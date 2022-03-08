@@ -158,24 +158,32 @@ func (dObj *gdocMdObj) createImgFolder()(err error) {
 		imgFoldPath = string(foldNamb[:idx]) + "/" + imgFoldNam
 	}
 
-	fmt.Println("folder: ", imgFoldPath)
+	fmt.Println("img folder path: ", imgFoldPath)
 
 	// check whether dir folder exists, if not create one
     newDir := false
-    if _, err := os.Stat(imgFoldPath); os.IsNotExist(err) {
+    _, err = os.Stat(imgFoldPath)
+	if os.IsNotExist(err) {
         err1 := os.Mkdir(imgFoldPath, os.ModePerm)
         if err1 != nil {
-            return fmt.Errorf("error createImgFolder:: could not create folder! %v", err1)
+            return fmt.Errorf("error createImgFolder:: could not create img folder! %v", err1)
         }
         newDir = true
-    }
-
+    } else {
+		if err != nil {
+            return fmt.Errorf("error createImgFolder:: could not find img folder! %v", err)
+		}
+	}
     // open directory
 
     if !newDir {
         err = os.RemoveAll(imgFoldPath)
         if err != nil {
             return fmt.Errorf("error createImgFolder:: could not delete files in image folder! %v", err)
+        }
+        err = os.Mkdir(imgFoldPath, os.ModePerm)
+        if err != nil {
+            return fmt.Errorf("error createImgFolder:: could not create img folder! %v", err)
         }
     }
 	dObj.imgFoldNam = imgFoldNam
@@ -539,8 +547,9 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
     }
 
 	numParEl := len(par.Elements)
-	if (numParEl == 1) && (len(par.Elements[0].TextRun.Content) == 1) {
-		return "<br>\n","", nil
+	if (numParEl == 1) && (!(len(par.Elements[0].TextRun.Content) >0)) {
+//		return "<br>\n","", nil
+		return "\n","", nil
 	}
 
 	parStr = ""
@@ -586,34 +595,36 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 	} // loop parEl
 
 
-	parLen := len(parStr)
-	xb := []byte(parStr)
+//	parLen := len(parStr)
+//	xb := []byte(parStr)
 	nparStr := parStr
 //fmt.Println("parstr: ",parStr," : ",len(parStr))
 
 // case of string terminated by new line
+/*
 	if xb[parLen-1] == '\n' {
 		nparStr = string(xb[:parLen-1])
 	}
+*/
 //fmt.Println("nparstr: ",nparStr," : ",len(nparStr))
 
-	if len(nparStr) <1 {
+	if !(len(nparStr) > 0) {
 		outstr ="\n"
 		tocstr = "\n"
 		return outstr, tocstr,nil
 	}
 
 // check of new line in the middle of the string
-		xb = []byte(nparStr)
+		xnb := []byte(nparStr)
 		n2parStr := ""
 		ist := 0
 		for i:= 0; i< len(nparStr); i++ {
-			if xb[i] == '\n' {
-				n2parStr += string(xb[ist:i]) + "     \n"
+			if xnb[i] == '\n' {
+				n2parStr += string(xnb[ist:i]) + "     \n"
 				ist = i
 			}
 		}
-		n2parStr += string(xb[ist:])
+		n2parStr += string(xnb[ist:])
 //fmt.Println("n2parstr: ",n2parStr," : ",len(n2parStr))
 		if decode {
 			tocParStr := dObj.cvtTocName(n2parStr)
