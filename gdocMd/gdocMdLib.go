@@ -304,6 +304,44 @@ func (dObj *gdocMdObj) cvtMdHeadStyl()(outstr string, err error) {
     return outstr, nil
 }
 
+func (dObj *gdocMdObj) cvtPosImg(par *docs.Paragraph)(outstr string, err error) {
+//            	imgstr, err := dObj.cvtPosImg(par)
+	if par == nil {
+        return "", fmt.Errorf("error cvtPosImg:: par is nil!")
+	}
+
+	doc := dObj.doc
+
+	numPosImg := len(par.PositionedObjectIds)
+
+	for i:=0; i< numPosImg; i++ {
+		posId := par.PositionedObjectIds[i]
+
+    	idx := 0
+    	for i:=0; i< len(posId); i++ {
+        	if posId[i] == '.' {
+            	idx = i+1
+            	break
+        	}
+    	}
+
+    	imgId :=""
+    	if (idx>0) && (idx<len(posId)-1) {
+        	imgId = posId[idx:]
+    	}
+
+    	imgObj := doc.PositionedObjects[posId].PositionedObjectProperties.EmbeddedObject
+		imgSrc := dObj.imgFoldNam + "/" + imgId + ".jpeg"
+
+    	outstr=fmt.Sprintf("<img src=\"%s\" id=\"%s\" alt=\"%s\" width=\"%.1fpt\" height=\"%.1fpt\">\n",
+			imgSrc, imgId, imgObj.Title, imgObj.Size.Width.Magnitude, imgObj.Size.Height.Magnitude )
+
+	}
+
+	return outstr, nil
+}
+
+
 func (dObj *gdocMdObj) cvtPelInlineImg(imgEl *docs.InlineObjectElement)(outstr string, err error) {
 
    	if imgEl == nil {
@@ -384,7 +422,7 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 	var NamedTxtStyl *docs.TextStyle
 	var ListProp *docs.NestingLevel
 	var doc *docs.Document
-	
+
 	doc = dObj.doc
 
     if par == nil {
@@ -647,10 +685,8 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 		}
 
 	if par.PositionedObjectIds != nil {
-		outstr += fmt.Sprintf("/nParagraph has as Positioned Objects: %d\n", len(par.PositionedObjectIds))
-		for id:=0; id< len(par.PositionedObjectIds); id++ {
-			outstr += fmt.Sprintf("posObject Id[%d]: %s\n", id, par.PositionedObjectIds[id])
-		}
+
+
 	}
 
 	return outstr, tocstr,nil
@@ -658,7 +694,7 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 
 
 func CvtGdocToMd(outfil *os.File, doc *docs.Document, toc bool)(err error) {
-	var outstr, tocstr, liststr string
+	var outstr, tocstr string
     docObj := new(gdocMdObj)
     docObj.doc = doc
 	docObj.folder = outfil
@@ -689,20 +725,28 @@ func CvtGdocToMd(outfil *os.File, doc *docs.Document, toc bool)(err error) {
 		if bodyEl.Paragraph != nil {
 			par := bodyEl.Paragraph
 //			outstr += fmt.Sprintf("  Paragraph with %d Par-Elements\n", len(par.Elements))
-			if par.Bullet != nil {
-			}
+
 			tstr, toctstr, err :=docObj.cvtParToMd(par)
 			if err != nil {
 				outstr += fmt.Sprintf("error cvtPar: %v\n",err)
 			} else {
-				outstr += liststr + tstr
+				outstr += tstr
 				tocstr += toctstr
 			}
+
 			if par.ParagraphStyle != nil {
 //				outstr += "  Has Style Structure\n"
 			}
+
 			if par.PositionedObjectIds != nil {
-				outstr += fmt.Sprintf("  Has Positioned Objects: %d\n", len(par.PositionedObjectIds))
+				fmt.Printf("  Has Positioned Objects: %d\n", len(par.PositionedObjectIds))
+            	imgstr, err := docObj.cvtPosImg(par)
+	            if err != nil {
+					errstr := fmt.Sprintf("\n[//]: # (error cvtParPosImg: %v)\n",err)
+					imgstr = errstr + imgstr
+        	    }
+				outstr += imgstr
+
 			}
 
 		}
