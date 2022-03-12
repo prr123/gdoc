@@ -193,7 +193,7 @@ func (dObj *gdocMdObj) createImgFolder()(err error) {
 }
 
 
-func (dObj *gdocMdObj) Init() (err error) {
+func (dObj *gdocMdObj) InitGdocMd() (err error) {
     if dObj == nil {
         return fmt.Errorf("error gdocMD::Init: dObj is nil!")
     }
@@ -304,10 +304,9 @@ func (dObj *gdocMdObj) cvtMdHeadStyl()(outstr string, err error) {
     return outstr, nil
 }
 
-func (dObj *gdocMdObj) cvtPosImg(par *docs.Paragraph)(outstr string, err error) {
-//            	imgstr, err := dObj.cvtPosImg(par)
+func (dObj *gdocMdObj) renderPosImg(par *docs.Paragraph)(outstr string, err error) {
 	if par == nil {
-        return "", fmt.Errorf("error cvtPosImg:: par is nil!")
+        return "", fmt.Errorf("error renderPosImg:: par is nil!")
 	}
 
 	doc := dObj.doc
@@ -698,7 +697,7 @@ func CvtGdocToMd(outfil *os.File, doc *docs.Document, toc bool)(err error) {
     docObj := new(gdocMdObj)
     docObj.doc = doc
 	docObj.folder = outfil
-    err = docObj.Init()
+    err = docObj.InitGdocMd()
     if err != nil {
         return fmt.Errorf("error CvtGdocToMd: could not initialise! %v", err)
     }
@@ -740,7 +739,7 @@ func CvtGdocToMd(outfil *os.File, doc *docs.Document, toc bool)(err error) {
 
 			if par.PositionedObjectIds != nil {
 				fmt.Printf("  Has Positioned Objects: %d\n", len(par.PositionedObjectIds))
-            	imgstr, err := docObj.cvtPosImg(par)
+            	imgstr, err := docObj.renderPosImg(par)
 	            if err != nil {
 					errstr := fmt.Sprintf("\n[//]: # (error cvtParPosImg: %v)\n",err)
 					imgstr = errstr + imgstr
