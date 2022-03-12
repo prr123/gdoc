@@ -35,11 +35,11 @@ type gdocMdObj struct {
 	folder *os.File
 	imgFoldNam string
 	imgFoldPath string
+	verb bool
 }
 
 func (dObj *gdocMdObj) downloadImg()(err error) {
 
-	verb := false
 	doc := dObj.doc
 	if !(len(dObj.imgFoldNam) >0) {
 		return fmt.Errorf("error downloadImg:: no imgfolder found!")
@@ -152,7 +152,7 @@ func (dObj *gdocMdObj) createImgFolder()(err error) {
 			break
 		}
 	}
-//		return fmt.Errorf("error createImgFolder:: no sub folder!")
+
 	imgFoldPath := imgFoldNam
 	if idx > 0 {
 		imgFoldPath = string(foldNamb[:idx]) + "/" + imgFoldNam
@@ -174,8 +174,8 @@ func (dObj *gdocMdObj) createImgFolder()(err error) {
             return fmt.Errorf("error createImgFolder:: could not find img folder! %v", err)
 		}
 	}
-    // open directory
 
+    // open directory
     if !newDir {
         err = os.RemoveAll(imgFoldPath)
         if err != nil {
