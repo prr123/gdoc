@@ -24,13 +24,19 @@
 // 2/3/2022 reduced css by eliminating paragraph element where default values are repeated
 // 	 -indentfirst:0
 //	  -indent:0
-//  - line-height: 1.15 
+//  - line-height: 1.15
+//
+// 9/3/2022 add img sub folders
+//          add positioned images
+//		    add conversion options
 //
 package gdocToHtml
 
 import (
 	"fmt"
 	"os"
+	"net/http"
+	"io"
 	"unicode/utf8"
 	"google.golang.org/api/docs/v1"
 )
@@ -65,7 +71,7 @@ type GdocHtmlObj struct {
     TocHtml string
     TocCss string
     Title string
-    List [20]listObj
+    List *[]listObj
     CNestLev int64
     CListOr bool
 	CListId string
@@ -74,12 +80,22 @@ type GdocHtmlObj struct {
 	fontFamily string
 	fontWeight int64
 	numLists int
-	numInLine int
-	inlineImgList *[] string
-	numPosObj int
+	inImgCount int
+	posImgCount int
+	parCount int
 	numHeaders int
 	numFootNotes int
 	df_ls float64
+	Options *OptObj
+	folder *os.File
+    imgFoldNam string
+    imgFoldPath string
+}
+
+type OptObj struct {
+	creImgFold bool
+    verb bool
+	toc bool
 }
 
 type dispObj struct {
@@ -104,63 +120,187 @@ type listObj struct {
     UnTyp bool
     Id string
 	numNestLev int
-	NestLev [10]nestLevel
+	NestLev [9]nestLevel
 }
 
-func createImgFolder(imgFoldNam string)(err error) {
+func getImgLayout (layout string) (ltyp int, err error) {
 
-    if len(imgFoldNam) < 2 {
-        return fmt.Errorf("error createIMgFolder:: filename %s too short!", imgFoldNam)
+	switch layout {
+		case "WRAP_TEXT":
+
+		case "BREAK_LEFT":
+
+		case "BREAK_RIGHT":
+
+		case "BREAK_LEFT_RIGHT":
+
+		case "IN_FRONT_OF_TEXT":
+
+		case "BEHIND_TEXT":
+
+		default:
+			return -1, fmt.Errorf("error getImgLayout layout %s not implemented!", layout)
+	}
+	return ltyp, nil
+}
+
+func (dObj *GdocHtmlObj) downloadImg()(err error) {
+
+    doc := dObj.Doc
+	verb := dObj.Options.verb
+    if !(len(dObj.imgFoldNam) >0) {
+        return fmt.Errorf("error downloadImg:: no imgfolder found!")
+    }
+    imgFoldPath := dObj.imgFoldPath + "/"
+    fmt.Println("image dir: ", imgFoldPath)
+
+    fmt.Printf("*** Inline Imgs: %d ***\n", len(doc.InlineObjects))
+    for k, inlObj := range doc.InlineObjects {
+        imgProp := inlObj.InlineObjectProperties.EmbeddedObject.ImageProperties
+        if verb {
+            fmt.Printf("Source: %s Obj %s\n", k, imgProp.SourceUri)
+            fmt.Printf("Content: %s Obj %s\n", k, imgProp.ContentUri)
+        }
+        if !(len(imgProp.SourceUri) > 0) {
+            return fmt.Errorf("error downloadImg:: image %s has no URI\n", k)
+        }
+        imgNam := imgFoldPath + k[4:] + ".jpeg"
+        if verb {fmt.Printf("image path: %s\n", imgNam)}
+        URL := imgProp.ContentUri
+        httpResp, err := http.Get(URL)
+        if err != nil {
+            return fmt.Errorf("error downloadImg:: could not fetch %s! %v", URL, err)
+        }
+        defer httpResp.Body.Close()
+//  fmt.Printf("http got %s!\n", URL)
+        if httpResp.StatusCode != 200 {
+            return fmt.Errorf("error downloadImg:: Received non 200 response code %d!", httpResp.StatusCode)
+        }
+//  fmt.Printf("http status: %d\n ", httpResp.StatusCode)
+    //Create a empty file
+        outfil, err := os.Create(imgNam)
+        if err != nil {
+            return fmt.Errorf("error downloadImg:: cannot create img file! %v", err)
+        }
+        defer outfil.Close()
+//  fmt.Println("created dir")
+        //Write the bytes to the fiel
+        _, err = io.Copy(outfil, httpResp.Body)
+        if err != nil {
+            return fmt.Errorf("error downloadImg:: cannot copy img file content! %v", err)
+        }
     }
 
-    bf := []byte(imgFoldNam)
+
+   fmt.Printf("*** Positioned Imgs: %d ***\n", len(doc.PositionedObjects))
+    for k, posObj := range doc.PositionedObjects {
+        imgProp := posObj.PositionedObjectProperties.EmbeddedObject.ImageProperties
+        if verb {
+            fmt.Printf("Source: %s Obj %s\n", k, imgProp.SourceUri)
+            fmt.Printf("Content: %s Obj %s\n", k, imgProp.ContentUri)
+        }
+        if !(len(imgProp.SourceUri) > 0) {
+            return fmt.Errorf("error downloadImg:: image %s has no URI\n", k)
+        }
+        imgNam := imgFoldPath + k[4:] + ".jpeg"
+        if verb {fmt.Printf("image path: %s\n", imgNam)}
+        URL := imgProp.ContentUri
+        httpResp, err := http.Get(URL)
+        if err != nil {
+            return fmt.Errorf("error downloadImg:: could not fetch %s! %v", URL, err)
+        }
+        defer httpResp.Body.Close()
+//  fmt.Printf("http got %s!\n", URL)
+        if httpResp.StatusCode != 200 {
+            return fmt.Errorf("error downloadImg:: Received non 200 response code %d!", httpResp.StatusCode)
+        }
+//  fmt.Printf("http status: %d\n ", httpResp.StatusCode)
+    //Create a empty file
+
+
+        outfil, err := os.Create(imgNam)
+        if err != nil {
+            return fmt.Errorf("error downloadImg:: cannot create img file! %v", err)
+        }
+        defer outfil.Close()
+//  fmt.Println("created dir")
+        //Write the bytes to the fiel
+        _, err = io.Copy(outfil, httpResp.Body)
+        if err != nil {
+            return fmt.Errorf("error downloadImg:: cannot copy img file content! %v", err)
+        }
+    }
+
+    return nil
+}
+
+
+func (dObj *GdocHtmlObj) createImgFolder()(err error) {
+
+    filnam :=dObj.DocName
+    if len(filnam) < 2 {
+        return fmt.Errorf("error createImgFolder:: filename %s too short!", filnam)
+    }
+
+    bf := []byte(filnam)
     // replace empty space with underscore
-    for i:= 0; i< len(imgFoldNam); i++ {
+    for i:= 0; i< len(filnam); i++ {
         if bf[i] == ' ' {bf[i]='_'}
         if bf[i] == '.' {
             return fmt.Errorf("error createImgFolder:: filnam has period!")
         }
     }
 
-	newDir := false
-    if _, err := os.Stat(imgFoldNam); os.IsNotExist(err) {
-        err1:= os.Mkdir(imgFoldNam, os.ModePerm)
-        if err1 != nil {
-            return fmt.Errorf("error createImgFolder:: could not create image folder! %v", err1)
+    imgFoldNam := "imgs_" + string(bf)
+
+    fmt.Println("output file name: ", dObj.folder.Name())
+    foldNamb := []byte(dObj.folder.Name())
+    idx := 0
+    for i:=len(foldNamb)-1; i> 0; i-- {
+        if foldNamb[i] == '/' {
+            idx = i
+            break
         }
-		newDir = true
     }
 
-	// directory exists
-	_, err = os.Open(imgFoldNam)
-	if err != nil {
-		return fmt.Errorf("error createImgFolder:: could not open existing image folder: %s! %v", imgFoldNam, err)
-	}
+    imgFoldPath := imgFoldNam
+    if idx > 0 {
+        imgFoldPath = string(foldNamb[:idx]) + "/" + imgFoldNam
+    }
 
-	if !newDir {
-		err = os.RemoveAll(imgFoldNam)
-		if err != nil {
-			return fmt.Errorf("error createImgFolder:: could not delete files in image folder! %v", err)
-		}
-	}
+    fmt.Println("img folder path: ", imgFoldPath)
 
-/*
-		files, err := dfil.Readdir(-1)
-    	defer dfil.Close()
-    	if err != nil {
-			return fmt.Errorf("error createImgFolder:: could not read files in image folder! %v", err)
-    	}
+    // check whether dir folder exists, if not create one
+    newDir := false
+    _, err = os.Stat(imgFoldPath)
+    if os.IsNotExist(err) {
+        err1 := os.Mkdir(imgFoldPath, os.ModePerm)
+        if err1 != nil {
+            return fmt.Errorf("error createImgFolder:: could not create img folder! %v", err1)
+        }
+        newDir = true
+    } else {
+        if err != nil {
+            return fmt.Errorf("error createImgFolder:: could not find img folder! %v", err)
+        }
+    }
 
-    	for _, file := range files {
-        	err := os.Remove(file.Name())
-    		if err != nil {
-				return fmt.Errorf("error createImgFolder:: could not delete file %s in image folder! %v", file.Name(), err)
-    		}
-		}
-*/
+    // open directory
+    if !newDir {
+        err = os.RemoveAll(imgFoldPath)
+        if err != nil {
+            return fmt.Errorf("error createImgFolder:: could not delete files in image folder! %v", err)
+        }
+        err = os.Mkdir(imgFoldPath, os.ModePerm)
+        if err != nil {
+            return fmt.Errorf("error createImgFolder:: could not create img folder! %v", err)
+        }
+    }
+    dObj.imgFoldNam = imgFoldNam
+    dObj.imgFoldPath = imgFoldPath
+
     return nil
 }
-
 func (dObj *GdocHtmlObj) disp_GdocHtmlObj (dbgfil *os.File) (err error) {
 	var outstr string
 
@@ -186,7 +326,7 @@ func (dObj *GdocHtmlObj) FindListIndex (listId string) (listIdx int, err error) 
 
 	listIdx = -1
 	for i:=0; i< dObj.numLists; i++ {
-		if dObj.List[i].Id == listId {
+		if (*dObj.List)[i].Id == listId {
 			listIdx = i
 			break
 		}
@@ -217,12 +357,19 @@ func (dObj *GdocHtmlObj) FindListProp (listId string) (listProp *docs.ListProper
 	return nil
 }
 
-func (dObj *GdocHtmlObj) Init(doc *docs.Document) (err error) {
-	var dNam string
+func (dObj *GdocHtmlObj) InitGdocHtmlLib (doc *docs.Document, opt *OptObj) (err error) {
 	var normStyl *docs.NamedStyle
+	var defOpt OptObj
 	dObj.Doc = doc
-	dNam = doc.Title
+	dNam := doc.Title
 
+	defOpt.verb = true
+	defOpt.creImgFold = true
+	defOpt.toc = false
+
+	if opt == nil {
+		dObj.Options = &defOpt
+	}
 	// need to transform file name
 	// replace spaces with underscore
 	x := []byte(dNam)
@@ -261,19 +408,24 @@ func (dObj *GdocHtmlObj) Init(doc *docs.Document) (err error) {
 		return fmt.Errorf("error gdoc Init -- number of lists exceeded max value 20!")
 	}
 	il := 0
+// xxx
+
+	dlists := make([]listObj,len(doc.Lists))
+	dObj.List = &dlists
 	for idstr, list := range doc.Lists {
-		dObj.List[il].Id = idstr
+		dlists[il].Id = idstr
 		numNestLev := len(list.ListProperties.NestingLevels)
-		dObj.List[il].numNestLev = numNestLev
+		dlists[il].numNestLev = numNestLev
+
 		for nl:=0; nl<numNestLev; nl++ {
 			nestLevel := list.ListProperties.NestingLevels[nl]
-			dObj.List[il].NestLev[nl].GlAl = nestLevel.BulletAlignment
-			dObj.List[il].NestLev[nl].GlFmt = nestLevel.GlyphFormat
-			dObj.List[il].NestLev[nl].GlSym = nestLevel.GlyphSymbol
-			dObj.List[il].NestLev[nl].GlTyp = nestLevel.GlyphType
-			dObj.List[il].NestLev[nl].FlInd = nestLevel.IndentFirstLine.Magnitude
-			dObj.List[il].NestLev[nl].StInd = nestLevel.IndentStart.Magnitude
-			dObj.List[il].NestLev[nl].Count = nestLevel.StartNumber
+			dlists[il].NestLev[nl].GlAl = nestLevel.BulletAlignment
+			dlists[il].NestLev[nl].GlFmt = nestLevel.GlyphFormat
+			dlists[il].NestLev[nl].GlSym = nestLevel.GlyphSymbol
+			dlists[il].NestLev[nl].GlTyp = nestLevel.GlyphType
+			dlists[il].NestLev[nl].FlInd = nestLevel.IndentFirstLine.Magnitude
+			dlists[il].NestLev[nl].StInd = nestLevel.IndentStart.Magnitude
+			dlists[il].NestLev[nl].Count = nestLevel.StartNumber
 			ord := false
 			switch nestLevel.GlyphType {
 				case "DECIMAL":
@@ -296,7 +448,7 @@ func (dObj *GdocHtmlObj) Init(doc *docs.Document) (err error) {
 				default:
 					ord = false
 			}
-			dObj.List[il].NestLev[nl].GlOrd = ord
+			dlists[il].NestLev[nl].GlOrd = ord
 		}
 		il++
 	}
@@ -304,23 +456,21 @@ func (dObj *GdocHtmlObj) Init(doc *docs.Document) (err error) {
 // Headers
 	dObj.numHeaders = len(doc.Headers)
 // images
-	dObj.numInLine = len(doc.InlineObjects)
+	dObj.inImgCount = len(doc.InlineObjects)
+	dObj.posImgCount = len(doc.PositionedObjects)
+    totObjNum := dObj.inImgCount + dObj.posImgCount
+    dObj.parCount = len(doc.Body.Content)
 
+    if totObjNum == 0 {return nil}
 
-	dObj.numPosObj = len(doc.PositionedObjects)
-
-/*
-	if (dObj.numInLine + dObj.numPosObj) > 0  {
-		dObj.ImgFoldName = dObj.DocName + "_Img"
-		// create clean imgfolder
-		err = createImgFolder(dObj.ImgFoldName)
-		if err != nil {
-			return fmt.Errorf("error Init: cannot create clean image folder! %v", err)
-		}
-	}
-
-	dObj.inlineImgList = make([]string,dObj.numInLine)
-*/
+    err = dObj.createImgFolder()
+    if err != nil {
+        return fmt.Errorf("error gdocMd::Init: could create ImgFolder: %v!", err)
+    }
+    err = dObj.downloadImg()
+    if err != nil {
+        return fmt.Errorf("error gdocMd::Init: could download images: %v!", err)
+    }
 
 	return nil
 }
@@ -481,6 +631,83 @@ func (dObj *GdocHtmlObj) CloseList(nl int64)(htmlStr string) {
 	return htmlStr
 }
 
+func (dObj *GdocHtmlObj) renderPosImg(posImg docs.PositionedObject, posId string)(htmlStr, cssStr string, err error) {
+
+	posObjProp := posImg.PositionedObjectProperties
+	imgProp := posObjProp.EmbeddedObject
+	htmlStr += fmt.Sprintf("\n<!-- Positioned Image %s -->\n", posId)
+	imgDivId := fmt.Sprintf("%s_%s", dObj.DocName, posId[4:])
+	imgId := imgDivId + "_img"
+	pimgId := imgDivId +"_p"
+
+	layout := posObjProp.Positioning.Layout
+	topPos := posObjProp.Positioning.TopOffset.Magnitude
+	leftPos := posObjProp.Positioning.LeftOffset.Magnitude
+	fmt.Printf("layout %s top: %.1fmm left:%.1fmm\n", layout, topPos*PtTomm, leftPos*PtTomm)
+
+	imgSrc := imgProp.ImageProperties.ContentUri
+	if dObj.Options.creImgFold {
+		imgSrc = dObj.imgFoldNam + "/" + posId[4:] + ".jpeg"
+	}
+
+	switch layout {
+		case "WRAP_TEXT", "BREAK_LEFT":
+			cssStr += fmt.Sprintf("#%s {\n", imgId)
+			cssStr += fmt.Sprintf("float:left; clear:both;")
+			cssStr += fmt.Sprintf("  width:%.1fpt; height:%.1fpt;\n",imgProp.Size.Width.Magnitude, imgProp.Size.Height.Magnitude)
+			cssStr += fmt.Sprintf("  margin: %.1fpt %.1fpt %.1fpt %.1fpt;\n", imgProp.MarginTop.Magnitude, imgProp.MarginRight.Magnitude, imgProp.MarginBottom.Magnitude, imgProp.MarginLeft.Magnitude)
+			cssStr += "}\n"
+			cssStr += fmt.Sprintf("#%s {\n", pimgId)
+			cssStr += fmt.Sprintf("  margin-left: %.1fpt; margin-right: %.1fpt;\n", imgProp.MarginLeft.Magnitude, imgProp.MarginRight.Magnitude)
+			cssStr += "}\n"
+			cssStr += fmt.Sprintf("#%s:before {\n", imgDivId)
+			cssStr += fmt.Sprintf("content:''; display:block; float:left; height:%.1fmm;\n",topPos*PtTomm)
+			cssStr += "}\n"
+
+		case "BREAK_RIGHT":
+			cssStr += fmt.Sprintf("#%s {\n", imgId)
+			cssStr += fmt.Sprintf("float:right; clear:both;")
+			cssStr += fmt.Sprintf("  width:%.1fpt; height:%.1fpt;\n",imgProp.Size.Width.Magnitude, imgProp.Size.Height.Magnitude)
+			cssStr += fmt.Sprintf("  margin: %.1fpt %.1fpt %.1fpt %.1fpt;\n", imgProp.MarginTop.Magnitude, imgProp.MarginRight.Magnitude, imgProp.MarginBottom.Magnitude, imgProp.MarginLeft.Magnitude)
+			cssStr += "}\n"
+			cssStr += fmt.Sprintf("#%s {\n", pimgId)
+			cssStr += fmt.Sprintf("  margin-left: %.1fpt; margin-right: %.1fpt;\n", imgProp.MarginLeft.Magnitude, imgProp.MarginRight.Magnitude)
+			cssStr += "}\n"
+			cssStr += fmt.Sprintf("#%s:before {\n", imgDivId)
+			cssStr += fmt.Sprintf("content:''; display:block; float:right; height:%.1fmm;\n",topPos*PtTomm)
+			cssStr += "}\n"
+
+		case "BREAK_LEFT_RIGHT":
+
+		case "IN_FRONT_OF_TEXT":
+// absolute
+		case "BEHIND_TEXT":
+// absolute
+		default:
+			cssStr += fmt.Sprintf("#%s {\n", imgId)
+			cssStr += fmt.Sprintf("  width:%.1fpt; height:%.1fpt;\n",imgProp.Size.Width.Magnitude, imgProp.Size.Height.Magnitude)
+			cssStr += fmt.Sprintf("  margin: %.1fpt %.1fpt %.1fpt %.1fpt;\n", imgProp.MarginTop.Magnitude, imgProp.MarginRight.Magnitude, imgProp.MarginBottom.Magnitude, imgProp.MarginLeft.Magnitude)
+			cssStr += "}\n"
+			cssStr += fmt.Sprintf("#%s {\n", pimgId)
+			cssStr += fmt.Sprintf("  margin-left: %.1fpt; margin-right: %.1fpt;\n", imgProp.MarginLeft.Magnitude, imgProp.MarginRight.Magnitude)
+			cssStr += "}\n"
+	}
+
+	htmlStr += fmt.Sprintf("  <div id=\"%s\">\n",imgDivId)
+	htmlStr += fmt.Sprintf("     <img src=\"%s\" alt=\"%s\" id=\"%s\">\n", imgSrc, imgProp.Title, imgId)
+//	htmlStr += fmt.Sprintf("     <p id=\"%s\">%s</p>\n", pimgId, imgProp.Title)
+	htmlStr += "  </div>\n"
+
+	return htmlStr, cssStr, nil
+}
+
+// paragraph element par
+// - Bullet
+// - Elements
+// - ParagraphStyle
+// - Positioned Objects
+//
+
 func (dObj *GdocHtmlObj) ConvertParTocToHtml(par *docs.Paragraph)(parObj dispObj, err error) {
 	var parHtmlStr, parCssStr string
 	var prefix, suffix string
@@ -497,7 +724,23 @@ func (dObj *GdocHtmlObj) ConvertParTocToHtml(par *docs.Paragraph)(parObj dispObj
 	if dObj == nil {
         return parObj, fmt.Errorf("error ConvertParTocToHtml -- dObj is nil!")
     }
+// Positioned Objects
+	numPosObj := len(par.PositionedObjectIds)
+	for i:=0; i< numPosObj; i++ {
+		posId := par.PositionedObjectIds[i]
+		posObj, ok := dObj.Doc.PositionedObjects[posId]
+		if !ok {return parObj, fmt.Errorf("error ConvertParTocToHtml:: could not find positioned Object with id: ", posId)}
 
+		imgHtmlStr, imgCssStr, err := dObj.renderPosImg(posObj, posId)
+		if err != nil {
+			parHtmlStr += fmt.Sprintf("<!-- error render img %v -->\n", err) + imgHtmlStr
+			parCssStr += imgCssStr
+		} else {
+			parHtmlStr += imgHtmlStr
+			parCssStr += imgCssStr
+		}
+	}
+// lists
     if par.Bullet != nil {
         parHtmlStr += "\n<!-- List Element -->\n"
 		// find list id
@@ -508,7 +751,7 @@ func (dObj *GdocHtmlObj) ConvertParTocToHtml(par *docs.Paragraph)(parObj dispObj
 		}
 		listProp := dObj.FindListProp(listId)
 		nestIdx = par.Bullet.NestingLevel
-		listOrd := dObj.List[listIdx].NestLev[nestIdx].GlOrd
+		listOrd := (*dObj.List)[listIdx].NestLev[nestIdx].GlOrd
 		liClaStr := listId[4:]
     	listStr += fmt.Sprintf("<!-- list id: %s OL: %t List Index: %d Nest Level: %d -->\n", listId, listOrd ,listIdx, nestIdx)
 		listStr += fmt.Sprintf("<!-- CList id: %s COL: %t Nest Level: %d -->\n",dObj.CListId, dObj.CListOr, dObj.CNestLev)
@@ -661,10 +904,11 @@ func (dObj *GdocHtmlObj) ConvertParTocToHtml(par *docs.Paragraph)(parObj dispObj
 		parHtmlStr += "\n<!-- Par Element -->\n"
 	}
 
+// we need to redo
 	if len(par.ParagraphStyle.HeadingId) > 0 {
 		parHtmlStr += fmt.Sprintf("<!-- Heading Id: %s -->\n", par.ParagraphStyle.HeadingId)
 	}
-	decode := false
+	decode := true
 	prefix = ""
 	suffix = ""
 	switch par.ParagraphStyle.NamedStyleType {
@@ -794,9 +1038,6 @@ func (dObj *GdocHtmlObj) ConvertParTocToHtml(par *docs.Paragraph)(parObj dispObj
 
         }
         if parEl.Person != nil {
-
-        }
-        if parEl.InlineObjectElement != nil {
 
         }
         if parEl.RichLink != nil {
@@ -1285,48 +1526,47 @@ func (dObj *GdocHtmlObj) ConvertBody(toc bool) (bodyObj *dispObj, err error) {
 	return bodyObj, nil
 }
 
-func CvtGdocHtml(outfil *os.File, doc *docs.Document)(err error) {
+func CvtGdocHtml(outfil *os.File, doc *docs.Document, options *OptObj)(err error) {
 
-	toc := true
-	docObj := new(GdocHtmlObj)
-	err = docObj.Init(doc)
-
+	dObj := new(GdocHtmlObj)
+	dObj.folder = outfil
+	err = dObj.InitGdocHtmlLib(doc, options)
 	if err != nil {
-		return fmt.Errorf("error Cvt Init %v", err)
+		return fmt.Errorf("error CvtGdocHtml:: InitGdocHtml %v", err)
 	}
-	head, err := docObj.ConvertDocHeadAttToCSS()
+	head, err := dObj.ConvertDocHeadAttToCSS()
 	if err != nil {
-		return fmt.Errorf("error cc header %v", err)
+		return fmt.Errorf("error CvtGdocHtml: ConvertDocHeatAttToCss %v", err)
 	}
 
-	tocHead, err := docObj.CreateTocHead(toc)
+	toc := dObj.Options.toc
+	tocHead, err := dObj.CreateTocHead(toc)
 	if err != nil {
 		tocHead.htmlToc = fmt.Sprintf("<!--- error Toc Head: %v --->\n",err)
 	}
 
-	body, err := docObj.ConvertBody(toc)
+	body, err := dObj.ConvertBody(toc)
 	if err != nil {
 		return fmt.Errorf("error cc body %v", err)
 	}
 
 	// create html file
 	outstr := "<!DOCTYPE html>\n"
-	outstr += fmt.Sprintf("<!-- file: %s -->\n", docObj.DocName)
-	outstr += fmt.Sprintf("<!-- img folder: %s -->\n",docObj.ImgFoldName)
+	outstr += fmt.Sprintf("<!-- file: %s -->\n", dObj.DocName)
+	outstr += fmt.Sprintf("<!-- img folder: %s -->\n",dObj.ImgFoldName)
 	outstr += "<head>\n<style>\n"
 	outfil.WriteString(outstr)
 	outfil.WriteString(head.cssStr)
 	outfil.WriteString(body.cssStr)
 	if toc {
 		outfil.WriteString(tocHead.cssToc)
+		outfil.WriteString(body.cssToc)
 	}
-	outfil.WriteString(body.cssToc)
 	outfil.WriteString("</style>\n</head>\n<body>\n")
-	if toc {
-		outfil.WriteString(tocHead.htmlToc)
-	}
+	if toc {outfil.WriteString(tocHead.htmlToc)}
 	outfil.WriteString(head.htmlStr)
-	outfil.WriteString(body.htmlToc)
+
+	if toc {outfil.WriteString(body.htmlToc)}
 	outfil.WriteString(body.htmlStr)
 	outfil.WriteString("</body>\n</html>\n")
 	return nil
