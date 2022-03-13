@@ -28,6 +28,7 @@ type gdocTxtObj struct {
 	parCount int
 	posImgCount int
  	inImgCount int
+	TableCount int
 	imgId []string
 	doc *docs.Document
 	DocName string
@@ -40,6 +41,7 @@ func (dObj *gdocTxtObj) Init() (err error) {
 	dObj.parCount = 0
 	dObj.posImgCount = 0
 	dObj.inImgCount = 0
+	dObj.TableCount = 0
 	return nil
 }
 
@@ -69,10 +71,112 @@ func (dObj *gdocTxtObj) dispTOC(toc *docs.TableOfContents)(outstr string, err er
 	return outstr, nil
 }
 
-func (dObj *gdocTxtObj) dispTable(table *docs.Table)(outstr string, err error) {
+func (dObj *gdocTxtObj) dispTable(tbl *docs.Table)(outstr string, err error) {
+	var tabWidth, tabHeight float64
+	var icol, irow int64
 
-	if table == nil {
+	doc := dObj.doc
+
+	if tbl == nil {
 		return "", fmt.Errorf("error dispTable: no table pt")
+	}
+	dObj.TableCount++
+	outstr = fmt.Sprintf("*** table %d: rows: %d cols: %d ***\n",dObj.TableCount,tbl.Rows, tbl.Columns )
+	// table rows
+
+	tabWidth = 0.0
+	if tbl.TableStyle == nil {
+		outstr += "no table style\n"
+	}
+
+	docPg := doc.DocumentStyle
+	PgWidth := docPg.PageSize.Width.Magnitude
+	NetPgWidth := PgWidth - (docPg.MarginLeft.Magnitude + docPg.MarginRight.Magnitude)
+	outstr += fmt.Sprintf("Default Table Width: %.1f\n", NetPgWidth*PtTomm)
+	tabWidth = NetPgWidth
+    for icol=0; icol < tbl.Columns; icol++ {
+		tcolObj :=tbl.TableStyle.TableColumnProperties[icol]
+		if tcolObj.Width != nil {
+			tabWidth += tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude
+		}
+	}
+
+	tabHeight = 0.0
+	for irow=0; irow < tbl.Rows; irow++ {
+		trowObj := tbl.TableRows[irow]
+		tabHeight += trowObj.TableRowStyle.MinRowHeight.Magnitude
+	}
+
+	outstr += fmt.Sprintf("  Min Height: %.1fmm Width: %.1fmm\n\n", tabHeight*PtTomm, tabWidth*PtTomm)
+	tblCellCount:=0
+    for irow =0; irow < tbl.Rows; irow++ {
+        trowobj := tbl.TableRows[irow]
+        mrheight := trowobj.TableRowStyle.MinRowHeight.Magnitude
+        numCols := (int64)(len(trowobj.TableCells))
+		outstr += fmt.Sprintf("  table row[%d]: cols:%d min Height: %.1f\n", irow, numCols, mrheight)
+		tcellDefWidth := tabWidth/(float64)(numCols)
+
+        for icol =0; icol< numCols; icol++ {
+			tcolObj :=tbl.TableStyle.TableColumnProperties[icol]
+			tcellWidth := tcellDefWidth
+			if tcolObj.Width != nil {
+				tcellWidth = tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude
+			}
+			outstr += fmt.Sprintf("    col[%d]: width: %.1f", icol, tcellWidth)
+
+            tcell := trowobj.TableCells[icol]
+			txtStr := ""
+			numEl := len(tcell.Content)
+			for el:=0; el<numEl; el++ {
+				if tcell.Content[el].Paragraph != nil {
+					for pel:=0; pel < len(tcell.Content[el].Paragraph.Elements); pel++ {
+						pelObj := tcell.Content[el].Paragraph.Elements[pel]
+						if pelObj.TextRun != nil {
+							txtStr += pelObj.TextRun.Content
+						}
+					}
+				}
+			}
+            tcellstyl := tcell.TableCellStyle
+			if tcellstyl != nil {
+				if tcellstyl.BackgroundColor.Color != nil {
+					outstr += fmt.Sprintf(" color: %s", dObj.getColor(tcellstyl.BackgroundColor.Color))
+				}
+				outstr += fmt.Sprintf(" vert align: %s", tcellstyl.ContentAlignment)
+				padTop := 0.0
+				if tcellstyl.PaddingTop != nil {
+					padTop = tcellstyl.PaddingTop.Magnitude
+				}
+				padRight := 0.0
+				if tcellstyl.PaddingRight != nil {
+					padRight = tcellstyl.PaddingRight.Magnitude
+				}
+				padBottom := 0.0
+				if tcellstyl.PaddingBottom != nil {
+					padBottom = tcellstyl.PaddingBottom.Magnitude
+				}
+				padLeft := 0.0
+				if tcellstyl.PaddingLeft != nil {
+					padLeft = tcellstyl.PaddingLeft.Magnitude
+				}
+				outstr += fmt.Sprintf(" pad: %.1f %.1f %.1f %.1f", padTop, padRight, padBottom, padLeft)
+				if tcellstyl.BorderLeft != nil {
+					outstr += fmt.Sprintf(" border left: Dash %s", tcellstyl.BorderLeft.DashStyle)
+
+					if tcellstyl.BorderLeft.Width != nil {
+						outstr += fmt.Sprintf(" width: %.1f", tcellstyl.BorderLeft.Width.Magnitude)
+					}
+					if tcellstyl.BorderLeft.Color != nil {
+						outstr += fmt.Sprintf(" color: %s", dObj.getColor(tcellstyl.BorderLeft.Color.Color))
+					}
+				}
+			}
+			outstr += fmt.Sprintf(" text: %s", txtStr)
+
+            tblCellCount++
+//            tblCellClass = fmt.Sprintf("%s_tbc_%d_%d", dObj.DocName, dObj.TableCount, tblCellCount)
+//xxx
+		}
 	}
 	return outstr, nil
 }
@@ -449,7 +553,7 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
     if err != nil {
         return fmt.Errorf("error Cvt Txt Init %v", err)
     }
-	if len(doc.Title) < 3 {
+	if !(len(doc.Title) >0) {
 		return fmt.Errorf("error CvtGdocToTxt:: the string doc.Title %s is too short!", doc.Title)
 	}
 	_, err = outfil.WriteString("Document Title: " + doc.Title + "\n")
