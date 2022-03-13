@@ -705,18 +705,26 @@ func (dObj *GdocHtmlObj) renderPosImg(posImg docs.PositionedObject, posId string
 // table element
 // 	tObj, _ := dObj.cvtTableToHtml(tableEl)
 
-func (dObj *GdocHtmlObj) ConvertParTocToHtml(par *docs.Paragraph)(tabObj dispObj, err error) {
+func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 	var htmlStr, cssStr string
-	var tabWidth, tabHeight float64
-
-	tbl := par.Table
+	var tabWidth float64
+	var icol, trow int64
+	var outstr string
+	doc := dObj.Doc
 	dObj.TableCount++
 	tblId := fmt.Sprintf("%s_tab_%d", dObj.DocName, dObj.TableCount)
 
-	tabWidth = 0
-  	for icol:=0; icol < tbl.Columns; icol++ {
-		tabWidth += tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude
-  	}
+    docPg := doc.DocumentStyle
+    PgWidth := docPg.PageSize.Width.Magnitude
+    NetPgWidth := PgWidth - (docPg.MarginLeft.Magnitude + docPg.MarginRight.Magnitude)
+    outstr += fmt.Sprintf("Default Table Width: %.1f", NetPgWidth*PtTomm)
+    tabWidth = NetPgWidth
+    for icol=0; icol < tbl.Columns; icol++ {
+        tcolObj :=tbl.TableStyle.TableColumnProperties[icol]
+        if tcolObj.Width != nil {
+            tabWidth += tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude
+        }
+    }
 
 	//set up table
 	htmlStr = fmt.Sprintf("<table id=\"%s\">\n", tblId)
@@ -729,34 +737,50 @@ func (dObj *GdocHtmlObj) ConvertParTocToHtml(par *docs.Paragraph)(tabObj dispObj
 	cssStr += "}\n"
 
 // row styling
+	htmlStr += "  <tbody>\n"
 	tblCellCount := 0
 	tblCellClass := fmt.Sprintf("%s_tbc_%d_%d", dObj.DocName, dObj.TableCount, tblCellCount)
-	for trow:=0; trow < tbl.Rows; trow++ {
+	for trow=0; trow < tbl.Rows; trow++ {
+		htmlStr += "  <tr>\n"
 		trowobj := tbl.TableRows[trow]
-		mrheight := trowobj.TableRowStyle.MinRowHeight.Magnitude
+//		mrheight := trowobj.TableRowStyle.MinRowHeight.Magnitude
 
 		numCols := len(trowobj.TableCells)
 		for tcol:=0; tcol< numCols; tcol++ {
 
 			tcell := trowobj.TableCells[tcol]
-			tcellstyle := tcell.TableCellStyle
-			if tcellstyle != nil {
-				
-
-			}
+//			tcellstyle := tcell.TableCellStyle
+//			if tcellstyle != nil {
+//			}
 			tblCellCount++
 			tblCellClass = fmt.Sprintf("%s_tbc_%d_%d", dObj.DocName, dObj.TableCount, tblCellCount)
 
 			cssStr = fmt.Sprintf(".%s {\n",tblCellClass)
- 			cssStr += fmt.Sprintf("  border: 1px solid black;\n", xx)
-			cssStr += fmt.Sprintf("  vertical-align: %s;\n", )
+// todo xxx
+ 			cssStr += fmt.Sprintf("  border: 1px solid black;\n")
+			cssStr += fmt.Sprintf("  vertical-align: top;\n")
  			cssStr += "}\n"
+			htmlStr += "    <td>\n"
+			elNum := len(tcell.Content)
+			for el:=0; el< elNum; el++ {
+				elObj := tcell.Content[el]
+				tObj, err:=dObj.ConvertContentEl(elObj)
+				if err != nil {
+					tabObj.htmlStr = htmlStr
+					tabObj.cssStr = cssStr
+					return tabObj, fmt.Errorf("error ConvertTable: %v", err)
+				}
+				cssStr += tObj.cssStr
+				htmlStr += "    " + tObj.htmlStr
+				htmlStr += "  </td>\n"
+			}
 		}
+		htmlStr += "</tr>\n"
 	}
 
-//
-	tabObj.htmlStr = ""
-	tabObj.cssStr = ""
+	htmlStr += "  </tbody>\n</table>\n"
+	tabObj.htmlStr = htmlStr
+	tabObj.cssStr = cssStr
 	return tabObj, nil
 }
 // paragraph element par
@@ -1405,7 +1429,7 @@ func (dObj *GdocHtmlObj) ConvertContentEl(contEl *docs.StructuralElement) (GdocH
 	}
 	if contEl.Table != nil {
 		tableEl := contEl.Table
-		tObj, _ := dObj.cvtTableToHtml(tableEl)
+		tObj, _ := dObj.cvtTable(tableEl)
 		htmlObj.cssStr += tObj.cssStr
 		htmlObj.htmlStr += tObj.htmlStr
 	}
