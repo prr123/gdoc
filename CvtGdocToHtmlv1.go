@@ -47,7 +47,7 @@ func main() {
 		fmt.Println("error main -- cannot open out file: ", err)
 		os.Exit(1)
 	}
-	err = gdocHtml.CvtGdocHtml(outfil, doc)
+	err = gdocHtml.CvtGdocHtml(outfil, doc, nil)
 	if err != nil {
 		fmt.Println("error main -- cannot convert gdoc file: ", err)
 		os.Exit(1)
