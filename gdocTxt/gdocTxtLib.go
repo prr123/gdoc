@@ -84,15 +84,24 @@ func (dObj *gdocTxtObj) dispTable(tbl *docs.Table)(outstr string, err error) {
 	outstr = fmt.Sprintf("*** table %d: rows: %d cols: %d ***\n",dObj.TableCount,tbl.Rows, tbl.Columns )
 	// table rows
 
+	outstr += "Table Style Properties\n"
 	tabWidth = 0.0
-	if tbl.TableStyle == nil {
-		outstr += "no table style\n"
+	if tbl.TableStyle != nil {
+		numColProp := (int64)(len(tbl.TableStyle.TableColumnProperties))
+		for icol=0; icol<numColProp; icol++ {
+			tColProp := tbl.TableStyle.TableColumnProperties[icol]
+			outstr += fmt.Sprintf(" col[%d]: w type: %s", icol, tColProp.WidthType)
+			if tColProp.Width !=nil {
+				outstr += fmt.Sprintf(" width: %.1f", tColProp.Width.Magnitude*PtTomm)
+			}
+			outstr += "\n"
+		}
 	}
 
 	docPg := doc.DocumentStyle
 	PgWidth := docPg.PageSize.Width.Magnitude
 	NetPgWidth := PgWidth - (docPg.MarginLeft.Magnitude + docPg.MarginRight.Magnitude)
-	outstr += fmt.Sprintf("Default Table Width: %.1f\n", NetPgWidth*PtTomm)
+	outstr += fmt.Sprintf("Default Table Width: %.1f", NetPgWidth*PtTomm)
 	tabWidth = NetPgWidth
     for icol=0; icol < tbl.Columns; icol++ {
 		tcolObj :=tbl.TableStyle.TableColumnProperties[icol]
@@ -108,6 +117,7 @@ func (dObj *gdocTxtObj) dispTable(tbl *docs.Table)(outstr string, err error) {
 	}
 
 	outstr += fmt.Sprintf("  Min Height: %.1fmm Width: %.1fmm\n\n", tabHeight*PtTomm, tabWidth*PtTomm)
+
 	tblCellCount:=0
     for irow =0; irow < tbl.Rows; irow++ {
         trowobj := tbl.TableRows[irow]
