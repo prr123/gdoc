@@ -29,7 +29,9 @@
 // 9/3/2022 add img sub folders
 //          add positioned images
 //		    add conversion options
+// 12/3/022 add table
 //
+
 package gdocToHtml
 
 import (
@@ -408,7 +410,6 @@ func (dObj *GdocHtmlObj) InitGdocHtmlLib (doc *docs.Document, opt *OptObj) (err 
 		return fmt.Errorf("error gdoc Init -- number of lists exceeded max value 20!")
 	}
 	il := 0
-// xxx
 
 	dlists := make([]listObj,len(doc.Lists))
 	dObj.List = &dlists
@@ -701,6 +702,63 @@ func (dObj *GdocHtmlObj) renderPosImg(posImg docs.PositionedObject, posId string
 	return htmlStr, cssStr, nil
 }
 
+// table element
+// 	tObj, _ := dObj.cvtTableToHtml(tableEl)
+
+func (dObj *GdocHtmlObj) ConvertParTocToHtml(par *docs.Paragraph)(tabObj dispObj, err error) {
+	var htmlStr, cssStr string
+	var tabWidth, tabHeight float64
+
+	tbl := par.Table
+	dObj.TableCount++
+	tblId := fmt.Sprintf("%s_tab_%d", dObj.DocName, dObj.TableCount)
+
+	tabWidth = 0
+  	for icol:=0; icol < tbl.Columns; icol++ {
+		tabWidth += tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude
+  	}
+
+	//set up table
+	htmlStr = fmt.Sprintf("<table id=\"%s\">\n", tblId)
+
+  // table styling
+  	cssStr = fmt.Sprintf("#table %s {\n",tblId)
+ 	cssStr += fmt.Sprintf("  border: 1px solid black;\n  border-collapse: collapse;\n")
+ 	cssStr += fmt.Sprintf("  width: %.1fpt;\n", tabWidth)
+	cssStr += "   margin:auto;\n"
+	cssStr += "}\n"
+
+// row styling
+	tblCellCount := 0
+	tblCellClass := fmt.Sprintf("%s_tbc_%d_%d", dObj.DocName, dObj.TableCount, tblCellCount)
+	for trow:=0; trow < tbl.Rows; trow++ {
+		trowobj := tbl.TableRows[trow]
+		mrheight := trowobj.TableRowStyle.MinRowHeight.Magnitude
+
+		numCols := len(trowobj.TableCells)
+		for tcol:=0; tcol< numCols; tcol++ {
+
+			tcell := trowobj.TableCells[tcol]
+			tcellstyle := tcell.TableCellStyle
+			if tcellstyle != nil {
+				
+
+			}
+			tblCellCount++
+			tblCellClass = fmt.Sprintf("%s_tbc_%d_%d", dObj.DocName, dObj.TableCount, tblCellCount)
+
+			cssStr = fmt.Sprintf(".%s {\n",tblCellClass)
+ 			cssStr += fmt.Sprintf("  border: 1px solid black;\n", xx)
+			cssStr += fmt.Sprintf("  vertical-align: %s;\n", )
+ 			cssStr += "}\n"
+		}
+	}
+
+//
+	tabObj.htmlStr = ""
+	tabObj.cssStr = ""
+	return tabObj, nil
+}
 // paragraph element par
 // - Bullet
 // - Elements
@@ -1346,7 +1404,10 @@ func (dObj *GdocHtmlObj) ConvertContentEl(contEl *docs.StructuralElement) (GdocH
 
 	}
 	if contEl.Table != nil {
-
+		tableEl := contEl.Table
+		tObj, _ := dObj.cvtTableToHtml(tableEl)
+		htmlObj.cssStr += tObj.cssStr
+		htmlObj.htmlStr += tObj.htmlStr
 	}
 	if contEl.TableOfContents != nil {
 
