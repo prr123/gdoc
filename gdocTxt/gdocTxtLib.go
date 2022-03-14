@@ -130,9 +130,9 @@ func (dObj *gdocTxtObj) dispTable(tbl *docs.Table)(outstr string, err error) {
 			tcolObj :=tbl.TableStyle.TableColumnProperties[icol]
 			tcellWidth := tcellDefWidth
 			if tcolObj.Width != nil {
-				tcellWidth = tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude
+				tcellWidth = tcolObj.Width.Magnitude
 			}
-			outstr += fmt.Sprintf("    col[%d]: width: %.1f", icol, tcellWidth)
+			outstr += fmt.Sprintf("    col[%d]: width: %.1f type: %20s", icol, tcellWidth, tcolObj.WidthType)
 
             tcell := trowobj.TableCells[icol]
 			txtStr := ""
