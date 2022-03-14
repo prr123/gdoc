@@ -146,6 +146,20 @@ func getImgLayout (layout string) (ltyp int, err error) {
 	return ltyp, nil
 }
 
+func tcell_vert_align (tstyl *docs.TableCellStyle) (outstr string) {
+	switch tstyl.ContentAlignment {
+		case "TOP":
+			outstr = "top"
+		case "Middle":
+		 	outstr = "middle"
+		case "BOTTOM":
+			outstr = "bottom"
+		default:
+			outstr = "baseline"
+	}
+	return outstr
+}
+
 func (dObj *GdocHtmlObj) downloadImg()(err error) {
 
     doc := dObj.Doc
@@ -710,9 +724,11 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 	var tabWidth float64
 	var icol, trow int64
 	var outstr string
+	var tcelpad [4]float64
+
 	doc := dObj.Doc
 	dObj.TableCount++
-	tblId := fmt.Sprintf("%s_tab_%d", dObj.DocName, dObj.TableCount)
+//	tblId := fmt.Sprintf("%s_tab_%d", dObj.DocName, dObj.TableCount)
 
     docPg := doc.DocumentStyle
     PgWidth := docPg.PageSize.Width.Magnitude
@@ -727,21 +743,37 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
     }
 
 	//set up table
-	htmlStr = fmt.Sprintf("<table id=\"%s\">\n", tblId)
+	tblClass := fmt.Sprintf("%s_tbl", dObj.DocName)
+	tblCellClass := fmt.Sprintf("%s_tcel", dObj.DocName)
+	htmlStr = fmt.Sprintf("<table class=\"%s\">\n", tblClass)
 
   // table styling
-  	cssStr = fmt.Sprintf("#table %s {\n",tblId)
+  	cssStr = fmt.Sprintf(".%s {\n",tblClass)
  	cssStr += fmt.Sprintf("  border: 1px solid black;\n  border-collapse: collapse;\n")
  	cssStr += fmt.Sprintf("  width: %.1fpt;\n", tabWidth)
 	cssStr += "   margin:auto;\n"
 	cssStr += "}\n"
 
+// table cell default values
+	tcelDefStyl := tbl.TableRows[0].TableCells[0].TableCellStyle
+	if tcelDefStyl.PaddingTop != nil {tcelpad[0] = tcelDefStyl.PaddingTop.Magnitude}
+	if tcelDefStyl.PaddingRight != nil {tcelpad[1] = tcelDefStyl.PaddingRight.Magnitude}
+	if tcelDefStyl.PaddingBottom != nil {tcelpad[2] = tcelDefStyl.PaddingBottom.Magnitude}
+	if tcelDefStyl.PaddingLeft != nil {tcelpad[3] = tcelDefStyl.PaddingLeft.Magnitude}
+
+	cssStr += fmt.Sprintf(".%s {\n",tblCellClass)
+ 	cssStr += fmt.Sprintf("  border: 1px solid black;\n")
+	cssStr += fmt.Sprintf("  vertical-align: %s;\n",tcell_vert_align (tcelDefStyl) )
+
+	cssStr += fmt.Sprintf("  padding: %.1fpt %.1fpt %.1fpt %.1fpt;\n", tcelpad[0], tcelpad[1], tcelpad[2], tcelpad[3])
+
+ 	cssStr += "}\n"
+
 // row styling
 	htmlStr += "  <tbody>\n"
 	tblCellCount := 0
-	tblCellClass := fmt.Sprintf("%s_tbc_%d_%d", dObj.DocName, dObj.TableCount, tblCellCount)
 	for trow=0; trow < tbl.Rows; trow++ {
-		htmlStr += "  <tr>\n"
+		htmlStr += fmt.Sprintf("  <tr>\n")
 		trowobj := tbl.TableRows[trow]
 //		mrheight := trowobj.TableRowStyle.MinRowHeight.Magnitude
 
@@ -753,14 +785,7 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 //			if tcellstyle != nil {
 //			}
 			tblCellCount++
-			tblCellClass = fmt.Sprintf("%s_tbc_%d_%d", dObj.DocName, dObj.TableCount, tblCellCount)
-
-			cssStr = fmt.Sprintf(".%s {\n",tblCellClass)
-// todo xxx
- 			cssStr += fmt.Sprintf("  border: 1px solid black;\n")
-			cssStr += fmt.Sprintf("  vertical-align: top;\n")
- 			cssStr += "}\n"
-			htmlStr += "    <td>\n"
+			htmlStr += fmt.Sprintf("    <td class=\"%s\">\n", tblCellClass)
 			elNum := len(tcell.Content)
 			for el:=0; el< elNum; el++ {
 				elObj := tcell.Content[el]
