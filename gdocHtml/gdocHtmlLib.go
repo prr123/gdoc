@@ -125,6 +125,48 @@ type listObj struct {
 	NestLev [9]nestLevel
 }
 
+type deftabcell struct {
+	pad [4] float64
+	vert_al string
+	bcolor string
+	border [4] tbl_border
+}
+
+type tbl_border struct {
+	color string
+	dash string
+	width float64
+}
+
+func getColor(color  *docs.Color)(outstr string) {
+    outstr = ""
+        if color != nil {
+            blue := int(color.RgbColor.Blue*255.0)
+            red := int(color.RgbColor.Red*255.0)
+            green := int(color.RgbColor.Green*255)
+            outstr += fmt.Sprintf("rgb(%d, %d, %d);\n", red, green, blue)
+            return outstr
+        }
+    outstr = "/*no color*/\n"
+    return outstr
+}
+
+func getDash(dashStyle string)(outstr string) {
+
+	switch dashStyle {
+		case "SOLID":
+			outstr = "solid"
+		case "DOT":
+			outstr = "dotted"
+		case "DASH":
+			outstr = "dashed"
+		default:
+			outstr = "none"
+	}
+
+    return outstr
+}
+
 func getImgLayout (layout string) (ltyp int, err error) {
 
 	switch layout {
@@ -490,18 +532,6 @@ func (dObj *GdocHtmlObj) InitGdocHtmlLib (doc *docs.Document, opt *OptObj) (err 
 	return nil
 }
 
-func (dObj *GdocHtmlObj) getColor(color  *docs.Color)(outstr string) {
-    outstr = ""
-        if color != nil {
-            blue := int(color.RgbColor.Blue*255.0)
-            red := int(color.RgbColor.Red*255.0)
-            green := int(color.RgbColor.Green*255)
-            outstr += fmt.Sprintf("rgb(%d, %d, %d);\n", red, green, blue)
-            return outstr
-        }
-    outstr = "/*no color*/\n"
-    return outstr
-}
 
 func (dObj *GdocHtmlObj) convertGlyph(nlev *docs.NestingLevel, ord bool)(cssStr string) {
 
@@ -723,8 +753,7 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 	var htmlStr, cssStr string
 	var tabWidth float64
 	var icol, trow int64
-	var outstr string
-	var tcelpad [4]float64
+	var defcel deftabcell
 
 	doc := dObj.Doc
 	dObj.TableCount++
@@ -733,14 +762,46 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
     docPg := doc.DocumentStyle
     PgWidth := docPg.PageSize.Width.Magnitude
     NetPgWidth := PgWidth - (docPg.MarginLeft.Magnitude + docPg.MarginRight.Magnitude)
-    outstr += fmt.Sprintf("Default Table Width: %.1f", NetPgWidth*PtTomm)
+//   fmt.Printf("Default Table Width: %.1f", NetPgWidth)
     tabWidth = NetPgWidth
+	tabw := 0.0
     for icol=0; icol < tbl.Columns; icol++ {
         tcolObj :=tbl.TableStyle.TableColumnProperties[icol]
         if tcolObj.Width != nil {
-            tabWidth += tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude
+            tabw += tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude
         }
     }
+	if tabw > 0.0 {tabWidth = tabw}
+
+// table cell default values
+	tcelDefStyl := tbl.TableRows[0].TableCells[0].TableCellStyle
+	if tcelDefStyl.PaddingTop != nil {defcel.pad[0] = tcelDefStyl.PaddingTop.Magnitude}
+	if tcelDefStyl.PaddingRight != nil {defcel.pad[1] = tcelDefStyl.PaddingRight.Magnitude}
+	if tcelDefStyl.PaddingBottom != nil {defcel.pad[2] = tcelDefStyl.PaddingBottom.Magnitude}
+	if tcelDefStyl.PaddingLeft != nil {defcel.pad[3] = tcelDefStyl.PaddingLeft.Magnitude}
+
+	if tcelDefStyl.BackgroundColor != nil {defcel.bcolor = getColor(tcelDefStyl.BackgroundColor.Color)}
+
+	if tcelDefStyl.BorderTop != nil {
+		if tcelDefStyl.BorderTop.Color != nil {defcel.border[0].color = getColor(tcelDefStyl.BorderTop.Color.Color)}
+		if tcelDefStyl.BorderTop.Width != nil {defcel.border[0].width = tcelDefStyl.BorderTop.Width.Magnitude}
+		defcel.border[0].dash = getDash(tcelDefStyl.BorderTop.DashStyle)
+	}
+	if tcelDefStyl.BorderRight != nil {
+		if tcelDefStyl.BorderRight.Color != nil {defcel.border[1].color = getColor(tcelDefStyl.BorderRight.Color.Color)}
+		if tcelDefStyl.BorderRight.Width != nil {defcel.border[1].width = tcelDefStyl.BorderRight.Width.Magnitude}
+		defcel.border[1].dash = getDash(tcelDefStyl.BorderRight.DashStyle)
+	}
+	if tcelDefStyl.BorderBottom != nil {
+		if tcelDefStyl.BorderBottom.Color != nil {defcel.border[2].color = getColor(tcelDefStyl.BorderBottom.Color.Color)}
+		if tcelDefStyl.BorderBottom.Width != nil {defcel.border[2].width = tcelDefStyl.BorderBottom.Width.Magnitude}
+		defcel.border[2].dash = getDash(tcelDefStyl.BorderBottom.DashStyle)
+	}
+	if tcelDefStyl.BorderLeft != nil {
+		if tcelDefStyl.BorderLeft.Color != nil {defcel.border[3].color = getColor(tcelDefStyl.BorderLeft.Color.Color)}
+		if tcelDefStyl.BorderLeft.Width != nil {defcel.border[3].width = tcelDefStyl.BorderLeft.Width.Magnitude}
+		defcel.border[3].dash = getDash(tcelDefStyl.BorderLeft.DashStyle)
+	}
 
 	//set up table
 	tblClass := fmt.Sprintf("%s_tbl", dObj.DocName)
@@ -754,18 +815,25 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 	cssStr += "   margin:auto;\n"
 	cssStr += "}\n"
 
-// table cell default values
-	tcelDefStyl := tbl.TableRows[0].TableCells[0].TableCellStyle
-	if tcelDefStyl.PaddingTop != nil {tcelpad[0] = tcelDefStyl.PaddingTop.Magnitude}
-	if tcelDefStyl.PaddingRight != nil {tcelpad[1] = tcelDefStyl.PaddingRight.Magnitude}
-	if tcelDefStyl.PaddingBottom != nil {tcelpad[2] = tcelDefStyl.PaddingBottom.Magnitude}
-	if tcelDefStyl.PaddingLeft != nil {tcelpad[3] = tcelDefStyl.PaddingLeft.Magnitude}
+// table columns
+	tabWtyp :=tbl.TableStyle.TableColumnProperties[0].WidthType
+//	if !((tabWtyp == "EVENLY_DISTRIBUTED")||(tabWtyp == "WIDTH_TYPE_UNSPECIFIED")) {
+//fmt.Printf("table width type: %s\n", tabWtyp)
+	if tabWtyp == "FIXED_WIDTH" {
+		htmlStr +="<colgroup>\n"
+		for icol = 0; icol < tbl.Columns; icol++ {
+			colId := fmt.Sprintf("tab%d_col%d", dObj.TableCount, icol)
+			cssStr += fmt.Sprintf("#%s {width: %.1fpt;}\n", colId, tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude)
+			htmlStr += fmt.Sprintf("<col span=\"1\" id=\"%s\">\n", colId)
+		}
+		htmlStr +="</colgroup>\n"
+	}
+
 
 	cssStr += fmt.Sprintf(".%s {\n",tblCellClass)
  	cssStr += fmt.Sprintf("  border: 1px solid black;\n")
 	cssStr += fmt.Sprintf("  vertical-align: %s;\n",tcell_vert_align (tcelDefStyl) )
-
-	cssStr += fmt.Sprintf("  padding: %.1fpt %.1fpt %.1fpt %.1fpt;\n", tcelpad[0], tcelpad[1], tcelpad[2], tcelpad[3])
+	cssStr += fmt.Sprintf("  padding: %.1fpt %.1fpt %.1fpt %.1fpt;\n", defcel.pad[0], defcel.pad[1], defcel.pad[2], defcel.pad[3])
 
  	cssStr += "}\n"
 
@@ -1269,13 +1337,13 @@ func (dObj *GdocHtmlObj) DecodeTxtStylToCss(txtStyl *docs.TextStyle, head bool)(
 		if txtStyl.ForegroundColor.Color != nil {
 			//0 to 1
             tcssStr += "  color: "
-            tcssStr += dObj.getColor(txtStyl.ForegroundColor.Color)
+            tcssStr += getColor(txtStyl.ForegroundColor.Color)
 		}
 	}
 	if txtStyl.BackgroundColor != nil {
 		if txtStyl.BackgroundColor.Color != nil {
             tcssStr += "  background-color: "
-            tcssStr += dObj.getColor(txtStyl.BackgroundColor.Color)
+            tcssStr += getColor(txtStyl.BackgroundColor.Color)
 		}
 	}
 
