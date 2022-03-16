@@ -63,7 +63,7 @@ func (dObj *gdocTxtObj) dispTOC(toc *docs.TableOfContents)(outstr string, err er
 		outstr += fmt.Sprintf("\n element: %d ", el)
 		tStr,err := dObj.dispContentEl(tocEl)
 		if err != nil {
-			outstr += fmt.Sprintf("/n error dispContentEl: %v\n", err) + tStr
+			outstr += fmt.Sprintf("\n error dispContentEl: %v\n", err) + tStr
 		} else {
 			outstr += tStr
 		}
@@ -132,7 +132,7 @@ func (dObj *gdocTxtObj) dispTable(tbl *docs.Table)(outstr string, err error) {
 			if tcolObj.Width != nil {
 				tcellWidth = tcolObj.Width.Magnitude
 			}
-			outstr += fmt.Sprintf("    col[%d]: width: %.1f type: %20s", icol, tcellWidth, tcolObj.WidthType)
+			outstr += fmt.Sprintf("    col[%d]: width: %6.1f type: %s", icol, tcellWidth, tcolObj.WidthType)
 
             tcell := trowobj.TableCells[icol]
 			txtStr := ""
@@ -170,8 +170,49 @@ func (dObj *gdocTxtObj) dispTable(tbl *docs.Table)(outstr string, err error) {
 					padLeft = tcellstyl.PaddingLeft.Magnitude
 				}
 				outstr += fmt.Sprintf(" pad: %.1f %.1f %.1f %.1f", padTop, padRight, padBottom, padLeft)
+			}
+			outstr += fmt.Sprintf(" text: %s", txtStr)
+
+			if tcellstyl != nil {
+				outstr += "     border top: "
+				if tcellstyl.BorderTop != nil {
+					outstr += fmt.Sprintf(" dash %s", tcellstyl.BorderTop.DashStyle)
+
+					if tcellstyl.BorderTop.Width != nil {
+						outstr += fmt.Sprintf(" width: %.1f", tcellstyl.BorderTop.Width.Magnitude)
+					}
+					if tcellstyl.BorderTop.Color != nil {
+						outstr += fmt.Sprintf(" color: %s", dObj.getColor(tcellstyl.BorderTop.Color.Color))
+					}
+				} else { outstr += " <no char>" }
+
+				outstr += " right: "
+				if tcellstyl.BorderRight != nil {
+					outstr += fmt.Sprintf(" dash %s", tcellstyl.BorderRight.DashStyle)
+
+					if tcellstyl.BorderRight.Width != nil {
+						outstr += fmt.Sprintf(" width: %.1f", tcellstyl.BorderRight.Width.Magnitude)
+					}
+					if tcellstyl.BorderRight.Color != nil {
+						outstr += fmt.Sprintf(" color: %s", dObj.getColor(tcellstyl.BorderRight.Color.Color))
+					}
+				} else { outstr += " <no char>" }
+
+				outstr += " bottom: "
+				if tcellstyl.BorderBottom != nil {
+					outstr += fmt.Sprintf(" dash %s", tcellstyl.BorderBottom.DashStyle)
+
+					if tcellstyl.BorderBottom.Width != nil {
+						outstr += fmt.Sprintf(" width: %.1f", tcellstyl.BorderBottom.Width.Magnitude)
+					}
+					if tcellstyl.BorderBottom.Color != nil {
+						outstr += fmt.Sprintf(" color: %s", dObj.getColor(tcellstyl.BorderBottom.Color.Color))
+					}
+				} else { outstr += " <no char>" }
+
+				outstr += " left: "
 				if tcellstyl.BorderLeft != nil {
-					outstr += fmt.Sprintf(" border left: Dash %s", tcellstyl.BorderLeft.DashStyle)
+					outstr += fmt.Sprintf(" dash %s", tcellstyl.BorderLeft.DashStyle)
 
 					if tcellstyl.BorderLeft.Width != nil {
 						outstr += fmt.Sprintf(" width: %.1f", tcellstyl.BorderLeft.Width.Magnitude)
@@ -179,13 +220,20 @@ func (dObj *gdocTxtObj) dispTable(tbl *docs.Table)(outstr string, err error) {
 					if tcellstyl.BorderLeft.Color != nil {
 						outstr += fmt.Sprintf(" color: %s", dObj.getColor(tcellstyl.BorderLeft.Color.Color))
 					}
+				} else { outstr += " <no char>" }
+
+				outstr += "\n"
+// func (dObj *gdocTxtObj) dispPar(par *docs.Paragraph)(outstr string, err error) {
+				for el:=0; el< len(tcell.Content); el++ {
+					tstr, err := dObj.dispPar(tcell.Content[el].Paragraph)
+					if err != nil {
+						outstr += fmt.Sprintf("error par of tablecel %d\n",el)
+					} else {
+						outstr += tstr
+					}
 				}
 			}
-			outstr += fmt.Sprintf(" text: %s", txtStr)
-
             tblCellCount++
-//            tblCellClass = fmt.Sprintf("%s_tbc_%d_%d", dObj.DocName, dObj.TableCount, tblCellCount)
-//xxx
 		}
 	}
 	return outstr, nil
@@ -361,7 +409,7 @@ func (dObj *gdocTxtObj) dispBorder(parBorder *docs.ParagraphBorder)(outstr strin
 
 	outstr = "Border Style: \n"
 	if parBorder == nil {
-		outstr += "error dispParStyl: no parStyl\n"
+		outstr += "error dispParStyl: no Par Border Style\n"
 		return outstr
 	}
 	outstr += fmt.Sprintf("   Border Style:   %s\n", parBorder.DashStyle)
@@ -394,7 +442,7 @@ func (dObj *gdocTxtObj) dispParStyl(parStyl *docs.ParagraphStyle)(outstr string,
 	if parStyl == nil {
 		return "", fmt.Errorf("error dispParStyl: no parStyl")
 	}
-	outstr = "Paragraph Style:\n"
+	outstr = "** Paragraph Style ***\n"
 	outstr += fmt.Sprintf("  Heading Id:  %s \n", parStyl.HeadingId)
 	outstr += fmt.Sprintf("  Named Style: %s \n", parStyl.NamedStyleType)
 	if len(parStyl.Alignment) > 0 {
@@ -704,7 +752,7 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 		outstr += fmt.Sprintf("\n element: %d ", el)
 		tStr,err := docObj.dispContentEl(elStr)
 		if err != nil {
-			outstr += fmt.Sprintf("/n error dispContent[%d]: %v\n", el, err) + tStr
+			outstr += fmt.Sprintf("\n error dispContent[%d]: %v\n", el, err) + tStr
 		} else {
 			outstr += tStr
 		}
