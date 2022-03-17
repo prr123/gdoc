@@ -95,9 +95,10 @@ type GdocHtmlObj struct {
 }
 
 type OptObj struct {
-	creImgFold bool
-    verb bool
-	toc bool
+	CssFil bool
+	ImgFold bool
+    Verb bool
+	Toc bool
 }
 
 type dispObj struct {
@@ -125,18 +126,32 @@ type listObj struct {
 	NestLev [9]nestLevel
 }
 
-type deftabcell struct {
+type tabCell struct {
 	pad [4] float64
-	vert_al string
+	spad float64
+	vert_align string
+	bckcolor string
+	border [4] tblBorder
+	bwidth float64
+	bdash string
 	bcolor string
-	border [4] tbl_border
+	cspan int
+	rspan int
 }
 
-type tbl_border struct {
+type tblBorder struct {
 	color string
 	dash string
 	width float64
 }
+
+type parStyl struct {
+	pad [4]float64
+	margin [4]float64
+	txtAl string
+	linHeight float64
+}
+
 
 func getColor(color  *docs.Color)(outstr string) {
     outstr = ""
@@ -188,8 +203,8 @@ func getImgLayout (layout string) (ltyp int, err error) {
 	return ltyp, nil
 }
 
-func tcell_vert_align (tstyl *docs.TableCellStyle) (outstr string) {
-	switch tstyl.ContentAlignment {
+func tcell_vert_align (alStr string) (outstr string) {
+	switch alStr {
 		case "TOP":
 			outstr = "top"
 		case "Middle":
@@ -205,7 +220,7 @@ func tcell_vert_align (tstyl *docs.TableCellStyle) (outstr string) {
 func (dObj *GdocHtmlObj) downloadImg()(err error) {
 
     doc := dObj.Doc
-	verb := dObj.Options.verb
+	verb := dObj.Options.Verb
     if !(len(dObj.imgFoldNam) >0) {
         return fmt.Errorf("error downloadImg:: no imgfolder found!")
     }
@@ -421,9 +436,10 @@ func (dObj *GdocHtmlObj) InitGdocHtmlLib (doc *docs.Document, opt *OptObj) (err 
 	dObj.Doc = doc
 	dNam := doc.Title
 
-	defOpt.verb = true
-	defOpt.creImgFold = true
-	defOpt.toc = false
+	defOpt.Verb = true
+	defOpt.ImgFold = true
+	defOpt.Toc = false
+	defOpt.CssFil = false
 
 	if opt == nil {
 		dObj.Options = &defOpt
@@ -691,7 +707,7 @@ func (dObj *GdocHtmlObj) renderPosImg(posImg docs.PositionedObject, posId string
 	fmt.Printf("layout %s top: %.1fmm left:%.1fmm\n", layout, topPos*PtTomm, leftPos*PtTomm)
 
 	imgSrc := imgProp.ImageProperties.ContentUri
-	if dObj.Options.creImgFold {
+	if dObj.Options.ImgFold {
 		imgSrc = dObj.imgFoldNam + "/" + posId[4:] + ".jpeg"
 	}
 
@@ -753,7 +769,8 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 	var htmlStr, cssStr string
 	var tabWidth float64
 	var icol, trow int64
-	var defcel deftabcell
+	var defcel tabCell
+
 
 	doc := dObj.Doc
 	dObj.TableCount++
@@ -774,33 +791,64 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 	if tabw > 0.0 {tabWidth = tabw}
 
 // table cell default values
-	tcelDefStyl := tbl.TableRows[0].TableCells[0].TableCellStyle
-	if tcelDefStyl.PaddingTop != nil {defcel.pad[0] = tcelDefStyl.PaddingTop.Magnitude}
-	if tcelDefStyl.PaddingRight != nil {defcel.pad[1] = tcelDefStyl.PaddingRight.Magnitude}
-	if tcelDefStyl.PaddingBottom != nil {defcel.pad[2] = tcelDefStyl.PaddingBottom.Magnitude}
-	if tcelDefStyl.PaddingLeft != nil {defcel.pad[3] = tcelDefStyl.PaddingLeft.Magnitude}
+// define default cell classs
+	tcelDef := tbl.TableRows[0].TableCells[0]
+	tcelDefStyl := tcelDef.TableCellStyle
 
-	if tcelDefStyl.BackgroundColor != nil {defcel.bcolor = getColor(tcelDefStyl.BackgroundColor.Color)}
+// default values which google does not set but uses
+	defcel.vert_align = "top"
+	defcel.bcolor = "black"
+	defcel.bwidth = 1.0
+	defcel.bdash = "solid"
 
-	if tcelDefStyl.BorderTop != nil {
-		if tcelDefStyl.BorderTop.Color != nil {defcel.border[0].color = getColor(tcelDefStyl.BorderTop.Color.Color)}
-		if tcelDefStyl.BorderTop.Width != nil {defcel.border[0].width = tcelDefStyl.BorderTop.Width.Magnitude}
-		defcel.border[0].dash = getDash(tcelDefStyl.BorderTop.DashStyle)
-	}
-	if tcelDefStyl.BorderRight != nil {
-		if tcelDefStyl.BorderRight.Color != nil {defcel.border[1].color = getColor(tcelDefStyl.BorderRight.Color.Color)}
-		if tcelDefStyl.BorderRight.Width != nil {defcel.border[1].width = tcelDefStyl.BorderRight.Width.Magnitude}
-		defcel.border[1].dash = getDash(tcelDefStyl.BorderRight.DashStyle)
-	}
-	if tcelDefStyl.BorderBottom != nil {
-		if tcelDefStyl.BorderBottom.Color != nil {defcel.border[2].color = getColor(tcelDefStyl.BorderBottom.Color.Color)}
-		if tcelDefStyl.BorderBottom.Width != nil {defcel.border[2].width = tcelDefStyl.BorderBottom.Width.Magnitude}
-		defcel.border[2].dash = getDash(tcelDefStyl.BorderBottom.DashStyle)
-	}
-	if tcelDefStyl.BorderLeft != nil {
-		if tcelDefStyl.BorderLeft.Color != nil {defcel.border[3].color = getColor(tcelDefStyl.BorderLeft.Color.Color)}
-		if tcelDefStyl.BorderLeft.Width != nil {defcel.border[3].width = tcelDefStyl.BorderLeft.Width.Magnitude}
-		defcel.border[3].dash = getDash(tcelDefStyl.BorderLeft.DashStyle)
+// xxx
+	if tcelDefStyl != nil {
+		defcel.vert_align = tcell_vert_align(tcelDefStyl.ContentAlignment)
+
+// if left border is the only border specified, let's use it for default values
+		tb := (tcelDefStyl.BorderTop == nil)&& (tcelDefStyl.BorderRight == nil)
+		tb = tb&&(tcelDefStyl.BorderBottom == nil)
+		if (tcelDefStyl.BorderLeft != nil) && tb {
+			if tcelDefStyl.BorderLeft.Color != nil {defcel.border[3].color = getColor(tcelDefStyl.BorderLeft.Color.Color)}
+			if tcelDefStyl.BorderLeft.Width != nil {defcel.border[3].width = tcelDefStyl.BorderLeft.Width.Magnitude}
+			defcel.border[3].dash = getDash(tcelDefStyl.BorderLeft.DashStyle)
+		}
+
+		if tcelDefStyl.PaddingTop != nil {defcel.pad[0] = tcelDefStyl.PaddingTop.Magnitude}
+		if tcelDefStyl.PaddingRight != nil {defcel.pad[1] = tcelDefStyl.PaddingRight.Magnitude}
+		if tcelDefStyl.PaddingBottom != nil {defcel.pad[2] = tcelDefStyl.PaddingBottom.Magnitude}
+		if tcelDefStyl.PaddingLeft != nil {defcel.pad[3] = tcelDefStyl.PaddingLeft.Magnitude}
+
+		if tcelDefStyl.BackgroundColor != nil {defcel.bckcolor = getColor(tcelDefStyl.BackgroundColor.Color)}
+
+		if tcelDefStyl.BorderTop != nil {
+			if tcelDefStyl.BorderTop.Color != nil {defcel.border[0].color = getColor(tcelDefStyl.BorderTop.Color.Color)}
+			if tcelDefStyl.BorderTop.Width != nil {defcel.border[0].width = tcelDefStyl.BorderTop.Width.Magnitude}
+			defcel.border[0].dash = getDash(tcelDefStyl.BorderTop.DashStyle)
+		}
+		if tcelDefStyl.BorderRight != nil {
+			if tcelDefStyl.BorderRight.Color != nil {defcel.border[1].color = getColor(tcelDefStyl.BorderRight.Color.Color)}
+			if tcelDefStyl.BorderRight.Width != nil {defcel.border[1].width = tcelDefStyl.BorderRight.Width.Magnitude}
+			defcel.border[1].dash = getDash(tcelDefStyl.BorderRight.DashStyle)
+		}
+		if tcelDefStyl.BorderBottom != nil {
+			if tcelDefStyl.BorderBottom.Color != nil {defcel.border[2].color = getColor(tcelDefStyl.BorderBottom.Color.Color)}
+			if tcelDefStyl.BorderBottom.Width != nil {defcel.border[2].width = tcelDefStyl.BorderBottom.Width.Magnitude}
+			defcel.border[2].dash = getDash(tcelDefStyl.BorderBottom.DashStyle)
+		}
+		if tcelDefStyl.BorderLeft != nil {
+			if tcelDefStyl.BorderLeft.Color != nil {defcel.border[3].color = getColor(tcelDefStyl.BorderLeft.Color.Color)}
+			if tcelDefStyl.BorderLeft.Width != nil {defcel.border[3].width = tcelDefStyl.BorderLeft.Width.Magnitude}
+			defcel.border[3].dash = getDash(tcelDefStyl.BorderLeft.DashStyle)
+		}
+		if tcelDefStyl.BorderTop == tcelDefStyl.BorderRight {
+			fmt.Println("same border!")
+			if tcelDefStyl.BorderTop != nil {
+				if tcelDefStyl.BorderTop.Color != nil {defcel.bcolor = getColor(tcelDefStyl.BorderTop.Color.Color)}
+				defcel.bdash = getDash(tcelDefStyl.BorderTop.DashStyle)
+				if tcelDefStyl.BorderTop.Width != nil {defcel.bwidth = tcelDefStyl.BorderTop.Width.Magnitude}
+			}
+		}
 	}
 
 	//set up table
@@ -831,11 +879,11 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 
 
 	cssStr += fmt.Sprintf(".%s {\n",tblCellClass)
- 	cssStr += fmt.Sprintf("  border: 1px solid black;\n")
-	cssStr += fmt.Sprintf("  vertical-align: %s;\n",tcell_vert_align (tcelDefStyl) )
+ 	cssStr += fmt.Sprintf("  border: %.1fpt %s %s;\n", defcel.bwidth, defcel.bdash, defcel.bcolor)
+	cssStr += fmt.Sprintf("  vertical-align: %s;\n", defcel.vert_align )
 	cssStr += fmt.Sprintf("  padding: %.1fpt %.1fpt %.1fpt %.1fpt;\n", defcel.pad[0], defcel.pad[1], defcel.pad[2], defcel.pad[3])
-
  	cssStr += "}\n"
+
 
 // row styling
 	htmlStr += "  <tbody>\n"
@@ -847,13 +895,37 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 
 		numCols := len(trowobj.TableCells)
 		for tcol:=0; tcol< numCols; tcol++ {
-
 			tcell := trowobj.TableCells[tcol]
-//			tcellstyle := tcell.TableCellStyle
-//			if tcellstyle != nil {
-//			}
 			tblCellCount++
-			htmlStr += fmt.Sprintf("    <td class=\"%s\">\n", tblCellClass)
+			cellStr := ""
+			celId := fmt.Sprintf("tab%d_cell%d", dObj.TableCount, tblCellCount)
+			// check whether cell style is different from default
+			if tcell.TableCellStyle != nil {
+				tstyl := tcell.TableCellStyle
+				if tstyl.BackgroundColor != nil {cellStr += fmt.Sprintf(" background-color:\"%s\";",getColor(tstyl.BackgroundColor.Color))}
+				if tcell_vert_align(tstyl.ContentAlignment) != defcel.vert_align {cellStr += fmt.Sprintf(" vertical-align: %s;", tcell_vert_align(tstyl.ContentAlignment))}
+				if tstyl.PaddingTop != nil {
+					if tstyl.PaddingTop.Magnitude != defcel.pad[0] { cellStr += fmt.Sprintf(" padding-top: %5.1fpt;", tstyl.PaddingTop.Magnitude)}
+				}
+
+				if tstyl.BorderTop != nil {
+					// Color
+					if tstyl.BorderTop.Color != nil {cellStr += fmt.Sprintf(" border-top-color: %s;", getColor(tstyl.BorderTop.Color.Color))}
+					//dash
+					if getDash(tstyl.BorderTop.DashStyle) != defcel.bdash {cellStr += fmt.Sprintf(" border-top-style: %s;",  getDash(tstyl.BorderTop.DashStyle))}
+					//Width
+					if tstyl.BorderTop.Width != nil {cellStr += fmt.Sprintf(" border-top-width: %5.1fpt;", tstyl.BorderTop.Width.Magnitude)}
+				}
+			}
+// xxxx
+			if len(cellStr) >0 {
+				cssStr += fmt.Sprintf("#%s {",celId)
+				cssStr += fmt.Sprintf("%s }\n", cellStr)
+				htmlStr += fmt.Sprintf("    <td id=\"%s\" class=\"%s\">\n", celId, tblCellClass)
+			} else {
+			// default
+				htmlStr += fmt.Sprintf("    <td class=\"%s\">\n", tblCellClass)
+			}
 			elNum := len(tcell.Content)
 			for el:=0; el< elNum; el++ {
 				elObj := tcell.Content[el]
@@ -865,8 +937,9 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 				}
 				cssStr += tObj.cssStr
 				htmlStr += "    " + tObj.htmlStr
-				htmlStr += "  </td>\n"
 			}
+			htmlStr += "  </td>\n"
+
 		}
 		htmlStr += "</tr>\n"
 	}
@@ -1717,7 +1790,7 @@ func CvtGdocHtml(outfil *os.File, doc *docs.Document, options *OptObj)(err error
 		return fmt.Errorf("error CvtGdocHtml: ConvertDocHeatAttToCss %v", err)
 	}
 
-	toc := dObj.Options.toc
+	toc := dObj.Options.Toc
 	tocHead, err := dObj.CreateTocHead(toc)
 	if err != nil {
 		tocHead.htmlToc = fmt.Sprintf("<!--- error Toc Head: %v --->\n",err)
