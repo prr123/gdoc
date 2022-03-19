@@ -223,7 +223,7 @@ func (dObj *gdocTxtObj) dispTable(tbl *docs.Table)(outstr string, err error) {
 				} else { outstr += " <no char>" }
 
 				outstr += "\n"
-// func (dObj *gdocTxtObj) dispPar(par *docs.Paragraph)(outstr string, err error) {
+
 				for el:=0; el< len(tcell.Content); el++ {
 					tstr, err := dObj.dispPar(tcell.Content[el].Paragraph)
 					if err != nil {
@@ -275,16 +275,26 @@ func (dObj *gdocTxtObj) dispListProp(listp *docs.ListProperties)(outstr string, 
 func (dObj *gdocTxtObj) dispPar(par *docs.Paragraph)(outstr string, err error) {
 
 	if par == nil {
-		return "", fmt.Errorf("error dispParStyl: no par element provided! ")
+		return "", fmt.Errorf("error dispPar: no par element provided! ")
 	}
 
 	if par.Bullet != nil {
-		outstr += fmt.Sprintf("  List El with %d Sub-Elements\n", len(par.Elements))
+		outstr += fmt.Sprintf("  List Paragraph with %d Sub-Elements\n", len(par.Elements))
 		outstr += fmt.Sprintf("    list id: %s nest level %d \n", par.Bullet.ListId, par.Bullet.NestingLevel)
 	} else {
-		outstr += fmt.Sprintf("  Paragraph El with %d Sub-Elements\n", len(par.Elements))
+		outstr += fmt.Sprintf("  Paragraph with %d Sub-Elements\n", len(par.Elements))
 	}
-
+//xxx
+	if par.ParagraphStyle != nil {
+		tstr,err := dObj.dispParStyl(par.ParagraphStyle)
+		if err != nil {
+			return outstr, fmt.Errorf("error dispParStyl %v", err)
+		}
+		outstr += tstr
+	} else {
+		outstr += "    *** no Pargraph Style ***\n"
+	}
+	outstr += fmt.Sprintf("  *** Paragraph Elements: %d ***/n", len(par.Elements))
 	for p:=0; p< len(par.Elements); p++ {
 		parDet := par.Elements[p]
 		outstr += fmt.Sprintf("  Par-El[%d]: %d - %d : ", p, parDet.StartIndex, parDet.EndIndex)
@@ -311,14 +321,13 @@ func (dObj *gdocTxtObj) dispPar(par *docs.Paragraph)(outstr string, err error) {
 				outstr += tstr
 			}
 		}
-		if parDet.HorizontalRule != nil {
-			outstr += "  Horizontal Rule\n"
-		}
 		if parDet.ColumnBreak != nil {
 			outstr += "  Column Break\n"
 		}
 		if parDet.InlineObjectElement != nil {
 			outstr += "  Inline Object\n"
+		} else {
+			outstr += "    *** no Inline Object ***\n"
 		}
 		if parDet.Person != nil {
 			outstr += fmt.Sprintf("  Has Person\n")
@@ -328,6 +337,8 @@ func (dObj *gdocTxtObj) dispPar(par *docs.Paragraph)(outstr string, err error) {
 		}
 		if parDet.PageBreak != nil {
 			outstr += fmt.Sprintf("  Has Page Break\n")
+		} else {
+			outstr += "    *** no Page Break ***\n"
 		}
 		if parDet.AutoText != nil {
 			outstr += fmt.Sprintf("  Has AutoText\n")
@@ -337,18 +348,14 @@ func (dObj *gdocTxtObj) dispPar(par *docs.Paragraph)(outstr string, err error) {
 		}
 		if parDet.HorizontalRule != nil {
 			outstr += fmt.Sprintf("  Has Horizontal Rule\n")
+		} else {
+			outstr += "    *** no Horizontal Rule ***\n"
 		}
 		if parDet.FootnoteReference != nil {
 			outstr += fmt.Sprintf("  Has Footnote Reference\n")
+		} else {
+			outstr += "    *** no Footnote Reference ***\n"
 		}
-	}
-	if par.ParagraphStyle != nil {
-//		outstr += "  Has Par Style\n"
-		tstr, err := dObj.dispParStyl(par.ParagraphStyle)
-		if err != nil {
-			outstr += fmt.Sprintf("/* error disp Paragraph Style: %v */\n", err)
-		}
-		outstr += tstr
 	}
 	if par.PositionedObjectIds != nil {
 		outstr += fmt.Sprintf("  Has Positioned Objects: %d\n", len(par.PositionedObjectIds))
@@ -367,7 +374,12 @@ func (dObj *gdocTxtObj) dispSecStyle(secStyl *docs.SectionStyle)(outstr string, 
 	if secStyl == nil {
 		return outstr, fmt.Errorf("error dispSecStyl: no secStyl")
 	}
-	outstr += "SectionType:          " + secStyl.SectionType + "\n"
+	if len(secStyl.SectionType) > 0 {
+		outstr += fmt.Sprintf("SectionType:          %s\n", secStyl.SectionType)
+	} else {
+		outstr += fmt.Sprintf("SectionType:   		not specified\n")
+	}
+
 	outstr += fmt.Sprintf(" Column Properties: %d", len(secStyl.ColumnProperties))
 	for i:=0; i< len(secStyl.ColumnProperties); i++ {
 		col := secStyl.ColumnProperties[i]
@@ -407,18 +419,18 @@ func (dObj *gdocTxtObj) dispSecStyle(secStyl *docs.SectionStyle)(outstr string, 
 
 func (dObj *gdocTxtObj) dispBorder(parBorder *docs.ParagraphBorder)(outstr string) {
 
-	outstr = "Border Style: \n"
+	outstr = "    *** Border Style ***\n"
 	if parBorder == nil {
 		outstr += "error dispParStyl: no Par Border Style\n"
 		return outstr
 	}
-	outstr += fmt.Sprintf("   Border Style:   %s\n", parBorder.DashStyle)
-	outstr += fmt.Sprintf("   Border Width:   %.1f %s\n", parBorder.Width.Magnitude, parBorder.Width.Unit)
-	outstr += fmt.Sprintf("   Border Padding: %.1f %s\n", parBorder.Padding.Magnitude, parBorder.Padding.Unit)
+	outstr += fmt.Sprintf("    Border Style:   %s\n", parBorder.DashStyle)
+	outstr += fmt.Sprintf("    Border Width:   %.1f %s\n", parBorder.Width.Magnitude, parBorder.Width.Unit)
+	outstr += fmt.Sprintf("    Border Padding: %.1f %s\n", parBorder.Padding.Magnitude, parBorder.Padding.Unit)
 	if parBorder.Color != nil {
 		if parBorder.Color.Color != nil {
 			colStr := dObj.getColor(parBorder.Color.Color)
-			outstr += fmt.Sprintf("   Border Color: %s\n", colStr)
+			outstr += fmt.Sprintf("    Border Color: %s\n", colStr)
 		}
 	}
 	return outstr
@@ -440,9 +452,9 @@ func (dObj *gdocTxtObj) getColor(color  *docs.Color)(outstr string) {
 func (dObj *gdocTxtObj) dispParStyl(parStyl *docs.ParagraphStyle)(outstr string, err error) {
 
 	if parStyl == nil {
-		return "", fmt.Errorf("error dispParStyl: no parStyl")
+		return "", fmt.Errorf("error dispParStyl: no ParStyl")
 	}
-	outstr = "** Paragraph Style ***\n"
+	outstr = "*** Paragraph Style ***\n"
 	outstr += fmt.Sprintf("  Heading Id:  %s \n", parStyl.HeadingId)
 	outstr += fmt.Sprintf("  Named Style: %s \n", parStyl.NamedStyleType)
 	if len(parStyl.Alignment) > 0 {
@@ -509,7 +521,7 @@ func (dObj *gdocTxtObj) dispTxtStyl(txtStyl *docs.TextStyle)(outstr string, err 
 	if txtStyl == nil {
 		return "", fmt.Errorf("error dispTxtStyl: TextStyle is nil!")
 	}
-	outstr = "  Text Style:\n"
+	outstr = "** Text Style ***\n"
 	if len(txtStyl.BaselineOffset) > 0 {
 		outstr +=  fmt.Sprintf("    BaseLine Offset: %s\n",txtStyl.BaselineOffset)
 	}
@@ -626,22 +638,22 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 
 	inObjLen := len(doc.InlineObjects)
 	posObjLen := len(doc.PositionedObjects)
-
+/*
 	if (inObjLen + posObjLen) > 0 {
 		err = createImgFolder(doc.Title)
 		if err != nil {
 			return fmt.Errorf("error CvtGdocToTxt:: cannot create image folder: %v",err)
 		}
 	}
-
-	outstr += fmt.Sprintf("\nInline Objects: %d\n", inObjLen)
+*/
+	outstr += fmt.Sprintf("\n*** Inline Objects: %d ***\n", inObjLen)
 	for key,inlObj :=  range doc.InlineObjects {
 		emObj := inlObj.InlineObjectProperties.EmbeddedObject
 		outstr+= fmt.Sprintf("key: %s Title: %s H: %.2f W:%.2f\n", key, emObj.Title, emObj.Size.Height.Magnitude,emObj.Size.Width.Magnitude)
 		outstr+= fmt.Sprintf("  Content Uri: %s Source Uri: %s\n", emObj.ImageProperties.ContentUri, emObj.ImageProperties.SourceUri )
 	}
 
-	outstr += fmt.Sprintf("\nPositioned Objects: %d\n",posObjLen)
+	outstr += fmt.Sprintf("\n*** Positioned Objects: %d ***\n",posObjLen)
 	for key, posObj :=  range doc.PositionedObjects {
 		emObj := posObj.PositionedObjectProperties.EmbeddedObject
 		objPos := posObj.PositionedObjectProperties.Positioning
@@ -653,7 +665,7 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 	}
 
 	headLen := len(doc.Headers)
-	outstr += fmt.Sprintf("\nHeaders: %d\n",headLen)
+	outstr += fmt.Sprintf("\n*** Headers: %d ****\n",headLen)
 	knum := 0
 	for key, header := range doc.Headers {
 		knum++
@@ -661,7 +673,7 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 	}
 
 	footLen := len(doc.Footers)
-	outstr += fmt.Sprintf("\nFooters: %d\n",footLen)
+	outstr += fmt.Sprintf("\n*** Footers: %d ***\n",footLen)
 	knum = 0
 	for key, footer := range doc.Footers {
 		knum++
@@ -669,7 +681,7 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 	}
 
 	ftnoteLen := len(doc.Footnotes)
-	outstr += fmt.Sprintf("\nFootnotes: %d\n",ftnoteLen)
+	outstr += fmt.Sprintf("\n*** Footnotes: %d ***\n",ftnoteLen)
 	knum = 0
 	for key, ftnote := range doc.Footnotes {
 		knum++
@@ -678,7 +690,7 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 
 	// Lists
 	listLen := len(doc.Lists)
-	outstr += fmt.Sprintf("\nLists: %d\n",listLen)
+	outstr += fmt.Sprintf("\n*** Lists: %d ***\n",listLen)
 	knum = 0
 	for key, list := range doc.Lists {
 		knum++
@@ -694,7 +706,7 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 	outfil.WriteString(outstr)
 
 	nrLen := len(doc.NamedRanges)
-	outstr += fmt.Sprintf("\nNamedRanges: %d\n",nrLen)
+	outstr += fmt.Sprintf("\n*** NamedRanges: %d ***\n",nrLen)
 	knum = 0
 	for key, namrange := range doc.NamedRanges {
 		knum++
@@ -703,7 +715,7 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 
 	outfil.WriteString(outstr)
 
-	outstr = "\nParagraphs\n"
+	outstr = "\n*** Named Styles ***\n"
 	hdstyles := doc.NamedStyles
 	hdstyLen := len(hdstyles.Styles)
 	outstr += fmt.Sprintf("document named styles: %d \n",hdstyLen)
