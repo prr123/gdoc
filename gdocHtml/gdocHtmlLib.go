@@ -1742,13 +1742,13 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 			decode = true
 
 		case "NORMAL_TEXT":
-            prefix = fmt.Sprintf("<p class=\"%s_normal\">", dObj.docName)
+            prefix = fmt.Sprintf("<p class=\"%s_p\">", dObj.docName)
 			suffix ="</p>"
 			if par.ParagraphStyle != nil {
-				// first check Style parameters agains default
+				// first check Style parameters against default
 				dObj.parCount++
 				parIdStr = fmt.Sprintf("%s_p%d",dObj.docName, dObj.parCount)
-				prefix = fmt.Sprintf("<p id=\"%s\" class=\"%s_normal\">",parIdStr, dObj.docName)
+				prefix = fmt.Sprintf("<p id=\"%s\" class=\"%s_p\">",parIdStr, dObj.docName)
 			}
 
 		default:
@@ -2195,7 +2195,7 @@ func (dObj *GdocHtmlObj) creHeadCss() (cssStr string, err error) {
 
 	defTxtMap := new(textMap)
 //fmt.Println("getting txtstyl!")
-	_, txtStyl, err := dObj.getNamedStyl("NORMAL_TEXT")
+	parStyl, txtStyl, err := dObj.getNamedStyl("NORMAL_TEXT")
 	if err != nil {
 		return cssStr, fmt.Errorf("error creHeadCss: %v", err)
 	}
@@ -2207,26 +2207,27 @@ func (dObj *GdocHtmlObj) creHeadCss() (cssStr string, err error) {
 	}
 //fmt.Printf("txtmap: %v\n", defTxtMap)
 
-	cssStr += cvtTextMapCss(defTxtMap)
+	txtCssStr := cvtTextMapCss(defTxtMap)
 //	fmt.Printf(" *** def css ***\n %s\n",tcssStr)
-//zzz
-
-/*
-	tstr, err := dObj.cvtNamedStylCss("NORMAL_TEXT")
-	if err != nil {
-		return "", fmt.Errorf("Error NamedStyle Conversion: %v", err)
-	}
-	cssStr += fmt.Sprintf("%s\n", tstr)
-*/
-	cssStr += "}\n"
+	cssStr += fmt.Sprintf("%s\n}\n", txtCssStr)
 
 	// paragraph default
 	cssStr += fmt.Sprintf(".%s_p {\n", dObj.docName)
-	cssStr += "  margin: 0;\n"
+	cssStr += "  margin: 0; display: block;\n"
 
-	if dObj.df_ls > 0 {
-		cssStr += fmt.Sprintf("  line-height: %.2f;\n", dObj.df_ls/100.0)
+	defParMap := new(parMap)
+
+	_, err = fillParMap(defParMap, parStyl)
+	if err != nil {
+//fmt.Printf("error %v\n", err)
+		return cssStr, fmt.Errorf("error creHeadCss: %v", err)
 	}
+//fmt.Printf("txtmap: %v\n", defTxtMap)
+
+	cssStr += cvtParMapCss(defParMap)
+
+	cssStr += txtCssStr
+
 	cssStr += "}\n"
 
 	if dObj.Options.Toc {
