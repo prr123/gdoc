@@ -64,32 +64,31 @@ type GdocHtmlObj struct {
     h4Count int
     h5Count int
     h6Count int
-	hTitle bool
-	hSubtitle bool
-	h1 bool
-	h2 bool
-	h3 bool
-	h4 bool
-	h5 bool
-	h6 bool
+	title namStyl
+	subtitle namStyl
+	h1 namStyl
+	h2 namStyl
+	h3 namStyl
+	h4 namStyl
+	h5 namStyl
+	h6 namStyl
+	pnorm namStyl
+	hasList bool
     spanCount int
 //    subDivCount int
-//    bodyCss string
-//    bodyHtml string
-//    tocHtml string
-//    tocCss string
-    Title string
+	numLists int
     lists *[]listObj
+	listCssStr string
+	numHeaders int
+	headers *[]string
     cNestLev int64
     cListOr bool
 	cListId string
 	fontSize float64
 	fontFamily string
 	fontWeight int64
-	numLists int
 	inImgCount int
 	posImgCount int
-	numHeaders int
 	numFootNotes int
 	df_ls float64
 	Options *OptObj
@@ -108,10 +107,11 @@ type OptObj struct {
 }
 
 type dispObj struct {
-	htmlStr string
-	cssStr string
-	htmlToc string
-	cssToc string
+	headCss string
+	bodyHtml string
+	bodyCss string
+	tocHtml string
+	tocCss string
 }
 
 type nestLevel struct {
@@ -152,12 +152,449 @@ type tblBorder struct {
 }
 
 type parStyl struct {
-	pad [4]float64
-	margin [4]float64
+	align string
 	txtAl string
-	linHt float64
+	lineHt float64
+	hasBorder bool
 }
 
+type cssAtt struct {
+	ValFl float64
+	ValInt int
+	AttNam string
+	ValStr string
+}
+
+type namStyl struct {
+	count int
+	exist bool
+}
+
+type parMap struct {
+	halign string
+	headingId string
+	direct bool
+	indEnd float64
+	indFlin float64
+	indStart float64
+	keepLines bool
+	keepNext bool
+	linSpac float64
+	shading string
+	spaceTop float64
+	spaceBelow float64
+	spaceMode string
+	tabs []*tabStop
+	pad [4]float64
+	margin [4]float64
+	hasBorders bool
+	bordTop parBorder
+	bordLeft parBorder
+	bordRight parBorder
+	bordBot parBorder
+	bordBet parBorder
+}
+
+type parBorder struct {
+	pad float64
+	width float64
+	color string
+	dash string
+}
+
+
+type tabStop struct {
+	tabAlign string
+	offset float64
+}
+
+type textMap struct {
+	bckColor string
+	baseOffset string
+	bold bool
+	italic bool
+	underline bool
+	strike bool
+	fontSize float64
+	txtColor string
+	link bool
+	fontType string
+	fontWeight	int64
+}
+
+type linkMap struct {
+	url string
+	bookmark string
+}
+
+
+func fillTextMap(txtMap *textMap, txtStyl *docs.TextStyle)(alter bool, err error) {
+
+	alter = false
+	if txtStyl == nil {
+		return alter, fmt.Errorf("error decode txtstyle: -- no Style")
+	}
+
+	if txtStyl.BaselineOffset != txtMap.baseOffset {
+		txtMap.baseOffset = txtStyl.BaselineOffset
+		alter = true
+	}
+
+	if txtStyl.Bold != txtMap.bold {
+		txtMap.bold = txtStyl.Bold
+		alter = true
+	}
+
+	if txtStyl.Italic != txtMap.italic {
+		txtMap.italic = txtStyl.Italic
+		alter = true
+	}
+
+	if txtStyl.Underline != txtMap.underline {
+ 		txtMap.underline = txtStyl.Underline
+		alter = true
+	}
+
+	if txtStyl.Strikethrough != txtMap.strike {
+		txtMap.strike = txtStyl.Strikethrough
+		alter = true
+	}
+
+	if txtStyl.WeightedFontFamily != nil {
+		if txtStyl.WeightedFontFamily.FontFamily != txtMap.fontType {
+			txtMap.fontType = txtStyl.WeightedFontFamily.FontFamily
+			alter = true
+		}
+		if txtStyl.WeightedFontFamily.Weight != txtMap.fontWeight {
+			txtMap.fontWeight = txtStyl.WeightedFontFamily.Weight
+			alter = true
+		}
+	}
+	if txtStyl.FontSize != nil {
+		if txtStyl.FontSize.Magnitude != txtMap.fontSize {
+			txtMap.fontSize = txtStyl.FontSize.Magnitude
+			alter = true
+		}
+	}
+
+	if txtStyl.ForegroundColor != nil {
+		if txtStyl.ForegroundColor.Color != nil {
+			color := getColor(txtStyl.ForegroundColor.Color)
+			if color != txtMap.txtColor {
+				txtMap.txtColor = color
+				alter = true
+			}
+		}
+	}
+
+	if txtStyl.BackgroundColor != nil {
+		if txtStyl.BackgroundColor.Color != nil {
+			color := getColor(txtStyl.BackgroundColor.Color)
+			if color != txtMap.bckColor {
+				txtMap.bckColor = color
+				alter = true
+			}
+		}
+	}
+
+
+	return alter, nil
+}
+
+func fillParMap(parmap *parMap, parStyl *docs.ParagraphStyle)(alter bool, err error) {
+
+	alter = false
+	if parStyl == nil {
+		return alter, fmt.Errorf("error fillParMap: no parStyl!")
+	}
+
+	if parStyl.Alignment != parmap.halign {parmap.halign = parStyl.Alignment}
+	parmap.direct = true
+	if (parStyl.IndentStart != nil) {
+		if parStyl.IndentStart.Magnitude != parmap.indStart {
+			parmap.indStart = parStyl.IndentStart.Magnitude
+			alter = true
+		}
+	}
+	if (parStyl.IndentEnd != nil) {
+		if parStyl.IndentEnd.Magnitude != parmap.indEnd {
+			parmap.indEnd = parStyl.IndentEnd.Magnitude
+			alter = true
+		}
+	}
+	if (parStyl.IndentFirstLine != nil) {
+		if parStyl.IndentFirstLine.Magnitude != parmap.indFlin {
+			parmap.indFlin = parStyl.IndentFirstLine.Magnitude
+			alter = true
+		}
+	}
+	if parStyl.LineSpacing/100.0 != parmap.linSpac {parmap.linSpac = parStyl.LineSpacing/100.0; alter = true;}
+	if parStyl.KeepLinesTogether != parmap.keepLines {parmap.keepLines = parStyl.KeepLinesTogether; alter = true;}
+	if parStyl.KeepWithNext != parmap.keepNext {parmap.keepNext = parStyl.KeepWithNext; alter = true;}
+
+	if (parStyl.SpaceAbove != nil) {
+		if parStyl.SpaceAbove.Magnitude != parmap.spaceTop {
+			parmap.spaceTop = parStyl.SpaceAbove.Magnitude
+			alter = true
+		}
+	}
+	if (parStyl.SpaceBelow != nil) {
+		if parStyl.SpaceBelow.Magnitude != parmap.spaceBelow {
+			parmap.spaceBelow = parStyl.SpaceBelow.Magnitude
+			alter = true
+		}
+	}
+
+	if parStyl.SpacingMode != parmap.spaceMode {parmap.spaceMode = parStyl.SpacingMode; alter = true;}
+
+	//tabs to do
+	parmap.hasBorders = true
+
+	bb := true
+	bb = bb && (parStyl.BorderBetween == nil)
+	bb = bb && (parStyl.BorderTop == nil)
+	bb = bb && (parStyl.BorderRight == nil)
+	bb = bb && (parStyl.BorderBottom == nil)
+	bb = bb && (parStyl.BorderLeft == nil)
+	if bb {parmap.hasBorders = false}
+
+	if bb { return alter, nil }
+
+	if parStyl.BorderBetween != nil {
+		if parStyl.BorderBetween.Width != nil {
+			if parStyl.BorderBetween.Width.Magnitude != parmap.bordBet.width {
+				parmap.bordBet.width = parStyl.BorderBetween.Width.Magnitude
+				alter = true
+			}
+		}
+		if parStyl.BorderBetween.Padding != nil {
+			if parStyl.BorderBetween.Padding.Magnitude != parmap.bordBet.pad {
+				parmap.bordBet.pad = parStyl.BorderBetween.Padding.Magnitude
+				alter = true
+			}
+		}
+		if parStyl.BorderBetween.Color != nil {
+			if parStyl.BorderBetween.Color.Color != nil {
+				color := getColor(parStyl.BorderBetween.Color.Color)
+				if color != parmap.bordBet.color {
+					parmap.bordBet.color = color
+					alter = true
+				}
+			}
+		}
+		if parStyl.BorderBetween.DashStyle != parmap.bordBet.dash {parmap.bordBet.dash = parStyl.BorderBetween.DashStyle; alter = true;}
+	}
+
+	if parStyl.BorderTop != nil {
+		if parStyl.BorderTop.Width != nil {
+			if parStyl.BorderTop.Width.Magnitude != parmap.bordTop.width {
+				parmap.bordTop.width = parStyl.BorderTop.Width.Magnitude
+				alter = true
+			}
+		}
+		if parStyl.BorderTop.Padding != nil {
+			if parStyl.BorderTop.Padding.Magnitude != parmap.bordTop.pad {
+				parmap.bordTop.pad = parStyl.BorderTop.Padding.Magnitude
+				alter = true
+			}
+		}
+		if parStyl.BorderTop.Color != nil {
+			if parStyl.BorderTop.Color.Color != nil {
+				color := getColor(parStyl.BorderTop.Color.Color)
+				if color != parmap.bordTop.color {
+					parmap.bordTop.color = color
+					alter = true
+				}
+			}
+		}
+		if parStyl.BorderTop.DashStyle != parmap.bordTop.dash {parmap.bordTop.dash = parStyl.BorderTop.DashStyle; alter = true;}
+	}
+
+	if parStyl.BorderRight != nil {
+		if parStyl.BorderRight.Width != nil {
+			if parStyl.BorderRight.Width.Magnitude != parmap.bordRight.width {
+				parmap.bordRight.width = parStyl.BorderRight.Width.Magnitude
+				alter = true
+			}
+		}
+		if parStyl.BorderRight.Padding != nil {
+			if parStyl.BorderRight.Padding.Magnitude != parmap.bordRight.pad {
+				parmap.bordRight.pad = parStyl.BorderRight.Padding.Magnitude
+				alter = true
+			}
+		}
+		if parStyl.BorderRight.Color != nil {
+			if parStyl.BorderRight.Color.Color != nil {
+				color := getColor(parStyl.BorderRight.Color.Color)
+				if color != parmap.bordRight.color {
+					parmap.bordRight.color = color
+					alter = true
+				}
+			}
+		}
+		if parStyl.BorderRight.DashStyle != parmap.bordRight.dash {
+			parmap.bordRight.dash = parStyl.BorderRight.DashStyle
+			alter = true
+		}
+	}
+
+	if parStyl.BorderBottom != nil {
+		if parStyl.BorderBottom.Width != nil {
+			if parStyl.BorderBottom.Width.Magnitude != parmap.bordBot.width {
+				parmap.bordBot.width = parStyl.BorderBottom.Width.Magnitude
+				alter = true
+			}
+		}
+		if parStyl.BorderBottom.Padding != nil {
+			if parStyl.BorderBottom.Padding.Magnitude != parmap.bordBot.pad {
+				parmap.bordBot.pad = parStyl.BorderBottom.Padding.Magnitude
+				alter = true
+			}
+		}
+		if parStyl.BorderBottom.Color != nil {
+			if parStyl.BorderBottom.Color.Color != nil {
+				color := getColor(parStyl.BorderBottom.Color.Color)
+				if color != parmap.bordBot.color {
+					parmap.bordBot.color = color
+					alter = true
+				}
+			}
+		}
+		if parStyl.BorderBottom.DashStyle != parmap.bordBot.dash {parmap.bordBot.dash = parStyl.BorderBottom.DashStyle; alter = true;}
+	}
+
+	if parStyl.BorderLeft != nil {
+		if parStyl.BorderLeft.Width != nil {
+			if parStyl.BorderLeft.Width.Magnitude != parmap.bordLeft.width {
+				parmap.bordLeft.width = parStyl.BorderLeft.Width.Magnitude
+				alter = true
+			}
+		}
+		if parStyl.BorderLeft.Padding != nil {
+			if parStyl.BorderLeft.Padding.Magnitude != parmap.bordLeft.pad {
+				parmap.bordLeft.pad = parStyl.BorderLeft.Padding.Magnitude
+				alter = true
+			}
+		}
+		if parStyl.BorderLeft.Color != nil {
+			if parStyl.BorderLeft.Color.Color != nil {
+				color := getColor(parStyl.BorderLeft.Color.Color)
+				if color != parmap.bordLeft.color {
+					parmap.bordLeft.color = color
+					alter = true
+				}
+			}
+		}
+		if parStyl.BorderLeft.DashStyle != parmap.bordLeft.dash {parmap.bordLeft.dash = parStyl.BorderLeft.DashStyle; alter = true;}
+	}
+
+	bb2 := true
+	bb2 = bb2 && (parmap.bordBet.width == 0.0)
+	bb2 = bb2 && (parmap.bordTop.width == 0.0)
+	bb2 = bb2 && (parmap.bordRight.width == 0.0)
+	bb2 = bb2 && (parmap.bordBot.width == 0.0)
+	bb2 = bb2 && (parmap.bordLeft.width == 0.0)
+
+	if bb2 {parmap.hasBorders = false}
+
+
+	return alter, nil
+}
+
+func cvtParMapCss(pMap *parMap)(cssStr string) {
+
+	cssStr =""
+
+	if len(pMap.halign) > 0 {
+		switch pMap.halign {
+			case "START":
+				cssStr += "  text-align: left;\n"
+			case "CENTER":
+				cssStr += "  text-align: center;\n"
+			case "END":
+				cssStr += "  text-align: right;\n"
+			case "JUSTIFIED":
+				cssStr += "  text-align: justify;\n"
+			default:
+				cssStr += fmt.Sprintf("/* unrecognized Alignment %s */\n", pMap.halign)
+		}
+
+	}
+
+	if pMap.indFlin > 0.0 {
+		cssStr += fmt.Sprintf("  text-indent: %.2fpt;\n", pMap.indFlin)
+	}
+	if pMap.indStart > 0.0 {
+		cssStr += fmt.Sprintf("  margin-left: %.2fpt;\n", pMap.indStart)
+	}
+	if pMap.indEnd > 0.0 {
+		cssStr += fmt.Sprintf("  margin-right: %.2fpt;\n", pMap.indEnd)
+	}
+
+// need to investigate
+	if pMap.linSpac > 0.0 {
+		cssStr += fmt.Sprintf("  line-height: %.2f;\n", pMap.linSpac)
+	}
+
+	if pMap.spaceTop > 0.0 {
+		cssStr += fmt.Sprintf("  margin-top: %.2fpt;\n", pMap.spaceTop)
+	}
+
+	if pMap.spaceBelow > 0.0 {
+		cssStr += fmt.Sprintf("  margin-bottom: %.2fpt;\n", pMap.spaceBelow)
+	}
+
+	if !pMap.hasBorders { return cssStr }
+	cssStr += fmt.Sprintf("  padding: %.1fpt %.1fpt %.1fpt %.1fpt;\n", pMap.bordTop.pad, pMap.bordRight.pad, pMap.bordBot.pad, pMap.bordLeft.pad)
+	cssStr += fmt.Sprintf("  border-top: %.1fpt %s %s;\n", pMap.bordTop.width, getDash(pMap.bordTop.dash), pMap.bordTop.color)
+	cssStr += fmt.Sprintf("  border-right: %.1fpt %s %s;\n", pMap.bordRight.width, getDash(pMap.bordRight.dash), pMap.bordRight.color)
+	cssStr += fmt.Sprintf("  border-bottom: %.1fpt %s %s;\n", pMap.bordBot.width, getDash(pMap.bordBot.dash), pMap.bordBot.color)
+	cssStr += fmt.Sprintf("  border-left: %.1fpt %s %s;\n", pMap.bordLeft.width, getDash(pMap.bordLeft.dash), pMap.bordLeft.color)
+
+	return cssStr
+}
+
+func cvtTextMapCss(txtMap *textMap)(cssStr string) {
+
+	cssStr =""
+	if len(txtMap.baseOffset) > 0 {
+		switch txtMap.baseOffset {
+			case "SUPERSCRIPT":
+				cssStr += "  vertical-align: sub;\n"
+			case "SUBSCRIPT":
+				cssStr += "	vertical-align: sup;\n"
+			case "NONE":
+
+			default:
+			//error
+				cssStr += fmt.Sprintf("/* Baseline Offset unknown: %s */\n", txtMap.baseOffset)
+		}
+	}
+	if txtMap.bold {
+		cssStr += "  font-weight: bold;\n"
+	}
+	if txtMap.italic { cssStr += "  font-style: italic;\n"}
+	if txtMap.underline { cssStr += "  text-decoration: underline;\n"}
+	if txtMap.strike { cssStr += "  text-decoration: line-through;\n"}
+
+	if len(txtMap.fontType) >0 { cssStr += fmt.Sprintf("  font-family: %s;\n", txtMap.fontType)}
+	if txtMap.fontWeight > 0 {cssStr += fmt.Sprintf("  font-weight: %d;\n", txtMap.fontWeight)}
+	if txtMap.fontSize >0 {cssStr += fmt.Sprintf("  font-size: %.2fpt;\n", txtMap.fontSize)}
+	if len(txtMap.txtColor) >0 {cssStr += fmt.Sprintf("  color: %s;\n", txtMap.txtColor)}
+	if len(txtMap.bckColor) >0 {cssStr += fmt.Sprintf("  background-color: %s;\n", txtMap.bckColor)}
+
+	return cssStr
+}
+
+
+func addDispObj(src, add *dispObj) {
+	src.headCss += add.headCss
+	src.bodyHtml += add.bodyHtml
+	src.bodyCss += add.bodyCss
+	src.tocHtml += add.tocHtml
+	src.tocCss += add.tocCss
+	return
+}
 
 func getColor(color  *docs.Color)(outstr string) {
     outstr = ""
@@ -165,7 +602,7 @@ func getColor(color  *docs.Color)(outstr string) {
             blue := int(color.RgbColor.Blue*255.0)
             red := int(color.RgbColor.Red*255.0)
             green := int(color.RgbColor.Green*255)
-            outstr += fmt.Sprintf("rgb(%d, %d, %d);\n", red, green, blue)
+            outstr += fmt.Sprintf("rgb(%d, %d, %d)", red, green, blue)
             return outstr
         }
     outstr = "/*no color*/\n"
@@ -230,6 +667,33 @@ func (dObj *GdocHtmlObj) creHtmlHead()(outstr string, err error) {
 	outstr += fmt.Sprintf("<!-- img folder: %s -->\n",dObj.ImgFoldName)
 	outstr += "<head>\n<style>\n"
 	return outstr, nil
+}
+
+//xxnam
+func (dObj *GdocHtmlObj) getNamedStyl(namedTyp string)(parStyl *docs.ParagraphStyle, txtStyl *docs.TextStyle, err error) {
+	var namStyl *docs.NamedStyle
+
+	doc:= dObj.doc
+// initialise named styles
+	namStyles := doc.NamedStyles
+	stylIdx := -1
+
+// find normal style first
+	for istyl:=0; istyl<len(namStyles.Styles); istyl++ {
+		if namStyles.Styles[istyl].NamedStyleType == namedTyp {
+			stylIdx = istyl
+			namStyl = namStyles.Styles[istyl]
+			break
+		}
+	}
+
+	if stylIdx < 0 {
+		return nil, nil, fmt.Errorf("error getNamedStyl: cannot find named style %s!", namedTyp)
+	}
+
+	parStyl = namStyl.ParagraphStyle
+	txtStyl = namStyl.TextStyle
+	return parStyl, txtStyl, nil
 }
 
 
@@ -390,6 +854,7 @@ func (dObj *GdocHtmlObj) createImgFolder()(err error) {
 
     return nil
 }
+
 func (dObj *GdocHtmlObj) disp_GdocHtmlObj (dbgfil *os.File) (err error) {
 	var outstr string
 
@@ -447,7 +912,7 @@ func (dObj *GdocHtmlObj) findListProp (listId string) (listProp *docs.ListProper
 }
 
 func (dObj *GdocHtmlObj) InitGdocHtmlLib (doc *docs.Document, opt *OptObj) (err error) {
-	var normStyl *docs.NamedStyle
+//	var normStyl *docs.NamedStyle
 	var defOpt OptObj
 	dObj.doc = doc
 
@@ -473,15 +938,17 @@ func (dObj *GdocHtmlObj) InitGdocHtmlLib (doc *docs.Document, opt *OptObj) (err 
 // initialise heading use
 // each heading has a default paragraph style
 // no reason to  create css if heading is not used
-	dObj.hTitle = false
-	dObj.hSubtitle = false
-	dObj.h1 = false
-	dObj.h2 = false
-	dObj.h3 = false
-	dObj.h4 = false
-	dObj.h5 = false
-	dObj.h6 = false
+	dObj.title.exist = false
+	dObj.subtitle.exist = false
+	dObj.h1.exist = false
+	dObj.h2.exist = false
+	dObj.h3.exist = false
+	dObj.h4.exist = false
+	dObj.h5.exist = false
+	dObj.h6.exist = false
+	dObj.hasList = false
 
+/*
 // initialise named styles
 	namStyl := doc.NamedStyles
 	namStylNum := -1
@@ -498,14 +965,7 @@ func (dObj *GdocHtmlObj) InitGdocHtmlLib (doc *docs.Document, opt *OptObj) (err 
 	if namStylNum < 0 {
 		return fmt.Errorf("error gdoc Init -- no NORMAL_TEXT style!")
 	}
-
-// need to create a norma paragraph style
-	dObj.fontSize = normStyl.TextStyle.FontSize.Magnitude
-// add font family
-	dObj.fontFamily = normStyl.TextStyle.WeightedFontFamily.FontFamily
-	dObj.fontWeight = normStyl.TextStyle.WeightedFontFamily.Weight
-// default line spacing
-	dObj.df_ls = 115.0
+*/
 
 // list initalisation
 // need to separate ordered and unordered lists
@@ -557,6 +1017,11 @@ func (dObj *GdocHtmlObj) InitGdocHtmlLib (doc *docs.Document, opt *OptObj) (err 
 
 // Headers
 	dObj.numHeaders = len(doc.Headers)
+	dheaders := make(map[string]int,len(doc.Headers))
+	for k, _ := range doc.Headers {
+		dheaders[k] = 0
+	}
+
 // images
 	dObj.inImgCount = len(doc.InlineObjects)
 	dObj.posImgCount = len(doc.PositionedObjects)
@@ -972,12 +1437,12 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 				elObj := tcell.Content[el]
 				tObj, err:=dObj.cvtContentEl(elObj)
 				if err != nil {
-					tabObj.htmlStr = htmlStr
-					tabObj.cssStr = cssStr
+					tabObj.bodyHtml = htmlStr
+					tabObj.bodyCss = cssStr
 					return tabObj, fmt.Errorf("error ConvertTable: %v", err)
 				}
-				cssStr += tObj.cssStr
-				htmlStr += "    " + tObj.htmlStr
+				cssStr += tObj.bodyCss
+				htmlStr += "    " + tObj.bodyHtml
 			}
 			htmlStr += "  </td>\n"
 
@@ -986,8 +1451,8 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 	}
 
 	htmlStr += "  </tbody>\n</table>\n"
-	tabObj.htmlStr = htmlStr
-	tabObj.cssStr = cssStr
+	tabObj.bodyHtml = htmlStr
+	tabObj.bodyCss = cssStr
 	return tabObj, nil
 }
 // paragraph element par
@@ -997,7 +1462,7 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 // - Positioned Objects
 //
 
-func (dObj *GdocHtmlObj) cvtParHtml(par *docs.Paragraph)(parObj dispObj, err error) {
+func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) {
 	var parHtmlStr, parCssStr string
 	var prefix, suffix string
 	var tocPrefix, tocSuffix string
@@ -1008,21 +1473,21 @@ func (dObj *GdocHtmlObj) cvtParHtml(par *docs.Paragraph)(parObj dispObj, err err
 	var nestinc, i, j int64
 
 	if par == nil {
-        return parObj, fmt.Errorf("error cvtParHtml -- parEl is nil!")
+        return parObj, fmt.Errorf("error cvtPar -- parEl is nil!")
     }
 	if dObj == nil {
-        return parObj, fmt.Errorf("error cvttParHtml -- dObj is nil!")
+        return parObj, fmt.Errorf("error cvttPar -- dObj is nil!")
     }
 // Positioned Objects
 	numPosObj := len(par.PositionedObjectIds)
 	for i:=0; i< numPosObj; i++ {
 		posId := par.PositionedObjectIds[i]
 		posObj, ok := dObj.doc.PositionedObjects[posId]
-		if !ok {return parObj, fmt.Errorf("error cvtParHtml:: could not find positioned Object with id: ", posId)}
+		if !ok {return parObj, fmt.Errorf("error cvtPar: could not find positioned Object with id: ", posId)}
 
 		imgHtmlStr, imgCssStr, err := dObj.renderPosImg(posObj, posId)
 		if err != nil {
-			parHtmlStr += fmt.Sprintf("<!-- error cvtParHtml:: render pos img %v -->\n", err) + imgHtmlStr
+			parHtmlStr += fmt.Sprintf("<!-- error cvtPar:: render pos img %v -->\n", err) + imgHtmlStr
 			parCssStr += imgCssStr
 		} else {
 			parHtmlStr += imgHtmlStr
@@ -1032,11 +1497,12 @@ func (dObj *GdocHtmlObj) cvtParHtml(par *docs.Paragraph)(parObj dispObj, err err
 // lists
     if par.Bullet != nil {
         parHtmlStr += "\n<!-- List Element -->\n"
+		dObj.hasList = true
 		// find list id
 		listId := par.Bullet.ListId
 		listIdx, err := dObj.findListIndex(listId)
 		if err != nil {
-			return parObj, fmt.Errorf("error cvtParHtml:: findListIndex: -- no list idx found -- %v!", err)
+			return parObj, fmt.Errorf("error cvtPar:: findListIndex: -- no list idx found -- %v!", err)
 		}
 		listProp := dObj.findListProp(listId)
 		nestIdx = par.Bullet.NestingLevel
@@ -1185,7 +1651,6 @@ func (dObj *GdocHtmlObj) cvtParHtml(par *docs.Paragraph)(parObj dispObj, err err
 		} //len(dObj.cListId) == 0
 
     } else {
-		// par.Bullet == nil
 		// if there was a list, close it
 		if len(dObj.cListId) > 0 {
 			parHtmlStr += dObj.closeList(dObj.cNestLev)
@@ -1197,6 +1662,8 @@ func (dObj *GdocHtmlObj) cvtParHtml(par *docs.Paragraph)(parObj dispObj, err err
 	// Heading Id refers to a page heading
 	if len(par.ParagraphStyle.HeadingId) > 0 {
 		parHtmlStr += fmt.Sprintf("<!-- Heading Id: %s -->\n", par.ParagraphStyle.HeadingId)
+//head
+//		dObj.headers
 	}
 
 	decode := true
@@ -1214,13 +1681,10 @@ func (dObj *GdocHtmlObj) cvtParHtml(par *docs.Paragraph)(parObj dispObj, err err
 
         case "SUBTITLE":
 			parIdStr = fmt.Sprintf("%s_subtitle",dObj.docName)
-//			subtitleStr := fmt.Sprintf("\"#%s\"",parIdStr)
 			prefix = fmt.Sprintf("<p class=\"%s\">",parIdStr)
 			tocPrefix = ""
-//			tocPrefix = fmt.Sprintf("<p id=\"%s_TOC_subtitle\"><a href = %s>",dObj.docName, subtitleStr)
 			suffix ="</p>"
 			tocSuffix = ""
-//			tocSuffix = "</a></p>"
 			decode = false
 
         case "HEADING_1":
@@ -1295,7 +1759,7 @@ func (dObj *GdocHtmlObj) cvtParHtml(par *docs.Paragraph)(parObj dispObj, err err
 
 
 	// a normal paragraph (not a list paragraph)
-//xxx
+
 	if par.Bullet == nil {
 		tStr, err = dObj.cvtParStylCss(par.ParagraphStyle)
 		t2Str := tStr
@@ -1303,7 +1767,7 @@ func (dObj *GdocHtmlObj) cvtParHtml(par *docs.Paragraph)(parObj dispObj, err err
 			t2Str = fmt.Sprintf("/* error cvtParStyl: %v */\n",err) + tStr
 		}
 		if len(t2Str)>0 {
-			parObj.cssStr += fmt.Sprintf("#%s {\n",parIdStr) + t2Str + "}\n"
+			parObj.bodyCss += fmt.Sprintf("#%s {\n",parIdStr) + t2Str + "}\n"
 		}
 	}
 
@@ -1320,44 +1784,11 @@ func (dObj *GdocHtmlObj) cvtParHtml(par *docs.Paragraph)(parObj dispObj, err err
       	parHtmlStr += elHtmlStr
 		parCssStr += elCssStr
 
-//      outstr += fmt.Sprintf("\nPar-El[%d]: %d - %d \n", p, parEl.StartIndex, parEl.EndIndex)
-/*
-		if parEl.InlineObjectElement != nil {
-        	imgHtmlStr, imgCssStr, err := dObj.cvtInlineImg(parEl.InlineObjectElement)
-        	if err != nil {
-            	parHtmlStr += fmt.Sprintf("<!-- error cvtPelToHtml: %v -->\n",err)
-        	}
-        	parHtmlStr += imgHtmlStr
-			parCssStr += imgCssStr
-		}
-
-		if parEl.TextRun != nil {
-        	parElHtmlStr, parElCssStr, err := dObj.cvtParElText(parEl)
-        	if err != nil {
-            	parHtmlStr += fmt.Sprintf("<!-- error cvtPelToHtml: %v -->\n",err)
-        	}
-        	parHtmlStr += parElHtmlStr
-			parCssStr += parElCssStr
-		}
-        if parEl.HorizontalRule != nil {
-
-        }
-        if parEl.ColumnBreak != nil {
-
-        }
-        if parEl.Person != nil {
-
-        }
-        if parEl.RichLink != nil {
-
-        }
-*/
 	} // loop par el
-	parObj.cssStr +=listCssStr + parCssStr
-	parObj.htmlStr += listStr + prefix + parHtmlStr + suffix + listSuffix
-	parObj.htmlStr += "\n"
+	parObj.bodyCss +=listCssStr + parCssStr
+	parObj.bodyHtml += listStr + prefix + parHtmlStr + suffix + listSuffix + "\n"
 	if decode {
-		parObj.htmlToc += tocPrefix + parHtmlStr + tocSuffix + "\n"
+		parObj.tocHtml += tocPrefix + parHtmlStr + tocSuffix + "\n"
 	}
 	return parObj, nil
 }
@@ -1430,13 +1861,53 @@ func (dObj *GdocHtmlObj) creParStylCss(headParStyl, parParStyl *docs.ParagraphSt
 }
 
 func (dObj *GdocHtmlObj) cvtParStylCss(parStyl *docs.ParagraphStyle)(cssStr string, err error) {
-	var tcssStr, cssCoStr string
-	cssCoStr = fmt.Sprintf("  /* Paragraph Style: %s */\n", parStyl.NamedStyleType )
+
+	cssStr = fmt.Sprintf("  /* Paragraph Style: %s */\n", parStyl.NamedStyleType )
 
 	if parStyl == nil {
 		return "", fmt.Errorf("error decode parstyle: -- no Style")
 	}
+//xxx
+	tStr := ""
+	switch parStyl.NamedStyleType {
+		case "TITLE":
+			if !dObj.title.exist {
+				tStr =fmt.Sprintf(".%s_title {\n",dObj.docName)
+				dObj.title.exist = true
+			}
+		case "SUBTITLE":
+			if !dObj.subtitle.exist {
+				tStr =fmt.Sprintf(".%s_subtitle {\n",dObj.docName)
+				dObj.subtitle.exist = true
+			}
+		case "HEADING_1":
+			if !dObj.h1.exist {
+				tStr =fmt.Sprintf(".%s_h1 {\n",dObj.docName)
+				dObj.h1.exist = true
+			}
+		case "HEADING_2":
+			tStr =fmt.Sprintf(".%s_h2 {\n",dObj.docName)
+		case "HEADING_3":
+			tStr =fmt.Sprintf(".%s_h3 {\n",dObj.docName)
+		case "HEADING_4":
+			tStr =fmt.Sprintf(".%s_h4 {\n",dObj.docName)
+		case "HEADING_5":
+			tStr =fmt.Sprintf(".%s_h5 {\n",dObj.docName)
+		case "HEADING_6":
+			tStr =fmt.Sprintf(".%s_h6 {\n",dObj.docName)
+		case "NORMAL_TEXT":
 
+		case "NAMED_STYLE_TYPE_UNSPECIFIED":
+
+		case "":
+
+		default:
+			tStr =fmt.Sprintf("/* error cvtParStylCss: unknown named Style: %s */", parStyl.NamedStyleType)
+	}
+	cssStr = tStr
+//	fmt.Printf("heading css str: %s\n", tStr)
+
+	tcssStr :=""
 	if len(parStyl.Alignment) > 0 {
 		switch parStyl.Alignment {
 			case "START":
@@ -1486,9 +1957,9 @@ func (dObj *GdocHtmlObj) cvtParStylCss(parStyl *docs.ParagraphStyle)(cssStr stri
 		tcssStr += fmt.Sprintf("  padding-bottom: %.2fpt;\n", mag)
 	}
 
-	if len(tcssStr) > 0 {
-		cssStr = cssCoStr + tcssStr
-	}
+//	if len(tcssStr) > 0 {
+//		cssStr = cssCoStr + tcssStr
+//	}
 	return cssStr, nil
 }
 
@@ -1556,7 +2027,38 @@ func (dObj *GdocHtmlObj) cvtTxtStylCss(txtStyl *docs.TextStyle, head bool)(cssSt
 }
 
 
-func (dObj *GdocHtmlObj) cvtNamedStylCSS() (cssStr string, err error) {
+func (dObj *GdocHtmlObj) cvtNamedStylCss(NamStylTyp string) (cssStr string, err error) {
+	var NamStyl *docs.NamedStyle
+	var tStr string
+
+	doc := dObj.doc
+	nStyl := doc.NamedStyles
+	idxStyl := -1
+// find normal style first
+	for istyl:=0; istyl<len(nStyl.Styles); istyl++ {
+		if nStyl.Styles[istyl].NamedStyleType == NamStylTyp {
+			idxStyl = istyl
+			NamStyl = nStyl.Styles[istyl]
+			break
+		}
+	}
+
+	if idxStyl < 0 {return "", nil}
+
+	tStr, err = dObj.cvtParStylCss(NamStyl.ParagraphStyle)
+	if err != nil {
+		return cssStr, fmt.Errorf("error cvtParStyl: %v",err)
+	}
+	cssStr += tStr
+	tStr, err = dObj.cvtTxtStylCss(NamStyl.TextStyle, true)
+	if err != nil {
+		return cssStr, fmt.Errorf("error cvtTxtStyl: %v",err)
+	}
+
+	return cssStr, nil
+}
+
+func (dObj *GdocHtmlObj) cvtAllNamedStylCss() (cssStr string, err error) {
 	var NamStyl *docs.NamedStyle
 	var tStr string
 
@@ -1642,13 +2144,8 @@ func (dObj *GdocHtmlObj) cvtNamedStylCSS() (cssStr string, err error) {
 	return cssStr, nil
 }
 
-func (dObj *GdocHtmlObj) cvtDocHeadCSS() (headDisp *dispObj, err error) {
-	var cssStr string
-	var head dispObj
+func (dObj *GdocHtmlObj) creHeadCss() (cssStr string, err error) {
 
-	if dObj == nil {
-		return nil, fmt.Errorf("error CvtDocHeadCss -- no dObj")
-	}
 	//gdoc division css
 
 	cssStr = fmt.Sprintf(".%s_main {\n", dObj.docName)
@@ -1674,31 +2171,59 @@ func (dObj *GdocHtmlObj) cvtDocHeadCSS() (headDisp *dispObj, err error) {
 	}
 	cssStr += "}\n"
 
-	// normal text heading style
-	cssStr += fmt.Sprintf(".%s_normal {\n", dObj.docName)
-	tstr, err := dObj.cvtNamedStylCSS()
-	if err != nil {
-		return nil, fmt.Errorf("Error NamedStyle Conversion: %v", err)
-	}
-	cssStr += fmt.Sprintf("%s\n", tstr)
 
 //	cssStr += classStr + " > * {\n"
 //	cssStr += "  margin: 0;\n}\n"
 
-	cssStr += fmt.Sprintf(".%s_li {\n", dObj.docName)
-	cssStr += "  display: inline;\n}\n"
+	listCssStr :=""
+	listCssStr += fmt.Sprintf(".%s_li {\n", dObj.docName)
+	listCssStr += "  display: inline;\n}\n"
 
-	cssStr += fmt.Sprintf(".%s_ul {\n", dObj.docName)
-	cssStr += "  margin: 0;\n  padding-left: 0;\n}\n"
+	listCssStr += fmt.Sprintf(".%s_ul {\n", dObj.docName)
+	listCssStr += "  margin: 0;\n  padding-left: 0;\n}\n"
 
-	cssStr += fmt.Sprintf(".%s_ol {\n", dObj.docName)
-	cssStr += "  margin: 0;\n  padding-left: 0;\n}\n"
+	listCssStr += fmt.Sprintf(".%s_ol {\n", dObj.docName)
+	listCssStr += "  margin: 0;\n  padding-left: 0;\n}\n"
 
-	cssStr += fmt.Sprintf(".%s_li_p {\n", dObj.docName)
-	cssStr += "  display: inline;\n  margin: 5pt;\n}\n"
+	listCssStr += fmt.Sprintf(".%s_li_p {\n", dObj.docName)
+	listCssStr += "  display: inline;\n  margin: 5pt;\n}\n"
 
+	if dObj.hasList {cssStr += listCssStr}
+
+	// div default
+	cssStr += fmt.Sprintf(".%s_normal {\n", dObj.docName)
+
+	defTxtMap := new(textMap)
+//fmt.Println("getting txtstyl!")
+	_, txtStyl, err := dObj.getNamedStyl("NORMAL_TEXT")
+	if err != nil {
+		return cssStr, fmt.Errorf("error creHeadCss: %v", err)
+	}
+//fmt.Printf("txtstyl: %v\n", txtStyl)
+	_, err = fillTextMap(defTxtMap, txtStyl)
+	if err != nil {
+//fmt.Printf("error %v\n", err)
+		return cssStr, fmt.Errorf("error creHeadCss: %v", err)
+	}
+//fmt.Printf("txtmap: %v\n", defTxtMap)
+
+	cssStr += cvtTextMapCss(defTxtMap)
+//	fmt.Printf(" *** def css ***\n %s\n",tcssStr)
+//zzz
+
+/*
+	tstr, err := dObj.cvtNamedStylCss("NORMAL_TEXT")
+	if err != nil {
+		return "", fmt.Errorf("Error NamedStyle Conversion: %v", err)
+	}
+	cssStr += fmt.Sprintf("%s\n", tstr)
+*/
+	cssStr += "}\n"
+
+	// paragraph default
 	cssStr += fmt.Sprintf(".%s_p {\n", dObj.docName)
 	cssStr += "  margin: 0;\n"
+
 	if dObj.df_ls > 0 {
 		cssStr += fmt.Sprintf("  line-height: %.2f;\n", dObj.df_ls/100.0)
 	}
@@ -1709,9 +2234,8 @@ func (dObj *GdocHtmlObj) cvtDocHeadCSS() (headDisp *dispObj, err error) {
 		cssStr += fmt.Sprintf("  margin-top: %.1fmm;\n", docstyl.MarginTop.Magnitude*PtTomm)
 		cssStr += fmt.Sprintf("  margin-bottom: %.1fmm;\n}\n", docstyl.MarginBottom.Magnitude*PtTomm)
 	}
-	head.cssStr = cssStr
 
-	return &head, nil
+	return cssStr, nil
 }
 
 func (dObj *GdocHtmlObj) cvtContentEl(contEl *docs.StructuralElement) (GdocHtmlObj *dispObj, err error) {
@@ -1719,15 +2243,13 @@ func (dObj *GdocHtmlObj) cvtContentEl(contEl *docs.StructuralElement) (GdocHtmlO
 		return nil, fmt.Errorf("error cvtContentEl: -- dObj is nil")
 	}
 
-	htmlObj := new(dispObj)
+	bodyElObj := new(dispObj)
 
 	if contEl.Paragraph != nil {
 		parEl := contEl.Paragraph
-		tObj, _ := dObj.cvtParHtml(parEl)
-		htmlObj.cssStr += tObj.cssStr
-		htmlObj.htmlStr += tObj.htmlStr
-		htmlObj.htmlToc += tObj.htmlToc
-		htmlObj.cssToc += tObj.cssToc
+		tObj, err := dObj.cvtPar(parEl)
+		if err != nil { bodyElObj.bodyHtml += fmt.Sprintf("<!-- %v -->\n", err) }
+		addDispObj(bodyElObj, &tObj)
 	}
 
 	if contEl.SectionBreak != nil {
@@ -1735,15 +2257,15 @@ func (dObj *GdocHtmlObj) cvtContentEl(contEl *docs.StructuralElement) (GdocHtmlO
 	}
 	if contEl.Table != nil {
 		tableEl := contEl.Table
-		tObj, _ := dObj.cvtTable(tableEl)
-		htmlObj.cssStr += tObj.cssStr
-		htmlObj.htmlStr += tObj.htmlStr
+		tObj, err := dObj.cvtTable(tableEl)
+		if err != nil { bodyElObj.bodyHtml += fmt.Sprintf("<!-- %v -->\n", err) }
+		addDispObj(bodyElObj, &tObj)
 	}
 	if contEl.TableOfContents != nil {
 
 	}
 //	fmt.Println(" ConvertEl: ",htmlObj)
-	return htmlObj, nil
+	return bodyElObj, nil
 }
 
 func (dObj *GdocHtmlObj) cvtTocHeadCss() (CssStr string, err error) {
@@ -1805,58 +2327,37 @@ func (dObj *GdocHtmlObj) cvtTocHeadCss() (CssStr string, err error) {
 	for istyl:=0; istyl<len(nStyl.Styles); istyl++ {
 		tStr = ""
 		NamStyl := nStyl.Styles[istyl]
-		decode := false
 		switch NamStyl.NamedStyleType {
 		case "TITLE":
 			tStr =fmt.Sprintf("#%s_title {\n",tocCssId)
-			decode = true
 		case "SUBTITLE":
 			tStr =fmt.Sprintf("#%s_subtitle {\n",tocCssId)
-			decode = true
 		case "HEADING_1":
 			tStr =fmt.Sprintf(".%s h1 {\n",tocCssId)
  			tStr += "  padding-left: 10px;\n  margin: 0px;"
-			decode = true
 		case "HEADING_2":
 			tStr =fmt.Sprintf(".%s h2 {\n",tocCssId)
 			tStr += " padding-left: 20px;\n  margin: 0px;"
-			decode = true
 		case "HEADING_3":
 			tStr =fmt.Sprintf(".%s h3 {\n", tocCssId)
 			tStr += " padding-left: 40px;\n  margin: 0px;"
-			decode = true
 		case "HEADING_4":
 			tStr =fmt.Sprintf(".%s h4 {\n", tocCssId)
 			tStr += " padding-left: 60px;\n  margin: 0px;"
-			decode = true
 		case "HEADING_5":
 			tStr =fmt.Sprintf(".%s h5 {\n", tocCssId)
 			tStr += " padding-left: 80px;\n  margin: 0px;"
-			decode = true
 		case "HEADING_6":
 			tStr =fmt.Sprintf(".%s h6 {\n", tocCssId)
 			tStr += " padding-left: 100px;\n  margin: 0px;"
-			decode = true
 		case "NORMAL_TEXT":
 
 		default:
 			tStr =fmt.Sprintf("/* error - header: %s */", NamStyl.NamedStyleType)
 		}
 
-		if decode {
-			tpStr, err := dObj.cvtParStylCss(NamStyl.ParagraphStyle)
-			if err != nil {
-				return cssStr, fmt.Errorf("error cvtParStyl: %v",err)
-			}
-			ttStr, err := dObj.cvtTxtStylCss(NamStyl.TextStyle, true)
-			if err != nil {
-				return cssStr, fmt.Errorf("error cvtTxtStyl: %v",err)
-			}
 
-			cssStr += tStr + tpStr + ttStr + "}\n"
-		} else {
-			cssStr += tStr
-		}
+		cssStr += tStr
 	}
 	return cssStr, nil
 }
@@ -1868,9 +2369,9 @@ func (dObj *GdocHtmlObj) creTocHead() (hdObj *dispObj, err error) {
 	}
 
 	hdObj = new(dispObj)
-	hdObj.htmlToc = fmt.Sprintf("<div id=\"%s\"_TOC class=\"%s\">\n", dObj.docName, dObj.docName)
-	hdObj.htmlToc += fmt.Sprintf("<p id=\"%s_TOC_subtitle\">Table of Contents</p>\n",dObj.docName)
-	hdObj.cssToc, err = dObj.cvtTocHeadCss()
+	hdObj.tocHtml = fmt.Sprintf("<div id=\"%s\"_TOC class=\"%s\">\n", dObj.docName, dObj.docName)
+	hdObj.tocHtml += fmt.Sprintf("<p id=\"%s_TOC_subtitle\">Table of Contents</p>\n",dObj.docName)
+	hdObj.tocCss, err = dObj.cvtTocHeadCss()
 	if err != nil {
 		return hdObj, fmt.Errorf("error creTocHead:: cvtTocHeadCss: %v", err)
 	}
@@ -1892,7 +2393,7 @@ func (dObj *GdocHtmlObj) cvtBody() (bodyObj *dispObj, err error) {
 //	toc := dObj.Options.Toc
 	bodyObj = new(dispObj)
 
-	bodyObj.htmlStr = fmt.Sprintf("<div id=\"%s\" class=\"%s_main\">\n",dObj.docName, dObj.docName)
+	bodyObj.bodyHtml = fmt.Sprintf("<div id=\"%s\" class=\"%s_main\">\n",dObj.docName, dObj.docName)
 
 	elNum := len(body.Content)
 	for el:=0; el< elNum; el++ {
@@ -1902,23 +2403,20 @@ func (dObj *GdocHtmlObj) cvtBody() (bodyObj *dispObj, err error) {
 			fmt.Println("error cvtContentEl: %v", err)
 		}
 //		fmt.Println("tObj:", tObj)
-		bodyObj.htmlStr += tObj.htmlStr
-		bodyObj.cssStr += tObj.cssStr
-		bodyObj.htmlToc += tObj.htmlToc
-		bodyObj.cssToc += tObj.cssToc
+		addDispObj(bodyObj, tObj)
 	} // for el loop end
 	if len(dObj.cListId) > 0 {
-		bodyObj.htmlStr += dObj.closeList(dObj.cNestLev)
+		bodyObj.bodyHtml += dObj.closeList(dObj.cNestLev)
 	}
 
-	bodyObj.htmlToc += "</div>\n\n"
-	bodyObj.htmlStr += "</div>\n\n"
+	bodyObj.tocHtml += "</div>\n\n"
+	bodyObj.bodyHtml += "</div>\n\n"
 
 	return bodyObj, nil
 }
 
 func CreGdocHtmlFil(outfil *os.File, doc *docs.Document, options *OptObj)(err error) {
-	var tocHead *dispObj
+	var tocDiv *dispObj
 
 	if outfil == nil {return fmt.Errorf("error CreGdocHtmlFil -- outfil is nil!")}
 
@@ -1931,39 +2429,39 @@ func CreGdocHtmlFil(outfil *os.File, doc *docs.Document, options *OptObj)(err er
 
 	toc := dObj.Options.Toc
 
-	head, err := dObj.cvtDocHeadCSS()
+	mainDiv, err := dObj.cvtBody()
+	if err != nil {
+		return fmt.Errorf("error cc body %v", err)
+	}
+
+	headCssStr, err := dObj.creHeadCss()
 	if err != nil {
 		return fmt.Errorf("error CvtGdocHtml: ConvertDocHeatAttToCss %v", err)
 	}
+//	mainDiv.bodyCss = headCssStr + mainDiv.bodyCss
 
 	if toc {
-		tocHead, err = dObj.creTocHead()
+		tocDiv, err = dObj.creTocHead()
 		if err != nil {
-			tocHead.htmlToc = fmt.Sprintf("<!--- error Toc Head: %v --->\n",err)
+			tocDiv.tocHtml = fmt.Sprintf("<!--- error Toc Head: %v --->\n",err)
 		}
-	}
-
-	body, err := dObj.cvtBody()
-	if err != nil {
-		return fmt.Errorf("error cc body %v", err)
 	}
 
 	// create html file
 	docHeadStr,_ := dObj.creHtmlHead()
 	outfil.WriteString(docHeadStr)
-
-	outfil.WriteString(head.cssStr)
-	outfil.WriteString(body.cssStr)
+	// basic Css
+	outfil.WriteString(headCssStr)
+	// named styles
+	outfil.WriteString(mainDiv.bodyCss)
 	if toc {
-		outfil.WriteString(tocHead.cssToc)
-		outfil.WriteString(body.cssToc)
+		outfil.WriteString(tocDiv.tocCss)
+		outfil.WriteString(mainDiv.tocCss)
 	}
 	outfil.WriteString("</style>\n</head>\n<body>\n")
-	if toc {outfil.WriteString(tocHead.htmlToc)}
-	outfil.WriteString(head.htmlStr)
+	if toc {outfil.WriteString(tocDiv.tocHtml)}
+	outfil.WriteString(mainDiv.bodyHtml)
 
-	if toc {outfil.WriteString(body.htmlToc)}
-	outfil.WriteString(body.htmlStr)
 	outfil.WriteString("</body>\n</html>\n")
 	return nil
 }
