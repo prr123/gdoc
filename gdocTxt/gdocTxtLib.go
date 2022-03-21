@@ -8,6 +8,7 @@
 //
 //  24/2/2022 inline objects
 //
+//  21/3/2022 fomatting update
 
 package gdocToText
 
@@ -286,7 +287,7 @@ func (dObj *gdocTxtObj) dispPar(par *docs.Paragraph)(outstr string, err error) {
 	}
 //xxx
 	if par.ParagraphStyle != nil {
-		tstr,err := dObj.dispParStyl(par.ParagraphStyle)
+		tstr,err := dObj.dispParStyl(par.ParagraphStyle, 4)
 		if err != nil {
 			return outstr, fmt.Errorf("error dispParStyl %v", err)
 		}
@@ -294,7 +295,7 @@ func (dObj *gdocTxtObj) dispPar(par *docs.Paragraph)(outstr string, err error) {
 	} else {
 		outstr += "    *** no Pargraph Style ***\n"
 	}
-	outstr += fmt.Sprintf("  *** Paragraph Elements: %d ***/n", len(par.Elements))
+	outstr += fmt.Sprintf("\n  *** Paragraph Elements: %d ***\n", len(par.Elements))
 	for p:=0; p< len(par.Elements); p++ {
 		parDet := par.Elements[p]
 		outstr += fmt.Sprintf("  Par-El[%d]: %d - %d : ", p, parDet.StartIndex, parDet.EndIndex)
@@ -313,8 +314,7 @@ func (dObj *gdocTxtObj) dispPar(par *docs.Paragraph)(outstr string, err error) {
 			}
 			outstr += fmt.Sprintf(" Last Char: %q\n",parDet.TextRun.Content[cLen-1:cLen])
 			if (parDet.TextRun.TextStyle != nil) {
-	//			outstr += "    has Text Style\n"
-				tstr, err := dObj.dispTxtStyl(parDet.TextRun.TextStyle)
+				tstr, err := dObj.dispTxtStyl(parDet.TextRun.TextStyle, 4)
 				if err != nil {
 					outstr += fmt.Sprintf("/* error disp Text Style: %v */\n", err)
 				}
@@ -323,42 +323,52 @@ func (dObj *gdocTxtObj) dispPar(par *docs.Paragraph)(outstr string, err error) {
 		}
 		if parDet.ColumnBreak != nil {
 			outstr += "  Column Break\n"
+		} else {
+			outstr += "    *** no Column Break ***\n"
 		}
 		if parDet.InlineObjectElement != nil {
-			outstr += "  Inline Object\n"
+			outstr += "  *** Inline Object ***\n"
 		} else {
 			outstr += "    *** no Inline Object ***\n"
 		}
 		if parDet.Person != nil {
-			outstr += fmt.Sprintf("  Has Person\n")
+			outstr += fmt.Sprintf("  *** Has Person ***\n")
+		} else {
+			outstr += "    *** no Person ***\n"
 		}
 		if parDet.RichLink != nil {
-			outstr += fmt.Sprintf("  Has Rich Text Link\n")
+			outstr += fmt.Sprintf("  *** Has Rich Text ***\n")
+		} else {
+			outstr += "    *** no Rich Text ***\n"
 		}
 		if parDet.PageBreak != nil {
-			outstr += fmt.Sprintf("  Has Page Break\n")
+			outstr += fmt.Sprintf("  *** Has Page Break ***\n")
 		} else {
 			outstr += "    *** no Page Break ***\n"
 		}
 		if parDet.AutoText != nil {
-			outstr += fmt.Sprintf("  Has AutoText\n")
+			outstr += fmt.Sprintf("  *** Has AutoText ***\n")
+		} else {
+			outstr += "    *** no AutoText ***\n"
 		}
 		if parDet.Equation != nil {
-			outstr += fmt.Sprintf("  Has Equation\n")
+			outstr += fmt.Sprintf("  *** Has Equation ***\n")
+		} else {
+			outstr += "    *** no Equation ***\n"
 		}
 		if parDet.HorizontalRule != nil {
-			outstr += fmt.Sprintf("  Has Horizontal Rule\n")
+			outstr += fmt.Sprintf("  *** Has Horizontal Rule ***\n")
 		} else {
 			outstr += "    *** no Horizontal Rule ***\n"
 		}
 		if parDet.FootnoteReference != nil {
-			outstr += fmt.Sprintf("  Has Footnote Reference\n")
+			outstr += fmt.Sprintf("  *** Has Footnote Reference ***\n")
 		} else {
 			outstr += "    *** no Footnote Reference ***\n"
 		}
 	}
 	if par.PositionedObjectIds != nil {
-		outstr += fmt.Sprintf("  Has Positioned Objects: %d\n", len(par.PositionedObjectIds))
+		outstr += fmt.Sprintf("  *** Has Positioned Objects: %d ***\n", len(par.PositionedObjectIds))
 		for id:=0; id< len(par.PositionedObjectIds); id++ {
 			outstr += fmt.Sprintf("posObject Id[%d]: %s\n", id, par.PositionedObjectIds[id])
 		}
@@ -370,7 +380,7 @@ func (dObj *gdocTxtObj) dispPar(par *docs.Paragraph)(outstr string, err error) {
 
 func (dObj *gdocTxtObj) dispSecStyle(secStyl *docs.SectionStyle)(outstr string, err error) {
 
-	outstr = "Section Style\n"
+	outstr = "*** Section Style ***\n"
 	if secStyl == nil {
 		return outstr, fmt.Errorf("error dispSecStyl: no secStyl")
 	}
@@ -417,20 +427,22 @@ func (dObj *gdocTxtObj) dispSecStyle(secStyl *docs.SectionStyle)(outstr string, 
 }
 
 
-func (dObj *gdocTxtObj) dispBorder(parBorder *docs.ParagraphBorder)(outstr string) {
+func (dObj *gdocTxtObj) dispBorder(parBorder *docs.ParagraphBorder, wsp int)(outstr string) {
 
-	outstr = "    *** Border Style ***\n"
 	if parBorder == nil {
 		outstr += "error dispParStyl: no Par Border Style\n"
 		return outstr
 	}
-	outstr += fmt.Sprintf("    Border Style:   %s\n", parBorder.DashStyle)
-	outstr += fmt.Sprintf("    Border Width:   %.1f %s\n", parBorder.Width.Magnitude, parBorder.Width.Unit)
-	outstr += fmt.Sprintf("    Border Padding: %.1f %s\n", parBorder.Padding.Magnitude, parBorder.Padding.Unit)
+
+	wspStr := ""
+	for i:=0; i<wsp; i++ {wspStr += " "}
+	outstr = wspStr + fmt.Sprintf("    Border Style:   %s\n", parBorder.DashStyle)
+	outstr += wspStr + fmt.Sprintf("    Border Width:   %.1f %s\n", parBorder.Width.Magnitude, parBorder.Width.Unit)
+	outstr += wspStr + fmt.Sprintf("    Border Padding: %.1f %s\n", parBorder.Padding.Magnitude, parBorder.Padding.Unit)
 	if parBorder.Color != nil {
 		if parBorder.Color.Color != nil {
 			colStr := dObj.getColor(parBorder.Color.Color)
-			outstr += fmt.Sprintf("    Border Color: %s\n", colStr)
+			outstr += wspStr + fmt.Sprintf("    Border Color: %s\n", colStr)
 		}
 	}
 	return outstr
@@ -449,32 +461,35 @@ func (dObj *gdocTxtObj) getColor(color  *docs.Color)(outstr string) {
 	return outstr
 }
 
-func (dObj *gdocTxtObj) dispParStyl(parStyl *docs.ParagraphStyle)(outstr string, err error) {
+func (dObj *gdocTxtObj) dispParStyl(parStyl *docs.ParagraphStyle, wsp int)(outstr string, err error) {
 
 	if parStyl == nil {
 		return "", fmt.Errorf("error dispParStyl: no ParStyl")
 	}
-	outstr = "*** Paragraph Style ***\n"
-	outstr += fmt.Sprintf("  Heading Id:  %s \n", parStyl.HeadingId)
-	outstr += fmt.Sprintf("  Named Style: %s \n", parStyl.NamedStyleType)
+	wspStr := ""
+	for i:=0; i<wsp; i++ {wspStr += " "}
+
+	outstr = wspStr + "*** Paragraph Style ***\n"
+	outstr += wspStr + fmt.Sprintf("  Heading Id:  %s \n", parStyl.HeadingId)
+	outstr += wspStr + fmt.Sprintf("  Named Style: %s \n", parStyl.NamedStyleType)
 	if len(parStyl.Alignment) > 0 {
-		outstr +=  fmt.Sprintf("  Alignment:  %s \n", parStyl.Alignment)
+		outstr +=  wspStr + fmt.Sprintf("  Alignment:  %s \n", parStyl.Alignment)
 	}
-	outstr += fmt.Sprintf("  Directions: %s \n", parStyl.Direction)
+	outstr += wspStr + fmt.Sprintf("  Direction: %s \n", parStyl.Direction)
 	if parStyl.LineSpacing > 0 {
-		outstr += fmt.Sprintf("  Line Spacing: %.2f \n", parStyl.LineSpacing/100.0)
+		outstr += wspStr + fmt.Sprintf("  Line Spacing: %.2f \n", parStyl.LineSpacing/100.0)
 	}
-	outstr += fmt.Sprintf("  Keep Lines together: %t \n", parStyl.KeepLinesTogether)
-	outstr += fmt.Sprintf("  Keep With Next:      %t \n", parStyl.KeepWithNext)
+	outstr += wspStr + fmt.Sprintf("  Keep Lines together: %t \n", parStyl.KeepLinesTogether)
+	outstr += wspStr + fmt.Sprintf("  Keep With Next:      %t \n", parStyl.KeepWithNext)
 
 	if parStyl.IndentFirstLine != nil {
-		outstr += fmt.Sprintf("  Indent First Line: %f %s\n", parStyl.IndentFirstLine.Magnitude, parStyl.IndentFirstLine.Unit )
+		outstr += wspStr + fmt.Sprintf("  Indent First Line: %f %s\n", parStyl.IndentFirstLine.Magnitude, parStyl.IndentFirstLine.Unit )
 	}
 	if parStyl.IndentStart !=nil {
-		outstr += fmt.Sprintf("  Indent Start:      %f %s\n", parStyl.IndentStart.Magnitude, parStyl.IndentStart.Unit)
+		outstr += wspStr + fmt.Sprintf("  Indent Start:      %f %s\n", parStyl.IndentStart.Magnitude, parStyl.IndentStart.Unit)
 	}
 	if parStyl.IndentEnd !=nil {
-		outstr += fmt.Sprintf("  Indent End:        %f %s\n", parStyl.IndentEnd.Magnitude, parStyl.IndentEnd.Unit)
+		outstr += wspStr + fmt.Sprintf("  Indent End:        %f %s\n", parStyl.IndentEnd.Magnitude, parStyl.IndentEnd.Unit)
 	}
 	if parStyl.Shading !=nil {
 		if parStyl.Shading.BackgroundColor != nil {
@@ -483,77 +498,84 @@ func (dObj *gdocTxtObj) dispParStyl(parStyl *docs.ParagraphStyle)(outstr string,
     	        blue := int(color.RgbColor.Blue*255.0)
         	    red := int(color.RgbColor.Red*255.0)
             	green := int(color.RgbColor.Green*255)
-            	outstr += fmt.Sprintf(" Shading background-color: rgb(%d, %d, %d);\n", red, green, blue)
+            	outstr += wspStr + fmt.Sprintf(" Shading background-color: rgb(%d, %d, %d);\n", red, green, blue)
 			}
 		}
 	}
-	outstr += "  Border Between: "
 	if parStyl.BorderBetween != nil {
-		outstr += dObj.dispBorder(parStyl.BorderBetween)
+		outstr += wspStr + "  *** Border Between ***\n "
+		outstr += wspStr + dObj.dispBorder(parStyl.BorderBetween, 4)
+		outstr += "\n"
 	}
-	outstr += "\n"
-	outstr += "  Border Top: "
+
 	if parStyl.BorderTop != nil {
-		outstr += dObj.dispBorder(parStyl.BorderTop)
+		outstr += wspStr + "  *** Border Top ***\n "
+		outstr += wspStr + dObj.dispBorder(parStyl.BorderTop, 4)
+		outstr += "\n"
 	}
-	outstr += "\n"
-	outstr += "  Border Right: "
+
 	if parStyl.BorderRight != nil {
-		outstr += dObj.dispBorder(parStyl.BorderRight)
+		outstr += wspStr + "  *** Border Right ***\n"
+		outstr += wspStr + dObj.dispBorder(parStyl.BorderRight, 4)
+		outstr += "\n"
 	}
-	outstr += "\n"
-	outstr += "  Border Bottom: "
+
 	if parStyl.BorderBottom != nil {
-		outstr += dObj.dispBorder(parStyl.BorderBottom)
+		outstr += wspStr + "  *** Border Bottom ***\n"
+		outstr += wspStr + dObj.dispBorder(parStyl.BorderBottom, 4)
+		outstr += "\n"
 	}
-	outstr += "\n"
-	outstr += "  Border Left: "
+
 	if parStyl.BorderLeft != nil {
-		outstr += dObj.dispBorder(parStyl.BorderLeft)
+		outstr += wspStr + "  *** Border Left ***\n"
+		outstr += wspStr + dObj.dispBorder(parStyl.BorderLeft, 4)
+		outstr += "\n"
 	}
-	outstr += "\n"
 
 	return outstr, nil
 }
 
-func (dObj *gdocTxtObj) dispTxtStyl(txtStyl *docs.TextStyle)(outstr string, err error) {
+func (dObj *gdocTxtObj) dispTxtStyl(txtStyl *docs.TextStyle, wsp int)(outstr string, err error) {
 
 	if txtStyl == nil {
 		return "", fmt.Errorf("error dispTxtStyl: TextStyle is nil!")
 	}
-	outstr = "** Text Style ***\n"
+	wspStr :=""
+	for i:=0; i< wsp; i++ {wspStr +=" "}
+
+	outstr = wspStr + "*** Text Style ***\n"
 	if len(txtStyl.BaselineOffset) > 0 {
-		outstr +=  fmt.Sprintf("    BaseLine Offset: %s\n",txtStyl.BaselineOffset)
+		outstr +=  wspStr + fmt.Sprintf("    BaseLine Offset: %s\n",txtStyl.BaselineOffset)
 	}
-	outstr += fmt.Sprintf("    Bold:      %t\n", txtStyl.Bold)
-	outstr += fmt.Sprintf("    Italic:    %t\n", txtStyl.Italic)
-	outstr += fmt.Sprintf("    Underline: %t\n", txtStyl.Underline)
-	outstr += fmt.Sprintf("    strike through: %t\n", txtStyl.Strikethrough)
-	outstr += fmt.Sprintf("    small caps: %t\n", txtStyl.SmallCaps)
+	outstr += wspStr + fmt.Sprintf("    Bold:      %t\n", txtStyl.Bold)
+	outstr += wspStr + fmt.Sprintf("    Italic:    %t\n", txtStyl.Italic)
+	outstr += wspStr + fmt.Sprintf("    Underline: %t\n", txtStyl.Underline)
+	outstr += wspStr + fmt.Sprintf("    strike through: %t\n", txtStyl.Strikethrough)
+	outstr += wspStr + fmt.Sprintf("    small caps: %t\n", txtStyl.SmallCaps)
 
 	if txtStyl.WeightedFontFamily != nil {
-		outstr += fmt.Sprintf("  Font : %s %d\n",txtStyl.WeightedFontFamily.FontFamily, txtStyl.WeightedFontFamily.Weight)
+		outstr += wspStr + fmt.Sprintf("  Font : %s %d\n",txtStyl.WeightedFontFamily.FontFamily, txtStyl.WeightedFontFamily.Weight)
 	}
 	if txtStyl.FontSize != nil {
-		outstr += fmt.Sprintf("  Font Size: %f %s\n", txtStyl.FontSize.Magnitude, txtStyl.FontSize.Unit)
+		outstr += wspStr + fmt.Sprintf("  Font Size: %f %s\n", txtStyl.FontSize.Magnitude, txtStyl.FontSize.Unit)
 	}
 
     if txtStyl.ForegroundColor != nil {
         if txtStyl.ForegroundColor.Color != nil {
-            outstr += "  foreground-color: "
+            outstr += wspStr + "   foreground-color: "
             outstr += dObj.getColor(txtStyl.ForegroundColor.Color)
             outstr += "\n"
         }
     }
     if txtStyl.BackgroundColor != nil {
         if txtStyl.BackgroundColor.Color != nil {
-            outstr += fmt.Sprintf("  background-color:  ")
+            outstr += wspStr + fmt.Sprintf("   background-color:  ")
             outstr += dObj.getColor(txtStyl.BackgroundColor.Color)
             outstr += "\n"
         }
     }
     if txtStyl.Link != nil {
-		outstr +="  Link TBD\n"
+		outstr += wspStr + "  Link TBD\n"
 	}
 	return outstr, nil
 }
@@ -686,6 +708,11 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 	for key, ftnote := range doc.Footnotes {
 		knum++
 		outstr += fmt.Sprintf("  ftnote %d: key %s id %s elements %d\n", knum, key, ftnote.FootnoteId, len(ftnote.Content) )
+		for i:= 0; i< len(ftnote.Content); i++ {
+			outstr += fmt.Sprintf("  content [%d]\n", i)
+			tstr, err := docObj.dispContentEl(ftnote.Content[i])
+			if err == nil {outstr += tstr} else {outstr += fmt.Sprintf("error %v", err)}
+		}
 	}
 
 	// Lists
@@ -727,14 +754,14 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 		outfil.WriteString(outstr)
 //		outfil.WriteString("Paragraph Style:\n")
 		parStyl := stylel.ParagraphStyle
-		tstr,err := docObj.dispParStyl(parStyl)
+		tstr,err := docObj.dispParStyl(parStyl, 4)
 		if err != nil {
 			return fmt.Errorf("error dispParStyl %d: %v", i, err)
 		}
 		outfil.WriteString(tstr)
 //		outfil.WriteString("Text Style:\n")
 		txtStyl:= stylel.TextStyle
-		tstr,err = docObj.dispTxtStyl(txtStyl)
+		tstr,err = docObj.dispTxtStyl(txtStyl, 4)
 		if err != nil {
 			return fmt.Errorf("error dispTxtStyl %d: %v", i, err)
 		}
@@ -742,7 +769,7 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 		outfil.WriteString(tstr)
 	}
 
-	outstr ="\nDocument Style: \n"
+	outstr ="\n****************** Document Style **************************\n"
 	docstyl := doc.DocumentStyle
 	outstr += fmt.Sprintf("Height: %f %s  Width %f %s\n",docstyl.PageSize.Height.Magnitude,	docstyl.PageSize.Height.Unit,docstyl.PageSize.Width.Magnitude,docstyl.PageSize.Width.Unit)
 
