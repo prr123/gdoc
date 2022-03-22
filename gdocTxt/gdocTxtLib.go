@@ -298,9 +298,10 @@ func (dObj *gdocTxtObj) dispPar(par *docs.Paragraph)(outstr string, err error) {
 	outstr += fmt.Sprintf("\n  *** Paragraph Elements: %d ***\n", len(par.Elements))
 	for p:=0; p< len(par.Elements); p++ {
 		parDet := par.Elements[p]
-		outstr += fmt.Sprintf("  Par-El[%d]: %d - %d : ", p, parDet.StartIndex, parDet.EndIndex)
+		outstr += fmt.Sprintf("  Par-El[%d]: (%d-%d): ", p, parDet.StartIndex, parDet.EndIndex)
 		if parDet.TextRun != nil {
 			cLen := len(parDet.TextRun.Content)
+			outstr += fmt.Sprintf("cl: %d", cLen)
 			if cLen > 0 {
 				if cLen > 21 {
 					outstr += fmt.Sprintf("    \"%s ...\"",parDet.TextRun.Content[0:20])
