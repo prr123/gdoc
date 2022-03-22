@@ -745,7 +745,7 @@ func (dObj *GdocHtmlObj) downloadImg()(err error) {
     }
 
 
-   fmt.Printf("*** Positioned Imgs: %d ***\n", len(doc.PositionedObjects))
+    fmt.Printf("*** Positioned Imgs: %d ***\n", len(doc.PositionedObjects))
     for k, posObj := range doc.PositionedObjects {
         imgProp := posObj.PositionedObjectProperties.EmbeddedObject.ImageProperties
         if verb {
@@ -1139,43 +1139,41 @@ func (dObj *GdocHtmlObj) cvtInlineImg(imgEl *docs.InlineObjectElement)(htmlStr s
 	return htmlStr, cssStr, nil
 }
 
-func (dObj *GdocHtmlObj) cvtParElText(parEl *docs.ParagraphElement)(htmlStr string, cssStr string, err error) {
+func (dObj *GdocHtmlObj) cvtParElText(parElTxt *docs.TextRun)(htmlStr string, cssStr string, err error) {
 
-   if parEl == nil {
-        return "","", fmt.Errorf("error cvtPelText -- parEl is nil!")
-    }
-   if dObj == nil {
-        return "","", fmt.Errorf("error cvtPelText -- dObj is nil!")
+   if parElTxt == nil {
+        return "","", fmt.Errorf("error cvtPelText -- parElTxt is nil!")
     }
 
-
-    cLen := len(parEl.TextRun.Content)
+    cLen := len(parElTxt.Content)
 	if (cLen == 1) {
-		let := parEl.TextRun.Content
+		let := parElTxt.Content
 		if (let == "\n") {
 			htmlStr += "<br>"
 			return htmlStr, "", nil
 		}
 	}
-	spanCssStr, err := dObj.cvtTxtStylCss(parEl.TextRun.TextStyle, false)
+
+	// need to compare text style with the default style
+	spanCssStr, err := dObj.cvtTxtStylCss(parElTxt.TextStyle, false)
 	if err != nil {
 		spanCssStr = fmt.Sprintf("/*error parEl Css %v*/\n", err) + spanCssStr
 	}
 	dObj.spanCount++
 	linkPrefix := ""
 	linkSuffix := ""
-	if parEl.TextRun.TextStyle.Link != nil {
-		if len(parEl.TextRun.TextStyle.Link.Url)>0 {
-			linkPrefix = "<a href = \"" + parEl.TextRun.TextStyle.Link.Url + "\">"
+	if parElTxt.TextStyle.Link != nil {
+		if len(parElTxt.TextStyle.Link.Url)>0 {
+			linkPrefix = "<a href = \"" + parElTxt.TextStyle.Link.Url + "\">"
 			linkSuffix = "</a>"
 		}
 	}
 	spanIdStr := fmt.Sprintf("%s_sp%d", dObj.docName, dObj.spanCount)
 	if len(spanCssStr)>0 {
 		cssStr = fmt.Sprintf("#%s {\n", spanIdStr) + spanCssStr + "}\n"
-		htmlStr = fmt.Sprintf("<span id=\"%s\">",spanIdStr) + linkPrefix + parEl.TextRun.Content + linkSuffix + "</span>"
+		htmlStr = fmt.Sprintf("<span id=\"%s\">",spanIdStr) + linkPrefix + parElTxt.Content + linkSuffix + "</span>"
 	} else {
-		htmlStr = linkPrefix + parEl.TextRun.Content + linkSuffix
+		htmlStr = linkPrefix + parElTxt.Content + linkSuffix
 	}
 	return htmlStr, cssStr, nil
 }
@@ -1664,6 +1662,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 	decode := true
 	prefix = ""
 	suffix = ""
+
 	switch par.ParagraphStyle.NamedStyleType {
         case "TITLE":
 			parIdStr = fmt.Sprintf("%s_title",dObj.docName)
@@ -1754,9 +1753,9 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 
 
 	// a normal paragraph (not a list paragraph)
-
+//xxx
 	if par.Bullet == nil {
-		tStr, err = dObj.cvtParStylCss(par.ParagraphStyle)
+		tStr, _, _, err = dObj.cvtParStyl(par.ParagraphStyle)
 		t2Str := tStr
 		if err != nil {
 			t2Str = fmt.Sprintf("/* error cvtParStyl: %v */\n",err) + tStr
@@ -1773,9 +1772,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
     for pEl:=0; pEl< numParEl; pEl++ {
         parEl := par.Elements[pEl]
 		elHtmlStr, elCssStr, err := dObj.cvtParEl(parEl)
-		if err != nil {
-            	parHtmlStr += fmt.Sprintf("<!-- error cvtParEl: %v -->\n",err)
-		}
+		if err != nil { parHtmlStr += fmt.Sprintf("<!-- error cvtParEl: %v -->\n",err)}
       	parHtmlStr += elHtmlStr
 		parCssStr += elCssStr
 
@@ -1800,7 +1797,7 @@ func (dObj *GdocHtmlObj) cvtParEl(parEl *docs.ParagraphElement)(htmlStr string, 
 		}
 
 		if parEl.TextRun != nil {
-        	txtHtmlStr, txtCssStr, err := dObj.cvtParElText(parEl)
+        	txtHtmlStr, txtCssStr, err := dObj.cvtParElText(parEl.TextRun)
         	if err != nil {
             	htmlStr += fmt.Sprintf("<!-- error cvtPelToHtml: %v -->\n",err)
         	}
@@ -1855,14 +1852,14 @@ func (dObj *GdocHtmlObj) creParStylCss(headParStyl, parParStyl *docs.ParagraphSt
 	return cssStr, false, nil
 }
 
-func (dObj *GdocHtmlObj) cvtParStylCss(parStyl *docs.ParagraphStyle)(cssStr string, err error) {
+func (dObj *GdocHtmlObj) cvtParStyl(parStyl *docs.ParagraphStyle)(cssStr, prefix, suffix string, err error) {
 
 	cssStr = fmt.Sprintf("  /* Paragraph Style: %s */\n", parStyl.NamedStyleType )
 
 	if parStyl == nil {
-		return "", fmt.Errorf("error decode parstyle: -- no Style")
+		return "", "","", fmt.Errorf("error decode parstyle: -- no Style")
 	}
-//xxx
+//ppp
 	tStr := ""
 	switch parStyl.NamedStyleType {
 		case "TITLE":
@@ -1955,7 +1952,7 @@ func (dObj *GdocHtmlObj) cvtParStylCss(parStyl *docs.ParagraphStyle)(cssStr stri
 //	if len(tcssStr) > 0 {
 //		cssStr = cssCoStr + tcssStr
 //	}
-	return cssStr, nil
+	return cssStr, prefix, suffix, nil
 }
 
 func (dObj *GdocHtmlObj) cvtTxtStylCss(txtStyl *docs.TextStyle, head bool)(cssStr string, err error) {
@@ -2038,7 +2035,7 @@ func (dObj *GdocHtmlObj) cvtNamedStylCss(NamStylTyp string) (cssStr string, err 
 
 	if idxStyl < 0 {return "", nil}
 
-	tStr, err = dObj.cvtParStylCss(NamStyl.ParagraphStyle)
+	tStr, _,_, err = dObj.cvtParStyl(NamStyl.ParagraphStyle)
 	if err != nil {
 		return cssStr, fmt.Errorf("error cvtParStyl: %v",err)
 	}
@@ -2071,7 +2068,7 @@ func (dObj *GdocHtmlObj) cvtAllNamedStylCss() (cssStr string, err error) {
 		return "", fmt.Errorf("error ConvertNStyl -- no NORMAL_TEXT")
 	}
 
-	tStr, err = dObj.cvtParStylCss(NamStyl.ParagraphStyle)
+	tStr, _, _, err = dObj.cvtParStyl(NamStyl.ParagraphStyle)
 	if err != nil {
 		return cssStr, fmt.Errorf("error cvtParStyl: %v",err)
 	}
@@ -2120,7 +2117,7 @@ func (dObj *GdocHtmlObj) cvtAllNamedStylCss() (cssStr string, err error) {
 		}
 
 		if decode {
-			tpStr, err := dObj.cvtParStylCss(NamStyl.ParagraphStyle)
+			tpStr, _, _, err := dObj.cvtParStyl(NamStyl.ParagraphStyle)
 			if err != nil {
 				return cssStr, fmt.Errorf("error cvtParStyl: %v",err)
 			}
@@ -2162,11 +2159,8 @@ func (dObj *GdocHtmlObj) creHeadCss() (cssStr string, err error) {
 		cssStr += "  border: solid red;\n"
 		cssStr += "  border-width: 1px;\n"
 	}
-	cssStr += "}\n"
 
-
-//	cssStr += classStr + " > * {\n"
-//	cssStr += "  margin: 0;\n}\n"
+//	cssStr += "}\n"
 
 	listCssStr :=""
 	listCssStr += fmt.Sprintf(".%s_li {\n", dObj.docName)
@@ -2179,32 +2173,27 @@ func (dObj *GdocHtmlObj) creHeadCss() (cssStr string, err error) {
 	listCssStr += "  margin: 0;\n  padding-left: 0;\n}\n"
 
 	listCssStr += fmt.Sprintf(".%s_li_p {\n", dObj.docName)
-	listCssStr += "  display: inline;\n  margin: 5pt;\n}\n"
+	listCssStr += "  display: inline;\n  margin: 5pt;\n"
 
-	if dObj.hasList {cssStr += listCssStr}
-
-	// div default
-	cssStr += fmt.Sprintf(".%s_normal {\n", dObj.docName)
-
+	// add default text style
 	defTxtMap := new(textMap)
-//fmt.Println("getting txtstyl!")
 	parStyl, txtStyl, err := dObj.getNamedStyl("NORMAL_TEXT")
 	if err != nil {
 		return cssStr, fmt.Errorf("error creHeadCss: %v", err)
 	}
-//fmt.Printf("txtstyl: %v\n", txtStyl)
+
 	_, err = fillTextMap(defTxtMap, txtStyl)
 	if err != nil {
-//fmt.Printf("error %v\n", err)
 		return cssStr, fmt.Errorf("error creHeadCss: %v", err)
 	}
-//fmt.Printf("txtmap: %v\n", defTxtMap)
 
 	txtCssStr := cvtTextMapCss(defTxtMap)
-//	fmt.Printf(" *** def css ***\n %s\n",tcssStr)
-	cssStr += fmt.Sprintf("%s\n}\n", txtCssStr)
+	cssStr += txtCssStr
 
-	// paragraph default
+	if dObj.hasList {cssStr += listCssStr}
+	cssStr += "}\n"
+
+	// paragraph default style
 	cssStr += fmt.Sprintf(".%s_p {\n", dObj.docName)
 	cssStr += "  margin: 0; display: block;\n"
 
@@ -2306,7 +2295,7 @@ func (dObj *GdocHtmlObj) cvtTocHeadCss() (CssStr string, err error) {
 		return "", fmt.Errorf("error ConvertNStyl -- no NORMAL_TEXT")
 	}
 
-	tStr, err = dObj.cvtParStylCss(NamStyl.ParagraphStyle)
+	tStr, _, _, err = dObj.cvtParStyl(NamStyl.ParagraphStyle)
 	if err != nil {
 		return cssStr, fmt.Errorf("error cvtParStyl: %v",err)
 	}
