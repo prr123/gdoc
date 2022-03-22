@@ -1,0 +1,4144 @@
+*** Document Title: TestTextLong ***
+Document Id: 1MhrjsUt2PP9eiYY5MVAcSMaIlc6UI4oiG3twynI50Q8 
+Revision Id: ALm37BVDO2AdrSS0BqPRkYeK8iEJYA7dJ0wF0JZxAfVwI7h2jg0TYVTA-tBl0HmUT-ezM9GUPOPCXGadELqNzw 
+
+*** Inline Objects: 0 ***
+
+*** Positioned Objects: 0 ***
+
+*** Headers: 0 ****
+
+*** Footers: 0 ***
+
+*** Footnotes: 0 ***
+
+*** Lists: 10 ***
+    List 1: id: kix.4512qe0q5l8 nest levels: 9
+    List 2: id: kix.66qj6pqoe4jt nest levels: 9
+    List 3: id: kix.clwhcph34rnz nest levels: 9
+    List 4: id: kix.e6cnafk7n9fl nest levels: 9
+    List 5: id: kix.n2g8wfy1n3xi nest levels: 9
+    List 6: id: kix.tuf4hzpv3tzf nest levels: 9
+    List 7: id: kix.vkulnnwcyap0 nest levels: 9
+    List 8: id: kix.gcxjhw38afkb nest levels: 9
+    List 9: id: kix.j0du39mxa9yu nest levels: 9
+    List 10: id: kix.vwtjnyn3jmdk nest levels: 9
+
+*** NamedRanges: 0 ***
+
+*** Named Styles: 9 ***
+    Style[0]: NORMAL_TEXT 
+    Style[1]: HEADING_1 
+    Style[2]: HEADING_2 
+    Style[3]: HEADING_3 
+    Style[4]: HEADING_4 
+    Style[5]: HEADING_5 
+    Style[6]: HEADING_6 
+    Style[7]: TITLE 
+    Style[8]: SUBTITLE 
+
+****************** Document Style **************************
+Height: 792.000000 PT  Width 612.000000 PT
+margin top: 72.000000 PT 
+margin right: 72.000000 PT 
+margin bottom: 72.000000 PT 
+margin left: 56.692913 PT 
+
+******************** Body *********************************
+*** Body - Number of Elements: 34 ***
+*** Body - Element Summary ***
+  Paragraphs:  30
+  Lists:        0
+  Sections:     4
+  Tables:       0
+  TOC:          0
+*** Body - Element Detail ***
+   element: 0  type: Section Break StartIndex: 0 EndIndex: 1
+   element: 1  type: Paragraph StartIndex: 1 EndIndex: 880
+   element: 2  type: Paragraph StartIndex: 880 EndIndex: 1342
+   element: 3  type: Paragraph StartIndex: 1342 EndIndex: 1926
+   element: 4  type: Paragraph StartIndex: 1926 EndIndex: 2696
+   element: 5  type: Paragraph StartIndex: 2696 EndIndex: 3472
+   element: 6  type: Paragraph StartIndex: 3472 EndIndex: 3473
+   element: 7  type: Section Break StartIndex: 3473 EndIndex: 3474
+   element: 8  type: Paragraph StartIndex: 3474 EndIndex: 3789
+   element: 9  type: Paragraph StartIndex: 3789 EndIndex: 4369
+   element: 10  type: Paragraph StartIndex: 4369 EndIndex: 4954
+   element: 11  type: Paragraph StartIndex: 4954 EndIndex: 5774
+   element: 12  type: Paragraph StartIndex: 5774 EndIndex: 6346
+   element: 13  type: Paragraph StartIndex: 6346 EndIndex: 6993
+   element: 14  type: Paragraph StartIndex: 6993 EndIndex: 6994
+   element: 15  type: Section Break StartIndex: 6994 EndIndex: 6995
+   element: 16  type: Paragraph StartIndex: 6995 EndIndex: 7344
+   element: 17  type: Paragraph StartIndex: 7344 EndIndex: 8035
+   element: 18  type: Paragraph StartIndex: 8035 EndIndex: 8927
+   element: 19  type: Paragraph StartIndex: 8927 EndIndex: 9393
+   element: 20  type: Paragraph StartIndex: 9393 EndIndex: 10045
+   element: 21  type: Paragraph StartIndex: 10045 EndIndex: 10714
+   element: 22  type: Paragraph StartIndex: 10714 EndIndex: 10715
+   element: 23  type: Section Break StartIndex: 10715 EndIndex: 10716
+   element: 24  type: Paragraph StartIndex: 10716 EndIndex: 11157
+   element: 25  type: Paragraph StartIndex: 11157 EndIndex: 11628
+   element: 26  type: Paragraph StartIndex: 11628 EndIndex: 12446
+   element: 27  type: Paragraph StartIndex: 12446 EndIndex: 13363
+   element: 28  type: Paragraph StartIndex: 13363 EndIndex: 13364
+   element: 29  type: Paragraph StartIndex: 13364 EndIndex: 13707
+   element: 30  type: Paragraph StartIndex: 13707 EndIndex: 13708
+   element: 31  type: Paragraph StartIndex: 13708 EndIndex: 14054
+   element: 32  type: Paragraph StartIndex: 14054 EndIndex: 14055
+   element: 33  type: Paragraph StartIndex: 14055 EndIndex: 14258
+
+
+********************** Details *********************
+
+*** Body - Elements: 34 ***
+
+ element: 0  type: Section Break StartIndex: 0 EndIndex: 1
+*** Section Style ***
+SectionType:          CONTINUOUS
+ Column Properties: 0  Column Separador:     NONE
+  Default Header Id:    
+  Default Footer Id:    
+  Even Page Header Id:  
+  Even Page Footer Id:  
+  First Page Header Id: 
+  First Page Footer Id: 
+  Page Number Start:     0 
+  Use First Page H/F:   false 
+  *** Section Margins ***
+
+ element: 1  type: Paragraph StartIndex: 1 EndIndex: 880
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 1 - 880 :     "Lorem ipsum dolor si ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 2  type: Paragraph StartIndex: 880 EndIndex: 1342
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 880 - 1342 :     "Phasellus suscipit l ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 3  type: Paragraph StartIndex: 1342 EndIndex: 1926
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 1342 - 1926 :     "Vestibulum rutrum ar ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 4  type: Paragraph StartIndex: 1926 EndIndex: 2696
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 1926 - 2696 :     "Etiam finibus orci a ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 5  type: Paragraph StartIndex: 2696 EndIndex: 3472
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 2696 - 3472 :     "Lorem ipsum dolor si ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 6  type: Paragraph StartIndex: 3472 EndIndex: 3473
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 3472 - 3473 :     "" Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 7  type: Section Break StartIndex: 3473 EndIndex: 3474
+*** Section Style ***
+SectionType:          NEXT_PAGE
+ Column Properties: 0  Column Separador:     NONE
+  Default Header Id:    
+  Default Footer Id:    
+  Even Page Header Id:  
+  Even Page Footer Id:  
+  First Page Header Id: 
+  First Page Footer Id: 
+  Page Number Start:     0 
+  Use First Page H/F:   false 
+  *** Section Margins ***
+
+ element: 8  type: Paragraph StartIndex: 3474 EndIndex: 3789
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 3474 - 3789 :     "Nulla nibh dui, vehi ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 9  type: Paragraph StartIndex: 3789 EndIndex: 4369
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 3789 - 4369 :     "Suspendisse feugiat  ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 10  type: Paragraph StartIndex: 4369 EndIndex: 4954
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 4369 - 4954 :     "Nunc eget elit urna. ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 11  type: Paragraph StartIndex: 4954 EndIndex: 5774
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 4954 - 5774 :     "In at fringilla risu ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 12  type: Paragraph StartIndex: 5774 EndIndex: 6346
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 5774 - 6346 :     "In quis elit nec eni ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 13  type: Paragraph StartIndex: 6346 EndIndex: 6993
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 6346 - 6993 :     "Donec condimentum cu ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 14  type: Paragraph StartIndex: 6993 EndIndex: 6994
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 6993 - 6994 :     "" Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 15  type: Section Break StartIndex: 6994 EndIndex: 6995
+*** Section Style ***
+SectionType:          NEXT_PAGE
+ Column Properties: 0  Column Separador:     NONE
+  Default Header Id:    
+  Default Footer Id:    
+  Even Page Header Id:  
+  Even Page Footer Id:  
+  First Page Header Id: 
+  First Page Footer Id: 
+  Page Number Start:     0 
+  Use First Page H/F:   false 
+  *** Section Margins ***
+
+ element: 16  type: Paragraph StartIndex: 6995 EndIndex: 7344
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 6995 - 7344 :     "Cras tristique sapie ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 17  type: Paragraph StartIndex: 7344 EndIndex: 8035
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 7344 - 8035 :     "Mauris commodo ullam ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 18  type: Paragraph StartIndex: 8035 EndIndex: 8927
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 8035 - 8927 :     "Quisque elit libero, ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 19  type: Paragraph StartIndex: 8927 EndIndex: 9393
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 8927 - 9393 :     "Praesent tincidunt n ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 20  type: Paragraph StartIndex: 9393 EndIndex: 10045
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 9393 - 10045 :     "Nam euismod orci id  ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 21  type: Paragraph StartIndex: 10045 EndIndex: 10714
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 10045 - 10714 :     "Quisque ornare egest ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 22  type: Paragraph StartIndex: 10714 EndIndex: 10715
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 10714 - 10715 :     "" Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 23  type: Section Break StartIndex: 10715 EndIndex: 10716
+*** Section Style ***
+SectionType:          NEXT_PAGE
+ Column Properties: 0  Column Separador:     NONE
+  Default Header Id:    
+  Default Footer Id:    
+  Even Page Header Id:  
+  Even Page Footer Id:  
+  First Page Header Id: 
+  First Page Footer Id: 
+  Page Number Start:     0 
+  Use First Page H/F:   false 
+  *** Section Margins ***
+
+ element: 24  type: Paragraph StartIndex: 10716 EndIndex: 11157
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 10716 - 11157 :     "Vivamus commodo auct ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 25  type: Paragraph StartIndex: 11157 EndIndex: 11628
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 11157 - 11628 :     "Fusce interdum felis ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 26  type: Paragraph StartIndex: 11628 EndIndex: 12446
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 11628 - 12446 :     "Nunc aliquam leo lac ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 27  type: Paragraph StartIndex: 12446 EndIndex: 13363
+ *** Paragraph with 5 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+
+  *** Paragraph Elements: 5 ***
+  Par-El[0]: 12446 - 12458 :     "Lorem ipsum " Last Char: " "
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+  Par-El[1]: 12458 - 12470 :     "First Insert" Last Char: "t"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+  Par-El[2]: 12470 - 13129 :     " dolor sit amet, con ..." Last Char: " "
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+  Par-El[3]: 13129 - 13142 :     "Second Insert" Last Char: "t"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+  Par-El[4]: 13142 - 13363 :     " imperdiet neque. Ut ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 28  type: Paragraph StartIndex: 13363 EndIndex: 13364
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 13363 - 13364 :     "" Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 29  type: Paragraph StartIndex: 13364 EndIndex: 13707
+ *** Paragraph with 3 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+
+  *** Paragraph Elements: 3 ***
+  Par-El[0]: 13364 - 13376 :     "Lorem ipsum " Last Char: " "
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+  Par-El[1]: 13376 - 13381 :     "dolor" Last Char: "r"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+  Par-El[2]: 13381 - 13707 :     " sit amet, consectet ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 30  type: Paragraph StartIndex: 13707 EndIndex: 13708
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 13707 - 13708 :     "" Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 31  type: Paragraph StartIndex: 13708 EndIndex: 14054
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 13708 - 14054 :     "Cras tempor consecte ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 32  type: Paragraph StartIndex: 14054 EndIndex: 14055
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 14054 - 14055 :     "" Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 33  type: Paragraph StartIndex: 14055 EndIndex: 14258
+ *** Paragraph with 2 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+
+  *** Paragraph Elements: 2 ***
+  Par-El[0]: 14055 - 14257 :     "Ut ipsum dolor, faci ..." Last Char: "."
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+  Par-El[1]: 14257 - 14258 :     "" Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+*** Lists (Detail): 10 ***
+
+List [1]: id: kix.4512qe0q5l8 nest levels: 9
+  Nesting Levels: 9
+ NL: 0 Start: 1 Indent 36.00 First Line 18.00
+   Bullet Alignment: START 
+   Glyph Format:     %0 
+   GlyphSymbol:      ● 9679 3
+   GlyphType:         
+    *** has text style ***
+ NL: 1 Start: 1 Indent 72.00 First Line 54.00
+   Bullet Alignment: START 
+   Glyph Format:     %1 
+   GlyphSymbol:      ○ 9675 3
+   GlyphType:         
+    *** has text style ***
+ NL: 2 Start: 1 Indent 108.00 First Line 90.00
+   Bullet Alignment: START 
+   Glyph Format:     %2 
+   GlyphSymbol:      ■ 9632 3
+   GlyphType:         
+    *** has text style ***
+ NL: 3 Start: 1 Indent 144.00 First Line 126.00
+   Bullet Alignment: START 
+   Glyph Format:     %3 
+   GlyphSymbol:      ● 9679 3
+   GlyphType:         
+    *** has text style ***
+ NL: 4 Start: 1 Indent 180.00 First Line 162.00
+   Bullet Alignment: START 
+   Glyph Format:     %4 
+   GlyphSymbol:      ○ 9675 3
+   GlyphType:         
+    *** has text style ***
+ NL: 5 Start: 1 Indent 216.00 First Line 198.00
+   Bullet Alignment: START 
+   Glyph Format:     %5 
+   GlyphSymbol:      ■ 9632 3
+   GlyphType:         
+    *** has text style ***
+ NL: 6 Start: 1 Indent 252.00 First Line 234.00
+   Bullet Alignment: START 
+   Glyph Format:     %6 
+   GlyphSymbol:      ● 9679 3
+   GlyphType:         
+    *** has text style ***
+ NL: 7 Start: 1 Indent 288.00 First Line 270.00
+   Bullet Alignment: START 
+   Glyph Format:     %7 
+   GlyphSymbol:      ○ 9675 3
+   GlyphType:         
+    *** has text style ***
+ NL: 8 Start: 1 Indent 324.00 First Line 306.00
+   Bullet Alignment: START 
+   Glyph Format:     %8 
+   GlyphSymbol:      ■ 9632 3
+   GlyphType:         
+    *** has text style ***
+
+List [2]: id: kix.66qj6pqoe4jt nest levels: 9
+  Nesting Levels: 9
+ NL: 0 Start: 1 Indent 36.00 First Line 18.00
+   Bullet Alignment: START 
+   Glyph Format:     %0. 
+   GlyphSymbol:       65533 0
+   GlyphType:        UPPER_ALPHA 
+    *** has text style ***
+ NL: 1 Start: 1 Indent 72.00 First Line 54.00
+   Bullet Alignment: START 
+   Glyph Format:     %1. 
+   GlyphSymbol:       65533 0
+   GlyphType:        ALPHA 
+    *** has text style ***
+ NL: 2 Start: 1 Indent 108.00 First Line 90.00
+   Bullet Alignment: END 
+   Glyph Format:     %2. 
+   GlyphSymbol:       65533 0
+   GlyphType:        ROMAN 
+    *** has text style ***
+ NL: 3 Start: 1 Indent 144.00 First Line 126.00
+   Bullet Alignment: START 
+   Glyph Format:     %3. 
+   GlyphSymbol:       65533 0
+   GlyphType:        DECIMAL 
+    *** has text style ***
+ NL: 4 Start: 1 Indent 180.00 First Line 162.00
+   Bullet Alignment: START 
+   Glyph Format:     %4. 
+   GlyphSymbol:       65533 0
+   GlyphType:        ALPHA 
+    *** has text style ***
+ NL: 5 Start: 1 Indent 216.00 First Line 198.00
+   Bullet Alignment: END 
+   Glyph Format:     %5. 
+   GlyphSymbol:       65533 0
+   GlyphType:        ROMAN 
+    *** has text style ***
+ NL: 6 Start: 1 Indent 252.00 First Line 234.00
+   Bullet Alignment: START 
+   Glyph Format:     %6. 
+   GlyphSymbol:       65533 0
+   GlyphType:        DECIMAL 
+    *** has text style ***
+ NL: 7 Start: 1 Indent 288.00 First Line 270.00
+   Bullet Alignment: START 
+   Glyph Format:     %7. 
+   GlyphSymbol:       65533 0
+   GlyphType:        ALPHA 
+    *** has text style ***
+ NL: 8 Start: 1 Indent 324.00 First Line 306.00
+   Bullet Alignment: END 
+   Glyph Format:     %8. 
+   GlyphSymbol:       65533 0
+   GlyphType:        ROMAN 
+    *** has text style ***
+
+List [3]: id: kix.clwhcph34rnz nest levels: 9
+  Nesting Levels: 9
+ NL: 0 Start: 1 Indent 36.00 First Line 18.00
+   Bullet Alignment: START 
+   Glyph Format:     %0 
+   GlyphSymbol:      ● 9679 3
+   GlyphType:         
+    *** has text style ***
+ NL: 1 Start: 1 Indent 72.00 First Line 54.00
+   Bullet Alignment: START 
+   Glyph Format:     %1 
+   GlyphSymbol:      ○ 9675 3
+   GlyphType:         
+    *** has text style ***
+ NL: 2 Start: 1 Indent 108.00 First Line 90.00
+   Bullet Alignment: START 
+   Glyph Format:     %2 
+   GlyphSymbol:      ■ 9632 3
+   GlyphType:         
+    *** has text style ***
+ NL: 3 Start: 1 Indent 144.00 First Line 126.00
+   Bullet Alignment: START 
+   Glyph Format:     %3 
+   GlyphSymbol:      ● 9679 3
+   GlyphType:         
+    *** has text style ***
+ NL: 4 Start: 1 Indent 180.00 First Line 162.00
+   Bullet Alignment: START 
+   Glyph Format:     %4 
+   GlyphSymbol:      ○ 9675 3
+   GlyphType:         
+    *** has text style ***
+ NL: 5 Start: 1 Indent 216.00 First Line 198.00
+   Bullet Alignment: START 
+   Glyph Format:     %5 
+   GlyphSymbol:      ■ 9632 3
+   GlyphType:         
+    *** has text style ***
+ NL: 6 Start: 1 Indent 252.00 First Line 234.00
+   Bullet Alignment: START 
+   Glyph Format:     %6 
+   GlyphSymbol:      ● 9679 3
+   GlyphType:         
+    *** has text style ***
+ NL: 7 Start: 1 Indent 288.00 First Line 270.00
+   Bullet Alignment: START 
+   Glyph Format:     %7 
+   GlyphSymbol:      ○ 9675 3
+   GlyphType:         
+    *** has text style ***
+ NL: 8 Start: 1 Indent 324.00 First Line 306.00
+   Bullet Alignment: START 
+   Glyph Format:     %8 
+   GlyphSymbol:      ■ 9632 3
+   GlyphType:         
+    *** has text style ***
+
+List [4]: id: kix.e6cnafk7n9fl nest levels: 9
+  Nesting Levels: 9
+ NL: 0 Start: 1 Indent 36.00 First Line 18.00
+   Bullet Alignment: START 
+   Glyph Format:     %0 
+   GlyphSymbol:      ● 9679 3
+   GlyphType:         
+    *** has text style ***
+ NL: 1 Start: 1 Indent 72.00 First Line 54.00
+   Bullet Alignment: START 
+   Glyph Format:     %1 
+   GlyphSymbol:      ○ 9675 3
+   GlyphType:         
+    *** has text style ***
+ NL: 2 Start: 1 Indent 108.00 First Line 90.00
+   Bullet Alignment: START 
+   Glyph Format:     %2 
+   GlyphSymbol:      ■ 9632 3
+   GlyphType:         
+    *** has text style ***
+ NL: 3 Start: 1 Indent 144.00 First Line 126.00
+   Bullet Alignment: START 
+   Glyph Format:     %3 
+   GlyphSymbol:      ● 9679 3
+   GlyphType:         
+    *** has text style ***
+ NL: 4 Start: 1 Indent 180.00 First Line 162.00
+   Bullet Alignment: START 
+   Glyph Format:     %4 
+   GlyphSymbol:      ○ 9675 3
+   GlyphType:         
+    *** has text style ***
+ NL: 5 Start: 1 Indent 216.00 First Line 198.00
+   Bullet Alignment: START 
+   Glyph Format:     %5 
+   GlyphSymbol:      ■ 9632 3
+   GlyphType:         
+    *** has text style ***
+ NL: 6 Start: 1 Indent 252.00 First Line 234.00
+   Bullet Alignment: START 
+   Glyph Format:     %6 
+   GlyphSymbol:      ● 9679 3
+   GlyphType:         
+    *** has text style ***
+ NL: 7 Start: 1 Indent 288.00 First Line 270.00
+   Bullet Alignment: START 
+   Glyph Format:     %7 
+   GlyphSymbol:      ○ 9675 3
+   GlyphType:         
+    *** has text style ***
+ NL: 8 Start: 1 Indent 324.00 First Line 306.00
+   Bullet Alignment: START 
+   Glyph Format:     %8 
+   GlyphSymbol:      ■ 9632 3
+   GlyphType:         
+    *** has text style ***
+
+List [5]: id: kix.n2g8wfy1n3xi nest levels: 9
+  Nesting Levels: 9
+ NL: 0 Start: 1 Indent 72.00 First Line 54.00
+   Bullet Alignment: END 
+   Glyph Format:     %0. 
+   GlyphSymbol:       65533 0
+   GlyphType:        ROMAN 
+    *** has text style ***
+ NL: 1 Start: 1 Indent 108.00 First Line 90.00
+   Bullet Alignment: START 
+   Glyph Format:     %1. 
+   GlyphSymbol:       65533 0
+   GlyphType:        ALPHA 
+    *** has text style ***
+ NL: 2 Start: 1 Indent 144.00 First Line 126.00
+   Bullet Alignment: END 
+   Glyph Format:     %2. 
+   GlyphSymbol:       65533 0
+   GlyphType:        ROMAN 
+    *** has text style ***
+ NL: 3 Start: 1 Indent 180.00 First Line 162.00
+   Bullet Alignment: START 
+   Glyph Format:     %3. 
+   GlyphSymbol:       65533 0
+   GlyphType:        DECIMAL 
+    *** has text style ***
+ NL: 4 Start: 1 Indent 216.00 First Line 198.00
+   Bullet Alignment: START 
+   Glyph Format:     %4. 
+   GlyphSymbol:       65533 0
+   GlyphType:        ALPHA 
+    *** has text style ***
+ NL: 5 Start: 1 Indent 252.00 First Line 234.00
+   Bullet Alignment: END 
+   Glyph Format:     %5. 
+   GlyphSymbol:       65533 0
+   GlyphType:        ROMAN 
+    *** has text style ***
+ NL: 6 Start: 1 Indent 288.00 First Line 270.00
+   Bullet Alignment: START 
+   Glyph Format:     %6. 
+   GlyphSymbol:       65533 0
+   GlyphType:        DECIMAL 
+    *** has text style ***
+ NL: 7 Start: 1 Indent 324.00 First Line 306.00
+   Bullet Alignment: START 
+   Glyph Format:     %7. 
+   GlyphSymbol:       65533 0
+   GlyphType:        ALPHA 
+    *** has text style ***
+ NL: 8 Start: 1 Indent 360.00 First Line 342.00
+   Bullet Alignment: END 
+   Glyph Format:     %8. 
+   GlyphSymbol:       65533 0
+   GlyphType:        ROMAN 
+    *** has text style ***
+
+List [6]: id: kix.tuf4hzpv3tzf nest levels: 9
+  Nesting Levels: 9
+ NL: 0 Start: 1 Indent 36.00 First Line 18.00
+   Bullet Alignment: END 
+   Glyph Format:     %0. 
+   GlyphSymbol:       65533 0
+   GlyphType:        DECIMAL 
+    *** has text style ***
+ NL: 1 Start: 1 Indent 72.00 First Line 54.00
+   Bullet Alignment: END 
+   Glyph Format:     %0.%1. 
+   GlyphSymbol:       65533 0
+   GlyphType:        DECIMAL 
+    *** has text style ***
+ NL: 2 Start: 1 Indent 108.00 First Line 90.00
+   Bullet Alignment: END 
+   Glyph Format:     %0.%1.%2. 
+   GlyphSymbol:       65533 0
+   GlyphType:        DECIMAL 
+    *** has text style ***
+ NL: 3 Start: 1 Indent 144.00 First Line 126.00
+   Bullet Alignment: END 
+   Glyph Format:     %0.%1.%2.%3. 
+   GlyphSymbol:       65533 0
+   GlyphType:        DECIMAL 
+    *** has text style ***
+ NL: 4 Start: 1 Indent 180.00 First Line 162.00
+   Bullet Alignment: END 
+   Glyph Format:     %0.%1.%2.%3.%4. 
+   GlyphSymbol:       65533 0
+   GlyphType:        DECIMAL 
+    *** has text style ***
+ NL: 5 Start: 1 Indent 216.00 First Line 198.00
+   Bullet Alignment: END 
+   Glyph Format:     %0.%1.%2.%3.%4.%5. 
+   GlyphSymbol:       65533 0
+   GlyphType:        DECIMAL 
+    *** has text style ***
+ NL: 6 Start: 1 Indent 252.00 First Line 234.00
+   Bullet Alignment: END 
+   Glyph Format:     %0.%1.%2.%3.%4.%5.%6. 
+   GlyphSymbol:       65533 0
+   GlyphType:        DECIMAL 
+    *** has text style ***
+ NL: 7 Start: 1 Indent 288.00 First Line 270.00
+   Bullet Alignment: END 
+   Glyph Format:     %0.%1.%2.%3.%4.%5.%6.%7. 
+   GlyphSymbol:       65533 0
+   GlyphType:        DECIMAL 
+    *** has text style ***
+ NL: 8 Start: 1 Indent 324.00 First Line 306.00
+   Bullet Alignment: END 
+   Glyph Format:     %0.%1.%2.%3.%4.%5.%6.%7.%8. 
+   GlyphSymbol:       65533 0
+   GlyphType:        DECIMAL 
+    *** has text style ***
+
+List [7]: id: kix.vkulnnwcyap0 nest levels: 9
+  Nesting Levels: 9
+ NL: 0 Start: 1 Indent 36.00 First Line 18.00
+   Bullet Alignment: START 
+   Glyph Format:     %0 
+   GlyphSymbol:      ● 9679 3
+   GlyphType:         
+    *** has text style ***
+ NL: 1 Start: 1 Indent 72.00 First Line 54.00
+   Bullet Alignment: START 
+   Glyph Format:     %1 
+   GlyphSymbol:      ○ 9675 3
+   GlyphType:         
+    *** has text style ***
+ NL: 2 Start: 1 Indent 108.00 First Line 90.00
+   Bullet Alignment: START 
+   Glyph Format:     %2 
+   GlyphSymbol:      ■ 9632 3
+   GlyphType:         
+    *** has text style ***
+ NL: 3 Start: 1 Indent 144.00 First Line 126.00
+   Bullet Alignment: START 
+   Glyph Format:     %3 
+   GlyphSymbol:      ● 9679 3
+   GlyphType:         
+    *** has text style ***
+ NL: 4 Start: 1 Indent 180.00 First Line 162.00
+   Bullet Alignment: START 
+   Glyph Format:     %4 
+   GlyphSymbol:      ○ 9675 3
+   GlyphType:         
+    *** has text style ***
+ NL: 5 Start: 1 Indent 216.00 First Line 198.00
+   Bullet Alignment: START 
+   Glyph Format:     %5 
+   GlyphSymbol:      ■ 9632 3
+   GlyphType:         
+    *** has text style ***
+ NL: 6 Start: 1 Indent 252.00 First Line 234.00
+   Bullet Alignment: START 
+   Glyph Format:     %6 
+   GlyphSymbol:      ● 9679 3
+   GlyphType:         
+    *** has text style ***
+ NL: 7 Start: 1 Indent 288.00 First Line 270.00
+   Bullet Alignment: START 
+   Glyph Format:     %7 
+   GlyphSymbol:      ○ 9675 3
+   GlyphType:         
+    *** has text style ***
+ NL: 8 Start: 1 Indent 324.00 First Line 306.00
+   Bullet Alignment: START 
+   Glyph Format:     %8 
+   GlyphSymbol:      ■ 9632 3
+   GlyphType:         
+    *** has text style ***
+
+List [8]: id: kix.gcxjhw38afkb nest levels: 9
+  Nesting Levels: 9
+ NL: 0 Start: 1 Indent 36.00 First Line 18.00
+   Bullet Alignment: START 
+   Glyph Format:     %0 
+   GlyphSymbol:      ● 9679 3
+   GlyphType:         
+    *** has text style ***
+ NL: 1 Start: 1 Indent 72.00 First Line 54.00
+   Bullet Alignment: START 
+   Glyph Format:     %1 
+   GlyphSymbol:      ○ 9675 3
+   GlyphType:         
+    *** has text style ***
+ NL: 2 Start: 1 Indent 108.00 First Line 90.00
+   Bullet Alignment: START 
+   Glyph Format:     %2 
+   GlyphSymbol:      ■ 9632 3
+   GlyphType:         
+    *** has text style ***
+ NL: 3 Start: 1 Indent 144.00 First Line 126.00
+   Bullet Alignment: START 
+   Glyph Format:     %3 
+   GlyphSymbol:      ● 9679 3
+   GlyphType:         
+    *** has text style ***
+ NL: 4 Start: 1 Indent 180.00 First Line 162.00
+   Bullet Alignment: START 
+   Glyph Format:     %4 
+   GlyphSymbol:      ○ 9675 3
+   GlyphType:         
+    *** has text style ***
+ NL: 5 Start: 1 Indent 216.00 First Line 198.00
+   Bullet Alignment: START 
+   Glyph Format:     %5 
+   GlyphSymbol:      ■ 9632 3
+   GlyphType:         
+    *** has text style ***
+ NL: 6 Start: 1 Indent 252.00 First Line 234.00
+   Bullet Alignment: START 
+   Glyph Format:     %6 
+   GlyphSymbol:      ● 9679 3
+   GlyphType:         
+    *** has text style ***
+ NL: 7 Start: 1 Indent 288.00 First Line 270.00
+   Bullet Alignment: START 
+   Glyph Format:     %7 
+   GlyphSymbol:      ○ 9675 3
+   GlyphType:         
+    *** has text style ***
+ NL: 8 Start: 1 Indent 324.00 First Line 306.00
+   Bullet Alignment: START 
+   Glyph Format:     %8 
+   GlyphSymbol:      ■ 9632 3
+   GlyphType:         
+    *** has text style ***
+
+List [9]: id: kix.j0du39mxa9yu nest levels: 9
+  Nesting Levels: 9
+ NL: 0 Start: 1 Indent 36.00 First Line 18.00
+   Bullet Alignment: START 
+   Glyph Format:     %0 
+   GlyphSymbol:      ● 9679 3
+   GlyphType:         
+    *** has text style ***
+ NL: 1 Start: 1 Indent 72.00 First Line 54.00
+   Bullet Alignment: START 
+   Glyph Format:     %1 
+   GlyphSymbol:      ○ 9675 3
+   GlyphType:         
+    *** has text style ***
+ NL: 2 Start: 1 Indent 108.00 First Line 90.00
+   Bullet Alignment: START 
+   Glyph Format:     %2 
+   GlyphSymbol:      ■ 9632 3
+   GlyphType:         
+    *** has text style ***
+ NL: 3 Start: 1 Indent 144.00 First Line 126.00
+   Bullet Alignment: START 
+   Glyph Format:     %3 
+   GlyphSymbol:      ● 9679 3
+   GlyphType:         
+    *** has text style ***
+ NL: 4 Start: 1 Indent 180.00 First Line 162.00
+   Bullet Alignment: START 
+   Glyph Format:     %4 
+   GlyphSymbol:      ○ 9675 3
+   GlyphType:         
+    *** has text style ***
+ NL: 5 Start: 1 Indent 216.00 First Line 198.00
+   Bullet Alignment: START 
+   Glyph Format:     %5 
+   GlyphSymbol:      ■ 9632 3
+   GlyphType:         
+    *** has text style ***
+ NL: 6 Start: 1 Indent 252.00 First Line 234.00
+   Bullet Alignment: START 
+   Glyph Format:     %6 
+   GlyphSymbol:      ● 9679 3
+   GlyphType:         
+    *** has text style ***
+ NL: 7 Start: 1 Indent 288.00 First Line 270.00
+   Bullet Alignment: START 
+   Glyph Format:     %7 
+   GlyphSymbol:      ○ 9675 3
+   GlyphType:         
+    *** has text style ***
+ NL: 8 Start: 1 Indent 324.00 First Line 306.00
+   Bullet Alignment: START 
+   Glyph Format:     %8 
+   GlyphSymbol:      ■ 9632 3
+   GlyphType:         
+    *** has text style ***
+
+List [10]: id: kix.vwtjnyn3jmdk nest levels: 9
+  Nesting Levels: 9
+ NL: 0 Start: 1 Indent 36.00 First Line 18.00
+   Bullet Alignment: START 
+   Glyph Format:     %0 
+   GlyphSymbol:      ● 9679 3
+   GlyphType:         
+    *** has text style ***
+ NL: 1 Start: 1 Indent 72.00 First Line 54.00
+   Bullet Alignment: START 
+   Glyph Format:     %1 
+   GlyphSymbol:      ○ 9675 3
+   GlyphType:         
+    *** has text style ***
+ NL: 2 Start: 1 Indent 108.00 First Line 90.00
+   Bullet Alignment: START 
+   Glyph Format:     %2 
+   GlyphSymbol:      ■ 9632 3
+   GlyphType:         
+    *** has text style ***
+ NL: 3 Start: 1 Indent 144.00 First Line 126.00
+   Bullet Alignment: START 
+   Glyph Format:     %3 
+   GlyphSymbol:      ● 9679 3
+   GlyphType:         
+    *** has text style ***
+ NL: 4 Start: 1 Indent 180.00 First Line 162.00
+   Bullet Alignment: START 
+   Glyph Format:     %4 
+   GlyphSymbol:      ○ 9675 3
+   GlyphType:         
+    *** has text style ***
+ NL: 5 Start: 1 Indent 216.00 First Line 198.00
+   Bullet Alignment: START 
+   Glyph Format:     %5 
+   GlyphSymbol:      ■ 9632 3
+   GlyphType:         
+    *** has text style ***
+ NL: 6 Start: 1 Indent 252.00 First Line 234.00
+   Bullet Alignment: START 
+   Glyph Format:     %6 
+   GlyphSymbol:      ● 9679 3
+   GlyphType:         
+    *** has text style ***
+ NL: 7 Start: 1 Indent 288.00 First Line 270.00
+   Bullet Alignment: START 
+   Glyph Format:     %7 
+   GlyphSymbol:      ○ 9675 3
+   GlyphType:         
+    *** has text style ***
+ NL: 8 Start: 1 Indent 324.00 First Line 306.00
+   Bullet Alignment: START 
+   Glyph Format:     %8 
+   GlyphSymbol:      ■ 9632 3
+   GlyphType:         
+    *** has text style ***
+
+
+*** Named Styles ***
+document named styles: 9 
+
+style[0]: NORMAL_TEXT 
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  START 
+      Direction: LEFT_TO_RIGHT 
+      Line Spacing: 1.15 
+      Keep Lines together: false 
+      Keep With Next:      false 
+      Indent First Line: 0.000000 PT
+      Indent Start:      0.000000 PT
+      Indent End:        0.000000 PT
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+    *** Text Style ***
+        BaseLine Offset: NONE
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Calibri 400
+        Font Size: 11.000000 PT
+         foreground-color: rgb(0, 0, 0);
+
+
+style[1]: HEADING_1 
+    *** Paragraph Style ***
+      Heading Id:  h.t5khri47w5lf 
+      Named Style: HEADING_1 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: true 
+      Keep With Next:      true 
+    *** Text Style ***
+        Bold:      true
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Calibri 400
+        Font Size: 12.000000 PT
+
+style[2]: HEADING_2 
+    *** Paragraph Style ***
+      Heading Id:  h.kwmfhajxx5yr 
+      Named Style: HEADING_2 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: true 
+      Keep With Next:      true 
+    *** Text Style ***
+        Bold:      true
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font Size: 12.000000 PT
+
+style[3]: HEADING_3 
+    *** Paragraph Style ***
+      Heading Id:  h.i26rhue3pyp 
+      Named Style: HEADING_3 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: true 
+      Keep With Next:      true 
+    *** Text Style ***
+        Bold:      true
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+         foreground-color: rgb(67, 67, 67);
+
+
+style[4]: HEADING_4 
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: true 
+      Keep With Next:      true 
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font Size: 12.000000 PT
+         foreground-color: rgb(102, 102, 102);
+
+
+style[5]: HEADING_5 
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: true 
+      Keep With Next:      true 
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font Size: 11.000000 PT
+         foreground-color: rgb(102, 102, 102);
+
+
+style[6]: HEADING_6 
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: true 
+      Keep With Next:      true 
+    *** Text Style ***
+        Bold:      false
+        Italic:    true
+        Underline: false
+        strike through: false
+        small caps: false
+        Font Size: 11.000000 PT
+         foreground-color: rgb(102, 102, 102);
+
+
+style[7]: TITLE 
+    *** Paragraph Style ***
+      Heading Id:  h.1kcbf03imin1 
+      Named Style: TITLE 
+      Alignment:  CENTER 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: true 
+      Keep With Next:      true 
+    *** Text Style ***
+        Bold:      true
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font Size: 14.000000 PT
+
+style[8]: SUBTITLE 
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: true 
+      Keep With Next:      true 
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 15.000000 PT
+         foreground-color: rgb(102, 102, 102);
+
+
+******************** Body *********************************
+Body - Number of Elements: 34
+
+ element: 0  type: Section Break StartIndex: 0 EndIndex: 1
+*** Section Style ***
+SectionType:          CONTINUOUS
+ Column Properties: 0  Column Separador:     NONE
+  Default Header Id:    
+  Default Footer Id:    
+  Even Page Header Id:  
+  Even Page Footer Id:  
+  First Page Header Id: 
+  First Page Footer Id: 
+  Page Number Start:     0 
+  Use First Page H/F:   false 
+  *** Section Margins ***
+
+ element: 1  type: Paragraph StartIndex: 1 EndIndex: 880
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 1 - 880 :     "Lorem ipsum dolor si ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 2  type: Paragraph StartIndex: 880 EndIndex: 1342
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 880 - 1342 :     "Phasellus suscipit l ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 3  type: Paragraph StartIndex: 1342 EndIndex: 1926
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 1342 - 1926 :     "Vestibulum rutrum ar ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 4  type: Paragraph StartIndex: 1926 EndIndex: 2696
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 1926 - 2696 :     "Etiam finibus orci a ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 5  type: Paragraph StartIndex: 2696 EndIndex: 3472
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 2696 - 3472 :     "Lorem ipsum dolor si ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 6  type: Paragraph StartIndex: 3472 EndIndex: 3473
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 3472 - 3473 :     "" Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 7  type: Section Break StartIndex: 3473 EndIndex: 3474
+*** Section Style ***
+SectionType:          NEXT_PAGE
+ Column Properties: 0  Column Separador:     NONE
+  Default Header Id:    
+  Default Footer Id:    
+  Even Page Header Id:  
+  Even Page Footer Id:  
+  First Page Header Id: 
+  First Page Footer Id: 
+  Page Number Start:     0 
+  Use First Page H/F:   false 
+  *** Section Margins ***
+
+ element: 8  type: Paragraph StartIndex: 3474 EndIndex: 3789
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 3474 - 3789 :     "Nulla nibh dui, vehi ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 9  type: Paragraph StartIndex: 3789 EndIndex: 4369
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 3789 - 4369 :     "Suspendisse feugiat  ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 10  type: Paragraph StartIndex: 4369 EndIndex: 4954
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 4369 - 4954 :     "Nunc eget elit urna. ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 11  type: Paragraph StartIndex: 4954 EndIndex: 5774
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 4954 - 5774 :     "In at fringilla risu ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 12  type: Paragraph StartIndex: 5774 EndIndex: 6346
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 5774 - 6346 :     "In quis elit nec eni ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 13  type: Paragraph StartIndex: 6346 EndIndex: 6993
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 6346 - 6993 :     "Donec condimentum cu ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 14  type: Paragraph StartIndex: 6993 EndIndex: 6994
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 6993 - 6994 :     "" Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 15  type: Section Break StartIndex: 6994 EndIndex: 6995
+*** Section Style ***
+SectionType:          NEXT_PAGE
+ Column Properties: 0  Column Separador:     NONE
+  Default Header Id:    
+  Default Footer Id:    
+  Even Page Header Id:  
+  Even Page Footer Id:  
+  First Page Header Id: 
+  First Page Footer Id: 
+  Page Number Start:     0 
+  Use First Page H/F:   false 
+  *** Section Margins ***
+
+ element: 16  type: Paragraph StartIndex: 6995 EndIndex: 7344
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 6995 - 7344 :     "Cras tristique sapie ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 17  type: Paragraph StartIndex: 7344 EndIndex: 8035
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 7344 - 8035 :     "Mauris commodo ullam ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 18  type: Paragraph StartIndex: 8035 EndIndex: 8927
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 8035 - 8927 :     "Quisque elit libero, ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 19  type: Paragraph StartIndex: 8927 EndIndex: 9393
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 8927 - 9393 :     "Praesent tincidunt n ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 20  type: Paragraph StartIndex: 9393 EndIndex: 10045
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 9393 - 10045 :     "Nam euismod orci id  ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 21  type: Paragraph StartIndex: 10045 EndIndex: 10714
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 10045 - 10714 :     "Quisque ornare egest ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 22  type: Paragraph StartIndex: 10714 EndIndex: 10715
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 10714 - 10715 :     "" Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 23  type: Section Break StartIndex: 10715 EndIndex: 10716
+*** Section Style ***
+SectionType:          NEXT_PAGE
+ Column Properties: 0  Column Separador:     NONE
+  Default Header Id:    
+  Default Footer Id:    
+  Even Page Header Id:  
+  Even Page Footer Id:  
+  First Page Header Id: 
+  First Page Footer Id: 
+  Page Number Start:     0 
+  Use First Page H/F:   false 
+  *** Section Margins ***
+
+ element: 24  type: Paragraph StartIndex: 10716 EndIndex: 11157
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 10716 - 11157 :     "Vivamus commodo auct ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 25  type: Paragraph StartIndex: 11157 EndIndex: 11628
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 11157 - 11628 :     "Fusce interdum felis ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 26  type: Paragraph StartIndex: 11628 EndIndex: 12446
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Alignment:  JUSTIFIED 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+     Shading background-color: rgb(255, 255, 255);
+      *** Border Between ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Top ***
+             Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Right ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Bottom ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+      *** Border Left ***
+            Border Style:   SOLID
+        Border Width:   0.0 PT
+        Border Padding: 0.0 PT
+
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 11628 - 12446 :     "Nunc aliquam leo lac ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+        Font : Arial 400
+        Font Size: 10.500000 PT
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 27  type: Paragraph StartIndex: 12446 EndIndex: 13363
+ *** Paragraph with 5 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+
+  *** Paragraph Elements: 5 ***
+  Par-El[0]: 12446 - 12458 :     "Lorem ipsum " Last Char: " "
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+  Par-El[1]: 12458 - 12470 :     "First Insert" Last Char: "t"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+  Par-El[2]: 12470 - 13129 :     " dolor sit amet, con ..." Last Char: " "
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+  Par-El[3]: 13129 - 13142 :     "Second Insert" Last Char: "t"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+  Par-El[4]: 13142 - 13363 :     " imperdiet neque. Ut ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 28  type: Paragraph StartIndex: 13363 EndIndex: 13364
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 13363 - 13364 :     "" Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 29  type: Paragraph StartIndex: 13364 EndIndex: 13707
+ *** Paragraph with 3 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+
+  *** Paragraph Elements: 3 ***
+  Par-El[0]: 13364 - 13376 :     "Lorem ipsum " Last Char: " "
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+  Par-El[1]: 13376 - 13381 :     "dolor" Last Char: "r"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+  Par-El[2]: 13381 - 13707 :     " sit amet, consectet ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 30  type: Paragraph StartIndex: 13707 EndIndex: 13708
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 13707 - 13708 :     "" Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 31  type: Paragraph StartIndex: 13708 EndIndex: 14054
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 13708 - 14054 :     "Cras tempor consecte ..." Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 32  type: Paragraph StartIndex: 14054 EndIndex: 14055
+ *** Paragraph with 1 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+
+  *** Paragraph Elements: 1 ***
+  Par-El[0]: 14054 - 14055 :     "" Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+
+ element: 33  type: Paragraph StartIndex: 14055 EndIndex: 14258
+ *** Paragraph with 2 Sub-Elements ***
+    *** Paragraph Style ***
+      Heading Id:   
+      Named Style: NORMAL_TEXT 
+      Direction: LEFT_TO_RIGHT 
+      Keep Lines together: false 
+      Keep With Next:      false 
+
+  *** Paragraph Elements: 2 ***
+  Par-El[0]: 14055 - 14257 :     "Ut ipsum dolor, faci ..." Last Char: "."
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
+  Par-El[1]: 14257 - 14258 :     "" Last Char: "\n"
+    *** Text Style ***
+        Bold:      false
+        Italic:    false
+        Underline: false
+        strike through: false
+        small caps: false
+    *** no Column Break ***
+    *** no Inline Object ***
+    *** no Person ***
+    *** no Rich Text ***
+    *** no Page Break ***
+    *** no AutoText ***
+    *** no Equation ***
+    *** no Horizontal Rule ***
+    *** no Footnote Reference ***
