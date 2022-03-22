@@ -72,30 +72,29 @@ type GdocHtmlObj struct {
 	h4 namStyl
 	h5 namStyl
 	h6 namStyl
-	pnorm namStyl
-	hasList bool
     spanCount int
+//	pnorm namStyl
+	hasList bool
 //    subDivCount int
-	numLists int
+	listCount int
     lists *[]listObj
 	listCssStr string
-	numHeaders int
-	headers *[]string
     cNestLev int64
     cListOr bool
 	cListId string
-	fontSize float64
-	fontFamily string
-	fontWeight int64
+	numHeaders int
+	headers *[]string
+	headCount int
+	secCount int
+	elCount int
+	ftNoteCount int
 	inImgCount int
 	posImgCount int
-	numFootNotes int
-	df_ls float64
-	Options *OptObj
+//	df_ls float64
 	folder *os.File
     imgFoldNam string
     imgFoldPath string
-//    imgFoldId string
+	Options *OptObj
 }
 
 type OptObj struct {
@@ -103,6 +102,7 @@ type OptObj struct {
 	ImgFold bool
     Verb bool
 	Toc bool
+	multDiv bool
 	DivBorders bool
 }
 
@@ -879,7 +879,7 @@ func (dObj *GdocHtmlObj) findListIndex (listId string) (listIdx int, err error) 
 	}
 
 	listIdx = -1
-	for i:=0; i< dObj.numLists; i++ {
+	for i:=0; i< dObj.listCount; i++ {
 		if (*dObj.lists)[i].Id == listId {
 			listIdx = i
 			break
@@ -948,34 +948,34 @@ func (dObj *GdocHtmlObj) InitGdocHtmlLib (doc *docs.Document, opt *OptObj) (err 
 	dObj.h6.exist = false
 	dObj.hasList = false
 
-/*
-// initialise named styles
-	namStyl := doc.NamedStyles
-	namStylNum := -1
+// section breaks
+	dObj.elCount = len(doc.Body.Content)
+	dObj.secCount = 0
+	dObj.ftNoteCount = 0
 
-// find normal style first
-	for istyl:=0; istyl<len(namStyl.Styles); istyl++ {
-		if namStyl.Styles[istyl].NamedStyleType == "NORMAL_TEXT" {
-			namStylNum = istyl
-			normStyl = namStyl.Styles[istyl]
-			break
+	for el:=0; el<dObj.elCount; el++ {
+		elObj:= doc.Body.Content[el]
+		if elObj.SectionBreak != nil {
+			if elObj.SectionBreak.SectionStyle.SectionType == "NEXT_PAGE" {dObj.secCount++}
+		}
+		if elObj.Paragraph != nil {
+			for parEl:=0; parEl<len(elObj.Paragraph.Elements); parEl++ {
+				parElObj := elObj.Paragraph.Elements[parEl]
+				if parElObj.FootnoteReference != nil {dObj.ftNoteCount++}
+			}
 		}
 	}
-
-	if namStylNum < 0 {
-		return fmt.Errorf("error gdoc Init -- no NORMAL_TEXT style!")
-	}
-*/
 
 // list initalisation
 // need to separate ordered and unordered lists
 
-	dObj.numLists = len(doc.Lists)
+	dObj.listCount = len(doc.Lists)
 	il := 0
-	dlists := make([]listObj,len(doc.Lists))
+	dlists := make([]listObj,dObj.listCount)
 	dObj.lists = &dlists
 	for idstr, list := range doc.Lists {
 		dlists[il].Id = idstr
+
 		numNestLev := len(list.ListProperties.NestingLevels)
 		dlists[il].numNestLev = numNestLev
 
@@ -994,19 +994,14 @@ func (dObj *GdocHtmlObj) InitGdocHtmlLib (doc *docs.Document, opt *OptObj) (err 
 					ord = true
 				case "ZERO_DECIMAL":
 					ord = true
-
 				case "UPPER_ALPHA":
 					ord = true
-
 				case "ALPHA":
 					ord = true
-
 				case "UPPER_ROMAN":
 					ord = true
-
 				case "ROMAN":
 					ord = true
-
 				default:
 					ord = false
 			}
@@ -1942,7 +1937,7 @@ func (dObj *GdocHtmlObj) cvtParStylCss(parStyl *docs.ParagraphStyle)(cssStr stri
 	}
 
 // need to investigate
-	if parStyl.LineSpacing > 0 && parStyl.LineSpacing > dObj.df_ls {
+	if parStyl.LineSpacing > 0 {
 		ls := parStyl.LineSpacing
 		tcssStr += fmt.Sprintf("  line-height: %.2f;\n", ls/100.0)
 	}
@@ -2000,8 +1995,6 @@ func (dObj *GdocHtmlObj) cvtTxtStylCss(txtStyl *docs.TextStyle, head bool)(cssSt
 	if txtStyl.FontSize != nil {
 		mag := txtStyl.FontSize.Magnitude
 		tcssStr += fmt.Sprintf("  font-size: %.2fpt;\n", mag)
-	} else {
-		if head {tcssStr += fmt.Sprintf("  font-size: %.2fpt;\n", dObj.fontSize)}
 	}
 	if txtStyl.ForegroundColor != nil {
 		if txtStyl.ForegroundColor.Color != nil {
