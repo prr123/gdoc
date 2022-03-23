@@ -509,32 +509,32 @@ func (dObj *gdocTxtObj) dispParStyl(parStyl *docs.ParagraphStyle, wsp int)(outst
 		}
 	}
 	if parStyl.BorderBetween != nil {
-		outstr += wspStr + "  *** Border Between ***\n "
-		outstr += wspStr + dObj.dispBorder(parStyl.BorderBetween, 4)
+		outstr += wspStr + "  *** Border Between ***\n"
+		outstr += dObj.dispBorder(parStyl.BorderBetween, 4)
 		outstr += "\n"
 	}
 
 	if parStyl.BorderTop != nil {
-		outstr += wspStr + "  *** Border Top ***\n "
-		outstr += wspStr + dObj.dispBorder(parStyl.BorderTop, 4)
+		outstr += wspStr + "  *** Border Top ***\n"
+		outstr += dObj.dispBorder(parStyl.BorderTop, 4)
 		outstr += "\n"
 	}
 
 	if parStyl.BorderRight != nil {
 		outstr += wspStr + "  *** Border Right ***\n"
-		outstr += wspStr + dObj.dispBorder(parStyl.BorderRight, 4)
+		outstr += dObj.dispBorder(parStyl.BorderRight, 4)
 		outstr += "\n"
 	}
 
 	if parStyl.BorderBottom != nil {
 		outstr += wspStr + "  *** Border Bottom ***\n"
-		outstr += wspStr + dObj.dispBorder(parStyl.BorderBottom, 4)
+		outstr += dObj.dispBorder(parStyl.BorderBottom, 4)
 		outstr += "\n"
 	}
 
 	if parStyl.BorderLeft != nil {
 		outstr += wspStr + "  *** Border Left ***\n"
-		outstr += wspStr + dObj.dispBorder(parStyl.BorderLeft, 4)
+		outstr += dObj.dispBorder(parStyl.BorderLeft, 4)
 		outstr += "\n"
 	}
 
