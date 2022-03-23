@@ -546,13 +546,13 @@ func fillParMap(parmap *parMap, parStyl *docs.ParagraphStyle)(alter bool, err er
 	}
 
 	if parStyl.Alignment != parmap.halign {
-fmt.Printf("align: %s : %s \n", parmap.halign,parStyl.Alignment)
-
-		parmap.halign = parStyl.Alignment
-		alter = true
+//fmt.Printf("align: %s : %s \n", parmap.halign,parStyl.Alignment)
+		if len(parStyl.Alignment) > 0 {
+			if !(len(parmap.halign)>0) {alter =true}
+			parmap.halign = parStyl.Alignment
+		}
 	}
 	parmap.direct = true
-fmt.Printf("fillParMap: align %t\n", alter)
 
 	if (parStyl.IndentStart != nil) {
 		if parStyl.IndentStart.Magnitude != parmap.indStart {
@@ -573,9 +573,17 @@ fmt.Printf("fillParMap: align %t\n", alter)
 		}
 	}
 
-	if parStyl.LineSpacing/100.0 != parmap.linSpac {parmap.linSpac = parStyl.LineSpacing/100.0; alter = true;}
+	if parStyl.LineSpacing/100.0 != parmap.linSpac {
+// fmt.Printf("line spacing: %.2f %.2f\n", parmap.linSpac, parStyl.LineSpacing/100.0)
+		if parStyl.LineSpacing > 1.0 {
+			parmap.linSpac = parStyl.LineSpacing/100.0
+			alter = true
+		}
+	}
+
 	if parStyl.KeepLinesTogether != parmap.keepLines {parmap.keepLines = parStyl.KeepLinesTogether; alter = true;}
 	if parStyl.KeepWithNext != parmap.keepNext {parmap.keepNext = parStyl.KeepWithNext; alter = true;}
+
 
 	if (parStyl.SpaceAbove != nil) {
 		if parStyl.SpaceAbove.Magnitude != parmap.spaceTop {
@@ -590,7 +598,16 @@ fmt.Printf("fillParMap: align %t\n", alter)
 		}
 	}
 
-	if parStyl.SpacingMode != parmap.spaceMode {parmap.spaceMode = parStyl.SpacingMode; alter = true;}
+
+	if parStyl.SpacingMode != parmap.spaceMode {
+		if (len(parStyl.SpacingMode) > 0) {
+			parmap.spaceMode = parStyl.SpacingMode
+			alter = true
+		}
+	}
+
+//fmt.Printf("fillParMap1: %t\n", alter)
+//fmt.Printf("fillParMap2: %t\n", alter)
 
 	//tabs to do
 //	parmap.hasBorders = true
@@ -603,7 +620,7 @@ fmt.Printf("fillParMap: align %t\n", alter)
 	bb = bb && (parStyl.BorderLeft == nil)
 	if bb {
 		parmap.hasBorders = false
-fmt.Printf("fillParMap: alter %t\n", alter)
+//fmt.Printf("no border return: %t\n", alter)
 		return alter, nil
 	}
 
@@ -2101,15 +2118,17 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle)(cs
 	_, err = fillParMap(parmap, namParStyl)
 	if err != nil { }
 
+//	fmt.Printf("end fillparmap new\n\n")
+
 	if parStyl == nil {
 		cssAtt = cvtParMapCss(parmap)
 	} else {
 		alter, err = fillParMap(parmap, parStyl)
 		cssAtt = cvtParMapCss(parmap)
+//	fmt.Printf("end fillparmap parstyl fill: %t\n\n", alter)
 	}
 //ppp
 //	printParMap(parmap, parStyl)
-	fmt.Printf("end fillparmap: %t\n", alter)
 	// NamedStyle Type
 	prefix = ""
 	suffix = ""
