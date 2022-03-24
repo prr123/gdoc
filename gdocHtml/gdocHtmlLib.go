@@ -582,9 +582,20 @@ func fillParMap(parmap *parMap, parStyl *docs.ParagraphStyle)(alter bool, err er
 		}
 	}
 
-	if parStyl.KeepLinesTogether != parmap.keepLines {parmap.keepLines = parStyl.KeepLinesTogether; alter = true;}
-	if parStyl.KeepWithNext != parmap.keepNext {parmap.keepNext = parStyl.KeepWithNext; alter = true;}
+	// may have to introduce an examption for title
+	if !parmap.keepLines {
+		if parStyl.KeepLinesTogether != parmap.keepLines {
+			parmap.keepLines = parStyl.KeepLinesTogether
+			alter = true
+		}
+	}
 
+	if !parmap.keepNext {
+		if parStyl.KeepWithNext != parmap.keepNext {
+			parmap.keepNext = parStyl.KeepWithNext
+			alter =true
+		}
+	}
 
 	if (parStyl.SpaceAbove != nil) {
 		if parStyl.SpaceAbove.Magnitude != parmap.spaceTop {
@@ -607,8 +618,8 @@ func fillParMap(parmap *parMap, parStyl *docs.ParagraphStyle)(alter bool, err er
 		}
 	}
 
-//fmt.Printf("fillParMap1: %t\n", alter)
-//fmt.Printf("fillParMap2: %t\n", alter)
+//fmt.Printf("fillParMap 1: %t\n", alter)
+//fmt.Printf("fillParMap 2: %t\n", alter)
 
 	//tabs to do
 //	parmap.hasBorders = true
@@ -1785,6 +1796,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 				glyphStr := dObj.convertGlyph(nestProp, listOrd)
 				idFl := nestProp.IndentFirstLine.Magnitude
 				idSt := nestProp.IndentStart.Magnitude
+				// ordered list
 				if listOrd {
 					liClaOlStr := liClaStr + fmt.Sprintf("_ol%d",nestIdx)
 					listStr +=fmt.Sprintf("<ol class=\"%s\">\n", liClaOlStr)
@@ -1800,6 +1812,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 					listCssStr += "}\n"
 					dObj.cListOr = true
 				} else {
+				// unordered list
 					liClaUlStr := liClaStr + fmt.Sprintf("_ul%d",nestIdx)
 					listStr +=fmt.Sprintf("<ul class=\"%s\">\n", liClaUlStr)
 					listCssStr += fmt.Sprintf(".%s {\n", liClaUlStr)
@@ -1920,98 +1933,8 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 // we need to redo
 	// Heading Id refers to a page heading
 	if len(par.ParagraphStyle.HeadingId) > 0 {
-		parHtmlStr += fmt.Sprintf("<!-- Heading Id: %s -->\n", par.ParagraphStyle.HeadingId)
+		parHtmlStr += fmt.Sprintf("\n<!-- Heading Id: %s -->\n", par.ParagraphStyle.HeadingId)
 	}
-
-/*
-	switch par.ParagraphStyle.NamedStyleType {
-        case "TITLE":
-			parIdStr = fmt.Sprintf("%s_title",dObj.docName)
-			titleStr := fmt.Sprintf("\"#%s\"",parIdStr)
-			prefix = fmt.Sprintf("<p class=\"%s\">",parIdStr)
-			tocPrefix = fmt.Sprintf("<p id=\"%s_TOC_title\"><a href = %s>",dObj.docName ,titleStr)
-			suffix ="</p>"
-			tocSuffix = "</a></p>"
-			decode = true
-
-        case "SUBTITLE":
-			parIdStr = fmt.Sprintf("%s_subtitle",dObj.docName)
-			prefix = fmt.Sprintf("<p class=\"%s\">",parIdStr)
-			tocPrefix = ""
-			suffix ="</p>"
-			tocSuffix = ""
-			decode = false
-
-        case "HEADING_1":
-			dObj.h1Count++
-			parIdStr = fmt.Sprintf("%s_h1_%d", dObj.docName, dObj.h1Count)
-			prefix = fmt.Sprintf("<h1 id=\"%s\" class=\"%s_h1\">", parIdStr, dObj.docName)
-			tocPrefix = fmt.Sprintf("<h1><a href = \"#%s\">",parIdStr)
-			suffix ="</h1>"
-			tocSuffix = "</a></h1>"
-			decode = true
-
-        case "HEADING_2":
-			dObj.h2Count++
-			parIdStr = fmt.Sprintf("%s_h2_%d",dObj.docName, dObj.h2Count)
-			prefix = fmt.Sprintf("<h2 id=\"%s\" class=\"%s_h2\">", parIdStr, dObj.docName)
-			tocPrefix = fmt.Sprintf("<h2><a href = \"#%s\">",parIdStr)
-			suffix ="</h2>"
-			tocSuffix ="</a></h2>"
-			decode = true
-
-        case "HEADING_3":
-			dObj.h3Count++
-			parIdStr = fmt.Sprintf("%s_h3_%d",dObj.docName, dObj.h3Count)
-			prefix = fmt.Sprintf("<h3 id=\"%s\" class = \"%s_h3\">",parIdStr, dObj.docName)
-			tocPrefix = fmt.Sprintf("<h3><a href = \"#%s\">",parIdStr)
-			suffix ="</h3>"
-			tocSuffix ="</a></h3>"
-			decode = true
-
-        case "HEADING_4":
-			dObj.h4Count++
-			parIdStr = fmt.Sprintf("%s_h4_%d",dObj.docName, dObj.h4Count)
-			prefix = fmt.Sprintf("<h4 id=\"%s\" class=\"%s_h4\">", parIdStr, dObj.docName)
-			tocPrefix = fmt.Sprintf("<h4><a href = \"#%s\">",parIdStr)
-			suffix ="</h4>"
-			tocSuffix ="</a></h4>"
-			decode = true
-
-        case "HEADING_5":
-			dObj.h5Count++
-			parIdStr = fmt.Sprintf("%s_h5_%d",dObj.docName, dObj.h5Count)
-			prefix = fmt.Sprintf("<h5 id=\"%s\" class=\"%s_h5\">", parIdStr, dObj.docName)
-			tocPrefix = fmt.Sprintf("<h5><a href = \"#%s\">",parIdStr)
-			suffix ="</h5>"
-			tocSuffix ="</a></h5>"
-			decode = true
-
-        case "HEADING_6":
-			dObj.h6Count++
-			parIdStr = fmt.Sprintf("%s_h6_%d",dObj.docName, dObj.h6Count)
-			prefix = fmt.Sprintf("<h6 id=\"%s\" class=\"%s_h6\">",parIdStr, dObj.docName)
-			tocPrefix = fmt.Sprintf("<h6><a href = \"#%s\">",parIdStr)
-			suffix ="</h6>"
-			tocSuffix ="</a></h6>"
-			decode = true
-
-		case "NORMAL_TEXT":
-            prefix = fmt.Sprintf("<p class=\"%s_p\">", dObj.docName)
-			suffix ="</p>"
-			if par.ParagraphStyle != nil {
-				// first check Style parameters against default
-				dObj.parCount++
-				parIdStr = fmt.Sprintf("%s_p%d",dObj.docName, dObj.parCount)
-				prefix = fmt.Sprintf("<p id=\"%s\" class=\"%s_p\">",parIdStr, dObj.docName)
-			}
-
-		default:
-		// no prefix
-			prefix = ""
-			suffix = ""
-	}
-*/
 
 	// a normal paragraph (not a list paragraph)
 
@@ -2025,11 +1948,13 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 //
 	namedStyl := par.ParagraphStyle.NamedStyleType
 
-	hdcss, err := dObj.cvtNamedStyl(namedStyl)
-	if err != nil {
-		errStr = fmt.Sprintf("%v", err)
+	if namedStyl != "NORMAL_TEXT" {
+		hdcss, err := dObj.cvtNamedStyl(namedStyl)
+		if err != nil {
+			errStr = fmt.Sprintf("%v", err)
+		}
+		parObj.headCss += hdcss + errStr
 	}
-	parObj.headCss += hdcss + errStr
 
 	if par.Bullet == nil {
 
@@ -2173,7 +2098,7 @@ func (dObj *GdocHtmlObj) cvtNamedStyl(namedStylTyp string)(cssStr string, err er
 	}
 	parCss := cvtParMapCss(parmap)
 	txtCss := cvtTxtMapCss(txtmap)
-	cssStr += cssPrefix + parCss + txtCss + "}/n"
+	cssStr += cssPrefix + parCss + txtCss + "}\n"
 	return cssStr, nil
 }
 
@@ -2182,11 +2107,11 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle)(cs
 	cssComment:=""
 	if namParStyl == nil {
 		// def error the default is that the normal_text paragraph style is passed
-		cssComment = fmt.Sprintf("  /* Paragraph Style: no named Style */\n")
+		cssComment = fmt.Sprintf("/* Paragraph Style: no named Style */\n")
 		return cssComment, "", "", nil
 	}
 
-	cssComment = fmt.Sprintf("  /* Paragraph Style: %s */\n", parStyl.NamedStyleType )
+	cssComment = fmt.Sprintf("/* Paragraph Style: %s */\n", parStyl.NamedStyleType )
 
 	alter:= false
 	parmap := new(parMap)
@@ -2195,15 +2120,16 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle)(cs
 	_, err = fillParMap(parmap, namParStyl)
 	if err != nil { }
 
-//	fmt.Printf("end fillparmap new\n\n")
+// fmt.Printf("begin fillparmap parstyl %s: %t\n", parStyl.NamedStyleType, alter)
 
 	if parStyl == nil {
 		cssParAtt = cvtParMapCss(parmap)
 	} else {
 		alter, err = fillParMap(parmap, parStyl)
 		if alter {cssParAtt = cvtParMapCss(parmap)}
-// fmt.Printf("end filltxtmap parstyl fill: %t\n\n", txtAlter)
 	}
+ //fmt.Printf("end fillparmap parstyl %s: %t\n\n", parStyl.NamedStyleType, alter)
+
 //ppp
 //	printParMap(parmap, parStyl)
 	// NamedStyle Type
@@ -2212,13 +2138,14 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle)(cs
 	cssPrefix := ""
 	switch parStyl.NamedStyleType {
 		case "TITLE":
-			if !dObj.title.exist && !alter {
-				cssPrefix = fmt.Sprintf(".%s_title {\n",dObj.docName)
+			if dObj.title.exist && !alter {
+				prefix = fmt.Sprintf("<p class=\"%s_title\">", dObj.docName)
 				dObj.title.exist = true
 			}
 			if alter {
 				cssPrefix = fmt.Sprintf(".%s_title_%d {\n",dObj.docName, dObj.titleCount)
 				prefix = fmt.Sprintf("<p id=\"%s_title_%d\">", dObj.docName, dObj.titleCount)
+				dObj.titleCount++
 			}
 			suffix = "</p>"
 
@@ -2735,6 +2662,7 @@ func CreGdocHtmlFil(outfil *os.File, doc *docs.Document, options *OptObj)(err er
 	// basic Css
 	outfil.WriteString(headCssStr)
 	// named styles
+	outfil.WriteString(mainDiv.headCss)
 	outfil.WriteString(mainDiv.bodyCss)
 	if toc {
 		outfil.WriteString(tocDiv.tocCss)
