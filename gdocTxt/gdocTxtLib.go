@@ -33,6 +33,7 @@ type gdocTxtObj struct {
 	imgId []string
 	doc *docs.Document
 	DocName string
+	headingId []string
 }
 
 func (dObj *gdocTxtObj) InitGdocTxt() (err error) {
@@ -795,7 +796,7 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 	for key, list := range doc.Lists {
 		knum++
 		nest := list.ListProperties.NestingLevels
-		outstr += fmt.Sprintf("    List %d: id: %s nest levels: %d\n", knum, key, len(nest) )
+		outstr += fmt.Sprintf("    List %2d: id: %-20s nest levels: %d\n", knum, key, len(nest) )
 /*
 		tstr, err := docObj.dispListProp(list.ListProperties)
 		if err != nil {
@@ -838,6 +839,23 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 		outstr += txtstr
 */
 	}
+
+	body := doc.Body
+	hdCount:=0
+	hdstr := ""
+	for el:=0; el< len(body.Content); el++ {
+		elObj := body.Content[el]
+		if elObj.Paragraph != nil {
+			if len(elObj.Paragraph.ParagraphStyle.HeadingId) > 0 {
+				hdstr += fmt.Sprintf("heading [%d]: namedStyle: %s Heading Id: %s\n", hdCount,
+					elObj.Paragraph.ParagraphStyle.NamedStyleType,
+					elObj.Paragraph.ParagraphStyle.HeadingId)
+				hdCount++
+			}
+		}
+	}
+	outstr = fmt.Sprintf("\n*** Headings: %d ***\n", hdCount)
+	outstr += hdstr
 	outfil.WriteString(outstr)
 
 	outstr ="\n****************** Document Style **************************\n"
@@ -852,9 +870,8 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 	outfil.WriteString(outstr)
 
 
-	body := doc.Body
-	numEl := len(body.Content)
 	outstr = "\n******************** Body *********************************\n"
+	numEl := len(body.Content)
 	outstr += fmt.Sprintf("*** Body - Number of Elements: %d ***\n", numEl)
 	outstr += fmt.Sprintf("*** Body - Element Summary ***\n")
 
