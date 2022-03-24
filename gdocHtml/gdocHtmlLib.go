@@ -2461,8 +2461,6 @@ func (dObj *GdocHtmlObj) creHeadCss() (cssStr string, err error) {
 		cssStr += "  border-width: 1px;\n"
 	}
 
-//	cssStr += "}\n"
-
 	listCssStr :=""
 	listCssStr += fmt.Sprintf(".%s_li {\n", dObj.docName)
 	listCssStr += "  display: inline;\n}\n"
@@ -2509,7 +2507,7 @@ func (dObj *GdocHtmlObj) creHeadCss() (cssStr string, err error) {
 
 	cssStr += cvtParMapCss(defParMap)
 
-	cssStr += txtCssStr
+//	cssStr += txtCssStr
 
 	cssStr += "}\n"
 
