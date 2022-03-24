@@ -39,6 +39,7 @@ import (
 	"os"
 	"net/http"
 	"io"
+	"strings"
 	"unicode/utf8"
 	"google.golang.org/api/docs/v1"
 )
@@ -237,7 +238,7 @@ type linkMap struct {
 }
 
 
-func fillTextMap(txtMap *textMap, txtStyl *docs.TextStyle)(alter bool, err error) {
+func fillTxtMap(txtMap *textMap, txtStyl *docs.TextStyle)(alter bool, err error) {
 
 	alter = false
 	if txtStyl == nil {
@@ -819,7 +820,7 @@ func cvtParMapCss(pMap *parMap)(cssStr string) {
 	return cssStr
 }
 
-func cvtTextMapCss(txtMap *textMap)(cssStr string) {
+func cvtTxtMapCss(txtMap *textMap)(cssStr string) {
 
 	cssStr =""
 	if len(txtMap.baseOffset) > 0 {
@@ -2013,14 +2014,22 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 */
 
 	// a normal paragraph (not a list paragraph)
-//xxx
+
 	decode := true
 	prefix = ""
 	suffix = ""
 	tcssStr := ""
-	namParStyl, _, err := dObj.getNamedStyl(par.ParagraphStyle.NamedStyleType)
+	errStr := ""
+//	namParStyl, _, err := dObj.getNamedStyl(par.ParagraphStyle.NamedStyleType)
 //	namParStyl, namTxtStyl, err := dObj.getNamedStyl(par.ParagraphStyle.NamedStyleType)
 //
+	namedStyl := par.ParagraphStyle.NamedStyleType
+
+	hdcss, err := dObj.cvtNamedStyl(namedStyl)
+	if err != nil {
+		errStr = fmt.Sprintf("%v", err)
+	}
+	parObj.headCss += hdcss + errStr
 
 	if par.Bullet == nil {
 
@@ -2028,9 +2037,10 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 		if len(dObj.cListId) > 0 {
 			parHtmlStr += dObj.closeList(dObj.cNestLev)
 		}
-		parHtmlStr += fmt.Sprintf("\n<!-- Par Element %s -->\n", par.ParagraphStyle.NamedStyleType)
+		parHtmlStr += fmt.Sprintf("\n<!-- Par Element %s -->\n", namedStyl)
 
 		errStr := ""
+		namParStyl, _, _ := dObj.getNamedStyl(namedStyl)
 		tcssStr, prefix, suffix, err = dObj.cvtParStyl(par.ParagraphStyle, namParStyl)
 		if err != nil {
 			errStr = fmt.Sprintf("/* error cvtParStyl: %v */\n",err)
@@ -2051,6 +2061,10 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 
 	} // loop par el
 
+	if strings.Contains(parHtmlStr, "<br>") {
+		parObj.bodyHtml = "<br>\n"
+		return parObj, nil
+	}
 	parObj.bodyCss +=listCssStr + parCssStr
 	parObj.bodyHtml += listStr + prefix + parHtmlStr + suffix + listSuffix + "\n"
 	if decode {
@@ -2097,14 +2111,77 @@ func (dObj *GdocHtmlObj) cvtParEl(parEl *docs.ParagraphElement)(htmlStr string, 
 
 	return htmlStr, cssStr, nil
 }
+func (dObj *GdocHtmlObj) cvtNamedStyl(namedStylTyp string)(cssStr string, err error) {
 
+	cssComment:=""
+	namParStyl, namTxtStyl, err := dObj.getNamedStyl(namedStylTyp)
+	if err != nil {
+		cssComment = fmt.Sprintf("  /* cvtNamedStyle: named Style not recognized */\n")
+		return cssComment, nil
+	}
+
+
+	parmap := new(parMap)
+	txtmap := new(textMap)
+
+	_, err = fillParMap(parmap, namParStyl)
+	if err != nil {
+		cssComment = fmt.Sprintf("  /* cvtNamedStyle: error fillParMap */\n")
+		return cssComment, nil
+	}
+
+	_, err = fillTxtMap(txtmap, namTxtStyl)
+	if err != nil {
+		cssComment = fmt.Sprintf("  /* cvtNamedStyle: named Style not recognized */\n")
+		return cssComment, nil
+	}
+
+	cssPrefix := ""
+	switch namedStylTyp {
+		case "TITLE":
+			if !(dObj.title.exist)  {
+				cssPrefix = fmt.Sprintf(".%s_title {\n", dObj.docName)
+				dObj.title.exist = true
+			}
+
+		case "SUBTITLE":
+			if !(dObj.subtitle.exist) {
+				cssPrefix =fmt.Sprintf(".%s_subtitle {\n",dObj.docName)
+				dObj.subtitle.exist = true
+			}
+		case "HEADING_1":
+			if !(dObj.h1.exist) {
+				cssPrefix =fmt.Sprintf(".%s_h1 {\n",dObj.docName)
+				dObj.h1.exist = true
+			}
+		case "HEADING_2":
+			cssPrefix =fmt.Sprintf(".%s_h2 {\n",dObj.docName)
+		case "HEADING_3":
+			cssPrefix =fmt.Sprintf(".%s_h3 {\n",dObj.docName)
+		case "HEADING_4":
+			cssPrefix =fmt.Sprintf(".%s_h4 {\n",dObj.docName)
+		case "HEADING_5":
+			cssPrefix = fmt.Sprintf(".%s_h5 {\n",dObj.docName)
+		case "HEADING_6":
+			cssPrefix = fmt.Sprintf(".%s_h6 {\n",dObj.docName)
+		case "NORMAL_TEXT":
+
+		case "NAMED_STYLE_TYPE_UNSPECIFIED":
+
+		default:
+
+	}
+	parCss := cvtParMapCss(parmap)
+	txtCss := cvtTxtMapCss(txtmap)
+	cssStr += cssPrefix + parCss + txtCss + "}/n"
+	return cssStr, nil
+}
 
 func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle)(cssStr, prefix, suffix string, err error) {
 
 	cssComment:=""
 	if namParStyl == nil {
 		// def error the default is that the normal_text paragraph style is passed
-
 		cssComment = fmt.Sprintf("  /* Paragraph Style: no named Style */\n")
 		return cssComment, "", "", nil
 	}
@@ -2113,7 +2190,7 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle)(cs
 
 	alter:= false
 	parmap := new(parMap)
-	cssAtt := ""
+	cssParAtt := ""
 
 	_, err = fillParMap(parmap, namParStyl)
 	if err != nil { }
@@ -2121,11 +2198,11 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle)(cs
 //	fmt.Printf("end fillparmap new\n\n")
 
 	if parStyl == nil {
-		cssAtt = cvtParMapCss(parmap)
+		cssParAtt = cvtParMapCss(parmap)
 	} else {
 		alter, err = fillParMap(parmap, parStyl)
-		cssAtt = cvtParMapCss(parmap)
-//	fmt.Printf("end fillparmap parstyl fill: %t\n\n", alter)
+		if alter {cssParAtt = cvtParMapCss(parmap)}
+// fmt.Printf("end filltxtmap parstyl fill: %t\n\n", txtAlter)
 	}
 //ppp
 //	printParMap(parmap, parStyl)
@@ -2133,7 +2210,6 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle)(cs
 	prefix = ""
 	suffix = ""
 	cssPrefix := ""
-//	namTypValid := true
 	switch parStyl.NamedStyleType {
 		case "TITLE":
 			if !dObj.title.exist && !alter {
@@ -2167,10 +2243,10 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle)(cs
 		case "HEADING_6":
 			cssPrefix = fmt.Sprintf(".%s_h6 {\n",dObj.docName)
 		case "NORMAL_TEXT":
-			prefix = "<p>"
-			cssPrefix = fmt.Sprintf(".%s_p {\n",dObj.docName)
+			prefix = fmt.Sprintf("<p class=\"%s_p\">", dObj.docName)
+//			cssPrefix = fmt.Sprintf(".%s_p {\n",dObj.docName)
 			if alter {
-				cssPrefix = fmt.Sprintf(".%s_p_%d {\n",dObj.docName, dObj.parCount+1)
+//				cssPrefix = fmt.Sprintf(".%s_p_%d {\n",dObj.docName, dObj.parCount+1)
 				prefix = fmt.Sprintf("<p id=\"%s_p_%d\">",dObj.docName, dObj.parCount+1)
 			}
 			suffix = "</p>"
@@ -2182,12 +2258,12 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle)(cs
 //			namTypValid = false
 	}
 
-	if len(cssAtt) > 0 {cssStr = cssComment + cssPrefix + cssAtt + "}\n"}
-
+	if (len(cssParAtt) > 0) {cssStr = cssComment + cssPrefix + cssParAtt + "}\n"}
 
 // test for a valid namestyl type
 	return cssStr, prefix, suffix, nil
 }
+
 
 func (dObj *GdocHtmlObj) cvtTxtStylCss(txtStyl *docs.TextStyle, head bool)(cssStr string, err error) {
 	var tcssStr string
@@ -2407,12 +2483,12 @@ func (dObj *GdocHtmlObj) creHeadCss() (cssStr string, err error) {
 		return cssStr, fmt.Errorf("error creHeadCss: %v", err)
 	}
 
-	_, err = fillTextMap(defTxtMap, txtStyl)
+	_, err = fillTxtMap(defTxtMap, txtStyl)
 	if err != nil {
 		return cssStr, fmt.Errorf("error creHeadCss: %v", err)
 	}
 
-	txtCssStr := cvtTextMapCss(defTxtMap)
+	txtCssStr := cvtTxtMapCss(defTxtMap)
 	cssStr += txtCssStr
 
 	if dObj.hasList {cssStr += listCssStr}
