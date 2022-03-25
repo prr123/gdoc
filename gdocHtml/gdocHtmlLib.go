@@ -1422,24 +1422,13 @@ func (dObj *GdocHtmlObj) cvtParElText(parElTxt *docs.TextRun)(htmlStr string, cs
         return "","", fmt.Errorf("error cvtPelText -- parElTxt is nil!")
     }
 
-/*
-	// checks for cr text
-    cLen := len(parElTxt.Content)
-	if (cLen == 1) {
-		let := parElTxt.Content
-		if (let == "\n") {
-			htmlStr += "<br>"
-			return htmlStr, "", nil
-		}
-	}
-*/
-
+	// need to check whether <1
+	if len(parElTxt.Content) < 2 { return "","",nil}
 	// need to compare text style with the default style
 	spanCssStr, err := dObj.cvtTxtStylCss(parElTxt.TextStyle, false)
 	if err != nil {
 		spanCssStr = fmt.Sprintf("/*error parEl Css %v*/\n", err) + spanCssStr
 	}
-	dObj.spanCount++
 	linkPrefix := ""
 	linkSuffix := ""
 	if parElTxt.TextStyle.Link != nil {
@@ -1448,8 +1437,9 @@ func (dObj *GdocHtmlObj) cvtParElText(parElTxt *docs.TextRun)(htmlStr string, cs
 			linkSuffix = "</a>"
 		}
 	}
-	spanIdStr := fmt.Sprintf("%s_sp%d", dObj.docName, dObj.spanCount)
 	if len(spanCssStr)>0 {
+		dObj.spanCount++
+		spanIdStr := fmt.Sprintf("%s_sp%d", dObj.docName, dObj.spanCount)
 		cssStr = fmt.Sprintf("#%s {\n", spanIdStr) + spanCssStr + "}\n"
 		htmlStr = fmt.Sprintf("<span id=\"%s\">",spanIdStr) + linkPrefix + parElTxt.Content + linkSuffix + "</span>"
 	} else {
@@ -2270,114 +2260,6 @@ func (dObj *GdocHtmlObj) cvtTxtStylCss(txtStyl *docs.TextStyle, head bool)(cssSt
 	}
 	return cssStr, nil
 }
-
-/*
-func (dObj *GdocHtmlObj) cvtNamedStylCss(NamStylTyp string) (cssStr string, err error) {
-	var NamStyl *docs.NamedStyle
-	var tStr string
-
-	doc := dObj.doc
-	nStyl := doc.NamedStyles
-	idxStyl := -1
-// find normal style first
-	for istyl:=0; istyl<len(nStyl.Styles); istyl++ {
-		if nStyl.Styles[istyl].NamedStyleType == NamStylTyp {
-			idxStyl = istyl
-			NamStyl = nStyl.Styles[istyl]
-			break
-		}
-	}
-
-	if idxStyl < 0 {return "", nil}
-
-	tStr, _,_, err = dObj.cvtParStyl(nil, NamStyl.ParagraphStyle)
-	if err != nil {
-		return cssStr, fmt.Errorf("error cvtParStyl: %v",err)
-	}
-	cssStr += tStr
-	tStr, err = dObj.cvtTxtStylCss(NamStyl.TextStyle, true)
-	if err != nil {
-		return cssStr, fmt.Errorf("error cvtTxtStyl: %v",err)
-	}
-
-	return cssStr, nil
-}
-*/
-/*
-func (dObj *GdocHtmlObj) cvtAllNamedStylCss() (cssStr string, err error) {
-	var NamStyl *docs.NamedStyle
-	var tStr string
-
-	doc := dObj.doc
-	nStyl := doc.NamedStyles
-	normStyl := -1
-// find normal style first
-	for istyl:=0; istyl<len(nStyl.Styles); istyl++ {
-		if nStyl.Styles[istyl].NamedStyleType == "NORMAL_TEXT" {
-			normStyl = istyl
-			NamStyl = nStyl.Styles[istyl]
-			break
-		}
-	}
-
-	if normStyl < 0 {
-		return "", fmt.Errorf("error ConvertNStyl -- no NORMAL_TEXT")
-	}
-
-	tStr, _, _, err = dObj.cvtParStyl(nil, NamStyl.ParagraphStyle)
-	if err != nil {
-		return cssStr, fmt.Errorf("error cvtParStyl: %v",err)
-	}
-	cssStr += tStr
-	tStr, err = dObj.cvtTxtStylCss(NamStyl.TextStyle, true)
-	if err != nil {
-		return cssStr, fmt.Errorf("error cvtTxtStyl: %v",err)
-	}
-
-	cssStr += tStr + "}\n"
-
-	for istyl:=0; istyl<len(nStyl.Styles); istyl++ {
-		tStr = ""
-		NamStyl = nStyl.Styles[istyl]
-		decode := false
-		switch NamStyl.NamedStyleType {
-		case "TITLE":
-			tStr =fmt.Sprintf(".%s_title {\n",dObj.docName)
-			decode = true
-		case "SUBTITLE":
-			tStr =fmt.Sprintf(".%s_subtitle {\n",dObj.docName)
-			decode = true
-		case "HEADING_1":
-			tStr =fmt.Sprintf(".%s_h1 {\n",dObj.docName)
-			decode = true
-		case "HEADING_2":
-			tStr =fmt.Sprintf(".%s_h2 {\n",dObj.docName)
-			decode = true
-		case "HEADING_3":
-			tStr =fmt.Sprintf(".%s_h3 {\n",dObj.docName)
-			decode = true
-		case "HEADING_4":
-			tStr =fmt.Sprintf(".%s_h4 {\n",dObj.docName)
-			decode = true
-		case "HEADING_5":
-			tStr =fmt.Sprintf(".%s_h5 {\n",dObj.docName)
-			decode = true
-		case "HEADING_6":
-			tStr =fmt.Sprintf(".%s_h6 {\n",dObj.docName)
-			decode = true
-
-		case "NORMAL_TEXT":
-			decode = false
-
-		default:
-*/
-//			tStr =fmt.Sprintf("/* error - header: %s */", NamStyl.NamedStyleType)
-//		}
-
-//		cssStr += tStr
-//	}
-//	return cssStr, nil
-//}
 
 
 func (dObj *GdocHtmlObj) creHeadCss() (cssStr string, err error) {
