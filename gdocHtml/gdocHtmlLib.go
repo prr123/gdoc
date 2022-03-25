@@ -1963,7 +1963,9 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 		if len(dObj.cListId) > 0 {
 			parHtmlStr += dObj.closeList(dObj.cNestLev)
 		}
-		parHtmlStr += fmt.Sprintf("\n<!-- Par Element %s -->\n %s\n", namedStyl, hdHtmlStr)
+
+		parHtmlStr += fmt.Sprintf("\n<!-- Par Element %s -->\n", namedStyl)
+		if len(hdHtmlStr) > 0 {parHtmlStr += hdHtmlStr + "/n"}
 
 		errStr := ""
 		namParStyl, _, _ := dObj.getNamedStyl(namedStyl)
