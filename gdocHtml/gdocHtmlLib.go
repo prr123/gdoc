@@ -1932,8 +1932,9 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 
 // we need to redo
 	// Heading Id refers to a page heading
+	hdHtmlStr:=""
 	if len(par.ParagraphStyle.HeadingId) > 0 {
-		parHtmlStr += fmt.Sprintf("\n<!-- Heading Id: %s -->\n", par.ParagraphStyle.HeadingId)
+		hdHtmlStr = fmt.Sprintf("<!-- Heading Id: %s -->", par.ParagraphStyle.HeadingId)
 	}
 
 	// a normal paragraph (not a list paragraph)
@@ -1962,7 +1963,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 		if len(dObj.cListId) > 0 {
 			parHtmlStr += dObj.closeList(dObj.cNestLev)
 		}
-		parHtmlStr += fmt.Sprintf("\n<!-- Par Element %s -->\n", namedStyl)
+		parHtmlStr += fmt.Sprintf("\n<!-- Par Element %s -->\n %s\n", namedStyl, hdHtmlStr)
 
 		errStr := ""
 		namParStyl, _, _ := dObj.getNamedStyl(namedStyl)
