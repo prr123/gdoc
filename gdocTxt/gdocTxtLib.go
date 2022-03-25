@@ -681,11 +681,12 @@ func (dObj *gdocTxtObj) dispContentElShort(elStr *docs.StructuralElement)(outstr
 	}
 
 	if elStr.Paragraph != nil {
-		outstr += fmt.Sprintf(" type: Paragraph StartIndex: %d EndIndex: %d\n",  elStr.StartIndex, elStr.EndIndex)
+		outstr += fmt.Sprintf(" type: Paragraph Style: %-14s Length: %3d StartIndex: %5d EndIndex: %5d\n", elStr.Paragraph.ParagraphStyle.NamedStyleType ,
+			elStr.EndIndex - elStr.StartIndex, elStr.StartIndex, elStr.EndIndex)
 	}
 
 	if elStr.SectionBreak != nil {
-		outstr += fmt.Sprintf(" type: Section Break StartIndex: %d EndIndex: %d\n", elStr.StartIndex, elStr.EndIndex)
+		outstr += fmt.Sprintf(" type: Section StartIndex: %d EndIndex: %d\n", elStr.StartIndex, elStr.EndIndex)
 	}
 
 	if elStr.Table != nil {
@@ -883,7 +884,7 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 
 	outfil.WriteString(outstr)
 
-	outstr = fmt.Sprintf("*** Body - Element Detail ***\n")
+	outstr = fmt.Sprintf("\n*** Body - Element Detail ***\n")
 
 	for el:=0; el< numEl; el++ {
 		elObj := body.Content[el]
@@ -917,7 +918,7 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 	for key, list := range doc.Lists {
 		knum++
 		nest := list.ListProperties.NestingLevels
-		outstr += fmt.Sprintf("\nList [%d]: id: %s nest levels: %d\n", knum, key, len(nest) )
+		outstr += fmt.Sprintf("\nList [%d]: id: %-15s nest levels: %d\n", knum, key, len(nest) )
 		tstr, err := docObj.dispListProp(list.ListProperties)
 		if err != nil {
 			outstr += fmt.Sprintf("error dispLists: %v\n",err)
