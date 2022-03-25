@@ -39,7 +39,7 @@ import (
 	"os"
 	"net/http"
 	"io"
-	"strings"
+//	"strings"
 	"unicode/utf8"
 	"google.golang.org/api/docs/v1"
 )
@@ -1422,6 +1422,8 @@ func (dObj *GdocHtmlObj) cvtParElText(parElTxt *docs.TextRun)(htmlStr string, cs
         return "","", fmt.Errorf("error cvtPelText -- parElTxt is nil!")
     }
 
+/*
+	// checks for cr text
     cLen := len(parElTxt.Content)
 	if (cLen == 1) {
 		let := parElTxt.Content
@@ -1430,6 +1432,7 @@ func (dObj *GdocHtmlObj) cvtParElText(parElTxt *docs.TextRun)(htmlStr string, cs
 			return htmlStr, "", nil
 		}
 	}
+*/
 
 	// need to compare text style with the default style
 	spanCssStr, err := dObj.cvtTxtStylCss(parElTxt.TextStyle, false)
@@ -1957,15 +1960,27 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 		parObj.headCss += hdcss + errStr
 	}
 
-	if par.Bullet == nil {
 
+
+	if par.Bullet == nil {
 		// if there was an open list, close it
 		if len(dObj.cListId) > 0 {
 			parHtmlStr += dObj.closeList(dObj.cNestLev)
 		}
 
+		// check for new line paragraph
+		if len(par.Elements) == 1 {
+			if par.Elements[0].TextRun != nil {
+				if par.Elements[0].TextRun.Content == "\n" {
+					parObj.bodyHtml = "<br>\n"
+					return parObj, nil
+				}
+			}
+		}
+
+		// now we have a normal paragraph element
 		parHtmlStr += fmt.Sprintf("\n<!-- Par Element %s -->\n", namedStyl)
-		if len(hdHtmlStr) > 0 {parHtmlStr += hdHtmlStr + "/n"}
+		if len(hdHtmlStr) > 0 {parHtmlStr += hdHtmlStr + "\n"}
 
 		errStr := ""
 		namParStyl, _, _ := dObj.getNamedStyl(namedStyl)
@@ -1979,6 +1994,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 
 	// paragraph elements
 //	parObj, err := dObj.cvtParEl(par)
+
 	numParEl := len(par.Elements)
     for pEl:=0; pEl< numParEl; pEl++ {
         parEl := par.Elements[pEl]
@@ -1989,10 +2005,6 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 
 	} // loop par el
 
-	if strings.Contains(parHtmlStr, "<br>") {
-		parObj.bodyHtml = "<br>\n"
-		return parObj, nil
-	}
 	parObj.bodyCss +=listCssStr + parCssStr
 	parObj.bodyHtml += listStr + prefix + parHtmlStr + suffix + listSuffix + "\n"
 	if decode {
@@ -2039,6 +2051,7 @@ func (dObj *GdocHtmlObj) cvtParEl(parEl *docs.ParagraphElement)(htmlStr string, 
 
 	return htmlStr, cssStr, nil
 }
+
 func (dObj *GdocHtmlObj) cvtNamedStyl(namedStylTyp string)(cssStr string, err error) {
 
 	cssComment:=""
@@ -2099,9 +2112,11 @@ func (dObj *GdocHtmlObj) cvtNamedStyl(namedStylTyp string)(cssStr string, err er
 		default:
 
 	}
-	parCss := cvtParMapCss(parmap)
-	txtCss := cvtTxtMapCss(txtmap)
-	cssStr += cssPrefix + parCss + txtCss + "}\n"
+	if len(cssPrefix) > 0 {
+		parCss := cvtParMapCss(parmap)
+		txtCss := cvtTxtMapCss(txtmap)
+		cssStr += cssPrefix + parCss + txtCss + "}\n"
+	}
 	return cssStr, nil
 }
 
