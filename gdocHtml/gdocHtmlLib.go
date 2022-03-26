@@ -100,15 +100,6 @@ type GdocHtmlObj struct {
 	Options *OptObj
 }
 
-type OptObj struct {
-	CssFil bool
-	ImgFold bool
-    Verb bool
-	Toc bool
-	multDiv bool
-	DivBorders bool
-}
-
 type dispObj struct {
 	headCss string
 	bodyHtml string
@@ -153,21 +144,6 @@ type tblBorder struct {
 	dash string
 	width float64
 }
-/*
-type parStyl struct {
-	align string
-	txtAl string
-	lineHt float64
-	hasBorder bool
-}
-
-type cssAtt struct {
-	ValFl float64
-	ValInt int
-	AttNam string
-	ValStr string
-}
-*/
 
 type namStyl struct {
 	count int
@@ -237,6 +213,51 @@ type linkMap struct {
 	bookmark string
 }
 
+type OptObj struct {
+	DefLinSpacing float64
+	BaseFontSize int
+	CssFil bool
+	ImgFold bool
+    Verb bool
+	Toc bool
+	MultiDiv bool
+	DivBorders bool
+	DocMargin [4]int
+	ElMargin [4]int
+}
+
+var DefOpt OptObj
+
+func GetDefOption (opt *OptObj) {
+	opt.BaseFontSize = 0
+	opt.MultiDiv = false
+	opt.DivBorders = false
+	opt.DefLinSpacing = 1.2
+	opt.DivBorders = false
+	opt.CssFil = false
+	opt.ImgFold = true
+	opt.Verb = true
+	opt.Toc = false
+	for i:=0; i< 4; i++ {opt.ElMargin[i] = 0}
+	return
+}
+
+func ShowOption (opt *OptObj) {
+
+	fmt.Printf("\n************ Option Values ***********\n")
+	fmt.Printf("  Base Font Size:       %d\n", opt.BaseFontSize)
+	fmt.Printf("  Sections as <div>:    %t\n", opt.MultiDiv)
+	fmt.Printf("  Browser Line Spacing: %.1f\n",opt. DefLinSpacing)
+	fmt.Printf("  <div> Borders:        %t\n", opt.DivBorders)
+	fmt.Printf("  Separate CSS File:    %t\n", opt.CssFil)
+	fmt.Printf("  Image Folder:         %t\n", opt.ImgFold)
+	fmt.Printf("  Table of Content:     %t\n", opt.Toc)
+	fmt.Printf("  Verbose output:       %t\n", opt.Verb)
+	fmt.Printf("  Element Margin: ")
+	for i:=0; i<4; i++ { fmt.Printf(" %3d",opt.ElMargin[i])}
+	fmt.Printf("\n")
+	fmt.Printf("***************************************\n\n")
+}
 
 func fillTxtMap(txtMap *textMap, txtStyl *docs.TextStyle)(alter bool, err error) {
 
@@ -801,24 +822,33 @@ func cvtParMapCss(pMap *parMap)(cssStr string) {
 	if pMap.indFlin > 0.0 {
 		cssStr += fmt.Sprintf("  text-indent: %.2fpt;\n", pMap.indFlin)
 	}
-	if pMap.indStart > 0.0 {
+//	if pMap.indStart > 0.0 {
 		cssStr += fmt.Sprintf("  margin-left: %.2fpt;\n", pMap.indStart)
-	}
-	if pMap.indEnd > 0.0 {
+//	}
+//	if pMap.indEnd > 0.0 {
 		cssStr += fmt.Sprintf("  margin-right: %.2fpt;\n", pMap.indEnd)
-	}
+//	}
 
 // need to investigate
+//browser
 	if pMap.linSpac > 0.0 {
-		cssStr += fmt.Sprintf("  line-height: %.2f;\n", pMap.linSpac)
+		if DefOpt.DefLinSpacing > 0.0 {
+			cssStr += fmt.Sprintf("  line-height: %.2f;\n", DefOpt.DefLinSpacing*pMap.linSpac)
+		} else {
+			cssStr += fmt.Sprintf("  line-height: %.2f;\n", pMap.linSpac)
+		}
 	}
 
 	if pMap.spaceTop > 0.0 {
 		cssStr += fmt.Sprintf("  margin-top: %.2fpt;\n", pMap.spaceTop)
+	} else {
+		cssStr += fmt.Sprintf("  margin-top: 0;\n")
 	}
 
 	if pMap.spaceBelow > 0.0 {
 		cssStr += fmt.Sprintf("  margin-bottom: %.2fpt;\n", pMap.spaceBelow)
+	} else {
+		cssStr += fmt.Sprintf("  margin-bottom: 0;\n")
 	}
 
 	if !pMap.hasBorders { return cssStr }
@@ -1189,18 +1219,17 @@ func (dObj *GdocHtmlObj) findListProp (listId string) (listProp *docs.ListProper
 }
 
 func (dObj *GdocHtmlObj) InitGdocHtmlLib (doc *docs.Document, opt *OptObj) (err error) {
-//	var normStyl *docs.NamedStyle
-	var defOpt OptObj
+//	var defOpt OptObj
+
 	dObj.doc = doc
 
-	defOpt.Verb = true
-	defOpt.ImgFold = true
-	defOpt.Toc = false
-	defOpt.CssFil = false
+	GetDefOption(&DefOpt)
+	if DefOpt.Verb {ShowOption(&DefOpt)}
 
 	if opt == nil {
-		dObj.Options = &defOpt
+		dObj.Options = &DefOpt
 	}
+
 	// need to transform file name
 	// replace spaces with underscore
 	dNam := doc.Title
@@ -2086,15 +2115,30 @@ func (dObj *GdocHtmlObj) cvtNamedStyl(namedStylTyp string)(cssStr string, err er
 				dObj.h1.exist = true
 			}
 		case "HEADING_2":
-			cssPrefix =fmt.Sprintf(".%s_h2 {\n",dObj.docName)
+			if !(dObj.h2.exist) {
+				cssPrefix =fmt.Sprintf(".%s_h2 {\n",dObj.docName)
+				dObj.h2.exist = true
+			}
 		case "HEADING_3":
-			cssPrefix =fmt.Sprintf(".%s_h3 {\n",dObj.docName)
+			if !(dObj.h3.exist) {
+				cssPrefix =fmt.Sprintf(".%s_h3 {\n",dObj.docName)
+				dObj.h3.exist = true
+			}
 		case "HEADING_4":
-			cssPrefix =fmt.Sprintf(".%s_h4 {\n",dObj.docName)
+			if !(dObj.h4.exist) {
+				cssPrefix =fmt.Sprintf(".%s_h4 {\n",dObj.docName)
+				dObj.h4.exist = true
+			}
 		case "HEADING_5":
-			cssPrefix = fmt.Sprintf(".%s_h5 {\n",dObj.docName)
+			if !(dObj.h5.exist) {
+				cssPrefix =fmt.Sprintf(".%s_h5 {\n",dObj.docName)
+				dObj.h5.exist = true
+			}
 		case "HEADING_6":
-			cssPrefix = fmt.Sprintf(".%s_h6 {\n",dObj.docName)
+			if !(dObj.h6.exist) {
+				cssPrefix =fmt.Sprintf(".%s_h6 {\n",dObj.docName)
+				dObj.h6.exist = true
+			}
 		case "NORMAL_TEXT":
 
 		case "NAMED_STYLE_TYPE_UNSPECIFIED":
