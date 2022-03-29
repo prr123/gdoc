@@ -79,12 +79,11 @@ type GdocHtmlObj struct {
 //	pnorm namStyl
 	hasList bool
 //    subDivCount int
-	listCount int
+//	listCount int
     lists *[]listObj
-	listCssStr string
-    cNestLev int64
-    cListOr bool
-	cListId string
+	listCss string
+	listNest int64
+	listStack [10]cList
 	numHeaders int
 	headers *[]string
 	headCount int
@@ -93,11 +92,16 @@ type GdocHtmlObj struct {
 	ftNoteCount int
 	inImgCount int
 	posImgCount int
-//	df_ls float64
 	folder *os.File
     imgFoldNam string
     imgFoldPath string
 	Options *OptObj
+}
+
+type cList struct {
+    cListOr bool
+	cListId string
+	cliClass string
 }
 
 type dispObj struct {
@@ -117,6 +121,7 @@ type nestLevel struct {
     Count int64
     FlInd float64
     StInd float64
+	glTxtmap *textMap
 }
 
 type listObj struct {
@@ -257,6 +262,23 @@ func ShowOption (opt *OptObj) {
 	for i:=0; i<4; i++ { fmt.Printf(" %3d",opt.ElMargin[i])}
 	fmt.Printf("\n")
 	fmt.Printf("***************************************\n\n")
+}
+
+func printTxtMap(txtMap *textMap) {
+
+	fmt.Println("********* text map ****************")
+	fmt.Printf("Base Offset: %s\n", txtMap.baseOffset)
+	fmt.Printf("Bold Text:   %t\n", txtMap.bold)
+	fmt.Printf("Italic Text: %t\n", txtMap.italic)
+	fmt.Printf("Underline:   %t\n", txtMap.underline)
+	fmt.Printf("Text Strike: %t\n", txtMap.strike)
+	fmt.Printf("Font:        %s\n", txtMap.fontType)
+	fmt.Printf("Font Weight: %d\n", txtMap.fontWeight)
+	fmt.Printf("Font Size:   %.1f\n", txtMap.fontSize)
+	fmt.Printf("Font Color:  %s\n", txtMap.txtColor)
+	fmt.Printf("Font BckCol: %s\n", txtMap.bckColor)
+
+	return
 }
 
 func fillTxtMap(txtMap *textMap, txtStyl *docs.TextStyle)(alter bool, err error) {
@@ -819,16 +841,6 @@ func cvtParMapCss(pMap *parMap)(cssStr string) {
 
 	}
 
-	if pMap.indFlin > 0.0 {
-		cssStr += fmt.Sprintf("  text-indent: %.2fpt;\n", pMap.indFlin)
-	}
-//	if pMap.indStart > 0.0 {
-		cssStr += fmt.Sprintf("  margin-left: %.2fpt;\n", pMap.indStart)
-//	}
-//	if pMap.indEnd > 0.0 {
-		cssStr += fmt.Sprintf("  margin-right: %.2fpt;\n", pMap.indEnd)
-//	}
-
 // need to investigate
 //browser
 	if pMap.linSpac > 0.0 {
@@ -839,17 +851,36 @@ func cvtParMapCss(pMap *parMap)(cssStr string) {
 		}
 	}
 
-	if pMap.spaceTop > 0.0 {
-		cssStr += fmt.Sprintf("  margin-top: %.2fpt;\n", pMap.spaceTop)
-	} else {
-		cssStr += fmt.Sprintf("  margin-top: 0;\n")
+	if pMap.indFlin > 0.0 {
+		cssStr += fmt.Sprintf("  text-indent: %.1fpt;\n", pMap.indFlin)
 	}
 
-	if pMap.spaceBelow > 0.0 {
-		cssStr += fmt.Sprintf("  margin-bottom: %.2fpt;\n", pMap.spaceBelow)
+	mlCss :=""
+	if pMap.indStart > 0.0 {
+		mlCss = fmt.Sprintf("%.1fpt", pMap.indStart)
 	} else {
-		cssStr += fmt.Sprintf("  margin-bottom: 0;\n")
+		mlCss = fmt.Sprintf("0")
 	}
+	mrCss:=""
+	if pMap.indEnd > 0.0 {
+		mrCss = fmt.Sprintf("%.1fpt", pMap.indEnd)
+	} else {
+		mrCss = fmt.Sprintf("0")
+	}
+	mtCss := ""
+	if pMap.spaceTop > 0.0 {
+		mtCss = fmt.Sprintf("%.1fpt", pMap.spaceTop)
+	} else {
+		mtCss = fmt.Sprintf("0")
+	}
+	mbCss := ""
+	if pMap.spaceBelow > 0.0 {
+		mbCss = fmt.Sprintf("%.1fpt", pMap.spaceBelow)
+	} else {
+		mbCss = fmt.Sprintf("0")
+	}
+
+	cssStr += fmt.Sprintf("  margin: %s %s %s %s;\n", mtCss, mrCss, mbCss, mlCss)
 
 	if !pMap.hasBorders { return cssStr }
 	cssStr += fmt.Sprintf("  padding: %.1fpt %.1fpt %.1fpt %.1fpt;\n", pMap.bordTop.pad, pMap.bordRight.pad, pMap.bordBot.pad, pMap.bordLeft.pad)
@@ -1179,41 +1210,37 @@ func (dObj *GdocHtmlObj) disp_GdocHtmlObj (dbgfil *os.File) (err error) {
 	return nil
 }
 
-func (dObj *GdocHtmlObj) findListIndex (listId string) (listIdx int, err error) {
+func (dObj *GdocHtmlObj) getListIndex (listId string) (listIdx int) {
 
-	if len(listId) < 1 {
-		return -1, fmt.Errorf("error findListIndex: no listId string!")
+	if !(len(listId) >0) {
+		return -2
 	}
-
+	listCount := len(dObj.doc.Lists)
 	listIdx = -1
-	for i:=0; i< dObj.listCount; i++ {
+	for i:=0; i< listCount; i++ {
 		if (*dObj.lists)[i].Id == listId {
 			listIdx = i
 			break
 		}
 	}
-	if !(listIdx >-1) {
-		return listIdx, fmt.Errorf("error findListIndex: list index not found in Lists!")
-	}
 
-	return listIdx, nil
+	return listIdx
 }
 
 func (dObj *GdocHtmlObj) findListProp (listId string) (listProp *docs.ListProperties) {
 
-	listIdx := 0
+	found := false
 	doc := dObj.doc
 
 	for key, listItem := range doc.Lists  {
 		if listId == key {
 			listProp = listItem.ListProperties
+			found = true
 			break
 		}
-		listIdx++
 	}
-	if listIdx > 0 {
-		return listProp
-	}
+
+	if found { return listProp}
 
 	return nil
 }
@@ -1274,10 +1301,10 @@ func (dObj *GdocHtmlObj) InitGdocHtmlLib (doc *docs.Document, opt *OptObj) (err 
 
 // list initalisation
 // need to separate ordered and unordered lists
-
-	dObj.listCount = len(doc.Lists)
+	dObj.listNest = -1
+	listCount := len(doc.Lists)
 	il := 0
-	dlists := make([]listObj,dObj.listCount)
+	dlists := make([]listObj, listCount)
 	dObj.lists = &dlists
 	for idstr, list := range doc.Lists {
 		dlists[il].Id = idstr
@@ -1327,7 +1354,7 @@ func (dObj *GdocHtmlObj) InitGdocHtmlLib (doc *docs.Document, opt *OptObj) (err 
 	dObj.inImgCount = len(doc.InlineObjects)
 	dObj.posImgCount = len(doc.PositionedObjects)
     totObjNum := dObj.inImgCount + dObj.posImgCount
-    dObj.parCount = len(doc.Body.Content)
+//    dObj.parCount = len(doc.Body.Content)
 
 	if (dObj.Options.ImgFold) && (totObjNum > 0){
 		if dObj.Options.Verb {fmt.Printf("*** creating image folder for %d images ***\n", totObjNum)}
@@ -1347,10 +1374,10 @@ func (dObj *GdocHtmlObj) InitGdocHtmlLib (doc *docs.Document, opt *OptObj) (err 
 }
 
 
-func (dObj *GdocHtmlObj) convertGlyph(nlev *docs.NestingLevel, ord bool)(cssStr string) {
+func (dObj *GdocHtmlObj) cvtGlyph(nlev *docs.NestingLevel)(cssStr string) {
 
 	var glyphTyp string
-	if ord {
+
 	// ordered list
 		switch nlev.GlyphType {
 			case "DECIMAL":
@@ -1371,14 +1398,12 @@ func (dObj *GdocHtmlObj) convertGlyph(nlev *docs.NestingLevel, ord bool)(cssStr 
 				glyphTyp = "upper-roman"
 
 			default:
-				cssStr = "/* unknown GlyphType */\n"
+//				cssStr = "/* unknown GlyphType */\n"
+			glyphTyp = ""
 		}
 		if len(glyphTyp) > 0 {
-			cssStr = "  list-style-type:" + glyphTyp +";\n"
-			cssStr +="  list-style-position: inside;\n"
-			cssStr +="  padding-left: 0;\n"
-		}
-	} else {
+			cssStr = "  list-style-type: " + glyphTyp +";\n"
+		} else {
 	// unordered list
 		cssStr =fmt.Sprintf("/*-Glyph Symbol:%x - */\n",nlev.GlyphSymbol)
 		r, _ := utf8.DecodeRuneInString(nlev.GlyphSymbol)
@@ -1397,9 +1422,9 @@ func (dObj *GdocHtmlObj) convertGlyph(nlev *docs.NestingLevel, ord bool)(cssStr 
 
 		}
 		if len(glyphTyp) > 0 {
-			cssStr = "  list-style-type:" + glyphTyp +";\n"
-			cssStr +="  list-style-position: inside;\n"
-			cssStr +="  padding-left: 0;\n"
+			cssStr = "  list-style-type: " + glyphTyp +";\n"
+//			cssStr +="  list-style-position: inside;\n"
+//			cssStr +="  padding-left: 0;\n"
 		}
 	}
 
@@ -1479,14 +1504,20 @@ func (dObj *GdocHtmlObj) cvtParElText(parElTxt *docs.TextRun)(htmlStr string, cs
 
 
 func (dObj *GdocHtmlObj) closeList(nl int64)(htmlStr string) {
-	var i int64
-	for i =0; i <nl+1; i++ {
-		if dObj.cListOr {
+	// ends a list
+	var i, iend int64
+	nlStart := dObj.listNest
+	iend = nlStart - nl -1
+//	if nl <0 { iend = -1}
+	for i = nlStart; i > iend; i-- {
+		list := dObj.listStack[i]
+		if list.cListOr {
 			htmlStr += "</ol>\n"
 		} else {
 			htmlStr +="</ul>\n"
 		}
 	}
+	dObj.listNest = iend
 	return htmlStr
 }
 
@@ -1653,9 +1684,11 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 	tblClass := fmt.Sprintf("%s_tbl", dObj.docName)
 	tblCellClass := fmt.Sprintf("%s_tcel", dObj.docName)
 	htmlStr = ""
-	// if there was an open list, close it
-	if len(dObj.cListId) > 0 {
-		htmlStr += dObj.closeList(dObj.cNestLev)
+
+	// if there is an open list, close it
+	if dObj.listNest >= 0 {	
+		htmlStr += dObj.closeList(dObj.listNest)
+fmt.Printf("table closing list!\n")
 	}
 
 	htmlStr += fmt.Sprintf("<table class=\"%s\">\n", tblClass)
@@ -1764,10 +1797,8 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 	var parHtmlStr, parCssStr string
 	var prefix, suffix string
 	var tocPrefix, tocSuffix string
-//	var parIdStr string
-//	var tStr string
 	var nestIdx int64
-	var listStr, listCssStr, listSuffix string
+	var listPrefix, listHtml, listCss, listSuffix string
 	var nestinc, i, j int64
 
 	if par == nil {
@@ -1776,6 +1807,25 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 	if dObj == nil {
         return parObj, fmt.Errorf("error cvttPar -- dObj is nil!")
     }
+	errStr := ""
+	dObj.parCount++
+
+	parHtmlStr = ""
+	parCssStr = ""
+	// careful
+	nl := dObj.listNest
+
+
+fmt.Printf("par %d list: %d\n", dObj.parCount, dObj.listNest )
+
+	if par.Bullet == nil {
+		// if there was an open list, close it
+		if dObj.listNest >= 0 {
+			parHtmlStr += dObj.closeList(dObj.listNest)
+fmt.Printf("par bullet close list\n")
+		}
+	}
+
 // Positioned Objects
 	numPosObj := len(par.PositionedObjectIds)
 	for i:=0; i< numPosObj; i++ {
@@ -1792,202 +1842,14 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 			parCssStr += imgCssStr
 		}
 	}
-// lists
-    if par.Bullet != nil {
-        parHtmlStr += "\n<!-- List Element -->\n"
-		dObj.hasList = true
-		// find list id
-		listId := par.Bullet.ListId
-		listIdx, err := dObj.findListIndex(listId)
-		if err != nil {
-			return parObj, fmt.Errorf("error cvtPar:: findListIndex: -- no list idx found -- %v!", err)
-		}
-		listProp := dObj.findListProp(listId)
-		nestIdx = par.Bullet.NestingLevel
-		listOrd := (*dObj.lists)[listIdx].NestLev[nestIdx].GlOrd
-		liClaStr := listId[4:]
-    	listStr += fmt.Sprintf("<!-- list id: %s OL: %t List Index: %d Nest Level: %d -->\n", listId, listOrd ,listIdx, nestIdx)
-		listStr += fmt.Sprintf("<!-- CList id: %s COL: %t Nest Level: %d -->\n",dObj.cListId, dObj.cListOr, dObj.cNestLev)
-		listStr += fmt.Sprintf("<!-- list class: %S -->\n", liClaStr)
-		if len(dObj.cListId) == 0 {
-		// create a list
-			dObj.cListId = listId
-			dObj.cNestLev = nestIdx
-			for i=0; i< nestIdx +1; i++ {
-				nestProp := listProp.NestingLevels[i]
-				glyphStr := dObj.convertGlyph(nestProp, listOrd)
-				idFl := nestProp.IndentFirstLine.Magnitude
-				idSt := nestProp.IndentStart.Magnitude
-				// ordered list
-				if listOrd {
-					liClaOlStr := liClaStr + fmt.Sprintf("_ol%d",nestIdx)
-					listStr +=fmt.Sprintf("<ol class=\"%s\">\n", liClaOlStr)
-					listCssStr += fmt.Sprintf(".%s {\n", liClaOlStr)
-					listCssStr += glyphStr
-					listCssStr += "}\n"
-					listCssStr += fmt.Sprintf(".%s li {\n", liClaOlStr)
-					listCssStr += "  padding-top: 2pt;\n  padding-bottom: 2pt;\n"
-					listCssStr += fmt.Sprintf("  padding-left: %.1fpt;\n", idFl )
-					listCssStr += "}\n"
-					listCssStr += fmt.Sprintf(".%s li > * {\n", liClaOlStr)
-					listCssStr += fmt.Sprintf("  padding-left: %.1fpt;\n", (idSt - idFl - 14))
-					listCssStr += "}\n"
-					dObj.cListOr = true
-				} else {
-				// unordered list
-					liClaUlStr := liClaStr + fmt.Sprintf("_ul%d",nestIdx)
-					listStr +=fmt.Sprintf("<ul class=\"%s\">\n", liClaUlStr)
-					listCssStr += fmt.Sprintf(".%s {\n", liClaUlStr)
-					listCssStr += glyphStr
-					listCssStr += "}\n"
-					listCssStr += fmt.Sprintf(".%s li {\n", liClaUlStr)
-					listCssStr += "  padding-top: 2pt;\n  padding-bottom: 2pt;\n"
-					listCssStr += fmt.Sprintf("  padding-left: %.1fpt;\n", idFl )
-					listCssStr += "}\n"
-					listCssStr += fmt.Sprintf(".%s li > * {\n", liClaUlStr)
-					listCssStr += fmt.Sprintf("  padding-left: %.1fpt;\n", (idSt - idFl - 14))
-					listCssStr += "}\n"
-					dObj.cListOr = false
-				}
-			}
-			listStr += "<li>"
-			listSuffix = "</li>\n"
-		} else {
-			// a list already exists
-			if dObj.cListId == listId {
-				// more list entries
-				if nestIdx < dObj.cNestLev {
-					listStr += "<!-- end sub list -->\n"
-					nestinc = dObj.cNestLev - nestIdx
-					for j=0; j< nestinc; j++ {
-						if dObj.cListOr {
-							listStr +="</ol>"
-						} else {
-							listStr +="</ul>"
-						}
-					} // loop j
-					listStr += "\n"
-					dObj.cNestLev = nestIdx
-				}
-				if nestIdx > dObj.cNestLev {
-					listStr += "<!-- new sub list -->\n"
-					nestinc = nestIdx - dObj.cNestLev
-					for j=0; j< nestinc; j++ {
-						nestProp := listProp.NestingLevels[dObj.cNestLev + j+1]
-						glyphStr := dObj.convertGlyph(nestProp, dObj.cListOr)
-						idFl := nestProp.IndentFirstLine.Magnitude
-						idSt := nestProp.IndentStart.Magnitude
-						if dObj.cListOr {
-							liClaOlStr := liClaStr + fmt.Sprintf("_ol%d",nestIdx)
-							listStr +=fmt.Sprintf("<ol class=\"%s\">\n", liClaOlStr)
-							listCssStr += fmt.Sprintf(".%s {\n", liClaOlStr)
-							listCssStr += glyphStr
-							listCssStr += "}\n"
-							listCssStr += fmt.Sprintf(".%s li {\n", liClaOlStr)
-							listCssStr += "  padding-top: 2pt;\n  padding-bottom: 2pt;\n"
-							listCssStr += fmt.Sprintf("  padding-left: %.1fpt;\n", idFl )
-							listCssStr += "}\n"
-							listCssStr += fmt.Sprintf(".%s li > * {\n", liClaOlStr)
-							listCssStr += fmt.Sprintf("  padding-left: %.1fpt;\n", (idSt - idFl - 14))
-							listCssStr += "}\n"
-						} else {
-							liClaUlStr := liClaStr + fmt.Sprintf("_ul%d",nestIdx)
-							listStr +=fmt.Sprintf("<ul class=\"%s\">\n", liClaUlStr)
-							listCssStr += fmt.Sprintf(".%s {\n", liClaUlStr)
-							listCssStr += glyphStr
-							listCssStr += "}\n"
-							listCssStr += fmt.Sprintf(".%s li {\n", liClaUlStr)
-							listCssStr += "  padding-top: 2pt;\n  padding-bottom: 2pt;\n"
-							listCssStr += fmt.Sprintf("  padding-left: %.1fpt;\n", idFl )
-							listCssStr += "}\n"
-							listCssStr += fmt.Sprintf(".%s li > * {\n", liClaUlStr)
-							listCssStr += fmt.Sprintf("  padding-left: %.1fpt;\n", (idSt - idFl - 14))
-							listCssStr += "}\n"
-						}
-					} // loop j
-					dObj.cNestLev = nestIdx
-				}
-				// list with same nesting level
-				listStr += "<li>"
-				listSuffix = "</li>\n"
-			} else {
-			// a new list must be created
-				listStr += dObj.closeList(dObj.cNestLev)
-				dObj.cListId = listId
-				dObj.cNestLev = nestIdx
-//		nestIdx = par.Bullet.NestingLevel
-//		listOrd := dObj.lists[listIdx].NestLev[nestIdx].GlOrd
-				for i=0; i< nestIdx +1; i++ {
-					nestProp := listProp.NestingLevels[i]
-					glyphStr := dObj.convertGlyph(nestProp, listOrd)
-					idFl := nestProp.IndentFirstLine.Magnitude
-					idSt := nestProp.IndentStart.Magnitude
-					if listOrd {
-						liClaOlStr := liClaStr + fmt.Sprintf("_ol%d",nestIdx)
-						listStr +=fmt.Sprintf("<ol class=\"%s\">\n", liClaOlStr)
-						listCssStr += fmt.Sprintf(".%s {\n", liClaOlStr)
-						listCssStr += glyphStr
-						listCssStr += "}\n"
-						dObj.cListOr = true
-					} else {
-						liClaUlStr := liClaStr + fmt.Sprintf("_ul%d",nestIdx)
-						listStr +=fmt.Sprintf("<ol class=\"%s\">\n", liClaUlStr)
-						listCssStr += fmt.Sprintf(".%s {\n", liClaUlStr)
-						listCssStr += glyphStr
-						listCssStr += "}\n"
-						listCssStr += fmt.Sprintf(".%s li {\n", liClaUlStr)
-						listCssStr += "  padding-top: 2pt;\n  padding-bottom: 2pt;\n"
-						listCssStr += fmt.Sprintf("  padding-left: %.1fpt;\n", idFl )
-						listCssStr += "}\n"
-						listCssStr += fmt.Sprintf(".%s li > * {\n", liClaUlStr)
-						listCssStr += fmt.Sprintf("  padding-left: %.1fpt;\n", (idSt - idFl - 14))
-						listCssStr += "}\n"
-						dObj.cListOr = false
-					}
-				} // loop i
-				listStr += "<li>"
-				listSuffix = "</li>\n"
-			} // if dObj.cListId == listId
-		} //len(dObj.cListId) == 0
 
-    }
+	parObj.bodyHtml += parHtmlStr
+	parObj.bodyCss += parCssStr
+	// need to reset
+	parHtmlStr = ""
+	parCssStr = ""
 
-// we need to redo
-	// Heading Id refers to a page heading
-	hdHtmlStr:=""
-	if len(par.ParagraphStyle.HeadingId) > 0 {
-		hdHtmlStr = fmt.Sprintf("<!-- Heading Id: %s -->", par.ParagraphStyle.HeadingId)
-	}
-
-	// a normal paragraph (not a list paragraph)
-
-	decode := true
-	prefix = ""
-	suffix = ""
-	tcssStr := ""
-	errStr := ""
-//	namParStyl, _, err := dObj.getNamedStyl(par.ParagraphStyle.NamedStyleType)
-//	namParStyl, namTxtStyl, err := dObj.getNamedStyl(par.ParagraphStyle.NamedStyleType)
-//
-	namedStyl := par.ParagraphStyle.NamedStyleType
-
-	if namedStyl != "NORMAL_TEXT" {
-		hdcss, err := dObj.cvtNamedStyl(namedStyl)
-		if err != nil {
-			errStr = fmt.Sprintf("%v", err)
-		}
-		parObj.headCss += hdcss + errStr
-	}
-
-
-
-	if par.Bullet == nil {
-		// if there was an open list, close it
-		if len(dObj.cListId) > 0 {
-			parHtmlStr += dObj.closeList(dObj.cNestLev)
-		}
-
-		// check for new line paragraph
+	// check for new line paragraph
 		if len(par.Elements) == 1 {
 			if par.Elements[0].TextRun != nil {
 				if par.Elements[0].TextRun.Content == "\n" {
@@ -1997,23 +1859,56 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 			}
 		}
 
-		// now we have a normal paragraph element
-		parHtmlStr += fmt.Sprintf("\n<!-- Par Element %s -->\n", namedStyl)
-		if len(hdHtmlStr) > 0 {parHtmlStr += hdHtmlStr + "\n"}
 
-		errStr := ""
-		namParStyl, _, _ := dObj.getNamedStyl(namedStyl)
-		tcssStr, prefix, suffix, err = dObj.cvtParStyl(par.ParagraphStyle, namParStyl)
-		if err != nil {
-			errStr = fmt.Sprintf("/* error cvtParStyl: %v */\n",err)
-		}
-
-		parObj.bodyCss += errStr + tcssStr
+	namedTyp := par.ParagraphStyle.NamedStyleType
+	namParStyl, _, err := dObj.getNamedStyl(namedTyp)
+	if err != nil {
+		return parObj, fmt.Errorf("error cvtPar: %v", err)
 	}
 
-	// paragraph elements
-//	parObj, err := dObj.cvtParEl(par)
+	// default style for each named style
+	// add css for named style at the begining of the Css
+	// normal_text is already defined as the default in the css for the <div>
+	// *** important *** cvtNamedStyl needs to be run before CvtParStyle 
+	if namedTyp != "NORMAL_TEXT" {
+		hdcss, err := dObj.cvtNamedStyl(namedTyp)
+		if err != nil {
+			errStr = fmt.Sprintf("%v", err)
+		}
+		parObj.headCss += hdcss + errStr
+	}
 
+	if par.Bullet == nil {
+		// now we have a normal paragraph element
+		parHtmlStr += fmt.Sprintf("\n<!-- Paragraph %d %s -->\n", dObj.parCount, namedTyp)
+	}
+
+
+//	namParStyl, _, _ = dObj.getNamedStyl(namedTyp)
+
+//zz
+	parStylCss :=""
+	parStylCss, prefix, suffix, err = dObj.cvtParStyl(par.ParagraphStyle, namParStyl)
+	if err != nil {
+		errStr = fmt.Sprintf("/* error cvtParStyl: %v */\n",err)
+	}
+fmt.Printf("par %d:  %s %s %s\n", dObj.parCount, prefix, suffix, namedTyp)
+	parObj.bodyCss += errStr + parStylCss
+
+	// Heading Id refers to a heading not just a normal paragraph
+	hdHtmlStr:=""
+	if len(par.ParagraphStyle.HeadingId) > 0 {
+		hdHtmlStr = fmt.Sprintf("<!-- Heading Id: %s -->", par.ParagraphStyle.HeadingId)
+	}
+	if len(hdHtmlStr) > 0 {parHtmlStr += hdHtmlStr + "\n"}
+
+
+	decode := true
+	errStr = ""
+
+
+
+	// par elements: text and css for text
 	numParEl := len(par.Elements)
     for pEl:=0; pEl< numParEl; pEl++ {
         parEl := par.Elements[pEl]
@@ -2024,8 +1919,251 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 
 	} // loop par el
 
-	parObj.bodyCss +=listCssStr + parCssStr
-	parObj.bodyHtml += listStr + prefix + parHtmlStr + suffix + listSuffix + "\n"
+
+// lists
+    if par.Bullet != nil {
+		// there shoul be paragraph style for each ul and a text style for each list element
+
+		txtmap := new(textMap)
+		if par.Bullet.TextStyle != nil {
+			_, err := fillTxtMap(txtmap,par.Bullet.TextStyle)
+			if err != nil { return parObj, fmt.Errorf("error cvtPar List getting text style %v", err)}
+
+		}
+
+		if dObj.Options.Verb {listHtml += fmt.Sprintf("<!-- List Element %d -->\n", dObj.parCount)}
+		dObj.hasList = true
+		// find list id
+		listLId := par.Bullet.ListId
+
+		//find the list index
+		listIdx := dObj.getListIndex(listLId)
+		if listIdx < 0 {
+			return parObj, fmt.Errorf("error cvtPar:: getListIndex: -- no list index found -- %v!", err)
+		}
+
+		listProp := dObj.findListProp(listLId)
+		if listProp == nil {
+			return parObj, fmt.Errorf("error cvtPar:: cannot find list prop!")
+		}
+		nestIdx = par.Bullet.NestingLevel
+		listid := listLId[4:]
+
+
+		if nl < 0 {
+			// create a list
+fmt.Printf("creating list! nl %d nestIdx %d\n", nl, nestIdx)
+			dObj.listNest = nestIdx
+
+			for i=0; i< nestIdx +1; i++ {
+				listOrd := (*dObj.lists)[listIdx].NestLev[i].GlOrd
+				nestProp := listProp.NestingLevels[i]
+//				glyphCss := dObj.cvtGlyph(nestProp)
+				idFl := nestProp.IndentFirstLine.Magnitude
+				idSt := nestProp.IndentStart.Magnitude
+				dObj.listStack[i].cListId = listid
+				dObj.listStack[i].cListOr = listOrd
+
+				if dObj.Options.Verb {
+			//issue
+//			nlx := nestIdx
+//    		listHtml += fmt.Sprintf("<!-- list id: %s List Index: %d Nest Level: %d -->\n", listid, listIdx, nestIdx)
+//			listHtml += fmt.Sprintf("<!-- CList Nest Level %d id: %s Ordered List: %t -->\n",nl, dObj.listStack[nl].cListId, dObj.listStack[nl].cListOr)
+
+					if nl>=0 {
+//    					fmt.Printf(" *** list id: %s OL: %t List Index: %d Nest Level: %d\n", listid, listOrd ,listIdx, nestIdx)
+//						fmt.Printf(" *** CList Nest Level %d id: %s Ordered List: %t -->\n",nl, dObj.listStack[nl].cListId, dObj.listStack[nl].cListOr)
+					}
+				}
+
+
+				// ordered list
+				if listOrd {
+					listOlId := listid + fmt.Sprintf("_ol%d", i)
+					//html
+					listHtml += fmt.Sprintf("<ol class=\"%s\">\n", listOlId)
+					//css
+					listCss += fmt.Sprintf(".%s {\n", listOlId)
+					listCss += "  list-style-type: none;\n  list-style-position: outside;\n"
+					listCss += fmt.Sprintf("  margin: 0 0 0 %.0fpt;\n", idFl)
+					listCss += fmt.Sprintf("  padding-left: %.0fpt;\n", idSt-idFl -6.0)
+					listCss += "}\n"
+				} else {
+					// unordered list
+					listUlId := listid + fmt.Sprintf("_ul%d", i)
+					//html
+					listHtml += fmt.Sprintf("<ul class=\"%s\">\n", listUlId)
+					//css
+					listCss += fmt.Sprintf(".%s {\n", listUlId)
+					listCss += "  list-style-type: none;\n  list-style-position: outside;\n"
+					listCss += fmt.Sprintf("  margin: 0 0 0 %.0fpt;\n", idFl)
+					listCss += fmt.Sprintf("  padding-left: %.0fpt;\n", idSt-idFl -6.0)
+					listCss += "}\n"
+				}
+
+				//list item
+				liItemClass :=  listid + fmt.Sprintf("_li_n%d", i)
+				dObj.listStack[i].cliClass = listid
+			//html
+				listPrefix += fmt.Sprintf("<li class=\"%s %s\">",liItemClass, "")
+				listSuffix = "</li>\n"
+			//css
+				listCss += fmt.Sprintf(".%s{\n", liItemClass)
+				nestProp = listProp.NestingLevels[nestIdx]
+				glyphCss := dObj.cvtGlyph(nestProp)
+				listCss += glyphCss
+				listCss += "  display: list;\n  text-align: start\n"
+				listCss += "  padding-top: 2pt;\n  padding-bottom: 2pt;\n"
+				listCss += fmt.Sprintf("  padding-left: 6pt;\n")
+				listCss += "}\n"
+				listCss += fmt.Sprintf(".%s::marker {\n", liItemClass)
+				listCss += cvtTxtMapCss(txtmap)
+				listCss += "}\n"
+			}
+		} else {
+//fmt.Printf("there is a list! nl: %d  %s %s\n", nl, dObj.listStack[nl].cListId, listid)
+			// the list already exists
+			if dObj.listStack[nl].cListId == listid {
+				// more list entries
+//fmt.Printf("same list nl: %d nestidx: %d\n", nl, nestIdx)
+				if nestIdx < nl {
+					listHtml += "<!-- decrease nesting -->\n"
+					dObj.closeList(nestIdx)
+//fmt.Printf("same list closing list\n")
+					dObj.listNest = nestIdx
+				}
+				if nestIdx > nl {
+					listHtml += "<!-- increase nesting -->\n"
+					nestinc = nestIdx - nl
+					dObj.listNest = nestIdx
+					for j=0; j< nestinc; j++ {
+						listOrd := (*dObj.lists)[listIdx].NestLev[nl+j+1].GlOrd
+						nestProp := listProp.NestingLevels[nl+j+1]
+//						glyphCss := dObj.cvtGlyph(nestProp, listOrd)
+						idFl := nestProp.IndentFirstLine.Magnitude
+						idSt := nestProp.IndentStart.Magnitude
+						dObj.listStack[nl+j+1].cListId = listid
+						dObj.listStack[nl+j+1].cListOr = listOrd
+
+						// ordered list
+						if listOrd {
+							listOlId := listid + fmt.Sprintf("_ol%d", nl+j+1)
+							//html
+							listHtml += fmt.Sprintf("<ol class=\"%s\">\n", listOlId)
+							//css
+							listCss += fmt.Sprintf(".%s {\n", listOlId)
+							listCss += "  list-style-type: none;\n  list-style-position: outside;\n"
+							listCss += fmt.Sprintf("  margin: 0 0 0 %.0fpt;\n", idFl)
+							listCss += fmt.Sprintf("  padding-left: %.0fpt;\n", idSt-idFl -6.0)
+							listCss += "}\n"
+						} else {
+						// unordered list
+							listUlId := listid + fmt.Sprintf("_ul%d", nl+j+1)
+							//html
+							listHtml += fmt.Sprintf("<ul class=\"%s\">\n", listUlId)
+							//css
+							listCss += fmt.Sprintf(".%s {\n", listUlId)
+							listCss += "  list-style-type: none;\n  list-style-position: outside;\n"
+							listCss += fmt.Sprintf("  margin: 0 0 0 %.0fpt;\n", idFl)
+							listCss += fmt.Sprintf("  padding-left: %.0fpt;\n", idSt-idFl -6.0)
+							listCss += "}\n"
+						}
+					}
+					//list item
+					liItemClass :=  listid + fmt.Sprintf("_li_n%d", i)
+					dObj.listStack[nl+j+1].cliClass = listid
+					//html
+					listPrefix += fmt.Sprintf("<li class=\"%s %s\">",liItemClass, "")
+					listSuffix = "</li>\n"
+					//css
+					listCss += fmt.Sprintf(".%s{\n", liItemClass)
+					nestProp := listProp.NestingLevels[nestIdx]
+					glyphCss := dObj.cvtGlyph(nestProp)
+					listCss += glyphCss
+					listCss += "  display: list;\n  text-align: start\n"
+					listCss += "  padding-top: 2pt;\n  padding-bottom: 2pt;\n"
+					listCss += fmt.Sprintf("  padding-left: 6pt;\n")
+					listCss += "}\n"
+					listCss += fmt.Sprintf(".%s::marker {\n", liItemClass)
+					listCss += cvtTxtMapCss(txtmap)
+					listCss += "}\n"
+
+				}
+			} else {
+				// not the same list series
+				// a new list must be created
+				// first close the old list
+				listHtml += dObj.closeList(dObj.listNest)
+//fmt.Printf("not same list: closing prev list\n")
+				dObj.listNest = nestIdx
+
+				// create a new list
+				dObj.listNest = nestIdx
+
+				for i=0; i< nestIdx +1; i++ {
+						listOrd := (*dObj.lists)[listIdx].NestLev[i].GlOrd
+						nestProp := listProp.NestingLevels[i]
+//						glyphCss := dObj.cvtGlyph(nestProp)
+						idFl := nestProp.IndentFirstLine.Magnitude
+						idSt := nestProp.IndentStart.Magnitude
+						dObj.listStack[i].cListId = listid
+						dObj.listStack[i].cListOr = listOrd
+
+						// ordered list
+						if listOrd {
+							listOlId := listid + fmt.Sprintf("_ol%d", i)
+							//html
+							listHtml += fmt.Sprintf("<ol class=\"%s\">\n", listOlId)
+							//css
+							listCss += fmt.Sprintf(".%s {\n", listOlId)
+							listCss += "  list-style-type: none;\n  list-style-position: outside;\n"
+							listCss += fmt.Sprintf("  margin: 0 0 0 %.0fpt;\n", idFl)
+							listCss += fmt.Sprintf("  padding-left: %.0fpt;\n", idSt-idFl -6.0)
+							listCss += "}\n"
+						} else {
+							// unordered list
+							listUlId := listid + fmt.Sprintf("_ul%d", i)
+							//html
+							listHtml += fmt.Sprintf("<ul class=\"%s\">\n", listUlId)
+							//css
+							listCss += fmt.Sprintf(".%s {\n", listUlId)
+							listCss += "  list-style-type: none;\n  list-style-position: outside;\n"
+							listCss += fmt.Sprintf("  margin: 0 0 0 %.0fpt;\n", idFl)
+							listCss += fmt.Sprintf("  padding-left: %.0fpt;\n", idSt-idFl -6.0)
+							listCss += "}\n"
+						}
+
+						//list item
+						liItemClass :=  listid + fmt.Sprintf("_li_n%d", i)
+						dObj.listStack[i].cliClass = listid
+						//html
+						listPrefix += fmt.Sprintf("<li class=\"%s %s\">",liItemClass, "")
+						listSuffix = "</li>\n"
+						//css
+						listCss += fmt.Sprintf(".%s{\n", liItemClass)
+						nestProp = listProp.NestingLevels[nestIdx]
+						glyphCss := dObj.cvtGlyph(nestProp)
+						listCss += glyphCss
+						listCss += "  display: list;\n  text-align: start\n"
+						listCss += "  padding-top: 2pt;\n  padding-bottom: 2pt;\n"
+						listCss += fmt.Sprintf("  padding-left: 6pt;\n")
+						listCss += "}\n"
+						listCss += fmt.Sprintf(".%s::marker {\n", liItemClass)
+						listCss += cvtTxtMapCss(txtmap)
+						listCss += "}\n"
+
+				} //loop i
+
+    		}
+
+		}
+//ppp
+
+	} // end lists
+
+
+	parObj.bodyCss += listCss + parCssStr
+	parObj.bodyHtml += listHtml + listPrefix + prefix + parHtmlStr + suffix + listSuffix + "\n"
 	if decode {
 		parObj.tocHtml += tocPrefix + parHtmlStr + tocSuffix + "\n"
 	}
@@ -2170,7 +2308,9 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle)(cs
 	cssParAtt := ""
 
 	_, err = fillParMap(parmap, namParStyl)
-	if err != nil { }
+	if err != nil {
+		cssComment += "/* erro fill Parmap namparstyl */" + fmt.Sprintf("%v\n", err)
+	}
 
 // fmt.Printf("begin fillparmap parstyl %s: %t\n", parStyl.NamedStyleType, alter)
 
@@ -2178,9 +2318,12 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle)(cs
 		cssParAtt = cvtParMapCss(parmap)
 	} else {
 		alter, err = fillParMap(parmap, parStyl)
+		if err != nil {
+			cssComment += "/* erro fill Parmap parstyl */" + fmt.Sprintf("%v\n", err)
+		}
 		if alter {cssParAtt = cvtParMapCss(parmap)}
 	}
- //fmt.Printf("end fillparmap parstyl %s: %t\n\n", parStyl.NamedStyleType, alter)
+ fmt.Printf("parstyle %s alter: %t\n", parStyl.NamedStyleType, alter)
 
 //ppp
 //	printParMap(parmap, parStyl)
@@ -2192,7 +2335,6 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle)(cs
 		case "TITLE":
 			if dObj.title.exist && !alter {
 				prefix = fmt.Sprintf("<p class=\"%s_title\">", dObj.docName)
-				dObj.title.exist = true
 			}
 			if alter {
 				cssPrefix = fmt.Sprintf(".%s_title_%d {\n",dObj.docName, dObj.titleCount)
@@ -2202,31 +2344,84 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle)(cs
 			suffix = "</p>"
 
 		case "SUBTITLE":
-			if !dObj.subtitle.exist && !alter {
-				cssPrefix =fmt.Sprintf(".%s_subtitle {\n",dObj.docName)
-				dObj.subtitle.exist = true
+			if dObj.subtitle.exist && !alter {
+				prefix = fmt.Sprintf("<p class=\"%s_subtitle\">", dObj.docName)
 			}
+			if alter {
+				cssPrefix = fmt.Sprintf(".%s_subtitle_%d {\n",dObj.docName, dObj.subtitleCount)
+				prefix = fmt.Sprintf("<p id=\"%s_subtitle_%d\">", dObj.docName, dObj.subtitleCount)
+				dObj.subtitleCount++
+			}
+			suffix = "</p>"
+
 		case "HEADING_1":
-			if !dObj.h1.exist && !alter {
-				cssPrefix =fmt.Sprintf(".%s_h1 {\n",dObj.docName)
-				dObj.h1.exist = true
+			if dObj.h1.exist && !alter {
+				prefix = fmt.Sprintf("<h1 class=\"%s_h1\">", dObj.docName)
 			}
+			if alter {
+				cssPrefix = fmt.Sprintf(".%s_h1_%d {\n",dObj.docName, dObj.h1Count)
+				prefix = fmt.Sprintf("<h1 id=\"%s_h1_%d\">", dObj.docName, dObj.h1Count)
+				dObj.h1Count++
+			}
+			suffix = "</h1>"
 		case "HEADING_2":
-			cssPrefix =fmt.Sprintf(".%s_h2 {\n",dObj.docName)
+			if dObj.h2.exist && !alter {
+				prefix = fmt.Sprintf("<h2 class=\"%s_h2\">", dObj.docName)
+			}
+			if alter {
+				cssPrefix = fmt.Sprintf(".%s_h2_%d {\n",dObj.docName, dObj.h2Count)
+				prefix = fmt.Sprintf("<h2 id=\"%s_h2_%d\">", dObj.docName, dObj.h2Count)
+				dObj.h2Count++
+			}
+			suffix = "</h2>"
 		case "HEADING_3":
-			cssPrefix =fmt.Sprintf(".%s_h3 {\n",dObj.docName)
+			if dObj.h3.exist && !alter {
+				prefix = fmt.Sprintf("<h3 class=\"%s_h3\">", dObj.docName)
+			}
+			if alter {
+				cssPrefix = fmt.Sprintf(".%s_h3_%d {\n",dObj.docName, dObj.h3Count)
+				prefix = fmt.Sprintf("<h3 id=\"%s_h3_%d\">", dObj.docName, dObj.h3Count)
+				dObj.h3Count++
+			}
+			suffix = "</h3>"
 		case "HEADING_4":
-			cssPrefix =fmt.Sprintf(".%s_h4 {\n",dObj.docName)
+			if dObj.h4.exist && !alter {
+				prefix = fmt.Sprintf("<h4 class=\"%s_h4\">", dObj.docName)
+				dObj.h4.exist = true
+			}
+			if alter {
+				cssPrefix = fmt.Sprintf(".%s_h4_%d {\n",dObj.docName, dObj.h4Count)
+				prefix = fmt.Sprintf("<h4 id=\"%s_h4_%d\">", dObj.docName, dObj.h4Count)
+				dObj.h4Count++
+			}
+			suffix = "</h4>"
 		case "HEADING_5":
-			cssPrefix = fmt.Sprintf(".%s_h5 {\n",dObj.docName)
+			if dObj.h5.exist && !alter {
+				prefix = fmt.Sprintf("<h5 class=\"%s_h5\">", dObj.docName)
+				dObj.h5.exist = true
+			}
+			if alter {
+				cssPrefix = fmt.Sprintf(".%s_h5_%d {\n",dObj.docName, dObj.h5Count)
+				prefix = fmt.Sprintf("<h5 id=\"%s_h5_%d\">", dObj.docName, dObj.h5Count)
+				dObj.h5Count++
+			}
+			suffix = "</h5>"
 		case "HEADING_6":
-			cssPrefix = fmt.Sprintf(".%s_h6 {\n",dObj.docName)
+			if dObj.h6.exist && !alter {
+				prefix = fmt.Sprintf("<h6 class=\"%s_h6\">", dObj.docName)
+				dObj.h6.exist = true
+			}
+			if alter {
+				cssPrefix = fmt.Sprintf(".%s_h6_%d {\n",dObj.docName, dObj.h6Count)
+				prefix = fmt.Sprintf("<h6 id=\"%s_h6_%d\">", dObj.docName, dObj.h6Count)
+				dObj.h6Count++
+			}
+			suffix = "</h6>"
 		case "NORMAL_TEXT":
 			prefix = fmt.Sprintf("<p class=\"%s_p\">", dObj.docName)
-//			cssPrefix = fmt.Sprintf(".%s_p {\n",dObj.docName)
 			if alter {
-//				cssPrefix = fmt.Sprintf(".%s_p_%d {\n",dObj.docName, dObj.parCount+1)
-				prefix = fmt.Sprintf("<p id=\"%s_p_%d\">",dObj.docName, dObj.parCount+1)
+				cssPrefix = fmt.Sprintf(".%s_p_%d {\n",dObj.docName, dObj.parCount)
+				prefix = fmt.Sprintf("<p id=\"%s_p_%d\">",dObj.docName, dObj.parCount)
 			}
 			suffix = "</p>"
 
@@ -2237,7 +2432,8 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle)(cs
 //			namTypValid = false
 	}
 
-	if (len(cssParAtt) > 0) {cssStr = cssComment + cssPrefix + cssParAtt + "}\n"}
+fmt.Printf("parstyl: %s %s %s\n", parStyl.NamedStyleType, prefix, suffix)
+	if (len(cssPrefix) > 0) {cssStr = cssComment + cssPrefix + cssParAtt + "}\n"}
 
 // test for a valid namestyl type
 	return cssStr, prefix, suffix, nil
@@ -2332,19 +2528,6 @@ func (dObj *GdocHtmlObj) creHeadCss() (cssStr string, err error) {
 		cssStr += "  border-width: 1px;\n"
 	}
 
-	listCssStr :=""
-	listCssStr += fmt.Sprintf(".%s_li {\n", dObj.docName)
-	listCssStr += "  display: inline;\n}\n"
-
-	listCssStr += fmt.Sprintf(".%s_ul {\n", dObj.docName)
-	listCssStr += "  margin: 0;\n  padding-left: 0;\n}\n"
-
-	listCssStr += fmt.Sprintf(".%s_ol {\n", dObj.docName)
-	listCssStr += "  margin: 0;\n  padding-left: 0;\n}\n"
-
-	listCssStr += fmt.Sprintf(".%s_li_p {\n", dObj.docName)
-	listCssStr += "  display: inline;\n  margin: 5pt;\n"
-
 	// add default text style
 	defTxtMap := new(textMap)
 	parStyl, txtStyl, err := dObj.getNamedStyl("NORMAL_TEXT")
@@ -2357,15 +2540,13 @@ func (dObj *GdocHtmlObj) creHeadCss() (cssStr string, err error) {
 		return cssStr, fmt.Errorf("error creHeadCss: %v", err)
 	}
 
-	txtCssStr := cvtTxtMapCss(defTxtMap)
-	cssStr += txtCssStr
-
-	if dObj.hasList {cssStr += listCssStr}
+	cssStr += cvtTxtMapCss(defTxtMap)
 	cssStr += "}\n"
 
+//plist
 	// paragraph default style
 	cssStr += fmt.Sprintf(".%s_p {\n", dObj.docName)
-	cssStr += "  margin: 0; display: block;\n"
+	cssStr += "  display: block;\n"
 
 	defParMap := new(parMap)
 
@@ -2381,6 +2562,10 @@ func (dObj *GdocHtmlObj) creHeadCss() (cssStr string, err error) {
 //	cssStr += txtCssStr
 
 	cssStr += "}\n"
+
+	cssStr += fmt.Sprintf(".%s_p.list {display: inline;}\n", dObj.docName)
+
+
 
 	if dObj.Options.Toc {
 		cssStr += fmt.Sprintf(".%s_toc {\n", dObj.docName)
@@ -2558,8 +2743,9 @@ func (dObj *GdocHtmlObj) cvtBody() (bodyObj *dispObj, err error) {
 //		fmt.Println("tObj:", tObj)
 		addDispObj(bodyObj, tObj)
 	} // for el loop end
-	if len(dObj.cListId) > 0 {
-		bodyObj.bodyHtml += dObj.closeList(dObj.cNestLev)
+	if dObj.listNest >= 0 {
+		bodyObj.bodyHtml += dObj.closeList(dObj.listNest)
+fmt.Printf("end of doc closing list!")
 	}
 
 	bodyObj.tocHtml += "</div>\n\n"
