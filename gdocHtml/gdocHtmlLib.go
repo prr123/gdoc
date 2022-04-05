@@ -2565,9 +2565,9 @@ func (dObj *GdocHtmlObj) creHeadCss() (cssStr string, err error) {
 
 			switch dObj.docLists[i].ord {
 				case true:
-					cssStr += fmt.Sprintf(".%s_ol.nl_%d {\n", listClass, nl)
+					cssStr += fmt.Sprintf(".%s_ol.nL_%d {\n", listClass, nl)
 				case false:
-					cssStr += fmt.Sprintf(".%s_ul.nl_%d {\n", listClass, nl)
+					cssStr += fmt.Sprintf(".%s_ul.nL_%d {\n", listClass, nl)
 			}
 
 			idFl := nestLev.IndentFirstLine.Magnitude
@@ -2577,7 +2577,7 @@ func (dObj *GdocHtmlObj) creHeadCss() (cssStr string, err error) {
 			cssStr += fmt.Sprintf("}\n")
 
 			// Css <li nest level>
-			cssStr += fmt.Sprintf(".%s_li.nl_%d {\n", listClass, nl)
+			cssStr += fmt.Sprintf(".%s_li.nL_%d {\n", listClass, nl)
 			switch dObj.docLists[i].ord {
 				case true:
 //					cssStr += fmt.Sprintf("list-style-type: %s;\n", )
@@ -2587,7 +2587,7 @@ func (dObj *GdocHtmlObj) creHeadCss() (cssStr string, err error) {
 			cssStr += fmt.Sprintf("}\n")
 
 			// Css marker
-			cssStr += fmt.Sprintf(".%s_li.nl_%d::marker {\n", listClass, nl)
+			cssStr += fmt.Sprintf(".%s_li.nL_%d::marker {\n", listClass, nl)
 			cssStr +=  cvtTxtMapCss(glyphTxtMap)
 			cssStr += fmt.Sprintf("}\n")
 		}
