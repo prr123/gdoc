@@ -77,10 +77,10 @@ type GdocHtmlObj struct {
 	h6 namStyl
     spanCount int
 //	pnorm namStyl
-	hasList bool
+//	hasList bool
 //    subDivCount int
 //	listCount int
-    lists *[]listObj
+//    lists *[]listObj
 //	listCss string
 //	listNest int64
 	listStack *[]cList
@@ -110,7 +110,7 @@ type dispObj struct {
 }
 
 type cList struct {
-    cNestLev  int
+//    cNestLev  int
 	cListId string
 	cListCount int
 	cOrd bool
@@ -274,7 +274,7 @@ func ShowOption (opt *OptObj) {
 	fmt.Printf("***************************************\n\n")
 }
 
-func findDocListItem(list []docList, listid string) (res int) {
+func findDocList(list []docList, listid string) (res int) {
 
 	res = -1
 	for i:=0; i< len(list); i++ {
@@ -285,30 +285,71 @@ func findDocListItem(list []docList, listid string) (res int) {
 	return res
 }
 
-func pushLiStack(stack *[]cList, item cList) {
-	*stack = append(*stack, item)
-}
-
-func popLiStack(stack *[]cList)(n int) {
-	n = len(*stack) -1
-	if n>=0 {
-		*stack = (*stack)[:n]
-	} else {
-		n = -1
-		stack = nil
+func pushLiStack(stack *[]cList, item cList)(nstack *[]cList) {
+	if (stack == nil) {
+		xx := make([]cList,0)
+		stack = &xx
 	}
-	return n
+	*stack= append(*stack, item)
+	return stack
 }
 
-func getLiStack(stack *[]cList) (item cList, n int) {
+func popLiStack(stack *[]cList)(nstack *[]cList) {
 
+	if stack == nil {return nil}
+
+	n := len(*stack) -1
+	if n >= 0 {
+		xx	:= (*stack)[:n]
+		nstack = &xx
+	} else {
+		nstack = nil
+	}
+	return nstack
+}
+
+func getLiStack(stack *[]cList) (item cList, nl int) {
+
+	if stack == nil {
+		return item, -1
+	}
+	nl = len(*stack) -1
+	// review n>1 if there is a  stack!
+	if nl >= 0 {
+		item = (*stack)[nl]
+	} else {
+		nl = -1
+	}
+	return item, nl
+}
+
+func printLiStack(stack *[]cList) {
+var item cList
+var	n int
+	if stack == nil {
+		fmt.Println("*** no listStack ***")
+		return
+	}
 	n = len(*stack) -1
 	if n>=0 {
 		item = (*stack)[n]
 	} else {
 		n = -1
 	}
-	return item, n
+	fmt.Printf("list stack Nlevel: %d", n)
+	if n >= 0 {
+		fmt.Printf(" id: %s ordered: %t", item.cListId, item.cOrd)
+	}
+	fmt.Printf("\n")
+	return
+}
+
+func printLiStackItem(listAtt cList, cNest int){
+		fmt.Printf("list Att Nlevel: %d", cNest)
+		if cNest >= 0 {
+			fmt.Printf(" id: %s ordered: %t", listAtt.cListId, listAtt.cOrd)
+		}
+		fmt.Printf("\n")
 }
 
 func getGlyphOrd(glyphTyp string)(bool) {
@@ -1294,22 +1335,6 @@ func (dObj *GdocHtmlObj) disp_GdocHtmlObj (dbgfil *os.File) (err error) {
 	return nil
 }
 
-func (dObj *GdocHtmlObj) getListIndex (listId string) (listIdx int) {
-
-	if !(len(listId) >0) {
-		return -2
-	}
-	listCount := len(dObj.doc.Lists)
-	listIdx = -1
-	for i:=0; i< listCount; i++ {
-		if (*dObj.lists)[i].Id == listId {
-			listIdx = i
-			break
-		}
-	}
-
-	return listIdx
-}
 
 func (dObj *GdocHtmlObj) findListProp (listId string) (listProp *docs.ListProperties) {
 
@@ -1363,7 +1388,7 @@ func (dObj *GdocHtmlObj) InitGdocHtmlLib (doc *docs.Document, opt *OptObj) (err 
 	dObj.h4.exist = false
 	dObj.h5.exist = false
 	dObj.h6.exist = false
-	dObj.hasList = false
+//	dObj.hasList = false
 
 // section breaks
 	dObj.elCount = len(doc.Body.Content)
@@ -1378,7 +1403,7 @@ func (dObj *GdocHtmlObj) InitGdocHtmlLib (doc *docs.Document, opt *OptObj) (err 
 		if elObj.Paragraph != nil {
 			if elObj.Paragraph.Bullet != nil {
 				listId := elObj.Paragraph.Bullet.ListId
-				found := findDocListItem(dObj.docLists, listId)
+				found := findDocList(dObj.docLists, listId)
 				if found < 0 {
 					listItem.listId = listId
 					listItem.maxNestLev = elObj.Paragraph.Bullet.NestingLevel
@@ -1405,44 +1430,6 @@ func (dObj *GdocHtmlObj) InitGdocHtmlLib (doc *docs.Document, opt *OptObj) (err 
 	}
 */
 
-
-// list initalisation
-// need to separate ordered and unordered lists
-//	dObj.listNest = -1
-//	dObj.listCssClass = make([]string,0,100)
-
-
-	listCount := len(doc.Lists)
-	dlists := make([]listObj, listCount)
-	dObj.lists = &dlists
-
-	for il:=0; il< len(dObj.docLists); il++ {
-//	for listid, list := range doc.Lists {
-		listid := dObj.docLists[il].listId
-		dlists[il].Id = listid
-
-		list := doc.Lists[listid]
-
-//		numNestLev := len(list.ListProperties.NestingLevels)
-		numNestLev := dObj.docLists[il].maxNestLev
-		dlists[il].numNestLev = int(numNestLev)
-
-		for nl:=0; nl<int(numNestLev); nl++ {
-			nestLevel := list.ListProperties.NestingLevels[nl]
-			dlists[il].NestLev[nl].GlAl = nestLevel.BulletAlignment
-			dlists[il].NestLev[nl].GlFmt = nestLevel.GlyphFormat
-			dlists[il].NestLev[nl].GlSym = nestLevel.GlyphSymbol
-			dlists[il].NestLev[nl].GlTyp = nestLevel.GlyphType
-			dlists[il].NestLev[nl].FlInd = nestLevel.IndentFirstLine.Magnitude
-			dlists[il].NestLev[nl].StInd = nestLevel.IndentStart.Magnitude
-			dlists[il].NestLev[nl].Count = nestLevel.StartNumber
-
-			ord := getGlyphOrd(nestLevel.GlyphType)
-			dlists[il].NestLev[nl].GlOrd = ord
-			dObj.docLists[il].ord = ord
-		}
-		il++
-	}
 
 	if dObj.Options.Verb {
 		fmt.Printf("*********** Document Lists: %2d *******\n", len(dObj.docLists))
@@ -1615,16 +1602,21 @@ func (dObj *GdocHtmlObj) cvtParElText(parElTxt *docs.TextRun)(htmlStr string, cs
 
 func (dObj *GdocHtmlObj) closeList(nl int)(htmlStr string) {
 	// ends a list
-	n := len(*(dObj.listStack)) -1
 
-	for i := n; i >= nl; i-- {
-		ord := (*dObj.listStack)[i].cOrd
+	if (dObj.listStack == nil) {return ""}
+
+	stack := dObj.listStack
+	n := len(*stack) -1
+
+	for i := n; i > nl; i-- {
+		ord := (*stack)[i].cOrd
 		if ord {
 			htmlStr += "</ol>\n"
 		} else {
 			htmlStr +="</ul>\n"
 		}
-		popLiStack(dObj.listStack)
+		nstack := popLiStack(stack)
+		dObj.listStack = nstack
 	}
 	return htmlStr
 }
@@ -1810,7 +1802,6 @@ fmt.Printf("table closing list!\n")
 
 // table columns
 	tabWtyp :=tbl.TableStyle.TableColumnProperties[0].WidthType
-//	if !((tabWtyp == "EVENLY_DISTRIBUTED")||(tabWtyp == "WIDTH_TYPE_UNSPECIFIED")) {
 //fmt.Printf("table width type: %s\n", tabWtyp)
 	if tabWtyp == "FIXED_WIDTH" {
 		htmlStr +="<colgroup>\n"
@@ -1895,19 +1886,18 @@ fmt.Printf("table closing list!\n")
 	return tabObj, nil
 }
 
+func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) {
 // paragraph element par
 // - Bullet
 // - Elements
 // - ParagraphStyle
 // - Positioned Objects
 //
-func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) {
 	var parHtmlStr, parCssStr string
 	var prefix, suffix string
 	var tocPrefix, tocSuffix string
-//	var nestIdx int64
 	var listPrefix, listHtml, listCss, listSuffix string
-//	var nestinc, i, j int64
+	var newList cList
 
 	if par == nil {
         return parObj, fmt.Errorf("error cvtPar -- parEl is nil!")
@@ -1920,17 +1910,17 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 
 	parHtmlStr = ""
 	parCssStr = ""
-	// careful
 
-//fmt.Printf("par %d list: %d\n", dObj.parCount, dObj.listNest )
-	isList := true
+	isList := false
+	if par.Bullet != nil {isList = true}
+fmt.Printf("********** par %d list: %t ***********\n", dObj.parCount, isList)
+
 	if par.Bullet == nil {
 		// if there was an open list, close it
-		if len(*dObj.listStack) >= 0 {
-			parHtmlStr += dObj.closeList(len(*dObj.listStack))
+		if dObj.listStack != nil {
+			parHtmlStr += dObj.closeList(-1)
 //fmt.Printf("par bullet close list\n")
 		}
-		isList = false
 	}
 
 // Positioned Objects
@@ -2013,8 +2003,6 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 	decode := true
 	errStr = ""
 
-
-
 	// par elements: text and css for text
 	numParEl := len(par.Elements)
     for pEl:=0; pEl< numParEl; pEl++ {
@@ -2026,11 +2014,10 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 
 	} // loop par el
 
-
 // lists
     if par.Bullet != nil {
-		// there shoul be paragraph style for each ul and a text style for each list element
 
+		// there is paragraph style for each ul and a text style for each list element
 		txtmap := new(textMap)
 		if par.Bullet.TextStyle != nil {
 			_, err := fillTxtMap(txtmap,par.Bullet.TextStyle)
@@ -2039,248 +2026,96 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 		}
 
 		if dObj.Options.Verb {listHtml += fmt.Sprintf("<!-- List Element %d -->\n", dObj.parCount)}
-		dObj.hasList = true
-		// find list id
-		listLId := par.Bullet.ListId
 
-		//find list index
-		// old way search the document list map
-		listIdx := dObj.getListIndex(listLId)
-		if listIdx < 0 {
-			return parObj, fmt.Errorf("error cvtPar:: getListIndex: -- no list index found -- %v!", err)
-		}
+		// find list id of paragraph
+		listid := par.Bullet.ListId
+		nestIdx := int(par.Bullet.NestingLevel)
 
-		listProp := dObj.findListProp(listLId)
-		if listProp == nil {
-			return parObj, fmt.Errorf("error cvtPar:: cannot find list prop!")
-		}
+		// retrieve the list properties from the doc.Lists map
+		listProp := dObj.doc.Lists[listid].ListProperties
+		glyphTyp := listProp.NestingLevels[nestIdx].GlyphType
+		listOrd := getGlyphOrd(glyphTyp)
 
-//		nestIdx = par.Bullet.NestingLevel
-//		listid := listLId[4:]
-	}
-/*
-		switch {
-		case nl < 0:
-			// create a list
-//fmt.Printf("creating list! nl %d nestIdx %d\n", nl, nestIdx)
-			dObj.listNest = nestIdx
+		// A. check whether need new <ul> or <ol>
+		// listHtml contains the <ul> <ol> element
+		listHtml = ""
+//		listSid := listid[4:]
 
-			for i=0; i< nestIdx +1; i++ {
-				listOrd := (*dObj.lists)[listIdx].NestLev[i].GlOrd
-				nestProp := listProp.NestingLevels[i]
-//				glyphCss := dObj.cvtGlyph(nestProp)
-				idFl := nestProp.IndentFirstLine.Magnitude
-				idSt := nestProp.IndentStart.Magnitude
-				dObj.listStack[i].cListId = listid
-				dObj.listStack[i].cListOr = listOrd
+		// conditions for new <ul><ol>
+		// 1. beginning of a list
+		// 2. increase in nesting level
+		// 3. different listid -> old list ended; beginning of new list
 
-				if dObj.Options.Verb {
-			//issue
-//			nlx := nestIdx
-//    		listHtml += fmt.Sprintf("<!-- list id: %s List Index: %d Nest Level: %d -->\n", listid, listIdx, nestIdx)
-//			listHtml += fmt.Sprintf("<!-- CList Nest Level %d id: %s Ordered List: %t -->\n",nl, dObj.listStack[nl].cListId, dObj.listStack[nl].cListOr)
+		// condition for </ul></ol>
+		// 1. decrease in nesting level
 
-					if nl>=0 {
-//    					fmt.Printf(" *** list id: %s OL: %t List Index: %d Nest Level: %d\n", listid, listOrd ,listIdx, nestIdx)
-//						fmt.Printf(" *** CList Nest Level %d id: %s Ordered List: %t -->\n",nl, dObj.listStack[nl].cListId, dObj.listStack[nl].cListOr)
-					}
-				}
+		fmt.Println("*********** listStack **********")
+		fmt.Printf("listid: %s \n", listid)
+		printLiStack(dObj.listStack)
 
-
-				// ordered list
-				if listOrd {
-					listOlId := listid + fmt.Sprintf("_ol%d", i)
-					//html
-					listHtml += fmt.Sprintf("<ol class=\"%s\">\n", listOlId)
-					//css
-					listCss += fmt.Sprintf(".%s {\n", listOlId)
-					listCss += "  list-style-type: none;\n  list-style-position: outside;\n"
-					listCss += fmt.Sprintf("  margin: 0 0 0 %.0fpt;\n", idFl)
-					listCss += fmt.Sprintf("  padding-left: %.0fpt;\n", idSt-idFl -6.0)
-					listCss += "}\n"
-				} else {
-					// unordered list
-					listUlId := listid + fmt.Sprintf("_ul%d", i)
-					//html
-					listHtml += fmt.Sprintf("<ul class=\"%s\">\n", listUlId)
-					//css
-					listCss += fmt.Sprintf(".%s {\n", listUlId)
-					listCss += "  list-style-type: none;\n  list-style-position: outside;\n"
-					listCss += fmt.Sprintf("  margin: 0 0 0 %.0fpt;\n", idFl)
-					listCss += fmt.Sprintf("  padding-left: %.0fpt;\n", idSt-idFl -6.0)
-					listCss += "}\n"
-				}
-
-			}
-			//list item
-			liItemClass :=  listid + fmt.Sprintf("_nl_%d", nestIdx)
-				dObj.listStack[i].cliClass = listid
-			//html
-				listPrefix += fmt.Sprintf("<li class=\"%s %s\">",liItemClass, "")
-				listSuffix = "</li>\n"
-			//css
-				listCss += fmt.Sprintf(".%s{\n", liItemClass)
-				nestProp = listProp.NestingLevels[nestIdx]
-				glyphCss := dObj.cvtGlyph(nestProp)
-				listCss += glyphCss
-				listCss += "  display: list;\n  text-align: start\n"
-				listCss += "  padding-top: 2pt;\n  padding-bottom: 2pt;\n"
-				listCss += fmt.Sprintf("  padding-left: 6pt;\n")
-				listCss += "}\n"
-				listCss += fmt.Sprintf(".%s::marker {\n", liItemClass)
-				listCss += cvtTxtMapCss(txtmap)
-			listCss += "}\n"
-
-		case nl>=0:
-//fmt.Printf("there is a list! nl: %d  %s %s\n", nl, dObj.listStack[nl].cListId, listid)
-			// the list already exists
-			switch dObj.listStack[nl].cListId {
-				case listid:
-				// more list entries
-fmt.Printf("same list nl: %d nestidx: %d\n", nl, nestIdx)
+		listAtt, cNest := getLiStack(dObj.listStack)
+		printLiStackItem(listAtt, cNest)
+//lll
+		switch listid == listAtt.cListId {
+			case true:
 				switch {
-					case nestIdx < nl:
-						listHtml += "<!-- decrease nesting -->\n"
-						dObj.closeList(nestIdx)
-//fmt.Printf("same list closing list\n")
-						dObj.listNest = nestIdx
-
-					case nestIdx > nl:
-						listHtml += "<!-- increase nesting -->\n"
-						nestinc = nestIdx - nl
-						dObj.listNest = nestIdx
-						for j=0; j< nestinc; j++ {
-							listOrd := (*dObj.lists)[listIdx].NestLev[nl+j+1].GlOrd
-							nestProp := listProp.NestingLevels[nl+j+1]
-//						glyphCss := dObj.cvtGlyph(nestProp, listOrd)
-							idFl := nestProp.IndentFirstLine.Magnitude
-							idSt := nestProp.IndentStart.Magnitude
-							dObj.listStack[nl+j+1].cListId = listid
-							dObj.listStack[nl+j+1].cListOr = listOrd
-
+					case nestIdx > cNest:
+						for nl:=cNest; nl < nestIdx; nl++ {
+							newList.cListId = listid
+							newList.cOrd = listOrd
+							newStack := pushLiStack(dObj.listStack, newList)
+							dObj.listStack = newStack
 							if listOrd {
-							// ordered list
-								listOlId := listid + fmt.Sprintf("_ol%d", nl+j+1)
-							//html
-								listHtml += fmt.Sprintf("<ol class=\"%s\">\n", listOlId)
-							//css
-								listCss += fmt.Sprintf(".%s {\n", listOlId)
-								listCss += "  list-style-type: none;\n  list-style-position: outside;\n"
-								listCss += fmt.Sprintf("  margin: 0 0 0 %.0fpt;\n", idFl)
-								listCss += fmt.Sprintf("  padding-left: %.0fpt;\n", idSt-idFl -6.0)
-								listCss += "}\n"
+								listHtml = fmt.Sprintf("<ol class=\"%s_ul nL_%d\">\n", listid[4:], nl)
 							} else {
-							// unordered list
-								listUlId := listid + fmt.Sprintf("_ul%d", nl+j+1)
-								//html
-								listHtml += fmt.Sprintf("<ul class=\"%s\">\n", listUlId)
-								//css
-								listCss += fmt.Sprintf(".%s {\n", listUlId)
-								listCss += "  list-style-type: none;\n  list-style-position: outside;\n"
-								listCss += fmt.Sprintf("  margin: 0 0 0 %.0fpt;\n", idFl)
-								listCss += fmt.Sprintf("  padding-left: %.0fpt;\n", idSt-idFl -6.0)
-								listCss += "}\n"
+								listHtml = fmt.Sprintf("<ul class=\"%s_ul nL_%d\">\n", listid[4:], nl)
 							}
 						}
-					case nestIdx == nl:
+				listHtml += fmt.Sprintf("<!-- same list increase %s new NL %d  old Nl %d -->\n", listid, nestIdx, cNest)
+//				fmt.Printf("<!-- same list increase %s new NL %d  old Nl %d -->\n", listid, nestIdx, cNest)
+//	printLiStack(dObj.listStack)
 
-
-				}
-				//list item
-				liItemClass :=  listid + fmt.Sprintf("_nl_%d", nestIdx)
-				dObj.listStack[nl+j+1].cliClass = listid
-				//html
-				listPrefix += fmt.Sprintf("<li class=\"%s%s\">",liItemClass, "")
-				listSuffix = "</li>\n"
-				//css
-				listCss += fmt.Sprintf(".%s{\n", liItemClass)
-				found := findListCss(liItemClass)
-				if !found {
-					nestProp := listProp.NestingLevels[nestIdx]
-					glyphCss := dObj.cvtGlyph(nestProp)
-					listCss += glyphCss
-					listCss += "  display: list;\n  text-align: start\n"
-					listCss += "  padding-top: 2pt;\n  padding-bottom: 2pt;\n"
-					listCss += fmt.Sprintf("  padding-left: 6pt;\n")
-					listCss += "}\n"
-					listCss += fmt.Sprintf(".%s::marker {\n", liItemClass)
-					listCss += cvtTxtMapCss(txtmap)
-					listCss += "}\n"
-				}
-			}
-			default:
-			// not the same list series
-				// a new list must be created
-				// first close the old list
-				listHtml += dObj.closeList(dObj.listNest)
-//fmt.Printf("not same list: closing prev list\n")
-				dObj.listNest = nestIdx
-
-				// create a new list
-				dObj.listNest = nestIdx
-
-				for i=0; i< nestIdx +1; i++ {
-						listOrd := (*dObj.lists)[listIdx].NestLev[i].GlOrd
-						nestProp := listProp.NestingLevels[i]
-//						glyphCss := dObj.cvtGlyph(nestProp)
-						idFl := nestProp.IndentFirstLine.Magnitude
-						idSt := nestProp.IndentStart.Magnitude
-						dObj.listStack[i].cListId = listid
-						dObj.listStack[i].cListOr = listOrd
-
-						// ordered list
-						if listOrd {
-							listOlId := listid + fmt.Sprintf("_ol%d", i)
-							//html
-							listHtml += fmt.Sprintf("<ol class=\"%s\">\n", listOlId)
-							//css
-							listCss += fmt.Sprintf(".%s {\n", listOlId)
-							listCss += "  list-style-type: none;\n  list-style-position: outside;\n"
-							listCss += fmt.Sprintf("  margin: 0 0 0 %.0fpt;\n", idFl)
-							listCss += fmt.Sprintf("  padding-left: %.0fpt;\n", idSt-idFl -6.0)
-							listCss += "}\n"
-						} else {
-							// unordered list
-							listUlId := listid + fmt.Sprintf("_ul%d", i)
-							//html
-							listHtml += fmt.Sprintf("<ul class=\"%s\">\n", listUlId)
-							//css
-							listCss += fmt.Sprintf(".%s {\n", listUlId)
-							listCss += "  list-style-type: none;\n  list-style-position: outside;\n"
-							listCss += fmt.Sprintf("  margin: 0 0 0 %.0fpt;\n", idFl)
-							listCss += fmt.Sprintf("  padding-left: %.0fpt;\n", idSt-idFl -6.0)
-							listCss += "}\n"
+					case nestIdx < cNest:
+/*
+						for nl:=cNest; nl>= nestIdx; nl++ {
+							newStack := popLiStack(dObj.listStack)
+							dObj.listStack = newStack
 						}
+*/
+						listHtml = dObj.closeList(nestIdx)
+				listHtml += fmt.Sprintf("<!-- same list reduce %s new NL %d  old Nl %d -->\n", listid, nestIdx, cNest)
+//				fmt.Printf("<!-- same list reduce %s new NL %d  old Nl %d -->\n", listid, nestIdx, cNest)
+					case nestIdx == cNest:
+						listHtml =""
+				}
 
-						//list item
-						liItemClass :=  listid + fmt.Sprintf("_li_n%d", i)
-						dObj.listStack[i].cliClass = listid
-						//html
-						listPrefix += fmt.Sprintf("<li class=\"%s %s\">",liItemClass, "")
-						listSuffix = "</li>\n"
-						//css
-						listCss += fmt.Sprintf(".%s{\n", liItemClass)
-						nestProp = listProp.NestingLevels[nestIdx]
-						glyphCss := dObj.cvtGlyph(nestProp)
-						listCss += glyphCss
-						listCss += "  display: list;\n  text-align: start\n"
-						listCss += "  padding-top: 2pt;\n  padding-bottom: 2pt;\n"
-						listCss += fmt.Sprintf("  padding-left: 6pt;\n")
-						listCss += "}\n"
-						listCss += fmt.Sprintf(".%s::marker {\n", liItemClass)
-						listCss += cvtTxtMapCss(txtmap)
-						listCss += "}\n"
+			case false:
+				// new list
+				// close list first
+				listHtml = dObj.closeList(-1)
+				listHtml += fmt.Sprintf("<!-- new list %s %s -->\n", listid, listAtt.cListId)
+//			fmt.Printf("<!-- new list %s %s -->\n", listid, listAtt.cListId)
+				newList.cListId = listid
+				newList.cOrd = listOrd
+				newStack := pushLiStack(dObj.listStack, newList)
+				dObj.listStack = newStack
+				if listOrd {
+					listHtml += fmt.Sprintf("<ol class=\"%s_ul nL_%d\">\n", listid[4:], nestIdx)
+				} else {
+					listHtml += fmt.Sprintf("<ul class=\"%s_ul nL_%d\">\n", listid[4:], nestIdx)
+				}
+			// if no cList list -> Clistid == ""
 
-				} //loop i
-
-    		}
 
 		}
-//ppp
+		// need to add mark
+		//listPrefix := fmt.Sprintf("<li class=\"%s_li nL%d mk_%d\">\n"
+		listPrefix = fmt.Sprintf("<li class=\"%s_li nL_%d\">", listid[4:], nestIdx)
 
-	} // end lists
+		listSuffix = "</li>"
 
-*/
+	}
+
 	parObj.bodyCss += listCss + parCssStr
 	parObj.bodyHtml += listHtml + listPrefix + prefix + parHtmlStr + suffix + listSuffix + "\n"
 	if decode {
@@ -2934,7 +2769,7 @@ func (dObj *GdocHtmlObj) cvtBody() (bodyObj *dispObj, err error) {
 //		fmt.Println("tObj:", tObj)
 		addDispObj(bodyObj, tObj)
 	} // for el loop end
-	if len(*dObj.listStack) >= 0 {
+	if dObj.listStack != nil {
 		bodyObj.bodyHtml += dObj.closeList(len(*dObj.listStack))
 fmt.Printf("end of doc closing list!")
 	}
