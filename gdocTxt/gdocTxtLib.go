@@ -34,9 +34,57 @@ type gdocTxtObj struct {
 	doc *docs.Document
 	DocName string
 	headingId []string
+	docLists []docList
+}
+
+type docList struct {
+    listId string
+    maxNestLev int64
+    ord bool
+}
+
+func createImgFolder(filnam string)(err error) {
+
+	if len(filnam) < 2 {
+		return fmt.Errorf("error createIMgFolder:: filename %s too short!", filnam)
+	}
+
+	bf := []byte(filnam)
+	// replace empty space with underscore
+	for i:= 0; i< len(filnam); i++ {
+		if bf[i] == ' ' {bf[i]='_'}
+		if bf[i] == '.' {
+			return fmt.Errorf("error createImgFolder:: filnam has period!")
+		}
+	}
+
+	imgFoldNam := "output/img_" + string(bf)
+
+	if _, err := os.Stat(imgFoldNam); os.IsNotExist(err) {
+		err1:= os.Mkdir(imgFoldNam, os.ModePerm)
+		if err1 != nil {
+			return fmt.Errorf("error createImgFolder:: could not create folder! %v", err1)
+		}
+	}
+	return nil
+}
+
+func findDocList(list []docList, listid string) (res int) {
+
+    res = -1
+    for i:=0; i< len(list); i++ {
+        if list[i].listId == listid {
+            return i
+        }
+    }
+    return res
 }
 
 func (dObj *gdocTxtObj) InitGdocTxt() (err error) {
+	var listItem docList
+
+	body := dObj.doc.Body
+
 	if dObj == nil {
 		return fmt.Errorf("error Init: dObj is nil!")
 	}
@@ -44,6 +92,27 @@ func (dObj *gdocTxtObj) InitGdocTxt() (err error) {
 	dObj.posImgCount = 0
 	dObj.inImgCount = 0
 	dObj.TableCount = 0
+
+	for el:=0; el< len(body.Content); el++ {
+		elObj := body.Content[el]
+		if elObj.Paragraph != nil {
+            if elObj.Paragraph.Bullet != nil {
+                listId := elObj.Paragraph.Bullet.ListId
+                found := findDocList(dObj.docLists, listId)
+                if found < 0 {
+                    listItem.listId = listId
+                    listItem.maxNestLev = elObj.Paragraph.Bullet.NestingLevel
+                    dObj.docLists = append(dObj.docLists, listItem)
+                } else {
+                    nestlev := elObj.Paragraph.Bullet.NestingLevel
+                    if dObj.docLists[found].maxNestLev < nestlev { dObj.docLists[found].maxNestLev = nestlev }
+                }
+
+            }
+
+		}
+	}
+
 	return nil
 }
 
@@ -586,7 +655,9 @@ func (dObj *gdocTxtObj) dispTxtStyl(txtStyl *docs.TextStyle, wsp int)(outstr str
 	}
 	return outstr, nil
 }
+
 func (dObj *gdocTxtObj) dispBodySummary()(outstr string, err error) {
+//    var listItem docList
 
 	body := dObj.doc.Body
 
@@ -599,7 +670,11 @@ func (dObj *gdocTxtObj) dispBodySummary()(outstr string, err error) {
 	for el:=0; el< len(body.Content); el++ {
 		elObj := body.Content[el]
 		if elObj.Paragraph != nil {
-			if elObj.Paragraph.Bullet == nil {parCount++} else {listCount++}
+			parCount++
+            if elObj.Paragraph.Bullet != nil {
+				listCount++
+            }
+
 		}
 		if elObj.SectionBreak != nil {secCount++}
 		if elObj.Table != nil {tabCount++}
@@ -607,7 +682,8 @@ func (dObj *gdocTxtObj) dispBodySummary()(outstr string, err error) {
 	}
 
 	outstr =  fmt.Sprintf("  Paragraphs: %3d\n", parCount)
-	outstr += fmt.Sprintf("  Lists:      %3d\n", listCount)
+	outstr += fmt.Sprintf("  Doc Lists:  %3d\n", len(dObj.docLists))
+	outstr += fmt.Sprintf("  List Items: %3d\n", listCount)
 	outstr += fmt.Sprintf("  Sections:   %3d\n", secCount)
 	outstr += fmt.Sprintf("  Tables:     %3d\n", tabCount)
 	outstr += fmt.Sprintf("  TOC:        %3d\n", tocCount)
@@ -628,7 +704,9 @@ func (dObj *gdocTxtObj) dispContentEl(elStr *docs.StructuralElement)(outstr stri
 //	body := doc.Body
 	notFound := true
 	if elStr.Paragraph != nil {
-		outstr += fmt.Sprintf(" type: Paragraph StartIndex: %d EndIndex: %d\n",  elStr.StartIndex, elStr.EndIndex)
+		listStr := "Paragraph  "
+		if elStr.Paragraph.Bullet != nil {listStr = fmt.Sprintf("List: Id:%-18s NL:%3d", elStr.Paragraph.Bullet.ListId, elStr.Paragraph.Bullet.NestingLevel)}
+		outstr += fmt.Sprintf(" type: %s StartIndex: %d EndIndex: %d\n",  listStr, elStr.StartIndex, elStr.EndIndex)
 		notFound = false
 		par := elStr.Paragraph
 		tstr, err := dObj.dispPar(par)
@@ -681,8 +759,10 @@ func (dObj *gdocTxtObj) dispContentElShort(elStr *docs.StructuralElement)(outstr
 	}
 
 	if elStr.Paragraph != nil {
-		outstr += fmt.Sprintf(" type: Paragraph Style: %-14s Length: %3d StartIndex: %5d EndIndex: %5d\n", elStr.Paragraph.ParagraphStyle.NamedStyleType ,
-			elStr.EndIndex - elStr.StartIndex, elStr.StartIndex, elStr.EndIndex)
+		listStr := "Paragraph  "
+		if elStr.Paragraph.Bullet != nil {listStr = fmt.Sprintf("List NL: %2d", elStr.Paragraph.Bullet.NestingLevel)}
+		outstr += fmt.Sprintf(" type: %s Els: %d Style: %-14s Length: %3d StartIndex: %5d EndIndex: %5d\n", listStr, len(elStr.Paragraph.Elements),
+			elStr.Paragraph.ParagraphStyle.NamedStyleType , elStr.EndIndex - elStr.StartIndex, elStr.StartIndex, elStr.EndIndex)
 	}
 
 	if elStr.SectionBreak != nil {
@@ -790,22 +870,23 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 	}
 	outfil.WriteString(outstr)
 
+	// Document Lists
+
 	// Lists
+	outstr = fmt.Sprintf("\n*** Doc Lists: %d ***\n",len(docObj.docLists))
+	for i:=0; i<len(docObj.docLists); i++ {
+		outstr += fmt.Sprintf("    List %2d: id: %-18s order: %t max Nlevel: %d\n", i, docObj.docLists[i].listId, docObj.docLists[i].ord, docObj.docLists[i].maxNestLev)
+	}
+	outfil.WriteString(outstr)
+
+	// doc.Lists
 	listLen := len(doc.Lists)
 	outstr = fmt.Sprintf("\n*** Lists: %d ***\n",listLen)
 	knum = 0
 	for key, list := range doc.Lists {
 		knum++
 		nest := list.ListProperties.NestingLevels
-		outstr += fmt.Sprintf("    List %2d: id: %-20s nest levels: %d\n", knum, key, len(nest) )
-/*
-		tstr, err := docObj.dispListProp(list.ListProperties)
-		if err != nil {
-			outstr += fmt.Sprintf("error dispLists: %v\n",err)
-			break
-		}
-		outstr += tstr
-*/
+		outstr += fmt.Sprintf("    List %2d: id: %-18s nest levels: %d\n", knum, key, len(nest) )
 	}
 	outfil.WriteString(outstr)
 
@@ -970,28 +1051,3 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 	return nil
 }
 
-func createImgFolder(filnam string)(err error) {
-
-	if len(filnam) < 2 {
-		return fmt.Errorf("error createIMgFolder:: filename %s too short!", filnam)
-	}
-
-	bf := []byte(filnam)
-	// replace empty space with underscore
-	for i:= 0; i< len(filnam); i++ {
-		if bf[i] == ' ' {bf[i]='_'}
-		if bf[i] == '.' {
-			return fmt.Errorf("error createImgFolder:: filnam has period!")
-		}
-	}
-
-	imgFoldNam := "output/img_" + string(bf)
-
-	if _, err := os.Stat(imgFoldNam); os.IsNotExist(err) {
-		err1:= os.Mkdir(imgFoldNam, os.ModePerm)
-		if err1 != nil {
-			return fmt.Errorf("error createImgFolder:: could not create folder! %v", err1)
-		}
-	}
-	return nil
-}
