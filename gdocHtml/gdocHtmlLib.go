@@ -2377,15 +2377,16 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 			}
 			suffix = "</h6>"
 		case "NORMAL_TEXT":
-			if isList {
-				prefix = "<span>"; suffix = "</span>"
-			} else {
-				prefix = fmt.Sprintf("<p class=\"%s_p\">", dObj.docName)
-				if alter {
+			switch {
+				case isList:
+					prefix = "<span>"
+					suffix = "</span>"
+				case alter:
 					cssPrefix = fmt.Sprintf(".%s_p_%d {\n",dObj.docName, dObj.parCount)
-					prefix = fmt.Sprintf("<p id=\"%s_p_%d\">",dObj.docName, dObj.parCount)
-				}
-				suffix = "</p>"
+					prefix = fmt.Sprintf("<p class=\"%s_p_%d\">",dObj.docName, dObj.parCount)
+				default:
+					prefix = fmt.Sprintf("<p class=\"%s_p\">", dObj.docName)
+					suffix = "</p>"
 			}
 		case "NAMED_STYLE_TYPE_UNSPECIFIED":
 //			namTypValid = false
@@ -2468,7 +2469,7 @@ func (dObj *GdocHtmlObj) creHeadCss() (cssStr string, err error) {
 
 	//gdoc division css
 
-	cssStr = fmt.Sprintf(".%s_main {\n", dObj.docName)
+	cssStr = fmt.Sprintf(".%s_div {\n", dObj.docName)
 
     docstyl := dObj.doc.DocumentStyle
 	if dObj.Options.Toc {
@@ -2757,7 +2758,7 @@ func (dObj *GdocHtmlObj) cvtBody() (bodyObj *dispObj, err error) {
 //	toc := dObj.Options.Toc
 	bodyObj = new(dispObj)
 
-	bodyObj.bodyHtml = fmt.Sprintf("<div id=\"%s\" class=\"%s_main\">\n",dObj.docName, dObj.docName)
+	bodyObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div\">\n", dObj.docName)
 
 	elNum := len(body.Content)
 	for el:=0; el< elNum; el++ {
