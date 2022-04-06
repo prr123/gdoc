@@ -750,7 +750,7 @@ func fillParMap(parmap *parMap, parStyl *docs.ParagraphStyle)(alter bool, err er
 		}
 	}
 
-	// may have to introduce an examption for title
+	// may have to introduce an exemption for title
 	if !parmap.keepLines {
 		if parStyl.KeepLinesTogether != parmap.keepLines {
 			parmap.keepLines = parStyl.KeepLinesTogether
@@ -792,17 +792,56 @@ func fillParMap(parmap *parMap, parStyl *docs.ParagraphStyle)(alter bool, err er
 	//tabs to do
 //	parmap.hasBorders = true
 
+	// check for zero width borders
 	bb := true
-	bb = bb && (parStyl.BorderBetween == nil)
-	bb = bb && (parStyl.BorderTop == nil)
-	bb = bb && (parStyl.BorderRight == nil)
-	bb = bb && (parStyl.BorderBottom == nil)
-	bb = bb && (parStyl.BorderLeft == nil)
+	if (parStyl.BorderBetween != nil) {
+		if parStyl.BorderBetween.Width != nil {
+			if parStyl.BorderBetween.Width.Magnitude > 0.1 {
+				bb = false
+			}
+		}
+	}
+
+	if (parStyl.BorderTop != nil) {
+		if parStyl.BorderTop.Width != nil {
+			if parStyl.BorderTop.Width.Magnitude > 0.1 {
+				bb = false
+			}
+		}
+	}
+
+	if parStyl.BorderRight != nil {
+		if parStyl.BorderRight.Width != nil {
+			if parStyl.BorderRight.Width.Magnitude > 0.1 {
+				bb = false
+			}
+		}
+	}
+
+	if parStyl.BorderBottom != nil {
+		if parStyl.BorderBottom.Width != nil {
+			if parStyl.BorderBottom.Width.Magnitude > 0.1 {
+				bb = false
+			}
+		}
+	}
+
+
+	if parStyl.BorderLeft != nil {
+		if parStyl.BorderLeft.Width != nil {
+			if parStyl.BorderLeft.Width.Magnitude > 0.1 {
+				bb = false
+			}
+		}
+	}
+
 	if bb {
 		parmap.hasBorders = false
 //fmt.Printf("no border return: %t\n", alter)
+//fmt.Printf("fillParMap 3: %t\n", alter)
 		return alter, nil
 	}
+
 
 	parmap.hasBorders = true
 	if parStyl.BorderBetween != nil {
@@ -1913,7 +1952,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 
 	isList := false
 	if par.Bullet != nil {isList = true}
-fmt.Printf("********** par %d list: %t ***********\n", dObj.parCount, isList)
+//fmt.Printf("********** par %d list: %t ***********\n", dObj.parCount, isList)
 
 	if par.Bullet == nil {
 		// if there was an open list, close it
@@ -2049,12 +2088,12 @@ fmt.Printf("********** par %d list: %t ***********\n", dObj.parCount, isList)
 		// condition for </ul></ol>
 		// 1. decrease in nesting level
 
-		fmt.Println("*********** listStack **********")
-		fmt.Printf("listid: %s \n", listid)
-		printLiStack(dObj.listStack)
+//		fmt.Println("*********** listStack **********")
+//		fmt.Printf("listid: %s \n", listid)
+//		printLiStack(dObj.listStack)
 
 		listAtt, cNest := getLiStack(dObj.listStack)
-		printLiStackItem(listAtt, cNest)
+//		printLiStackItem(listAtt, cNest)
 //lll
 		switch listid == listAtt.cListId {
 			case true:
@@ -2277,7 +2316,7 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 		}
 		if alter {cssParAtt = cvtParMapCss(parmap)}
 	}
- fmt.Printf("parstyle %s alter: %t\n", parStyl.NamedStyleType, alter)
+ //fmt.Printf("*** parstyle %s alter: %t\n", parStyl.NamedStyleType, alter)
 
 //ppp
 //	printParMap(parmap, parStyl)
@@ -2772,7 +2811,7 @@ func (dObj *GdocHtmlObj) cvtBody() (bodyObj *dispObj, err error) {
 	} // for el loop end
 	if dObj.listStack != nil {
 		bodyObj.bodyHtml += dObj.closeList(len(*dObj.listStack))
-fmt.Printf("end of doc closing list!")
+//fmt.Printf("end of doc closing list!")
 	}
 
 	bodyObj.tocHtml += "</div>\n\n"
