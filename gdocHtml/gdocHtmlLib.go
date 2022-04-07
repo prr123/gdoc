@@ -52,16 +52,7 @@ type GdocHtmlObj struct {
 	h5 namStyl
 	h6 namStyl
     spanCount int
-//	pnorm namStyl
-//	hasList bool
-//    subDivCount int
-//	listCount int
-//    lists *[]listObj
-//	listCss string
-//	listNest int64
 	listStack *[]cList
-//	listCssClass []string
-//	liNestCss []string
 	docLists []docList
 	numHeaders int
 	headers *[]string
@@ -86,7 +77,6 @@ type dispObj struct {
 }
 
 type cList struct {
-//    cNestLev  int
 	cListId string
 	cListCount int
 	cOrd bool
@@ -110,12 +100,6 @@ type nestLevel struct {
 	glTxtmap *textMap
 }
 
-type listObj struct {
-    UnTyp bool
-    Id string
-	numNestLev int
-	NestLev [9]nestLevel
-}
 
 type tabCell struct {
 	pad [4] float64
@@ -2799,6 +2783,8 @@ func CreGdocHtmlFil(outfil *os.File, doc *docs.Document, options *OptObj)(err er
 		getDefOption(defOpt)
 		if defOpt.Verb {ShowOption(defOpt)}
 		dObj.Options = defOpt
+	} else {
+		dObj.Options = options
 	}
 
 	err = dObj.initGdocHtmlLib()
