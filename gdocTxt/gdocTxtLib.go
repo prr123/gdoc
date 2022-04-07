@@ -461,15 +461,15 @@ func (dObj *gdocTxtObj) dispSecStyle(secStyl *docs.SectionStyle)(outstr string, 
 		return outstr, fmt.Errorf("error dispSecStyl: no secStyl")
 	}
 	if len(secStyl.SectionType) > 0 {
-		outstr += fmt.Sprintf("SectionType:          %s\n", secStyl.SectionType)
+		outstr += fmt.Sprintf("  SectionType: %s\n", secStyl.SectionType)
 	} else {
-		outstr += fmt.Sprintf("SectionType:   		not specified\n")
+		outstr += fmt.Sprintf("  SectionType: not specified\n")
 	}
 
-	outstr += fmt.Sprintf(" Column Properties: %d", len(secStyl.ColumnProperties))
+	outstr += fmt.Sprintf("  Column Properties: %d", len(secStyl.ColumnProperties))
 	for i:=0; i< len(secStyl.ColumnProperties); i++ {
 		col := secStyl.ColumnProperties[i]
-		outstr += fmt.Sprintf(" Column [%d] Width: %d %s Padding End: %d %s\n",i, col.Width.Magnitude, col.Width.Unit, col.PaddingEnd.Magnitude, col.PaddingEnd.Unit)
+		outstr += fmt.Sprintf("  Column [%d] Width: %d %s Padding End: %d %s\n",i, col.Width.Magnitude, col.Width.Unit, col.PaddingEnd.Magnitude, col.PaddingEnd.Unit)
 	}
 	outstr += "  Column Separador:     " + secStyl.ColumnSeparatorStyle + "\n"
 	outstr += "  Default Header Id:    " + secStyl.DefaultHeaderId + "\n"
@@ -705,7 +705,7 @@ func (dObj *gdocTxtObj) dispContentEl(elStr *docs.StructuralElement)(outstr stri
 	notFound := true
 	if elStr.Paragraph != nil {
 		listStr := "Paragraph  "
-		if elStr.Paragraph.Bullet != nil {listStr = fmt.Sprintf("List: Id:%-18s NL:%3d", elStr.Paragraph.Bullet.ListId, elStr.Paragraph.Bullet.NestingLevel)}
+		if elStr.Paragraph.Bullet != nil {listStr = fmt.Sprintf("List Id:%-18s NL:%3d", elStr.Paragraph.Bullet.ListId, elStr.Paragraph.Bullet.NestingLevel)}
 		outstr += fmt.Sprintf(" type: %s StartIndex: %d EndIndex: %d\n",  listStr, elStr.StartIndex, elStr.EndIndex)
 		notFound = false
 		par := elStr.Paragraph
@@ -766,11 +766,15 @@ func (dObj *gdocTxtObj) dispContentElShort(elStr *docs.StructuralElement)(outstr
 	}
 
 	if elStr.SectionBreak != nil {
-		outstr += fmt.Sprintf(" type: Section StartIndex: %d EndIndex: %d\n", elStr.StartIndex, elStr.EndIndex)
+		if elStr.SectionBreak.SectionStyle != nil {
+			outstr += fmt.Sprintf(" type: Section *** %s *** StartIndex: %d EndIndex: %d\n", elStr.SectionBreak.SectionStyle.SectionType, elStr.StartIndex, elStr.EndIndex)
+		} else {
+			outstr += fmt.Sprintf(" type: Section *** no Section Style *** StartIndex: %d EndIndex: %d\n", elStr.StartIndex, elStr.EndIndex)
+		}
 	}
 
 	if elStr.Table != nil {
-		outstr += fmt.Sprintf(" type: Table StartIndex: %d EndIndex: %d\n", elStr.StartIndex, elStr.EndIndex)
+		outstr += fmt.Sprintf(" type: Table rows: %d columns: %d StartIndex: %d EndIndex: %d\n", elStr.Table.Rows, elStr.Table.Columns, elStr.StartIndex, elStr.EndIndex)
 	}
 
 	if elStr.TableOfContents != nil {
