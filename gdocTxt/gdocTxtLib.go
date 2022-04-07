@@ -761,8 +761,10 @@ func (dObj *gdocTxtObj) dispContentElShort(elStr *docs.StructuralElement)(outstr
 	if elStr.Paragraph != nil {
 		listStr := "Paragraph  "
 		if elStr.Paragraph.Bullet != nil {listStr = fmt.Sprintf("List NL: %2d", elStr.Paragraph.Bullet.NestingLevel)}
-		outstr += fmt.Sprintf(" type: %s Els: %d Style: %-14s Length: %3d StartIndex: %5d EndIndex: %5d\n", listStr, len(elStr.Paragraph.Elements),
-			elStr.Paragraph.ParagraphStyle.NamedStyleType , elStr.EndIndex - elStr.StartIndex, elStr.StartIndex, elStr.EndIndex)
+		heading := elStr.Paragraph.ParagraphStyle.HeadingId
+		if len(heading) == 0 {heading = "---"}
+		outstr += fmt.Sprintf("type: %s parEls: %d Style: %-14s Heading: %-16s Length: %3d Start: %5d End: %5d\n", listStr, len(elStr.Paragraph.Elements),
+			elStr.Paragraph.ParagraphStyle.NamedStyleType, heading, elStr.EndIndex - elStr.StartIndex, elStr.StartIndex, elStr.EndIndex)
 	}
 
 	if elStr.SectionBreak != nil {
@@ -973,7 +975,7 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 
 	for el:=0; el< numEl; el++ {
 		elObj := body.Content[el]
-		outstr += fmt.Sprintf("   element: %d ", el)
+		outstr += fmt.Sprintf(" element:%3d ", el)
 		tStr,err := docObj.dispContentElShort(elObj)
 		if err != nil {
 			outstr += fmt.Sprintf("\n error dispContent[%d]: %v\n", el, err) + tStr
