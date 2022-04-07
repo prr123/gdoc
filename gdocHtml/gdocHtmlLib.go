@@ -1,35 +1,11 @@
-// golang library that conversts gdoc to html
+// golang library that creates a html file from a gdoc file
 // author: prr
 // created: 18/11/2021
-// copyright 2022 Peter Riemenschneider
+// copyright 2022 prr, Peter Riemenschneider
 //
-// v1
-// 18/12  -- fix Color
-//		-- add cvtPar
-// 20/12  limit headings to four
-// 21/12 introduce special ids for title and subtitle
-//       made title and subtitle paragraphs instead of headings
-//		assumption is that there is only one title and one subtitle
-//		extended headings to six
-//		added TOC division
-// 22/12 added method CreateTocHead
-//		need to add parstyle normal text to toc div
+// for changes see github
 //
-// links
-//
-// 15/2/2022 add ordered lists
-//
-// 28/2/2022 add inline images
-//
-// 2/3/2022 reduced css by eliminating paragraph element where default values are repeated
-// 	 -indentfirst:0
-//	  -indent:0
-//  - line-height: 1.15
-//
-// 9/3/2022 add img sub folders
-//          add positioned images
-//		    add conversion options
-// 12/3/022 add table
+// start: CreGdocHtmlTil
 //
 
 package gdocToHtml
@@ -241,9 +217,8 @@ type OptObj struct {
 	ElMargin [4]int
 }
 
-var DefOpt OptObj
+func getDefOption(opt *OptObj) {
 
-func GetDefOption (opt *OptObj) {
 	opt.BaseFontSize = 0
 	opt.MultiDiv = false
 	opt.DivBorders = false
@@ -254,6 +229,7 @@ func GetDefOption (opt *OptObj) {
 	opt.Verb = true
 	opt.Toc = false
 	for i:=0; i< 4; i++ {opt.ElMargin[i] = 0}
+
 	return
 }
 
@@ -984,9 +960,7 @@ func fillParMap(parmap *parMap, parStyl *docs.ParagraphStyle)(alter bool, err er
 
 	return alter, nil
 }
-
-func cvtParMapCss(pMap *parMap)(cssStr string) {
-
+func (dObj *GdocHtmlObj) cvtParMapCss(pMap *parMap)(cssStr string) {
 	cssStr =""
 
 	if len(pMap.halign) > 0 {
@@ -1005,11 +979,10 @@ func cvtParMapCss(pMap *parMap)(cssStr string) {
 
 	}
 
-// need to investigate
-//browser
+	opt := dObj.Options
 	if pMap.linSpac > 0.0 {
-		if DefOpt.DefLinSpacing > 0.0 {
-			cssStr += fmt.Sprintf("  line-height: %.2f;\n", DefOpt.DefLinSpacing*pMap.linSpac)
+		if opt.DefLinSpacing > 0.0 {
+			cssStr += fmt.Sprintf("  line-height: %.2f;\n", opt.DefLinSpacing*pMap.linSpac)
 		} else {
 			cssStr += fmt.Sprintf("  line-height: %.2f;\n", pMap.linSpac)
 		}
@@ -1171,7 +1144,6 @@ func (dObj *GdocHtmlObj) creHtmlHead()(outstr string, err error) {
 	return outstr, nil
 }
 
-//xxnam
 func (dObj *GdocHtmlObj) getNamedStyl(namedTyp string)(parStyl *docs.ParagraphStyle, txtStyl *docs.TextStyle, err error) {
 	var namStyl *docs.NamedStyle
 
@@ -1393,21 +1365,15 @@ func (dObj *GdocHtmlObj) findListProp (listId string) (listProp *docs.ListProper
 	return nil
 }
 
-func (dObj *GdocHtmlObj) InitGdocHtmlLib (doc *docs.Document, opt *OptObj) (err error) {
+func (dObj *GdocHtmlObj) initGdocHtmlLib () (err error) {
 	var listItem docList
 
-	dObj.doc = doc
+//	if opt == nil {return fmt.Errorf("error InitGdocHtmlLib:: no option!")}
 
-	GetDefOption(&DefOpt)
-	if DefOpt.Verb {ShowOption(&DefOpt)}
-
-	if opt == nil {
-		dObj.Options = &DefOpt
-	}
-
+	doc:= dObj.doc
 	// need to transform file name
 	// replace spaces with underscore
-	dNam := doc.Title
+	dNam := dObj.doc.Title
 	x := []byte(dNam)
 	for i:=0; i<len(x); i++ {
 		if x[i] == ' ' {
@@ -1427,7 +1393,6 @@ func (dObj *GdocHtmlObj) InitGdocHtmlLib (doc *docs.Document, opt *OptObj) (err 
 	dObj.h4.exist = false
 	dObj.h5.exist = false
 	dObj.h6.exist = false
-//	dObj.hasList = false
 
 // section breaks
 	dObj.elCount = len(doc.Body.Content)
@@ -2278,7 +2243,7 @@ func (dObj *GdocHtmlObj) cvtNamedStyl(namedStylTyp string)(cssStr string, err er
 
 	}
 	if len(cssPrefix) > 0 {
-		parCss := cvtParMapCss(parmap)
+		parCss := dObj.cvtParMapCss(parmap)
 		txtCss := cvtTxtMapCss(txtmap)
 		cssStr += cssPrefix + parCss + txtCss + "}\n"
 	}
@@ -2308,13 +2273,13 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 // fmt.Printf("begin fillparmap parstyl %s: %t\n", parStyl.NamedStyleType, alter)
 
 	if parStyl == nil || isList {
-		cssParAtt = cvtParMapCss(parmap)
+		cssParAtt = dObj.cvtParMapCss(parmap)
 	} else {
 		alter, err = fillParMap(parmap, parStyl)
 		if err != nil {
 			cssComment += "/* erro fill Parmap parstyl */" + fmt.Sprintf("%v\n", err)
 		}
-		if alter {cssParAtt = cvtParMapCss(parmap)}
+		if alter {cssParAtt = dObj.cvtParMapCss(parmap)}
 	}
  //fmt.Printf("*** parstyle %s alter: %t\n", parStyl.NamedStyleType, alter)
 
@@ -2559,7 +2524,7 @@ func (dObj *GdocHtmlObj) creHeadCss() (cssStr string, err error) {
 	}
 //fmt.Printf("txtmap: %v\n", defTxtMap)
 
-	cssStr += cvtParMapCss(defParMap)
+	cssStr += dObj.cvtParMapCss(defParMap)
 
 //	cssStr += txtCssStr
 
@@ -2822,29 +2787,36 @@ func (dObj *GdocHtmlObj) cvtBody() (bodyObj *dispObj, err error) {
 
 func CreGdocHtmlFil(outfil *os.File, doc *docs.Document, options *OptObj)(err error) {
 	var tocDiv *dispObj
+	var dObj GdocHtmlObj
 
-	if outfil == nil {return fmt.Errorf("error CreGdocHtmlFil -- outfil is nil!")}
+	if outfil == nil {return fmt.Errorf("error CreGdocHtmlFil: outfil is nil!")}
 
-	dObj := new(GdocHtmlObj)
+	dObj.doc = doc
 	dObj.folder = outfil
-	err = dObj.InitGdocHtmlLib(doc, options)
+
+	if options == nil {
+		defOpt := new(OptObj)
+		getDefOption(defOpt)
+		if defOpt.Verb {ShowOption(defOpt)}
+		dObj.Options = defOpt
+	}
+
+	err = dObj.initGdocHtmlLib()
 	if err != nil {
 		return fmt.Errorf("error CvtGdocHtml:: InitGdocHtml %v", err)
 	}
 
-	toc := dObj.Options.Toc
-
 	mainDiv, err := dObj.cvtBody()
 	if err != nil {
-		return fmt.Errorf("error cc body %v", err)
+		return fmt.Errorf("error CvtGdocHtml:: cvtBody: %v", err)
 	}
 
 	headCssStr, err := dObj.creHeadCss()
 	if err != nil {
-		return fmt.Errorf("error CvtGdocHtml: ConvertDocHeatAttToCss %v", err)
+		return fmt.Errorf("error CvtGdocHtml:: creHeadCss: %v", err)
 	}
-//	mainDiv.bodyCss = headCssStr + mainDiv.bodyCss
 
+	toc := dObj.Options.Toc
 	if toc {
 		tocDiv, err = dObj.creTocHead()
 		if err != nil {
