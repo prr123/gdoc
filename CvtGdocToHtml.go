@@ -22,27 +22,27 @@ func main() {
 	var gd gdocApi.GdocApiStruct
 
     numArgs := len(os.Args)
-    if numArgs < 3 {
-		cmd := os.Args[0]
-		switch numArgs {
-			case 2:
-        		fmt.Println("error - no comand line arguments!")
-          		fmt.Printf("%s usage is:\n  %s docId opt [sumary, main, all]\n", cmd[2:], cmd)
-        		os.Exit(1)
-			case 3:
-        		fmt.Println("error - no opt argument provided!")
-          		fmt.Printf("%s usage is:\n  %s docId opt [sumary, main, all]\n", cmd[2:], cmd)
-        		os.Exit(1)
-			case 4:
-			default:
-        		fmt.Println("error - too many arguments!")
-          		fmt.Printf("%s usage is:\n  %s docId opt [sumary, main, all]\n", cmd[2:], cmd)
-        		os.Exit(1)
-		}
+//	fmt.Printf("args: %d\n", numArgs)
+	cmd := os.Args[0]
+	opt:=""
+	switch numArgs {
+		case 1:
+       		fmt.Println("error - no comand line arguments!")
+ 			fmt.Printf("%s usage is:\n  %s docId opt [sumary, main, all]\n", cmd[2:], cmd)
+        	os.Exit(1)
+		case 2:
+       		fmt.Println("error - no opt argument provided!")
+			fmt.Println("assuming opt = all")
+			opt = "all"
+		case 3:
+			opt = os.Args[2]
+		default:
+        	fmt.Println("error - too many arguments!")
+          	fmt.Printf("%s usage is:\n  %s docId opt [sumary, main, all]\n", cmd[2:], cmd)
+        	os.Exit(1)
     }
 
     docId := os.Args[1]
-	opt := os.Args[2]
 
 	err := gd.InitGdocApi()
 	srv := gd.Svc
