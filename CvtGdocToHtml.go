@@ -63,7 +63,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		err = gdocHtml.CreGdocHtmlSummary(outfil, doc, nil)
+		err = gdocHtml.CreGdocHtmlSection("summary", outfil, doc, nil)
 		if err != nil {
 			fmt.Println("error main: CreGdocHtmlSummary -- cannot convert gdoc doc: ", err)
 			os.Exit(1)
@@ -97,14 +97,9 @@ func main() {
 			os.Exit(1)
 		}
 
-		err = gdocHtml.CreGdocHtmlSummary(outfil, doc, nil)
+		err = gdocHtml.CreGdocHtmlDoc(outfil, doc, nil)
 		if err != nil {
 			fmt.Println("error CreGdocHtmlSummary -- cannot convert gdoc file: ", err)
-			os.Exit(1)
-		}
-		err = gdocHtml.CreGdocHtmlMain(outfil, doc, nil)
-		if err != nil {
-			fmt.Println("error CreGdocHtmlMain -- cannot convert gdoc file: ", err)
 			os.Exit(1)
 		}
 
