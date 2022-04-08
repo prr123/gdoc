@@ -32,7 +32,7 @@ func main() {
 
     docId := os.Args[1]
 
-	err := gd.Init()
+	err := gd.InitGdocApi()
 	srv := gd.Svc
 //	docId := "1pdI_GFPR--q88V3WNKogcPfqa5VFOpzDZASo4alCKrE"
 	doc, err := srv.Documents.Get(docId).Do()
@@ -42,12 +42,13 @@ func main() {
 	}
 	fmt.Printf("The title of the doc is: %s\n", doc.Title)
 
-	outfil, err := gd.CreTxtOutFile(doc.Title, "html")
+	outfil, err := gd.CreOutFile(doc.Title, "html")
 	if err != nil {
 		fmt.Println("error main -- cannot open out file: ", err)
 		os.Exit(1)
 	}
-	err = gdocHtml.CvtGdocHtml(outfil, doc, nil)
+
+	err = gdocHtml.CreGdocHtmlDoc(outfil, doc, nil)
 	if err != nil {
 		fmt.Println("error main -- cannot convert gdoc file: ", err)
 		os.Exit(1)
