@@ -26,7 +26,6 @@ const (
 
 type GdocHtmlObj struct {
 	doc *docs.Document
-//   	divClass string
 	docName string
     docWidth float64
 	docHeight float64
@@ -62,6 +61,8 @@ type GdocHtmlObj struct {
 	inImgCount int
 	posImgCount int
 	folder *os.File
+	foldName string
+	foldPath string
     imgFoldNam string
     imgFoldPath string
 	Options *OptObj
@@ -1275,6 +1276,59 @@ func (dObj *GdocHtmlObj) downloadImg()(err error) {
     return nil
 }
 
+func (dObj *GdocHtmlObj) createHtmlFolder(path string)(err error) {
+	var filnam, foldnam string
+
+	// check whether html folder exists
+    filnam = dObj.docName
+    if len(filnam) < 2 {
+        return fmt.Errorf("error createHtmlFolder:: docName %s too short!", filnam)
+    }
+
+	lenPath := len(path)
+	if lenPath > 0 {
+		if path[lenPath -1] != '/' { path += "/"}
+		foldnam = path + filnam
+	} else {
+		foldnam = filnam
+	}
+
+    // check whether dir folder exists, if not create one
+    newDir := false
+    _, err = os.Stat(foldnam)
+    if os.IsNotExist(err) {
+        err1 := os.Mkdir(foldnam, os.ModePerm)
+        if err1 != nil {
+            return fmt.Errorf("error createHtmlFolder:: could not create html folder! %v", err1)
+        }
+        newDir = true
+    } else {
+        if err != nil {
+            return fmt.Errorf("error createHtmlFolder:: could not find html folder! %v", err)
+        }
+    }
+
+    // open directory
+    if !newDir {
+        err = os.RemoveAll(foldnam)
+        if err != nil {
+            return fmt.Errorf("error createHtmlFolder:: could not delete files in html folder! %v", err)
+        }
+        err = os.Mkdir(foldnam, os.ModePerm)
+        if err != nil {
+            return fmt.Errorf("error createHtmlFolder:: could not create html folder! %v", err)
+        }
+    }
+    dObj.foldName = filnam
+    dObj.foldPath = foldnam
+/*
+	outfil, err = os.Create(path)
+    if err != nil {
+        return nil, fmt.Errorf("error CreateHtmlFolder: cannot create output text file: %v!", err)
+    }
+*/
+    return nil
+}
 
 func (dObj *GdocHtmlObj) createImgFolder()(err error) {
 
@@ -1379,7 +1433,7 @@ func (dObj *GdocHtmlObj) findListProp (listId string) (listProp *docs.ListProper
 	return nil
 }
 
-func (dObj *GdocHtmlObj) initGdocHtmlLib() (initObj *dispObj, err error) {
+func (dObj *GdocHtmlObj) initGdocHtmlLib() (err error) {
 	var listItem docList
 	var heading heading
 	var sec sect
@@ -1511,22 +1565,21 @@ func (dObj *GdocHtmlObj) initGdocHtmlLib() (initObj *dispObj, err error) {
 
     	err = dObj.createImgFolder()
 		if err != nil {
-        	return initObj, fmt.Errorf("error InitGdocHtmlLib: could not create ImgFolder: %v!", err)
+        	return fmt.Errorf("error InitGdocHtmlLib: could not create ImgFolder: %v!", err)
 		}
 		if dObj.Options.Verb {
 			fmt.Printf("Created Image folder: %s\n", dObj.ImgFoldName)
 		}
     	err = dObj.downloadImg()
     	if err != nil {
-        	return initObj, fmt.Errorf("error InitGdocHtmlLib: could not download images: %v!", err)
+        	return fmt.Errorf("error InitGdocHtmlLib: could not download images: %v!", err)
     	}
 	} else {
 		if dObj.Options.Verb {fmt.Printf("***** no image folder created *****\n")}
 	}
 	if dObj.Options.Verb {fmt.Printf("**************************************\n\n")}
-//iii
-	initObj = new(dispObj)
-	return initObj, nil
+
+	return nil
 }
 
 
@@ -2532,11 +2585,25 @@ func (dObj *GdocHtmlObj) cvtTxtStylCss(txtStyl *docs.TextStyle, head bool)(cssSt
 }
 
 
-func (dObj *GdocHtmlObj) creHeadCss(divStr string) (cssStr string, err error) {
-	var divExt string
+func (dObj *GdocHtmlObj) createDivHead(divName string) (divObj *dispObj, err error) {
+	var cssStr string
 	//gdoc division css
-	if len(divStr) == 0 {divExt = "div"} else {divExt = divStr}
-	cssStr = fmt.Sprintf(".%s_%s {\n", dObj.docName, divExt)
+
+	if len(divName) == 0 { return divObj, fmt.Errorf("error createDivHead: no divNam!") }
+	cssStr = fmt.Sprintf(".%s_%s {\n", dObj.docName, divName)
+
+	// html
+	divObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div %s\">\n", dObj.docName, divName)
+	// css
+	divObj.bodyCss = cssStr
+
+	return divObj, nil
+}
+
+func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
+	var cssStr string
+	//gdoc division css
+	cssStr = fmt.Sprintf(".%s_div {\n", dObj.docName)
 
     docstyl := dObj.doc.DocumentStyle
 	if dObj.Options.Toc {
@@ -2562,12 +2629,12 @@ func (dObj *GdocHtmlObj) creHeadCss(divStr string) (cssStr string, err error) {
 	defTxtMap := new(textMap)
 	parStyl, txtStyl, err := dObj.getNamedStyl("NORMAL_TEXT")
 	if err != nil {
-		return cssStr, fmt.Errorf("error creHeadCss: %v", err)
+		return headObj, fmt.Errorf("error creHeadCss: %v", err)
 	}
 
 	_, err = fillTxtMap(defTxtMap, txtStyl)
 	if err != nil {
-		return cssStr, fmt.Errorf("error creHeadCss: %v", err)
+		return headObj, fmt.Errorf("error creHeadCss: %v", err)
 	}
 
 	cssStr += cvtTxtMapCss(defTxtMap)
@@ -2583,7 +2650,7 @@ func (dObj *GdocHtmlObj) creHeadCss(divStr string) (cssStr string, err error) {
 	_, err = fillParMap(defParMap, parStyl)
 	if err != nil {
 //fmt.Printf("error %v\n", err)
-		return cssStr, fmt.Errorf("error creHeadCss: %v", err)
+		return headObj, fmt.Errorf("error creHeadCss: %v", err)
 	}
 //fmt.Printf("txtmap: %v\n", defTxtMap)
 
@@ -2667,7 +2734,11 @@ func (dObj *GdocHtmlObj) creHeadCss(divStr string) (cssStr string, err error) {
 		cssStr += fmt.Sprintf("  margin-bottom: %.1fmm;\n}\n", docstyl.MarginBottom.Magnitude*PtTomm)
 	}
 
-	return cssStr, nil
+	headObj.bodyCss = cssStr
+	//gdoc division html
+	headObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div\">", dObj.docName)
+
+	return headObj, nil
 }
 
 func (dObj *GdocHtmlObj) cvtContentEl(contEl *docs.StructuralElement) (GdocHtmlObj *dispObj, err error) {
@@ -2810,14 +2881,12 @@ func (dObj *GdocHtmlObj) creTocHead() (hdObj *dispObj, err error) {
 	return hdObj, nil
 }
 
-func (dObj *GdocHtmlObj) cvtBody(divStr string) (bodyObj *dispObj, err error) {
-	var divExt string
+func (dObj *GdocHtmlObj) cvtBody() (bodyObj *dispObj, err error) {
 
 	if dObj == nil {
 		return nil, fmt.Errorf("error cvtBody -- no GdocObj!")
 	}
 
-	if len(divStr) == 0 {divExt = "div"} else {divExt = divStr}
 
 	doc := dObj.doc
 	body := doc.Body
@@ -2827,7 +2896,7 @@ func (dObj *GdocHtmlObj) cvtBody(divStr string) (bodyObj *dispObj, err error) {
 	bodyObj = new(dispObj)
 
 //	toc := dObj.Options.Toc
-	bodyObj.bodyHtml = fmt.Sprintf("<div class=\"%s_%s\">\n", dObj.docName, divExt)
+	bodyObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div\">\n", dObj.docName)
 
 	elNum := len(body.Content)
 	for el:=0; el< elNum; el++ {
@@ -2913,17 +2982,17 @@ func CreGdocHtmlDoc(outfil *os.File, doc *docs.Document, options *OptObj)(err er
 		dObj.Options = options
 	}
 
-	initObj, err := dObj.initGdocHtmlLib()
+	err = dObj.initGdocHtmlLib()
 	if err != nil {
 		return fmt.Errorf("error CvtGdocHtml:: InitGdocHtml %v", err)
 	}
 
-	mainDiv, err := dObj.cvtBody("div")
+	mainDiv, err := dObj.cvtBody()
 	if err != nil {
 		return fmt.Errorf("error CvtGdocHtml:: cvtBody: %v", err)
 	}
 
-	headCssStr, err := dObj.creHeadCss("div")
+	headObj, err := dObj.createHead()
 	if err != nil {
 		return fmt.Errorf("error CvtGdocHtml:: creHeadCss: %v", err)
 	}
@@ -2941,7 +3010,7 @@ func CreGdocHtmlDoc(outfil *os.File, doc *docs.Document, options *OptObj)(err er
 	outfil.WriteString(docHeadStr)
 
 	// div Css and named styles used
-	outfil.WriteString(headCssStr)
+	outfil.WriteString(headObj.bodyCss)
 
 	outfil.WriteString(mainDiv.headCss)
 	outfil.WriteString(mainDiv.bodyCss)
@@ -2952,7 +3021,7 @@ func CreGdocHtmlDoc(outfil *os.File, doc *docs.Document, options *OptObj)(err er
 	outfil.WriteString("</style>\n</head>\n<body>\n")
 
 	// init html comments
-	outfil.WriteString(initObj.bodyHtml)
+	outfil.WriteString(headObj.bodyHtml)
 
 	if toc {outfil.WriteString(tocDiv.tocHtml)}
 
@@ -2979,17 +3048,17 @@ func CreGdocHtmlMain(outfil *os.File, doc *docs.Document, options *OptObj)(err e
 		dObj.Options = options
 	}
 
-	initObj, err := dObj.initGdocHtmlLib()
+	err = dObj.initGdocHtmlLib()
 	if err != nil {
 		return fmt.Errorf("error CvtGdocHtml:: InitGdocHtml %v", err)
 	}
 
-	mainDiv, err := dObj.cvtBody("div")
+	mainDiv, err := dObj.cvtBody()
 	if err != nil {
 		return fmt.Errorf("error CvtGdocHtml:: cvtBody: %v", err)
 	}
 
-	headCssStr, err := dObj.creHeadCss("div")
+	headObj, err := dObj.createHead()
 	if err != nil {
 		return fmt.Errorf("error CvtGdocHtml:: creHeadCss: %v", err)
 	}
@@ -3006,7 +3075,7 @@ func CreGdocHtmlMain(outfil *os.File, doc *docs.Document, options *OptObj)(err e
 	docHeadStr,_ := creHtmlHead()
 	outfil.WriteString(docHeadStr)
 	// basic Css
-	outfil.WriteString(headCssStr)
+	outfil.WriteString(headObj.bodyCss)
 	// named styles
 	outfil.WriteString(mainDiv.headCss)
 	outfil.WriteString(mainDiv.bodyCss)
@@ -3016,7 +3085,7 @@ func CreGdocHtmlMain(outfil *os.File, doc *docs.Document, options *OptObj)(err e
 	}
 	outfil.WriteString("</style>\n</head>\n<body>\n")
 
-	outfil.WriteString(initObj.bodyHtml)
+	outfil.WriteString(headObj.bodyHtml)
 	if toc {outfil.WriteString(tocDiv.tocHtml)}
 
 	outfil.WriteString(mainDiv.bodyHtml)
@@ -3042,18 +3111,18 @@ func CreGdocHtmlSection(heading string, outfil *os.File, doc *docs.Document, opt
 		dObj.Options = options
 	}
 
-	initObj, err := dObj.initGdocHtmlLib()
+	err = dObj.initGdocHtmlLib()
 	if err != nil {
 		return fmt.Errorf("error CvtGdocHtml:: InitGdocHtml %v", err)
 
 	}
 
-	mainDiv, err := dObj.cvtBody("div")
+	mainDiv, err := dObj.cvtBody()
 	if err != nil {
 		return fmt.Errorf("error CvtGdocHtml:: cvtBody: %v", err)
 	}
 
-	headCssStr, err := dObj.creHeadCss("div")
+	headObj, err := dObj.createHead()
 	if err != nil {
 		return fmt.Errorf("error CvtGdocHtml:: creHeadCss: %v", err)
 	}
@@ -3070,7 +3139,7 @@ func CreGdocHtmlSection(heading string, outfil *os.File, doc *docs.Document, opt
 	docHeadStr,_ := creHtmlHead()
 	outfil.WriteString(docHeadStr)
 	// basic Css
-	outfil.WriteString(headCssStr)
+	outfil.WriteString(headObj.bodyCss)
 	// named styles
 	outfil.WriteString(mainDiv.headCss)
 	outfil.WriteString(mainDiv.bodyCss)
@@ -3080,7 +3149,7 @@ func CreGdocHtmlSection(heading string, outfil *os.File, doc *docs.Document, opt
 	}
 	outfil.WriteString("</style>\n</head>\n<body>\n")
 
-	outfil.WriteString(initObj.bodyHtml)
+	outfil.WriteString(headObj.bodyHtml)
 	if toc {outfil.WriteString(tocDiv.tocHtml)}
 	outfil.WriteString(mainDiv.bodyHtml)
 
