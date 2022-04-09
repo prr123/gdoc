@@ -54,6 +54,7 @@ type GdocHtmlObj struct {
 	listStack *[]cList
 	docLists []docList
 	headings []heading
+	sections []sect
 	headCount int
 	secCount int
 	elCount int
@@ -72,6 +73,12 @@ type dispObj struct {
 	bodyCss string
 	tocHtml string
 	tocCss string
+}
+
+type sect struct {
+	sNum int
+	secElStart int
+	secElEnd int
 }
 
 type heading struct {
@@ -1375,6 +1382,7 @@ func (dObj *GdocHtmlObj) findListProp (listId string) (listProp *docs.ListProper
 func (dObj *GdocHtmlObj) initGdocHtmlLib() (initObj *dispObj, err error) {
 	var listItem docList
 	var heading heading
+	var sec sect
 //	if opt == nil {return fmt.Errorf("error InitGdocHtmlLib:: no option!")}
 
 	doc:= dObj.doc
@@ -1403,13 +1411,29 @@ func (dObj *GdocHtmlObj) initGdocHtmlLib() (initObj *dispObj, err error) {
 
 // section breaks
 	dObj.elCount = len(doc.Body.Content)
-	dObj.secCount = 0
 	dObj.ftNoteCount = 0
 	parHdEnd := 0
+	// last element of section
+	secPtEnd := 0
+	// set up first page
+	sec.secElStart = 0
+	dObj.sections = append(dObj.sections, sec)
+	seclen := len(dObj.sections)
+//		fmt.Println("el: ", el, "section len: ", seclen, " secPtEnd: ", secPtEnd)
+
 	for el:=0; el<dObj.elCount; el++ {
 		elObj:= doc.Body.Content[el]
 		if elObj.SectionBreak != nil {
-			if elObj.SectionBreak.SectionStyle.SectionType == "NEXT_PAGE" {dObj.secCount++}
+			if elObj.SectionBreak.SectionStyle.SectionType == "NEXT_PAGE" {
+//sss
+				sec.secElStart = el
+				dObj.sections = append(dObj.sections, sec)
+				seclen := len(dObj.sections)
+//		fmt.Println("el: ", el, "section len: ", seclen, " secPtEnd: ", secPtEnd)
+				if seclen > 1 {
+					dObj.sections[seclen-2].secElEnd = secPtEnd
+				}
+			}
 		}
 		// paragraphs and lists
 		if elObj.Paragraph != nil {
@@ -1433,8 +1457,9 @@ func (dObj *GdocHtmlObj) initGdocHtmlLib() (initObj *dispObj, err error) {
 				heading.hdElStart = el
 				dObj.headings = append(dObj.headings, heading)
 				hdlen := len(dObj.headings)
+//		fmt.Println("el: ", el, "hdlen: ", hdlen, "parHdEnd: ", parHdEnd)
 				if hdlen > 1 {
-					dObj.headings[hdlen-1].hdElEnd = parHdEnd
+					dObj.headings[hdlen-2].hdElEnd = parHdEnd
 				}
 			}
 
@@ -1444,6 +1469,7 @@ func (dObj *GdocHtmlObj) initGdocHtmlLib() (initObj *dispObj, err error) {
 				if parElObj.FootnoteReference != nil {dObj.ftNoteCount++}
 			}
 			parHdEnd = el
+			secPtEnd = el
 		} // end paragraph
 	} // end el loop
 
@@ -1451,14 +1477,21 @@ func (dObj *GdocHtmlObj) initGdocHtmlLib() (initObj *dispObj, err error) {
 	if hdlen > 0 {
 		dObj.headings[hdlen-1].hdElEnd = parHdEnd
 	}
-
+	seclen = len(dObj.sections)
+	if seclen > 0 {
+		dObj.sections[seclen-1].secElEnd = secPtEnd
+	}
 
 	if dObj.Options.Verb {
 		fmt.Printf("********** Headings in Document: %2d ***********\n", len(dObj.headings))
 		for i:=0; i< len(dObj.headings); i++ {
 			fmt.Printf("  heading %3d  Id: %-15s El Start:%3d End:%3d\n", i, dObj.headings[i].id, dObj.headings[i].hdElStart, dObj.headings[i].hdElEnd)
 		}
-		fmt.Printf("************ Lists in Document: %2d ***********\n", len(dObj.docLists))
+		fmt.Printf("\n********** Pages in Document: %2d ***********\n", len(dObj.sections))
+		for i:=0; i< len(dObj.sections); i++ {
+			fmt.Printf("  Page %3d  El Start:%3d End:%3d\n", i, dObj.sections[i].secElStart, dObj.sections[i].secElEnd)
+		}
+		fmt.Printf("\n************ Lists in Document: %2d ***********\n", len(dObj.docLists))
 		for i:=0; i< len(dObj.docLists); i++ {
 			fmt.Printf("list %3d id: %s max level: %d ordered: %t\n", i, dObj.docLists[i].listId, dObj.docLists[i].maxNestLev, dObj.docLists[i].ord)
 		}
