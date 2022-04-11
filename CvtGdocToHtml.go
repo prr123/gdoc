@@ -52,11 +52,11 @@ func main() {
 		fmt.Println("Unable to retrieve data from document: ", err)
 		os.Exit(1)
 	}
-	fmt.Printf("The title of the doc is: %s\n", doc.Title)
+	fmt.Printf("Doc Title: %s Option: %s\n", doc.Title, opt)
 
 	switch opt {
-	case "summary":
-		err = gdocHtml.CreGdocHtmlSection("summary", "output", doc, nil)
+	case "heading":
+		err = gdocHtml.CreGdocHtmlSection("", "output", doc, nil)
 		if err != nil {
 			fmt.Println("error main: CreGdocHtmlSummary -- cannot convert gdoc doc: ", err)
 			os.Exit(1)
