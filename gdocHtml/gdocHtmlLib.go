@@ -83,9 +83,10 @@ type sect struct {
 }
 
 type heading struct {
-	id string
 	hdElEnd int
 	hdElStart int
+	id string
+	text string
 }
 
 type cList struct {
@@ -1285,7 +1286,10 @@ func (dObj *GdocHtmlObj) createOutFil(divNam string) (err error) {
 		fnam = dObj.docName
 	}
 	filpath := dObj.folderPath + "/" + fnam + ".html"
-	fmt.Printf("filpath: %s fnam: %s\n", fnam, filpath)
+	if dObj.Options.Verb {
+		fmt.Println("******************* Output File ************")
+		fmt.Printf("file path: %s\n\n", filpath)
+	}
 	outfil, err := os.Create(filpath)
 	if err != nil {
 		return fmt.Errorf("os.Create: cannot create html file: %v", err)
@@ -1450,39 +1454,12 @@ func (dObj *GdocHtmlObj) findListProp (listId string) (listProp *docs.ListProper
 
 	return nil
 }
-/*
-func (dObj *GdocHtmlObj) initGdocFolder(doc *docs.Document, path string) (err error) {
-	if doc == nil {
-		return fmt.Errorf("no doc provided!")
-	}
-
-	// need to transform file name
-	// replace spaces with underscore
-	dNam := doc.Title
-	x := []byte(dNam)
-	for i:=0; i<len(x); i++ {
-		if x[i] == ' ' {
-			x[i] = '_'
-		}
-	}
-	dObj.docName = string(x[:])
-
-//ggg
-	err = dObj.createHtmlFolder(path)
-	if err!= nil {
-		return fmt.Errorf("createHtmlFolder: %v", err)
-	}
-
-	return nil
-}
-*/
 
 func (dObj *GdocHtmlObj) initGdocHtml(doc *docs.Document, options *OptObj) (err error) {
 	var listItem docList
 	var heading heading
 	var sec sect
 
-//	if options == nil {return fmt.Errorf("no option!")}
 	if doc == nil {return fmt.Errorf("no doc provided!")}
 	dObj.doc = doc
 
@@ -1562,9 +1539,22 @@ func (dObj *GdocHtmlObj) initGdocHtml(doc *docs.Document, options *OptObj) (err 
 				}
 			}
 			// headings
+			text := ""
 			if len(elObj.Paragraph.ParagraphStyle.HeadingId) > 0 {
 				heading.id = elObj.Paragraph.ParagraphStyle.HeadingId
 				heading.hdElStart = el
+
+				for parel:=0; parel<len(elObj.Paragraph.Elements); parel++ {
+					if elObj.Paragraph.Elements[parel].TextRun != nil {
+						text += elObj.Paragraph.Elements[parel].TextRun.Content
+					}
+				}
+				txtlen:= len(text)
+//	fmt.Printf(" text: %s %d\n", text, txtlen)
+				if text[txtlen -1] == '\n' { text = text[:txtlen-1] }
+//	fmt.Printf("%s\n", text)
+				heading.text = text
+
 				dObj.headings = append(dObj.headings, heading)
 				hdlen := len(dObj.headings)
 //		fmt.Println("el: ", el, "hdlen: ", hdlen, "parHdEnd: ", parHdEnd)
@@ -1595,7 +1585,7 @@ func (dObj *GdocHtmlObj) initGdocHtml(doc *docs.Document, options *OptObj) (err 
 	if dObj.Options.Verb {
 		fmt.Printf("********** Headings in Document: %2d ***********\n", len(dObj.headings))
 		for i:=0; i< len(dObj.headings); i++ {
-			fmt.Printf("  heading %3d  Id: %-15s El Start:%3d End:%3d\n", i, dObj.headings[i].id, dObj.headings[i].hdElStart, dObj.headings[i].hdElEnd)
+			fmt.Printf("  heading %3d  Id: %-15s text: %-20s El Start:%3d End:%3d\n", i, dObj.headings[i].id, dObj.headings[i].text, dObj.headings[i].hdElStart, dObj.headings[i].hdElEnd)
 		}
 		fmt.Printf("\n********** Pages in Document: %2d ***********\n", len(dObj.sections))
 		for i:=0; i< len(dObj.sections); i++ {
@@ -2646,17 +2636,28 @@ func (dObj *GdocHtmlObj) cvtTxtStylCss(txtStyl *docs.TextStyle, head bool)(cssSt
 }
 
 
-func (dObj *GdocHtmlObj) createDivHead(divName string) (divObj dispObj, err error) {
-	var cssStr string
+func (dObj *GdocHtmlObj) createDivHead(divName, idStr string) (divObj dispObj, err error) {
+	var htmlStr, cssStr string
 	//gdoc division css
 
 	if len(divName) == 0 { return divObj, fmt.Errorf("createDivHead: no divNam!") }
 	cssStr = fmt.Sprintf(".%s_div.%s {\n", dObj.docName, divName)
 
 	// html
-	divObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div %s\">\n", dObj.docName, divName)
+	if len(divName) == 0 {
+		htmlStr = fmt.Sprintf("<div class=\"%s_div\"", dObj.docName)
+	} else {
+		htmlStr = fmt.Sprintf("<div class=\"%s_div %s\"", dObj.docName, divName)
+	}
+
+	if len(idStr) > 0 {
+		htmlStr += fmt.Sprintf(" id=\"%s\"", idStr)
+	}
+
+	htmlStr += ">\n"
 	// css
 	divObj.bodyCss = cssStr
+	divObj.bodyHtml = htmlStr
 
 	return divObj, nil
 }
@@ -3007,7 +3008,7 @@ func (dObj *GdocHtmlObj) cvtBodySec(elSt, elEnd int) (bodyObj *dispObj, err erro
 //	bodyObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div\">\n", dObj.docName)
 	bodyObj.bodyHtml = ""
 
-	for el:=0; el< elCount; el++ {
+	for el:=elSt; el<= elEnd; el++ {
 		bodyEl := body.Content[el]
 		tObj, err:=dObj.cvtContentEl(bodyEl)
 		if err != nil {
@@ -3061,6 +3062,7 @@ func CreGdocHtmlDoc(folderPath string, doc *docs.Document, options *OptObj)(err 
 
 	headObj, err := dObj.createHead()
 	if err != nil {
+
 		return fmt.Errorf("creHeadCss: %v", err)
 	}
 
@@ -3177,7 +3179,7 @@ func CreGdocHtmlSection(heading, folderPath string, doc *docs.Document, options 
 	var tocDiv *dispObj
 	var dObj GdocHtmlObj
 
-	if len(heading) == 0 {fmt.Errorf("CreGdocHtmlSection:: no heading string provided!")}
+//	if len(heading) == 0 {fmt.Errorf("CreGdocHtmlSection:: no heading string provided!")}
 
 	err = dObj.initGdocHtml(doc, options)
 	if err != nil {
@@ -3202,10 +3204,26 @@ func CreGdocHtmlSection(heading, folderPath string, doc *docs.Document, options 
 		}
 	}
 
-	mainDiv, err := dObj.cvtBody()
-	if err != nil {
-		return fmt.Errorf("cvtBody: %v", err)
+//	dObj.headings
+	var mainDiv dispObj
+	for ihead:=0; ihead<len(dObj.headings); ihead++ {
+		pageStr := fmt.Sprintf("hd_%d", ihead)
+		idStr := fmt.Sprintf("%s_hd_%d", dObj.docName, ihead)
+		pgHd, err := dObj.createDivHead(pageStr, idStr)
+		if err != nil {
+			return fmt.Errorf("createDivHead %d %v", ihead, err)
+		}
+		elStart := dObj.headings[ihead].hdElStart
+		elEnd := dObj.headings[ihead].hdElEnd
+		pgBody, err := dObj.cvtBodySec(elStart, elEnd)
+		if err != nil {
+			return fmt.Errorf("cvtBodySec %d %v", ihead, err)
+		}
+		mainDiv.headCss += pgBody.headCss
+		mainDiv.bodyCss += pgBody.bodyCss
+		mainDiv.bodyHtml += pgHd.bodyHtml + pgBody.bodyHtml
 	}
+
 
 	headObj, err := dObj.createHead()
 	if err != nil {
@@ -3273,9 +3291,24 @@ func CreGdocHtmlAll(folderPath string, doc *docs.Document, options *OptObj)(err 
 		}
 	}
 
-	mainDiv, err := dObj.cvtBody()
-	if err != nil {
-		return fmt.Errorf("cvtBody: %v", err)
+//	dObj.sections
+	var mainDiv dispObj
+	for ipage:=0; ipage<len(dObj.sections); ipage++ {
+		pageStr := fmt.Sprintf("Pg_%d", ipage)
+		idStr := fmt.Sprintf("%s_pg_%d", dObj.docName, ipage)
+		pgHd, err := dObj.createDivHead(pageStr, idStr)
+		if err != nil {
+			return fmt.Errorf("createDivHead %d %v", ipage, err)
+		}
+		elStart := dObj.sections[ipage].secElStart
+		elEnd := dObj.sections[ipage].secElEnd
+		pgBody, err := dObj.cvtBodySec(elStart, elEnd)
+		if err != nil {
+			return fmt.Errorf("cvtBodySec %d %v", ipage, err)
+		}
+		mainDiv.headCss += pgBody.headCss
+		mainDiv.bodyCss += pgBody.bodyCss
+		mainDiv.bodyHtml += pgHd.bodyHtml + pgBody.bodyHtml
 	}
 
 	headObj, err := dObj.createHead()
@@ -3317,4 +3350,5 @@ func CreGdocHtmlAll(folderPath string, doc *docs.Document, options *OptObj)(err 
 	outfil.Close()
 	return nil
 }
+
 
