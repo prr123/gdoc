@@ -31,8 +31,8 @@ func main() {
  			fmt.Printf("%s usage is:\n  %s docId opt [sumary, main, all]\n", cmd[2:], cmd)
         	os.Exit(1)
 		case 2:
-       		fmt.Println("error - no opt argument provided!")
-			fmt.Println("assuming opt = all")
+       		fmt.Println("no option argument provided!")
+			fmt.Println("assuming 'opt = all'!")
 			opt = "all"
 		case 3:
 			opt = os.Args[2]
