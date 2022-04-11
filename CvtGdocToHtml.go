@@ -56,54 +56,40 @@ func main() {
 
 	switch opt {
 	case "summary":
-		outFilNam := fmt.Sprintf("output/%s_summary", doc.Title)
-		outfil, err := gd.CreOutFile(outFilNam, "html")
-		if err != nil {
-			fmt.Println("error creOutFile -- cannot open create outfile: ", err)
-			os.Exit(1)
-		}
-
-		err = gdocHtml.CreGdocHtmlSection("summary", outfil, doc, nil)
+		err = gdocHtml.CreGdocHtmlSection("summary", "output", doc, nil)
 		if err != nil {
 			fmt.Println("error main: CreGdocHtmlSummary -- cannot convert gdoc doc: ", err)
 			os.Exit(1)
 		}
-		outfil.Close()
 		fmt.Println("*** success summary ***!")
 		os.Exit(0)
 
 	case "main":
-		outFilNam := fmt.Sprintf("output/%s_main", doc.Title)
-		outfil, err := gd.CreOutFile(outFilNam, "html")
-		if err != nil {
-			fmt.Println("error creOutFile-- cannot open create outfile: ", err)
-			os.Exit(1)
-		}
-
-		err = gdocHtml.CreGdocHtmlMain(outfil, doc, nil)
+		err = gdocHtml.CreGdocHtmlMain("output", doc, nil)
 		if err != nil {
 			fmt.Println("error main CreGdocHtmlMain -- cannot convert gdoc file: ", err)
 			os.Exit(1)
 		}
-		outfil.Close()
 		fmt.Println("*** success main ***!")
 		os.Exit(0)
 
+	case "doc":
+		err = gdocHtml.CreGdocHtmlDoc("output", doc, nil)
+		if err != nil {
+			fmt.Println("error CreGdocHtmlDoc -- cannot convert gdoc file: ", err)
+			os.Exit(1)
+		}
+
+		fmt.Println("*** success all ***!")
+		os.Exit(0)
+
 	case "all":
-		outFilNam := fmt.Sprintf("output/%s", doc.Title)
-		outfil, err := gd.CreOutFile(outFilNam, "html")
+		err = gdocHtml.CreGdocHtmlAll("output", doc, nil)
 		if err != nil {
-			fmt.Println("error creOutFil - cannot open create outfile: ", err)
+			fmt.Println("error CreGdocHtmlAll -- cannot convert gdoc file: ", err)
 			os.Exit(1)
 		}
 
-		err = gdocHtml.CreGdocHtmlDoc(outfil, doc, nil)
-		if err != nil {
-			fmt.Println("error CreGdocHtmlSummary -- cannot convert gdoc file: ", err)
-			os.Exit(1)
-		}
-
-		outfil.Close()
 		fmt.Println("*** success all ***!")
 		os.Exit(0)
 
