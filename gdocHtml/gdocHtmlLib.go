@@ -1278,8 +1278,13 @@ func (dObj *GdocHtmlObj) downloadImg()(err error) {
 
 func (dObj *GdocHtmlObj) createOutFil(divNam string) (err error) {
 
-	fnam := dObj.docName + divNam
-	filpath := dObj.folderPath + fnam
+	if len(divNam) > 0 {
+		fnam := dObj.docName + "_" + divNam
+	} else {
+		fnam := dObj.docName
+	}
+	filpath := dObj.folderPath + "/" + fnam + ".html"
+	fmt.Printf("filpath: %s fnam: %s\n", fnam, filpath)
 	outfil, err := os.Create(filpath)
 	if err != nil {
 		return fmt.Errorf("os.Create: cannot create html file: %v", err)
@@ -3257,7 +3262,6 @@ func CreGdocHtmlAll(folderPath string, doc *docs.Document, options *OptObj)(err 
 	if err!= nil {
 		return fmt.Errorf("createOutFil %v", err)
 	}
-
 
 	if dObj.Options.ImgFold {
 		err = dObj.dlImages()
