@@ -1277,11 +1277,12 @@ func (dObj *GdocHtmlObj) downloadImg()(err error) {
 }
 
 func (dObj *GdocHtmlObj) createOutFil(divNam string) (err error) {
+	var fnam string
 
 	if len(divNam) > 0 {
-		fnam := dObj.docName + "_" + divNam
+		fnam = dObj.docName + "_" + divNam
 	} else {
-		fnam := dObj.docName
+		fnam = dObj.docName
 	}
 	filpath := dObj.folderPath + "/" + fnam + ".html"
 	fmt.Printf("filpath: %s fnam: %s\n", fnam, filpath)
@@ -2645,12 +2646,12 @@ func (dObj *GdocHtmlObj) cvtTxtStylCss(txtStyl *docs.TextStyle, head bool)(cssSt
 }
 
 
-func (dObj *GdocHtmlObj) createDivHead(divName string) (divObj *dispObj, err error) {
+func (dObj *GdocHtmlObj) createDivHead(divName string) (divObj dispObj, err error) {
 	var cssStr string
 	//gdoc division css
 
 	if len(divName) == 0 { return divObj, fmt.Errorf("createDivHead: no divNam!") }
-	cssStr = fmt.Sprintf(".%s_%s {\n", dObj.docName, divName)
+	cssStr = fmt.Sprintf(".%s_div.%s {\n", dObj.docName, divName)
 
 	// html
 	divObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div %s\">\n", dObj.docName, divName)
@@ -2796,7 +2797,7 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 
 	headObj.bodyCss = cssStr
 	//gdoc division html
-	headObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div\">", dObj.docName)
+	headObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div\">\n", dObj.docName)
 
 	return headObj, nil
 }
@@ -2956,7 +2957,8 @@ func (dObj *GdocHtmlObj) cvtBody() (bodyObj *dispObj, err error) {
 	bodyObj = new(dispObj)
 
 //	toc := dObj.Options.Toc
-	bodyObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div\">\n", dObj.docName)
+//	bodyObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div\">\n", dObj.docName)
+	bodyObj.bodyHtml = ""
 
 	elNum := len(body.Content)
 	for el:=0; el< elNum; el++ {
@@ -3002,7 +3004,8 @@ func (dObj *GdocHtmlObj) cvtBodySec(elSt, elEnd int) (bodyObj *dispObj, err erro
 	bodyObj = new(dispObj)
 
 	// need to move
-	bodyObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div\">\n", dObj.docName)
+//	bodyObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div\">\n", dObj.docName)
+	bodyObj.bodyHtml = ""
 
 	for el:=0; el< elCount; el++ {
 		bodyEl := body.Content[el]
