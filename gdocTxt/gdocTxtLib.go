@@ -867,15 +867,34 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 	knum = 0
 	for key, ftnote := range doc.Footnotes {
 		knum++
-		outstr += fmt.Sprintf("  ftnote %d: key %s id %s elements %d\n", knum, key, ftnote.FootnoteId, len(ftnote.Content) )
+		outstr += fmt.Sprintf("  ftnote %2d: key: %-16s elements: %2d", knum, key, len(ftnote.Content) )
 		for i:= 0; i< len(ftnote.Content); i++ {
-			outstr += fmt.Sprintf("  content [%d]\n", i)
-			tstr, err := docObj.dispContentEl(ftnote.Content[i])
-			if err == nil {outstr += tstr} else {outstr += fmt.Sprintf("error %v", err)}
+			if ftnote.Content[i].Paragraph == nil {continue}
+			text := ""
+			for j:=0; j<len(ftnote.Content[i].Paragraph.Elements); j++ {
+				el := ftnote.Content[i].Paragraph.Elements[j]
+				if el.TextRun == nil {continue}
+				text += el.TextRun.Content
+			}
+			outstr += fmt.Sprintf(" text: %s", text)
 		}
 	}
 	outfil.WriteString(outstr)
 
+// footnote occurence
+	icnt := 0
+	outstr = ""
+	for i:=0; i< len(doc.Body.Content); i++ {
+		if doc.Body.Content[i].Paragraph == nil {continue}
+		par:= doc.Body.Content[i].Paragraph
+		for j:=0; j<len(par.Elements); j++ {
+			if par.Elements[j].FootnoteReference == nil {continue}
+			icnt++
+			ftn := par.Elements[j].FootnoteReference
+			outstr += fmt.Sprintf("  ftnote: %2d struct: %3d el %3d Id: %-16s Number: %-2s\n", icnt, i, j, ftn.FootnoteId, ftn.FootnoteNumber)
+		}
+	}
+	outfil.WriteString(outstr)
 	// Document Lists
 
 	// Lists
@@ -1015,7 +1034,7 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 	}
 	outfil.WriteString(outstr)
 
-	outstr = "\n\n*** Named Styles ***\n"
+	outstr = "\n\n******* Named Styles **********\n"
 	hdstyles = doc.NamedStyles
 	hdstyLen = len(hdstyles.Styles)
 	outstr += fmt.Sprintf("document named styles: %d \n",hdstyLen)
@@ -1037,6 +1056,22 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 		outstr += txtstr
 	}
 	outfil.WriteString(outstr)
+
+	outstr = "\n\n************* Footnotes ************\n"
+	knum = 0
+	for key, ftnote := range doc.Footnotes {
+		knum++
+		outstr += fmt.Sprintf("  ftnote %d: key %s elements %d\n", knum, key, len(ftnote.Content) )
+		for i:= 0; i< len(ftnote.Content); i++ {
+			outstr += fmt.Sprintf("  content [%d]\n", i)
+			tstr, err := docObj.dispContentEl(ftnote.Content[i])
+			if err == nil {outstr += tstr} else {outstr += fmt.Sprintf("error %v", err)}
+		}
+	}
+
+	outstr += "****************************************\n"
+	outfil.WriteString(outstr)
+
 
 	outstr = "\n******************** Body *********************************\n"
 	outstr += fmt.Sprintf("Body - Number of Elements: %d\n", numEl)
