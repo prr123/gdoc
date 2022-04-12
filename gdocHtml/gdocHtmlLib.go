@@ -72,8 +72,8 @@ type dispObj struct {
 	headCss string
 	bodyHtml string
 	bodyCss string
-	tocHtml string
-	tocCss string
+//	tocHtml string
+//	tocCss string
 }
 
 type sect struct {
@@ -1000,8 +1000,8 @@ func addDispObj(src, add *dispObj) {
 	src.headCss += add.headCss
 	src.bodyHtml += add.bodyHtml
 	src.bodyCss += add.bodyCss
-	src.tocHtml += add.tocHtml
-	src.tocCss += add.tocCss
+//	src.tocHtml += add.tocHtml
+//	src.tocCss += add.tocCss
 	return
 }
 
@@ -1550,9 +1550,8 @@ func (dObj *GdocHtmlObj) initGdocHtml(doc *docs.Document, options *OptObj) (err 
 					}
 				}
 				txtlen:= len(text)
-//	fmt.Printf(" text: %s %d\n", text, txtlen)
 				if text[txtlen -1] == '\n' { text = text[:txtlen-1] }
-//	fmt.Printf("%s\n", text)
+//	fmt.Printf(" text: %s %d\n", text, txtlen)
 				heading.text = text
 
 				dObj.headings = append(dObj.headings, heading)
@@ -2058,7 +2057,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 //
 	var parHtmlStr, parCssStr string
 	var prefix, suffix string
-	var tocPrefix, tocSuffix string
+//	var tocPrefix, tocSuffix string
 	var listPrefix, listHtml, listCss, listSuffix string
 	var newList cList
 
@@ -2163,7 +2162,6 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 	if len(hdHtmlStr) > 0 {parHtmlStr += hdHtmlStr + "\n"}
 
 
-	decode := true
 	errStr = ""
 
 	// par elements: text and css for text
@@ -2239,14 +2237,9 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 //	printLiStack(dObj.listStack)
 
 					case nestIdx < cNest:
-/*
-						for nl:=cNest; nl>= nestIdx; nl++ {
-							newStack := popLiStack(dObj.listStack)
-							dObj.listStack = newStack
-						}
-*/
+
 						listHtml = dObj.closeList(nestIdx)
-				listHtml += fmt.Sprintf("<!-- same list reduce %s new NL %d  old Nl %d -->\n", listid, nestIdx, cNest)
+						listHtml += fmt.Sprintf("<!-- same list reduce %s new NL %d  old Nl %d -->\n", listid, nestIdx, cNest)
 //				fmt.Printf("<!-- same list reduce %s new NL %d  old Nl %d -->\n", listid, nestIdx, cNest)
 					case nestIdx == cNest:
 						listHtml =""
@@ -2281,9 +2274,6 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 
 	parObj.bodyCss += listCss + parCssStr
 	parObj.bodyHtml += listHtml + listPrefix + prefix + parHtmlStr + suffix + listSuffix + "\n"
-	if decode {
-		parObj.tocHtml += tocPrefix + parHtmlStr + tocSuffix + "\n"
-	}
 	return parObj, nil
 }
 
@@ -2833,114 +2823,113 @@ func (dObj *GdocHtmlObj) cvtContentEl(contEl *docs.StructuralElement) (GdocHtmlO
 	return bodyElObj, nil
 }
 
-func (dObj *GdocHtmlObj) cvtTocHeadCss() (CssStr string, err error) {
-	var cssStr, tStr string
-	var NamStyl *docs.NamedStyle
-
-	if dObj == nil {
-		return "", fmt.Errorf("/* error convertTocHeadtoCss -- dObj is nil */")
-	}
-
-	tocCssId := fmt.Sprintf("%s_TOC", dObj.docName)
+//ttt
+func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
+	var tocDiv dispObj
+	var htmlStr, cssStr string
 
 	doc := dObj.doc
-    docstyl := doc.DocumentStyle
-	nStyl := doc.NamedStyles
+	docStyl := doc.DocumentStyle
+	//html
+	htmlStr = fmt.Sprintf("<div class=\"%s %s_toc\">\n", dObj.docName, dObj.docName)
+	htmlStr += fmt.Sprintf("<p class=\"%s %s_subtitle\">Table of Contents</p>\n", dObj.docName, dObj.docName)
+	tocDiv.bodyHtml = htmlStr
 
-	cssStr = "." + tocCssId + " {\n"
+	// div css
+	cssStr = fmt.Sprintf(".%s.%s_toc  {\n", dObj.docName, dObj.docName)
 	cssStr += "  margin-top: 10mm;\n"
 	cssStr += "  margin-bottom: 10mm;\n"
-    cssStr += fmt.Sprintf("  margin-right: %.2fmm; \n",docstyl.MarginRight.Magnitude*PtTomm)
-    cssStr += fmt.Sprintf("  margin-left: %.2fmm; \n",docstyl.MarginLeft.Magnitude*PtTomm)
+    cssStr += fmt.Sprintf("  margin-right: %.2fmm; \n",docStyl.MarginRight.Magnitude*PtTomm)
+    cssStr += fmt.Sprintf("  margin-left: %.2fmm; \n",docStyl.MarginLeft.Magnitude*PtTomm)
 
-	dObj.docWidth = (docstyl.PageSize.Width.Magnitude - docstyl.MarginRight.Magnitude - docstyl.MarginLeft.Magnitude)*PtTomm
-
-	cssStr += fmt.Sprintf("  width: %.1fmm;\n", dObj.docWidth)
-//xxx
 	if dObj.Options.DivBorders {
 		cssStr += "  border: solid green;\n"
 		cssStr += "  border-width: 1px;\n"
 	}
 	cssStr += "  padding-top:10px;\n  padding-bottom:10px;\n"
-	normStyl := -1
-// find normal first
+	cssStr += "}/n"
+	tocDiv.bodyCss = cssStr
 
-	for istyl:=0; istyl<len(nStyl.Styles); istyl++ {
-		if nStyl.Styles[istyl].NamedStyleType == "NORMAL_TEXT" {
-			normStyl = istyl
-			NamStyl = nStyl.Styles[istyl]
-			break
-		}
-	}
-
-	if normStyl < 0 {
-		return "", fmt.Errorf("ConvertNStyl -- no NORMAL_TEXT")
-	}
-
-	tStr, _, _, err = dObj.cvtParStyl(nil, NamStyl.ParagraphStyle, false)
-	if err != nil {
-		return cssStr, fmt.Errorf("cvtParStyl: %v",err)
-	}
-	cssStr += tStr
-	tStr, err = dObj.cvtTxtStylCss(NamStyl.TextStyle, true)
-	if err != nil {
-		return cssStr, fmt.Errorf("cvtTxtStyl: %v",err)
-	}
-
-	cssStr += tStr + "}\n"
-
-	for istyl:=0; istyl<len(nStyl.Styles); istyl++ {
-		tStr = ""
-		NamStyl := nStyl.Styles[istyl]
-		switch NamStyl.NamedStyleType {
+//	var tocDiv dispObj
+	for ihead:=0; ihead<len(dObj.headings); ihead++ {
+//		pageStr := fmt.Sprintf("hd_%d", ihead)
+//		idStr := fmt.Sprintf("%s_hd_%d", dObj.docName, ihead)
+		elStart := dObj.headings[ihead].hdElStart
+//		elEnd := dObj.headings[ihead].hdElEnd
+		par := doc.Body.Content[elStart].Paragraph
+		parNamedStyl := par.ParagraphStyle.NamedStyleType
+		switch parNamedStyl {
 		case "TITLE":
-			tStr =fmt.Sprintf("#%s_title {\n",tocCssId)
+			prefix := fmt.Sprintf("<p class=\"%s_title\">", dObj.docName)
+			middle := fmt.Sprintf("<a href=\"%s\">%s</a>",dObj.headings[ihead].id, dObj.headings[ihead].text)
+			suffix := "</p>"
+			htmlStr = prefix + middle + suffix
+//			cssStr =fmt.Sprintf(".%s_title {\n",)
 		case "SUBTITLE":
-			tStr =fmt.Sprintf("#%s_subtitle {\n",tocCssId)
+			prefix := fmt.Sprintf("<p class=\"%s_subtitle\">", dObj.docName)
+			middle := fmt.Sprintf("<a href=\"%s\">%s</a>",dObj.headings[ihead].id, dObj.headings[ihead].text)
+			suffix := "</p>"
+			htmlStr = prefix + middle + suffix
+//			tStr =fmt.Sprintf("#%s_subtitle {\n",tocCssId)
 		case "HEADING_1":
-			tStr =fmt.Sprintf(".%s h1 {\n",tocCssId)
- 			tStr += "  padding-left: 10px;\n  margin: 0px;"
+			prefix := fmt.Sprintf("<h1 class=\"%s_h1 toc_h1\">", dObj.docName)
+			middle := fmt.Sprintf("<a href=\"%s\">%s</a>",dObj.headings[ihead].id, dObj.headings[ihead].text)
+			suffix := "</h1>"
+			htmlStr = prefix + middle + suffix
+			cssStr = fmt.Sprintf(".%s_h1.toc_h1 {\n",dObj.docName)
+ 			cssStr += "  padding-left: 10px;\n  margin: 0px;"
+			cssStr += "}/n"
 		case "HEADING_2":
-			tStr =fmt.Sprintf(".%s h2 {\n",tocCssId)
-			tStr += " padding-left: 20px;\n  margin: 0px;"
+			prefix := fmt.Sprintf("<h2 class=\"%s_h2 toc_h2\">", dObj.docName)
+			middle := fmt.Sprintf("<a href=\"%s\">%s</a>",dObj.headings[ihead].id, dObj.headings[ihead].text)
+			suffix := "</h2>"
+			htmlStr = prefix + middle + suffix
+			cssStr = fmt.Sprintf(".%s_h2.toc_h2 {\n",dObj.docName)
+			cssStr += " padding-left: 20px;\n  margin: 0px;"
+			cssStr += "}/n"
 		case "HEADING_3":
-			tStr =fmt.Sprintf(".%s h3 {\n", tocCssId)
-			tStr += " padding-left: 40px;\n  margin: 0px;"
+			prefix := fmt.Sprintf("<h3 class=\"%s_h3 toc_h3\">", dObj.docName)
+			middle := fmt.Sprintf("<a href=\"%s\">%s</a>",dObj.headings[ihead].id, dObj.headings[ihead].text)
+			suffix := "</h3>"
+			htmlStr = prefix + middle + suffix
+			cssStr = fmt.Sprintf(".%s_h3.toc_h3 {\n",dObj.docName)
+			cssStr += " padding-left: 40px;\n  margin: 0px;"
+			cssStr += "}/n"
 		case "HEADING_4":
-			tStr =fmt.Sprintf(".%s h4 {\n", tocCssId)
-			tStr += " padding-left: 60px;\n  margin: 0px;"
+			prefix := fmt.Sprintf("<h4 class=\"%s_h4 toc_h4\">", dObj.docName)
+			middle := fmt.Sprintf("<a href=\"%s\">%s</a>",dObj.headings[ihead].id, dObj.headings[ihead].text)
+			suffix := "</h4>"
+			htmlStr = prefix + middle + suffix
+			cssStr = fmt.Sprintf(".%s_h4.toc_h4 {\n",dObj.docName)
+			cssStr += " padding-left: 60px;\n  margin: 0px;"
+			cssStr += "}/n"
 		case "HEADING_5":
-			tStr =fmt.Sprintf(".%s h5 {\n", tocCssId)
-			tStr += " padding-left: 80px;\n  margin: 0px;"
+			prefix := fmt.Sprintf("<h5 class=\"%s_h5 toc_h5\">", dObj.docName)
+			middle := fmt.Sprintf("<a href=\"%s\">%s</a>",dObj.headings[ihead].id, dObj.headings[ihead].text)
+			suffix := "</h5>"
+			htmlStr = prefix + middle + suffix
+			cssStr = fmt.Sprintf(".%s_h5.toc_h5 {\n",dObj.docName)
+			cssStr += " padding-left: 80px;\n  margin: 0px;"
+			cssStr += "}/n"
 		case "HEADING_6":
-			tStr =fmt.Sprintf(".%s h6 {\n", tocCssId)
-			tStr += " padding-left: 100px;\n  margin: 0px;"
+			prefix := fmt.Sprintf("<h6 class=\"%s_h6 toc_h6\">", dObj.docName)
+			middle := fmt.Sprintf("<a href=\"%s\">%s</a>",dObj.headings[ihead].id, dObj.headings[ihead].text)
+			suffix := "</6>"
+			htmlStr = prefix + middle + suffix
+			cssStr = fmt.Sprintf(".%s_h6.toc_h6 {\n",dObj.docName)
+			cssStr += " padding-left: 100px;\n  margin: 0px;"
+			cssStr += "}/n"
 		case "NORMAL_TEXT":
 
 		default:
-			tStr =fmt.Sprintf("/* error - header: %s */", NamStyl.NamedStyleType)
+
 		}
+		tocDiv.bodyCss += cssStr
+		tocDiv.bodyHtml += htmlStr + "</div>"
 
-
-		cssStr += tStr
-	}
-	return cssStr, nil
-}
-
-
-func (dObj *GdocHtmlObj) creTocHead() (hdObj *dispObj, err error) {
-	if dObj == nil {
-		return nil, fmt.Errorf("creTocHead -- no GdocObj!")
 	}
 
-	hdObj = new(dispObj)
-	hdObj.tocHtml = fmt.Sprintf("<div id=\"%s\"_TOC class=\"%s\">\n", dObj.docName, dObj.docName)
-	hdObj.tocHtml += fmt.Sprintf("<p id=\"%s_TOC_subtitle\">Table of Contents</p>\n",dObj.docName)
-	hdObj.tocCss, err = dObj.cvtTocHeadCss()
-	if err != nil {
-		return hdObj, fmt.Errorf("creTocHead:: cvtTocHeadCss: %v", err)
-	}
-	return hdObj, nil
+	return &tocDiv, nil
 }
 
 func (dObj *GdocHtmlObj) cvtBody() (bodyObj *dispObj, err error) {
@@ -2976,7 +2965,7 @@ func (dObj *GdocHtmlObj) cvtBody() (bodyObj *dispObj, err error) {
 //fmt.Printf("end of doc closing list!")
 	}
 
-	bodyObj.tocHtml += "</div>\n\n"
+//	bodyObj.tocHtml += "</div>\n\n"
 	bodyObj.bodyHtml += "</div>\n\n"
 
 	return bodyObj, nil
@@ -3022,7 +3011,6 @@ func (dObj *GdocHtmlObj) cvtBodySec(elSt, elEnd int) (bodyObj *dispObj, err erro
 //fmt.Printf("end of doc closing list!")
 	}
 
-	bodyObj.tocHtml += "</div>\n\n"
 	bodyObj.bodyHtml += "</div>\n\n"
 
 	return bodyObj, nil
@@ -3068,9 +3056,9 @@ func CreGdocHtmlDoc(folderPath string, doc *docs.Document, options *OptObj)(err 
 
 	toc := dObj.Options.Toc
 	if toc {
-		tocDiv, err = dObj.creTocHead()
+		tocDiv, err = dObj.createTocDiv()
 		if err != nil {
-			tocDiv.tocHtml = fmt.Sprintf("<!--- error Toc Head: %v --->\n",err)
+			tocDiv.bodyHtml = fmt.Sprintf("<!--- error Toc Head: %v --->\n",err)
 		}
 	}
 
@@ -3085,15 +3073,14 @@ func CreGdocHtmlDoc(folderPath string, doc *docs.Document, options *OptObj)(err 
 	outfil.WriteString(mainDiv.headCss)
 	outfil.WriteString(mainDiv.bodyCss)
 	if toc {
-		outfil.WriteString(tocDiv.tocCss)
-		outfil.WriteString(mainDiv.tocCss)
+		outfil.WriteString(tocDiv.bodyCss)
 	}
 	outfil.WriteString("</style>\n</head>\n<body>\n")
 
 	// init html comments
 	outfil.WriteString(headObj.bodyHtml)
 
-	if toc {outfil.WriteString(tocDiv.tocHtml)}
+	if toc {outfil.WriteString(tocDiv.bodyHtml)}
 
 	outfil.WriteString(mainDiv.bodyHtml)
 	outfil.WriteString("</body>\n</html>\n")
@@ -3143,9 +3130,9 @@ func CreGdocHtmlMain(folderPath string, doc *docs.Document, options *OptObj)(err
 
 	toc := dObj.Options.Toc
 	if toc {
-		tocDiv, err = dObj.creTocHead()
+		tocDiv, err = dObj.createTocDiv()
 		if err != nil {
-			tocDiv.tocHtml = fmt.Sprintf("<!--- error Toc Head: %v --->\n",err)
+			tocDiv.bodyHtml = fmt.Sprintf("<!--- error Toc Head: %v --->\n",err)
 		}
 	}
 
@@ -3160,13 +3147,12 @@ func CreGdocHtmlMain(folderPath string, doc *docs.Document, options *OptObj)(err
 	outfil.WriteString(mainDiv.headCss)
 	outfil.WriteString(mainDiv.bodyCss)
 	if toc {
-		outfil.WriteString(tocDiv.tocCss)
-		outfil.WriteString(mainDiv.tocCss)
+		outfil.WriteString(tocDiv.bodyCss)
 	}
 	outfil.WriteString("</style>\n</head>\n<body>\n")
 
 	outfil.WriteString(headObj.bodyHtml)
-	if toc {outfil.WriteString(tocDiv.tocHtml)}
+	if toc {outfil.WriteString(tocDiv.bodyHtml)}
 
 	outfil.WriteString(mainDiv.bodyHtml)
 	outfil.WriteString("</body>\n</html>\n")
@@ -3232,9 +3218,9 @@ func CreGdocHtmlSection(heading, folderPath string, doc *docs.Document, options 
 
 	toc := dObj.Options.Toc
 	if toc {
-		tocDiv, err = dObj.creTocHead()
+		tocDiv, err = dObj.createTocDiv()
 		if err != nil {
-			tocDiv.tocHtml = fmt.Sprintf("<!--- error Toc Head: %v --->\n",err)
+			tocDiv.bodyHtml = fmt.Sprintf("<!--- error Toc Head: %v --->\n",err)
 		}
 	}
 
@@ -3250,13 +3236,12 @@ func CreGdocHtmlSection(heading, folderPath string, doc *docs.Document, options 
 	outfil.WriteString(mainDiv.headCss)
 	outfil.WriteString(mainDiv.bodyCss)
 	if toc {
-		outfil.WriteString(tocDiv.tocCss)
-		outfil.WriteString(mainDiv.tocCss)
+		outfil.WriteString(tocDiv.bodyCss)
 	}
 	outfil.WriteString("</style>\n</head>\n<body>\n")
 
 	outfil.WriteString(headObj.bodyHtml)
-	if toc {outfil.WriteString(tocDiv.tocHtml)}
+	if toc {outfil.WriteString(tocDiv.bodyHtml)}
 	outfil.WriteString(mainDiv.bodyHtml)
 
 	outfil.WriteString("</body>\n</html>\n")
@@ -3318,9 +3303,9 @@ func CreGdocHtmlAll(folderPath string, doc *docs.Document, options *OptObj)(err 
 
 	toc := dObj.Options.Toc
 	if toc {
-		tocDiv, err = dObj.creTocHead()
+		tocDiv, err = dObj.createTocDiv()
 		if err != nil {
-			tocDiv.tocHtml = fmt.Sprintf("<!--- error Toc Head: %v --->\n",err)
+			tocDiv.bodyHtml = fmt.Sprintf("<!--- error Toc Head: %v --->\n",err)
 		}
 	}
 
@@ -3337,13 +3322,12 @@ func CreGdocHtmlAll(folderPath string, doc *docs.Document, options *OptObj)(err 
 	outfil.WriteString(mainDiv.headCss)
 	outfil.WriteString(mainDiv.bodyCss)
 	if toc {
-		outfil.WriteString(tocDiv.tocCss)
-		outfil.WriteString(mainDiv.tocCss)
+		outfil.WriteString(tocDiv.bodyCss)
 	}
 	outfil.WriteString("</style>\n</head>\n<body>\n")
 
 	outfil.WriteString(headObj.bodyHtml)
-	if toc {outfil.WriteString(tocDiv.tocHtml)}
+	if toc {outfil.WriteString(tocDiv.bodyHtml)}
 	outfil.WriteString(mainDiv.bodyHtml)
 
 	outfil.WriteString("</body>\n</html>\n")
