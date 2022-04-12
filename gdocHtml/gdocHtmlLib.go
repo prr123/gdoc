@@ -136,6 +136,7 @@ type tblBorder struct {
 type namStyl struct {
 	count int
 	exist bool
+	tocExist bool
 }
 
 type parMap struct {
@@ -225,7 +226,7 @@ func getDefOption(opt *OptObj) {
 	opt.CssFil = false
 	opt.ImgFold = true
 	opt.Verb = true
-	opt.Toc = false
+	opt.Toc = true
 	for i:=0; i< 4; i++ {opt.ElMargin[i] = 0}
 
 	opt.Divisions = []string{"Summary", "Main"}
@@ -1495,6 +1496,16 @@ func (dObj *GdocHtmlObj) initGdocHtml(doc *docs.Document, options *OptObj) (err 
 	dObj.h4.exist = false
 	dObj.h5.exist = false
 	dObj.h6.exist = false
+
+
+	dObj.title.tocExist = false
+	dObj.subtitle.tocExist = false
+	dObj.h1.tocExist = false
+	dObj.h2.tocExist = false
+	dObj.h3.tocExist = false
+	dObj.h4.tocExist = false
+	dObj.h5.tocExist = false
+	dObj.h6.tocExist = false
 
 // section breaks
 	dObj.elCount = len(doc.Body.Content)
@@ -2779,13 +2790,13 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 			cssStr += fmt.Sprintf("}\n")
 		}
 	}
-
+/*
 	if dObj.Options.Toc {
 		cssStr += fmt.Sprintf(".%s_toc {\n", dObj.docName)
 		cssStr += fmt.Sprintf("  margin-top: %.1fmm;\n", docstyl.MarginTop.Magnitude*PtTomm)
 		cssStr += fmt.Sprintf("  margin-bottom: %.1fmm;\n}\n", docstyl.MarginBottom.Magnitude*PtTomm)
 	}
-
+*/
 	headObj.bodyCss = cssStr
 	//gdoc division html
 	headObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div\">\n", dObj.docName)
@@ -2847,87 +2858,109 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 		cssStr += "  border-width: 1px;\n"
 	}
 	cssStr += "  padding-top:10px;\n  padding-bottom:10px;\n"
-	cssStr += "}/n"
+	cssStr += "}\n"
 	tocDiv.bodyCss = cssStr
 
 //	var tocDiv dispObj
 	for ihead:=0; ihead<len(dObj.headings); ihead++ {
-//		pageStr := fmt.Sprintf("hd_%d", ihead)
-//		idStr := fmt.Sprintf("%s_hd_%d", dObj.docName, ihead)
+		cssStr = ""
+		htmlStr = ""
 		elStart := dObj.headings[ihead].hdElStart
 //		elEnd := dObj.headings[ihead].hdElEnd
 		par := doc.Body.Content[elStart].Paragraph
 		parNamedStyl := par.ParagraphStyle.NamedStyleType
+		hdId := dObj.headings[ihead].id[3:]
+		text := dObj.headings[ihead].text
 		switch parNamedStyl {
 		case "TITLE":
 			prefix := fmt.Sprintf("<p class=\"%s_title\">", dObj.docName)
-			middle := fmt.Sprintf("<a href=\"%s\">%s</a>",dObj.headings[ihead].id, dObj.headings[ihead].text)
-			suffix := "</p>"
+			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
+			suffix := "</p>\n"
 			htmlStr = prefix + middle + suffix
 //			cssStr =fmt.Sprintf(".%s_title {\n",)
 		case "SUBTITLE":
 			prefix := fmt.Sprintf("<p class=\"%s_subtitle\">", dObj.docName)
-			middle := fmt.Sprintf("<a href=\"%s\">%s</a>",dObj.headings[ihead].id, dObj.headings[ihead].text)
-			suffix := "</p>"
+			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
+			suffix := "</p>\n"
 			htmlStr = prefix + middle + suffix
-//			tStr =fmt.Sprintf("#%s_subtitle {\n",tocCssId)
 		case "HEADING_1":
+			//html
 			prefix := fmt.Sprintf("<h1 class=\"%s_h1 toc_h1\">", dObj.docName)
-			middle := fmt.Sprintf("<a href=\"%s\">%s</a>",dObj.headings[ihead].id, dObj.headings[ihead].text)
-			suffix := "</h1>"
+			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
+			suffix := "</h1>\n"
 			htmlStr = prefix + middle + suffix
-			cssStr = fmt.Sprintf(".%s_h1.toc_h1 {\n",dObj.docName)
- 			cssStr += "  padding-left: 10px;\n  margin: 0px;"
-			cssStr += "}/n"
+			//css
+			if !dObj.h1.tocExist {
+				cssStr = fmt.Sprintf(".%s_h1.toc_h1 {\n",dObj.docName)
+ 				cssStr += "  padding-left: 10px;\n  margin: 0px;"
+				cssStr += "}\n"
+				dObj.h1.tocExist = true
+			}
 		case "HEADING_2":
 			prefix := fmt.Sprintf("<h2 class=\"%s_h2 toc_h2\">", dObj.docName)
-			middle := fmt.Sprintf("<a href=\"%s\">%s</a>",dObj.headings[ihead].id, dObj.headings[ihead].text)
-			suffix := "</h2>"
+			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
+			suffix := "</h2>\n"
 			htmlStr = prefix + middle + suffix
-			cssStr = fmt.Sprintf(".%s_h2.toc_h2 {\n",dObj.docName)
-			cssStr += " padding-left: 20px;\n  margin: 0px;"
-			cssStr += "}/n"
+			if !dObj.h2.tocExist {
+				cssStr = fmt.Sprintf(".%s_h2.toc_h2 {\n",dObj.docName)
+				cssStr += " padding-left: 20px;\n  margin: 0px;"
+				cssStr += "}\n"
+				dObj.h2.tocExist = true
+			}
 		case "HEADING_3":
 			prefix := fmt.Sprintf("<h3 class=\"%s_h3 toc_h3\">", dObj.docName)
-			middle := fmt.Sprintf("<a href=\"%s\">%s</a>",dObj.headings[ihead].id, dObj.headings[ihead].text)
-			suffix := "</h3>"
+			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
+			suffix := "</h3>\n"
 			htmlStr = prefix + middle + suffix
-			cssStr = fmt.Sprintf(".%s_h3.toc_h3 {\n",dObj.docName)
-			cssStr += " padding-left: 40px;\n  margin: 0px;"
-			cssStr += "}/n"
+			if !dObj.h3.tocExist {
+				cssStr = fmt.Sprintf(".%s_h3.toc_h3 {\n",dObj.docName)
+				cssStr += " padding-left: 40px;\n  margin: 0px;"
+				cssStr += "}\n"
+				dObj.h3.tocExist = true
+			}
 		case "HEADING_4":
 			prefix := fmt.Sprintf("<h4 class=\"%s_h4 toc_h4\">", dObj.docName)
-			middle := fmt.Sprintf("<a href=\"%s\">%s</a>",dObj.headings[ihead].id, dObj.headings[ihead].text)
-			suffix := "</h4>"
+			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
+			suffix := "</h4>\n"
 			htmlStr = prefix + middle + suffix
-			cssStr = fmt.Sprintf(".%s_h4.toc_h4 {\n",dObj.docName)
-			cssStr += " padding-left: 60px;\n  margin: 0px;"
-			cssStr += "}/n"
+			if !dObj.h4.tocExist {
+				cssStr = fmt.Sprintf(".%s_h4.toc_h4 {\n",dObj.docName)
+				cssStr += " padding-left: 60px;\n  margin: 0px;"
+				cssStr += "}\n"
+				dObj.h4.tocExist = true
+			}
 		case "HEADING_5":
 			prefix := fmt.Sprintf("<h5 class=\"%s_h5 toc_h5\">", dObj.docName)
-			middle := fmt.Sprintf("<a href=\"%s\">%s</a>",dObj.headings[ihead].id, dObj.headings[ihead].text)
-			suffix := "</h5>"
+			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
+			suffix := "</h5>\n"
 			htmlStr = prefix + middle + suffix
-			cssStr = fmt.Sprintf(".%s_h5.toc_h5 {\n",dObj.docName)
-			cssStr += " padding-left: 80px;\n  margin: 0px;"
-			cssStr += "}/n"
+			if !dObj.h5.tocExist {
+				cssStr = fmt.Sprintf(".%s_h5.toc_h5 {\n",dObj.docName)
+				cssStr += " padding-left: 80px;\n  margin: 0px;"
+				cssStr += "}\n"
+				dObj.h5.tocExist = true
+			}
 		case "HEADING_6":
 			prefix := fmt.Sprintf("<h6 class=\"%s_h6 toc_h6\">", dObj.docName)
-			middle := fmt.Sprintf("<a href=\"%s\">%s</a>",dObj.headings[ihead].id, dObj.headings[ihead].text)
-			suffix := "</6>"
+			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
+			suffix := "</h6>\n"
 			htmlStr = prefix + middle + suffix
-			cssStr = fmt.Sprintf(".%s_h6.toc_h6 {\n",dObj.docName)
-			cssStr += " padding-left: 100px;\n  margin: 0px;"
-			cssStr += "}/n"
+			if !dObj.h6.tocExist {
+				cssStr = fmt.Sprintf(".%s_h6.toc_h6 {\n",dObj.docName)
+				cssStr += " padding-left: 100px;\n  margin: 0px;"
+				cssStr += "}\n"
+				dObj.h6.tocExist = true
+			}
 		case "NORMAL_TEXT":
 
 		default:
 
 		}
 		tocDiv.bodyCss += cssStr
-		tocDiv.bodyHtml += htmlStr + "</div>"
+		tocDiv.bodyHtml += htmlStr
 
 	}
+		tocDiv.bodyHtml += "</div>\n"
 
 	return &tocDiv, nil
 }
