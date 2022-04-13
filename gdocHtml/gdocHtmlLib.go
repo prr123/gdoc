@@ -54,6 +54,7 @@ type GdocHtmlObj struct {
 	docLists []docList
 	headings []heading
 	sections []sect
+	docFtnotes []docFtnote
 	headCount int
 	secCount int
 	elCount int
@@ -87,6 +88,13 @@ type heading struct {
 	hdElStart int
 	id string
 	text string
+}
+
+type docFtnote struct {
+	el int
+	parel int
+	id string
+	numStr string
 }
 
 type cList struct {
@@ -1460,6 +1468,7 @@ func (dObj *GdocHtmlObj) initGdocHtml(doc *docs.Document, options *OptObj) (err 
 	var listItem docList
 	var heading heading
 	var sec sect
+	var ftnote docFtnote
 
 	if doc == nil {return fmt.Errorf("no doc provided!")}
 	dObj.doc = doc
@@ -1537,7 +1546,8 @@ func (dObj *GdocHtmlObj) initGdocHtml(doc *docs.Document, options *OptObj) (err 
 		if elObj.Paragraph != nil {
 
 			if elObj.Paragraph.Bullet != nil {
-				// lists
+
+			// lists
 				listId := elObj.Paragraph.Bullet.ListId
 				found := findDocList(dObj.docLists, listId)
 				if found < 0 {
@@ -1548,7 +1558,9 @@ func (dObj *GdocHtmlObj) initGdocHtml(doc *docs.Document, options *OptObj) (err 
 					nestlev := elObj.Paragraph.Bullet.NestingLevel
 					if dObj.docLists[found].maxNestLev < nestlev { dObj.docLists[found].maxNestLev = nestlev }
 				}
+
 			}
+
 			// headings
 			text := ""
 			if len(elObj.Paragraph.ParagraphStyle.HeadingId) > 0 {
@@ -1571,13 +1583,21 @@ func (dObj *GdocHtmlObj) initGdocHtml(doc *docs.Document, options *OptObj) (err 
 				if hdlen > 1 {
 					dObj.headings[hdlen-2].hdElEnd = parHdEnd
 				}
-			}
+			} // end headings
 
 			// footnotes
 			for parEl:=0; parEl<len(elObj.Paragraph.Elements); parEl++ {
 				parElObj := elObj.Paragraph.Elements[parEl]
-				if parElObj.FootnoteReference != nil {dObj.ftNoteCount++}
+				if parElObj.FootnoteReference != nil {
+					dObj.ftNoteCount++
+					ftnote.el = el
+					ftnote.parel = parEl
+					ftnote.id = parElObj.FootnoteReference.FootnoteId
+					ftnote.numStr = parElObj.FootnoteReference.FootnoteNumber
+					dObj.docFtnotes = append(dObj.docFtnotes, ftnote)
+				}
 			}
+
 			parHdEnd = el
 			secPtEnd = el
 		} // end paragraph
@@ -1605,10 +1625,14 @@ func (dObj *GdocHtmlObj) initGdocHtml(doc *docs.Document, options *OptObj) (err 
 		for i:=0; i< len(dObj.docLists); i++ {
 			fmt.Printf("list %3d id: %s max level: %d ordered: %t\n", i, dObj.docLists[i].listId, dObj.docLists[i].maxNestLev, dObj.docLists[i].ord)
 		}
-		fmt.Printf("***********************************************\n\n")
+		for i:=0; i< len(dObj.docFtnotes); i++ {
+			ftn := dObj.docFtnotes[i]
+			fmt.Printf("ft %3d: Number: %-4s id: %-15s el: %3d parel: %3d\n", i, ftn.numStr, ftn.id, ftn.el, ftn.parel)
+		}
+
+		fmt.Printf("**************************************************\n\n")
 	}
 
-// Headings
 
 // images
 	dObj.inImgCount = len(doc.InlineObjects)
@@ -2834,7 +2858,64 @@ func (dObj *GdocHtmlObj) cvtContentEl(contEl *docs.StructuralElement) (GdocHtmlO
 	return bodyElObj, nil
 }
 
-//ttt
+//ootnote div
+func (dObj *GdocHtmlObj) createFootnoteDiv () (ftnObj *dispObj, err error) {
+	var ftnDiv dispObj
+	var htmlStr, cssStr string
+
+	doc := dObj.doc
+	docStyl := doc.DocumentStyle
+	//html
+	htmlStr = fmt.Sprintf("<div class=\"%s %s_ftn\">\n", dObj.docName, dObj.docName)
+	htmlStr += fmt.Sprintf("<p class=\"%s %s_subtitle %s_ftn\">Footnotes</p>\n", dObj.docName, dObj.docName)
+	ftnDiv.bodyHtml = htmlStr
+
+	// div css
+	cssStr = fmt.Sprintf(".%s.%s_subtitle  {\n", dObj.docName, dObj.docName)
+	cssStr += "  margin-top: 10mm;\n"
+	cssStr += "  margin-bottom: 10mm;\n"
+    cssStr += fmt.Sprintf("  margin-right: %.2fmm; \n",docStyl.MarginRight.Magnitude*PtTomm)
+    cssStr += fmt.Sprintf("  margin-left: %.2fmm; \n",docStyl.MarginLeft.Magnitude*PtTomm)
+
+	if dObj.Options.DivBorders {
+		cssStr += "  border: solid green;\n"
+		cssStr += "  border-width: 1px;\n"
+	}
+	cssStr += "  padding-top:10px;\n  padding-bottom:10px;\n"
+	cssStr += "}\n"
+
+	cssStr += fmt.Sprintf(".%s.%s_subtitle.%s_ftn {\n", dObj.docName, dObj.docName, dObj.docName)
+
+	cssStr += "}\n"
+	ftnObj.bodyCss = cssStr
+	ftnObj.bodyHtml = fmt.Sprintf("<!-- Footnotes: %d -->\n", len(dObj.docFtnotes))
+
+	for iFtn:=0; iFtn<len(dObj.docFtnotes); iFtn++ {
+		cssStr = ""
+		idStr := dObj.docFtnotes[iFtn].id
+		htmlStr += fmt.Sprintf("<!-- FTnote: %d %s -->\n", iFtn, idStr)
+		ftObj, ok := doc.Footnotes[idStr]
+		if !ok {
+			htmlStr += fmt.Sprintf("<!-- error ftnote %d not found! -->\n", iFtn)
+			continue
+		}
+
+		for el:=0; el<len(ftObj.Content); el++ {
+			elObj := ftObj.Content[el]
+			tObj, err := dObj.cvtContentEl(elObj)
+			if err != nil {
+				ftnObj.bodyHtml += fmt.Sprintf("<!-- error display el: %d -->\n", el)
+			}
+			addDispObj(&ftnDiv, tObj)
+		}
+	}
+
+	ftnDiv.bodyHtml += "</div>\n"
+
+	return &ftnDiv, nil
+}
+
+//toc div
 func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 	var tocDiv dispObj
 	var htmlStr, cssStr string
@@ -2960,7 +3041,8 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 		tocDiv.bodyHtml += htmlStr
 
 	}
-		tocDiv.bodyHtml += "</div>\n"
+
+	tocDiv.bodyHtml += "</div>\n"
 
 	return &tocDiv, nil
 }
@@ -2979,8 +3061,6 @@ func (dObj *GdocHtmlObj) cvtBody() (bodyObj *dispObj, err error) {
 	}
 	bodyObj = new(dispObj)
 
-//	toc := dObj.Options.Toc
-//	bodyObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div\">\n", dObj.docName)
 	bodyObj.bodyHtml = ""
 
 	elNum := len(body.Content)
@@ -2990,7 +3070,6 @@ func (dObj *GdocHtmlObj) cvtBody() (bodyObj *dispObj, err error) {
 		if err != nil {
 			fmt.Println("cvtContentEl: %v", err)
 		}
-//		fmt.Println("tObj:", tObj)
 		addDispObj(bodyObj, tObj)
 	} // for el loop end
 	if dObj.listStack != nil {
@@ -2998,7 +3077,6 @@ func (dObj *GdocHtmlObj) cvtBody() (bodyObj *dispObj, err error) {
 //fmt.Printf("end of doc closing list!")
 	}
 
-//	bodyObj.tocHtml += "</div>\n\n"
 	bodyObj.bodyHtml += "</div>\n\n"
 
 	return bodyObj, nil
@@ -3308,6 +3386,11 @@ func CreGdocHtmlAll(folderPath string, doc *docs.Document, options *OptObj)(err 
 			fmt.Errorf("dlImages: %v", err)
 		}
 	}
+// footnotes
+	ftnoteDiv, err := dObj.createFootnoteDiv()
+	if err != nil {
+		fmt.Errorf("createFootnoteDiv: %v", err)
+	}
 
 //	dObj.sections
 	var mainDiv dispObj
@@ -3362,6 +3445,8 @@ func CreGdocHtmlAll(folderPath string, doc *docs.Document, options *OptObj)(err 
 	outfil.WriteString(headObj.bodyHtml)
 	if toc {outfil.WriteString(tocDiv.bodyHtml)}
 	outfil.WriteString(mainDiv.bodyHtml)
+
+	outfil.WriteString(ftnoteDiv.bodyHtml)
 
 	outfil.WriteString("</body>\n</html>\n")
 	outfil.Close()
