@@ -2859,7 +2859,7 @@ func (dObj *GdocHtmlObj) cvtContentEl(contEl *docs.StructuralElement) (GdocHtmlO
 }
 
 //ootnote div
-func (dObj *GdocHtmlObj) createFootnoteDiv () (ftnObj *dispObj, err error) {
+func (dObj *GdocHtmlObj) createFootnoteDiv () (ftnoteDiv *dispObj, err error) {
 	var ftnDiv dispObj
 	var htmlStr, cssStr string
 
@@ -2867,7 +2867,7 @@ func (dObj *GdocHtmlObj) createFootnoteDiv () (ftnObj *dispObj, err error) {
 	docStyl := doc.DocumentStyle
 	//html
 	htmlStr = fmt.Sprintf("<div class=\"%s %s_ftn\">\n", dObj.docName, dObj.docName)
-	htmlStr += fmt.Sprintf("<p class=\"%s %s_subtitle %s_ftn\">Footnotes</p>\n", dObj.docName, dObj.docName)
+	htmlStr += fmt.Sprintf("<p class=\"%s %s_subtitle %s_ftn\">Footnotes</p>\n", dObj.docName, dObj.docName, dObj.docName)
 	ftnDiv.bodyHtml = htmlStr
 
 	// div css
@@ -2887,24 +2887,27 @@ func (dObj *GdocHtmlObj) createFootnoteDiv () (ftnObj *dispObj, err error) {
 	cssStr += fmt.Sprintf(".%s.%s_subtitle.%s_ftn {\n", dObj.docName, dObj.docName, dObj.docName)
 
 	cssStr += "}\n"
-	ftnObj.bodyCss = cssStr
-	ftnObj.bodyHtml = fmt.Sprintf("<!-- Footnotes: %d -->\n", len(dObj.docFtnotes))
+	ftnDiv.bodyCss = cssStr
+	ftnDiv.bodyHtml = htmlStr
+
+	ftnDiv.bodyHtml += fmt.Sprintf("<!-- Footnotes: %d -->\n", len(dObj.docFtnotes))
 
 	for iFtn:=0; iFtn<len(dObj.docFtnotes); iFtn++ {
-		cssStr = ""
+//		htmlStr = ""
 		idStr := dObj.docFtnotes[iFtn].id
-		htmlStr += fmt.Sprintf("<!-- FTnote: %d %s -->\n", iFtn, idStr)
-		ftObj, ok := doc.Footnotes[idStr]
+		htmlStr = fmt.Sprintf("<!-- FTnote: %d %s -->\n", iFtn, idStr)
+		docFt, ok := doc.Footnotes[idStr]
 		if !ok {
 			htmlStr += fmt.Sprintf("<!-- error ftnote %d not found! -->\n", iFtn)
 			continue
 		}
 
-		for el:=0; el<len(ftObj.Content); el++ {
-			elObj := ftObj.Content[el]
+		ftnDiv.bodyHtml += htmlStr
+		for el:=0; el<len(docFt.Content); el++ {
+			elObj := docFt.Content[el]
 			tObj, err := dObj.cvtContentEl(elObj)
 			if err != nil {
-				ftnObj.bodyHtml += fmt.Sprintf("<!-- error display el: %d -->\n", el)
+				ftnDiv.bodyHtml += fmt.Sprintf("<!-- error display el: %d -->\n", el)
 			}
 			addDispObj(&ftnDiv, tObj)
 		}
