@@ -1765,7 +1765,10 @@ func (dObj *GdocHtmlObj) cvtParElText(parElTxt *docs.TextRun)(htmlStr string, cs
 
 	// need to check whether <1
 	if len(parElTxt.Content) < 2 { return "","",nil}
+
 	// need to compare text style with the default style
+//todo
+
 	spanCssStr, err := dObj.cvtTxtStylCss(parElTxt.TextStyle, false)
 	if err != nil {
 		spanCssStr = fmt.Sprintf("/*error parEl Css %v*/\n", err) + spanCssStr
@@ -2085,16 +2088,13 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 //
 	var parHtmlStr, parCssStr string
 	var prefix, suffix string
-//	var tocPrefix, tocSuffix string
 	var listPrefix, listHtml, listCss, listSuffix string
 	var newList cList
 
 	if par == nil {
         return parObj, fmt.Errorf("cvtPar -- parEl is nil!")
     }
-	if dObj == nil {
-        return parObj, fmt.Errorf("cvttPar -- dObj is nil!")
-    }
+
 	errStr := ""
 	dObj.parCount++
 
@@ -2109,11 +2109,11 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 		// if there was an open list, close it
 		if dObj.listStack != nil {
 			parHtmlStr += dObj.closeList(-1)
-//fmt.Printf("par bullet close list\n")
+			//fmt.Printf("new par -> close list\n")
 		}
 	}
 
-// Positioned Objects
+	// Positioned Objects
 	numPosObj := len(par.PositionedObjectIds)
 	for i:=0; i< numPosObj; i++ {
 		posId := par.PositionedObjectIds[i]
@@ -2132,19 +2132,20 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 
 	parObj.bodyHtml += parHtmlStr
 	parObj.bodyCss += parCssStr
+
 	// need to reset
 	parHtmlStr = ""
 	parCssStr = ""
 
 	// check for new line paragraph
-		if len(par.Elements) == 1 {
-			if par.Elements[0].TextRun != nil {
-				if par.Elements[0].TextRun.Content == "\n" {
-					parObj.bodyHtml = "<br>\n"
-					return parObj, nil
-				}
+	if len(par.Elements) == 1 {
+		if par.Elements[0].TextRun != nil {
+			if par.Elements[0].TextRun.Content == "\n" {
+				parObj.bodyHtml = "<br>\n"
+				return parObj, nil
 			}
 		}
+	}
 
 
 	namedTyp := par.ParagraphStyle.NamedStyleType
@@ -2153,10 +2154,12 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 		return parObj, fmt.Errorf("cvtPar: %v", err)
 	}
 
-	// default style for each named style
-	// add css for named style at the begining of the Css
+	// default style for each named style used in the document
+	// add css for named style at the begining of the style sheet
 	// normal_text is already defined as the default in the css for the <div>
-	// *** important *** cvtNamedStyl needs to be run before CvtParStyle 
+	// *** important *** cvtNamedStyl needs to be run before CvtParStyle
+
+	// add css for named style  found in doc
 	if namedTyp != "NORMAL_TEXT" {
 		hdcss, err := dObj.cvtNamedStyl(namedTyp)
 		if err != nil {
@@ -2166,14 +2169,11 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 	}
 
 	if par.Bullet == nil {
-		// now we have a normal paragraph element
+		// normal (no list) paragraph element
 		parHtmlStr += fmt.Sprintf("\n<!-- Paragraph %d %s -->\n", dObj.parCount, namedTyp)
 	}
 
-
-//	namParStyl, _, _ = dObj.getNamedStyl(namedTyp)
-
-//zz
+	// get paragraph style
 	parStylCss :=""
 	parStylCss, prefix, suffix, err = dObj.cvtParStyl(par.ParagraphStyle, namParStyl, isList)
 	if err != nil {
@@ -2182,7 +2182,8 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 //fmt.Printf("par %d:  %s %s %s\n", dObj.parCount, prefix, suffix, namedTyp)
 	parObj.bodyCss += errStr + parStylCss
 
-	// Heading Id refers to a heading not just a normal paragraph
+	// Heading Id refers to a heading paragraph not just a normal paragraph
+	// headings are bookmarked for TOC
 	hdHtmlStr:=""
 	if len(par.ParagraphStyle.HeadingId) > 0 {
 		hdHtmlStr = fmt.Sprintf("<!-- Heading Id: %s -->", par.ParagraphStyle.HeadingId)
@@ -2228,7 +2229,6 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 		// A. check whether need new <ul> or <ol>
 		// listHtml contains the <ul> <ol> element
 		listHtml = ""
-//		listSid := listid[4:]
 
 		// conditions for new <ul><ol>
 		// 1. beginning of a list
@@ -2859,16 +2859,12 @@ func (dObj *GdocHtmlObj) createFootnoteDiv () (ftnoteDiv *dispObj, err error) {
 	doc := dObj.doc
 	docStyl := doc.DocumentStyle
 	//html
-	htmlStr = fmt.Sprintf("<div class=\"%s %s_ftn\">\n", dObj.docName, dObj.docName)
-	htmlStr += fmt.Sprintf("<p class=\"%s %s_subtitle %s_ftn\">Footnotes</p>\n", dObj.docName, dObj.docName, dObj.docName)
+	htmlStr = fmt.Sprintf("<div class=\"%s_div %s_ftn\">\n", dObj.docName, dObj.docName)
+	htmlStr += fmt.Sprintf("<p class=\"%s_div %s_title %s_ftn\">Footnotes</p>\n", dObj.docName, dObj.docName, dObj.docName)
 	ftnDiv.bodyHtml = htmlStr
 
-	// div css
-	cssStr = fmt.Sprintf(".%s.%s_subtitle  {\n", dObj.docName, dObj.docName)
-	cssStr += "  margin-top: 10mm;\n"
-	cssStr += "  margin-bottom: 10mm;\n"
-    cssStr += fmt.Sprintf("  margin-right: %.2fmm; \n",docStyl.MarginRight.Magnitude*PtTomm)
-    cssStr += fmt.Sprintf("  margin-left: %.2fmm; \n",docStyl.MarginLeft.Magnitude*PtTomm)
+	//css div footnote
+	cssStr = fmt.Sprintf(".%s_div.%s_ftn  {\n", dObj.docName, dObj.docName)
 
 	if dObj.Options.DivBorders {
 		cssStr += "  border: solid green;\n"
@@ -2877,13 +2873,22 @@ func (dObj *GdocHtmlObj) createFootnoteDiv () (ftnoteDiv *dispObj, err error) {
 	cssStr += "  padding-top:10px;\n  padding-bottom:10px;\n"
 	cssStr += "}\n"
 
-	cssStr += fmt.Sprintf(".%s.%s_subtitle.%s_ftn {\n", dObj.docName, dObj.docName, dObj.docName)
+	//css footnote title
+	cssStr += fmt.Sprintf(".%s_div.%s_title.%s_ftn {\n", dObj.docName, dObj.docName, dObj.docName)
 
 	cssStr += "}\n"
+
 	ftnDiv.bodyCss = cssStr
 	ftnDiv.bodyHtml = htmlStr
 
 	ftnDiv.bodyHtml += fmt.Sprintf("<!-- Footnotes: %d -->\n", len(dObj.docFtnotes))
+
+	cssStr = fmt.Sprintf(".%s_p.%s_pft {\n",dObj.docName, dObj.docName)
+	cssStr += "}\n"
+	cssStr = fmt.Sprintf(".%s_p.%s_pft::before {\n",dObj.docName, dObj.docName)
+	cssStr += "}\n"
+	ftnDiv.bodyCss = cssStr
+
 
 	for iFtn:=0; iFtn<len(dObj.docFtnotes); iFtn++ {
 //		htmlStr = ""
@@ -2896,6 +2901,7 @@ func (dObj *GdocHtmlObj) createFootnoteDiv () (ftnoteDiv *dispObj, err error) {
 		}
 
 		ftnDiv.bodyHtml += htmlStr
+
 		for el:=0; el<len(docFt.Content); el++ {
 			elObj := docFt.Content[el]
 			tObj, err := dObj.cvtContentEl(elObj)
@@ -2920,7 +2926,7 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 //	docStyl := doc.DocumentStyle
 	//html
 	htmlStr = fmt.Sprintf("<div class=\"%s_div %s_toc\">\n", dObj.docName, dObj.docName)
-	htmlStr += fmt.Sprintf("<p class=\"%s_div %s_title\">Table of Contents</p>\n", dObj.docName, dObj.docName)
+	htmlStr += fmt.Sprintf("<p class=\"%s_div %s_title %s_toctitle\">Table of Contents</p>\n", dObj.docName, dObj.docName, dObj.docName)
 	tocDiv.bodyHtml = htmlStr
 
 	// div css
@@ -2939,9 +2945,19 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 
 	// title css
 	// still need to add case where there is not title def.
-	// if dObj.title
+	// if dObj.title.exists
 	cssStr += fmt.Sprintf(".%s_div.%s_title.%s_toctitle {", dObj.docName, dObj.docName, dObj.docName)
-	cssStr += "text_indent: 10pt;"
+	cssStr += "text-align: start;"
+	cssStr += "text-decoration-line: underline; "
+	cssStr += "}\n"
+
+	cssStr += fmt.Sprintf(".%s_div.%s_title.%s_tocIlTitle {", dObj.docName, dObj.docName, dObj.docName)
+	cssStr += "text-align: start;"
+	cssStr += "text-decoration-line: none; "
+	cssStr += "}\n"
+
+	cssStr += fmt.Sprintf(".%s_noUl {", dObj.docName)
+	cssStr += "text-decoration: none; "
 	cssStr += "}\n"
 
 	tocDiv.bodyCss = cssStr
@@ -2958,8 +2974,8 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 		text := dObj.headings[ihead].text
 		switch parNamedStyl {
 		case "TITLE":
-			prefix := fmt.Sprintf("<p class=\"%s_div %s_title %s__tocTitle\">", dObj.docName, dObj.docName, dObj.docName)
-			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
+			prefix := fmt.Sprintf("<p class=\"%s_div %s_title %s_tocIlTitle\">", dObj.docName, dObj.docName, dObj.docName)
+			middle := fmt.Sprintf("<a href=\"#%s\" class=\"%s_noUl\">%s</a>", hdId, dObj.docName, text)
 			suffix := "</p>\n"
 			htmlStr = prefix + middle + suffix
 //			cssStr =fmt.Sprintf(".%s_title {\n",)
