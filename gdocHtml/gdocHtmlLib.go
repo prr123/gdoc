@@ -33,14 +33,6 @@ type GdocHtmlObj struct {
     ImgCount int
     tableCount int
     parCount int
-	titleCount int
-	subtitleCount int
-    h1Count int
-    h2Count int
-    h3Count int
-    h4Count int
-    h5Count int
-    h6Count int
 	title namStyl
 	subtitle namStyl
 	h1 namStyl
@@ -68,6 +60,13 @@ type GdocHtmlObj struct {
     imgFoldPath string
 	Options *OptObj
 }
+
+type namStyl struct {
+	count int
+	exist bool
+	tocExist bool
+}
+
 
 type dispObj struct {
 	headCss string
@@ -139,12 +138,6 @@ type tblBorder struct {
 	color string
 	dash string
 	width float64
-}
-
-type namStyl struct {
-	count int
-	exist bool
-	tocExist bool
 }
 
 type parMap struct {
@@ -2486,9 +2479,9 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 				prefix = fmt.Sprintf("<p class=\"%s_title%s\"", dObj.docName, isListClass)
 			}
 			if alter {
-				cssPrefix = fmt.Sprintf(".%s_title_%d {\n",dObj.docName, dObj.titleCount)
-				prefix = fmt.Sprintf("<p class=\"%s_title_%d\"", dObj.docName, dObj.titleCount)
-				dObj.titleCount++
+				cssPrefix = fmt.Sprintf(".%s_title_%d {\n",dObj.docName, dObj.title.count)
+				prefix = fmt.Sprintf("<p class=\"%s_title_%d\"", dObj.docName, dObj.title.count)
+				dObj.title.count++
 			}
 			suffix = "</p>"
 
@@ -2497,9 +2490,9 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 				prefix = fmt.Sprintf("<p class=\"%s_subtitle\"", dObj.docName)
 			}
 			if alter {
-				cssPrefix = fmt.Sprintf(".s_subtitle_%d {\n",dObj.docName, dObj.subtitleCount)
-				prefix = fmt.Sprintf("<p class=\"%s_subtitle_%d\"", dObj.docName, dObj.subtitleCount)
-				dObj.subtitleCount++
+				cssPrefix = fmt.Sprintf(".s_subtitle_%d {\n",dObj.docName, dObj.subtitle.count)
+				prefix = fmt.Sprintf("<p class=\"%s_subtitle_%d\"", dObj.docName, dObj.subtitle.count)
+				dObj.subtitle.count++
 			}
 			suffix = "</p>"
 
@@ -2508,9 +2501,9 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 				prefix = fmt.Sprintf("<h1 class=\"%s_h1\"", dObj.docName)
 			}
 			if alter {
-				cssPrefix = fmt.Sprintf(".%s_h1_%d {\n",dObj.docName, dObj.h1Count)
-				prefix = fmt.Sprintf("<h1 class=\"%s_h1_%d\"", dObj.docName, dObj.h1Count)
-				dObj.h1Count++
+				cssPrefix = fmt.Sprintf(".%s_h1_%d {\n",dObj.docName, dObj.h1.count)
+				prefix = fmt.Sprintf("<h1 class=\"%s_h1_%d\"", dObj.docName, dObj.h1.count)
+				dObj.h1.count++
 			}
 			suffix = "</h1>"
 		case "HEADING_2":
@@ -2518,9 +2511,9 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 				prefix = fmt.Sprintf("<h2 class=\"%s_h2\"", dObj.docName)
 			}
 			if alter {
-				cssPrefix = fmt.Sprintf(".%s_h2_%d {\n",dObj.docName, dObj.h2Count)
-				prefix = fmt.Sprintf("<h2 class=\"%s_h2_%d\"", dObj.docName, dObj.h2Count)
-				dObj.h2Count++
+				cssPrefix = fmt.Sprintf(".%s_h2_%d {\n",dObj.docName, dObj.h2.count)
+				prefix = fmt.Sprintf("<h2 class=\"%s_h2_%d\"", dObj.docName, dObj.h2.count)
+				dObj.h2.count++
 			}
 			suffix = "</h2>"
 		case "HEADING_3":
@@ -2528,9 +2521,9 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 				prefix = fmt.Sprintf("<h3 class=\"%s_h3\"", dObj.docName)
 			}
 			if alter {
-				cssPrefix = fmt.Sprintf(".%s_h3_%d {\n",dObj.docName, dObj.h3Count)
-				prefix = fmt.Sprintf("<h3 class=\"%s_h3_%d\"", dObj.docName, dObj.h3Count)
-				dObj.h3Count++
+				cssPrefix = fmt.Sprintf(".%s_h3_%d {\n",dObj.docName, dObj.h3.count)
+				prefix = fmt.Sprintf("<h3 class=\"%s_h3_%d\"", dObj.docName, dObj.h3.count)
+				dObj.h3.count++
 			}
 			suffix = "</h3>"
 		case "HEADING_4":
@@ -2539,9 +2532,9 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 				dObj.h4.exist = true
 			}
 			if alter {
-				cssPrefix = fmt.Sprintf(".%s_h4_%d {\n",dObj.docName, dObj.h4Count)
-				prefix = fmt.Sprintf("<h4 class=\"%s_h4_%d\"", dObj.docName, dObj.h4Count)
-				dObj.h4Count++
+				cssPrefix = fmt.Sprintf(".%s_h4_%d {\n",dObj.docName, dObj.h4.count)
+				prefix = fmt.Sprintf("<h4 class=\"%s_h4_%d\"", dObj.docName, dObj.h4.count)
+				dObj.h4.count++
 			}
 			suffix = "</h4>"
 		case "HEADING_5":
@@ -2550,9 +2543,9 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 				dObj.h5.exist = true
 			}
 			if alter {
-				cssPrefix = fmt.Sprintf(".%s_h5_%d {\n",dObj.docName, dObj.h5Count)
-				prefix = fmt.Sprintf("<h5 class=\"%s_h5_%d\"", dObj.docName, dObj.h5Count)
-				dObj.h5Count++
+				cssPrefix = fmt.Sprintf(".%s_h5_%d {\n",dObj.docName, dObj.h5.count)
+				prefix = fmt.Sprintf("<h5 class=\"%s_h5_%d\"", dObj.docName, dObj.h5.count)
+				dObj.h5.count++
 			}
 			suffix = "</h5>"
 		case "HEADING_6":
@@ -2561,9 +2554,9 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 				dObj.h6.exist = true
 			}
 			if alter {
-				cssPrefix = fmt.Sprintf(".%s_h6_%d {\n",dObj.docName, dObj.h6Count)
-				prefix = fmt.Sprintf("<h6 class=\"%s_h6_%d\"", dObj.docName, dObj.h6Count)
-				dObj.h6Count++
+				cssPrefix = fmt.Sprintf(".%s_h6_%d {\n",dObj.docName, dObj.h6.count)
+				prefix = fmt.Sprintf("<h6 class=\"%s_h6_%d\"", dObj.docName, dObj.h6.count)
+				dObj.h6.count++
 			}
 			suffix = "</h6>"
 		case "NORMAL_TEXT":
@@ -2924,18 +2917,18 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 	var htmlStr, cssStr string
 
 	doc := dObj.doc
-	docStyl := doc.DocumentStyle
+//	docStyl := doc.DocumentStyle
 	//html
-	htmlStr = fmt.Sprintf("<div class=\"%s %s_toc\">\n", dObj.docName, dObj.docName)
-	htmlStr += fmt.Sprintf("<p class=\"%s %s_subtitle\">Table of Contents</p>\n", dObj.docName, dObj.docName)
+	htmlStr = fmt.Sprintf("<div class=\"%s_div %s_toc\">\n", dObj.docName, dObj.docName)
+	htmlStr += fmt.Sprintf("<p class=\"%s_div %s_title\">Table of Contents</p>\n", dObj.docName, dObj.docName)
 	tocDiv.bodyHtml = htmlStr
 
 	// div css
-	cssStr = fmt.Sprintf(".%s.%s_toc  {\n", dObj.docName, dObj.docName)
-	cssStr += "  margin-top: 10mm;\n"
-	cssStr += "  margin-bottom: 10mm;\n"
-    cssStr += fmt.Sprintf("  margin-right: %.2fmm; \n",docStyl.MarginRight.Magnitude*PtTomm)
-    cssStr += fmt.Sprintf("  margin-left: %.2fmm; \n",docStyl.MarginLeft.Magnitude*PtTomm)
+	cssStr = fmt.Sprintf(".%s_div.%s_toc  {\n", dObj.docName, dObj.docName)
+//	cssStr += "  margin-top: 10mm;\n"
+//	cssStr += "  margin-bottom: 10mm;\n"
+//    cssStr += fmt.Sprintf("  margin-right: %.2fmm; \n",docStyl.MarginRight.Magnitude*PtTomm)
+//    cssStr += fmt.Sprintf("  margin-left: %.2fmm; \n",docStyl.MarginLeft.Magnitude*PtTomm)
 
 	if dObj.Options.DivBorders {
 		cssStr += "  border: solid green;\n"
@@ -2943,6 +2936,14 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 	}
 	cssStr += "  padding-top:10px;\n  padding-bottom:10px;\n"
 	cssStr += "}\n"
+
+	// title css
+	// still need to add case where there is not title def.
+	// if dObj.title
+	cssStr += fmt.Sprintf(".%s_div.%s_title.%s_toctitle {", dObj.docName, dObj.docName, dObj.docName)
+	cssStr += "text_indent: 10pt;"
+	cssStr += "}\n"
+
 	tocDiv.bodyCss = cssStr
 
 //	var tocDiv dispObj
@@ -2957,7 +2958,7 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 		text := dObj.headings[ihead].text
 		switch parNamedStyl {
 		case "TITLE":
-			prefix := fmt.Sprintf("<p class=\"%s_title\">", dObj.docName)
+			prefix := fmt.Sprintf("<p class=\"%s_div %s_title %s__tocTitle\">", dObj.docName, dObj.docName, dObj.docName)
 			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
 			suffix := "</p>\n"
 			htmlStr = prefix + middle + suffix
