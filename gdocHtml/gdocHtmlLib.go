@@ -2325,6 +2325,19 @@ func (dObj *GdocHtmlObj) cvtParEl(parEl *docs.ParagraphElement)(htmlStr string, 
 			cssStr += txtCssStr
 		}
 
+		if parEl.FootnoteReference != nil {
+        	txtHtmlStr, txtCssStr, err := dObj.cvtParElText(parEl.TextRun)
+        	if err != nil {
+            	htmlStr += fmt.Sprintf("<!-- error cvtPelToHtml: %v -->\n",err)
+        	}
+        	htmlStr += txtHtmlStr
+			cssStr += txtCssStr
+		}
+
+		if parEl.PageBreak != nil {
+
+		}
+
         if parEl.HorizontalRule != nil {
 
         }
