@@ -2888,6 +2888,7 @@ func (dObj *GdocHtmlObj) createFootnoteDiv () (ftnoteDiv *dispObj, err error) {
 	cssStr += "  display:block;\n"
 	cssStr += "  list-style-type: decimal;\n"
 	cssStr += "  padding-inline-start: 10pt;\n"
+	cssStr += "  margin: 0;\n"
 	cssStr += "}\n"
 
 	// prefix for paragraphs
