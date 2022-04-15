@@ -2884,15 +2884,19 @@ func (dObj *GdocHtmlObj) createFootnoteDiv () (ftnoteDiv *dispObj, err error) {
 	ftnDiv.bodyHtml += fmt.Sprintf("<!-- Footnotes: %d -->\n", len(dObj.docFtnotes))
 
 	cssStr = fmt.Sprintf(".%s_p.%s_pft {\n",dObj.docName, dObj.docName)
+
 	cssStr += "}\n"
 	cssStr = fmt.Sprintf(".%s_p.%s_pft::before {\n",dObj.docName, dObj.docName)
+
 	cssStr += "}\n"
-	ftnDiv.bodyCss = cssStr
+	ftnDiv.bodyCss += cssStr
+	ftnDiv.bodyHtml += htmlStr
 
 
 	for iFtn:=0; iFtn<len(dObj.docFtnotes); iFtn++ {
 //		htmlStr = ""
 		idStr := dObj.docFtnotes[iFtn].id
+		ftnDiv.bodyHtml += htmlStr
 		htmlStr = fmt.Sprintf("<!-- FTnote: %d %s -->\n", iFtn, idStr)
 		docFt, ok := doc.Footnotes[idStr]
 		if !ok {
@@ -2901,17 +2905,35 @@ func (dObj *GdocHtmlObj) createFootnoteDiv () (ftnoteDiv *dispObj, err error) {
 		}
 
 		ftnDiv.bodyHtml += htmlStr
-
+		// presumably footnotes are paragraphs only
 		for el:=0; el<len(docFt.Content); el++ {
 			elObj := docFt.Content[el]
+			if elObj.Paragraph == nil {continue}
+			par := elObj.Paragraph
+			htmlStr += fmt.Sprintf"<p class=\"%s_p\">\n", dObj.docName)
+
+			for parEl:=0; parEl< len(par.Elements); parEl++ {
+				parElObj := par.Elements[parEl]
+				thtml, tcss, err := cvtParEl(parElObj)
+				if err != nil {
+					htmlStr += fmt.Sprintf("<!-- el: %d parel %d error %v -->\n", el, parEl, err)
+				}
+				htmlStr += thtml
+				cssStr +=tcss
+			}
+/*
 			tObj, err := dObj.cvtContentEl(elObj)
 			if err != nil {
 				ftnDiv.bodyHtml += fmt.Sprintf("<!-- error display el: %d -->\n", el)
 			}
 			addDispObj(&ftnDiv, tObj)
+*/
+
+			htmlStr += "</p>"
 		}
 	}
 
+	ftnDiv.bodyHtml += htmlStr
 	ftnDiv.bodyHtml += "</div>\n"
 
 	return &ftnDiv, nil
