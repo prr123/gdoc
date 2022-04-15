@@ -2857,64 +2857,78 @@ func (dObj *GdocHtmlObj) createFootnoteDiv () (ftnoteDiv *dispObj, err error) {
 	var htmlStr, cssStr string
 
 	doc := dObj.doc
-	docStyl := doc.DocumentStyle
-	//html
-	htmlStr = fmt.Sprintf("<div class=\"%s_div %s_ftn\">\n", dObj.docName, dObj.docName)
-	htmlStr += fmt.Sprintf("<p class=\"%s_div %s_title %s_ftn\">Footnotes</p>\n", dObj.docName, dObj.docName, dObj.docName)
-	ftnDiv.bodyHtml = htmlStr
+
+	//html div footnote
+	htmlStr = fmt.Sprintf("<!-- Footnotes: %d -->\n", len(dObj.docFtnotes))
+	htmlStr += fmt.Sprintf("<div class=\"%s_div %s_ftndiv\">\n", dObj.docName, dObj.docName)
 
 	//css div footnote
-	cssStr = fmt.Sprintf(".%s_div.%s_ftn  {\n", dObj.docName, dObj.docName)
+	cssStr = fmt.Sprintf(".%s_div.%s_ftndiv  {\n", dObj.docName, dObj.docName)
 
 	if dObj.Options.DivBorders {
 		cssStr += "  border: solid green;\n"
 		cssStr += "  border-width: 1px;\n"
 	}
-	cssStr += "  padding-top:10px;\n  padding-bottom:10px;\n"
+	cssStr += "  padding-top:10px;\n"
+	cssStr += "  counter-reset:ftcounter;\n"
 	cssStr += "}\n"
+
+	//html footnote title
+	htmlStr += fmt.Sprintf("<p class=\"%s_div %s_title %s_ftTit\">Footnotes</p>\n", dObj.docName, dObj.docName, dObj.docName)
+//	ftnDiv.bodyHtml = htmlStr
 
 	//css footnote title
-	cssStr += fmt.Sprintf(".%s_div.%s_title.%s_ftn {\n", dObj.docName, dObj.docName, dObj.docName)
-
+	cssStr += fmt.Sprintf(".%s_div.%s_title.%s_ftTit {\n", dObj.docName, dObj.docName, dObj.docName)
+	cssStr += "  color: purple;\n"
 	cssStr += "}\n"
 
+	// list for footnotes
+	htmlStr +=fmt.Sprintf("<ol class=\"%s_ftnOl\">\n", dObj.docName)
+	cssStr += fmt.Sprintf(".%s_ftnOl {\n", dObj.docName)
+	cssStr += "  display:block;\n"
+	cssStr += "  list-style-type: decimal;\n"
+	cssStr += "  padding-inline-start: 10pt;\n"
+	cssStr += "}\n"
+
+	// prefix for paragraphs
+	cssStr += fmt.Sprintf(".%s_p.%s_pft {\n",dObj.docName, dObj.docName)
+	cssStr += "text-indent: 10pt;"
+	cssStr += "counter-increment:ftcounter;"
+	cssStr += "}\n"
+	cssStr += fmt.Sprintf(".%s_p.%s_pft::before {\n",dObj.docName, dObj.docName)
+	cssStr += "counter(ftcounter) ' ';"
+	cssStr += "}\n"
 	ftnDiv.bodyCss = cssStr
 	ftnDiv.bodyHtml = htmlStr
 
-	ftnDiv.bodyHtml += fmt.Sprintf("<!-- Footnotes: %d -->\n", len(dObj.docFtnotes))
-
-	cssStr = fmt.Sprintf(".%s_p.%s_pft {\n",dObj.docName, dObj.docName)
-
-	cssStr += "}\n"
-	cssStr = fmt.Sprintf(".%s_p.%s_pft::before {\n",dObj.docName, dObj.docName)
-
-	cssStr += "}\n"
-	ftnDiv.bodyCss += cssStr
-	ftnDiv.bodyHtml += htmlStr
-
-
+	// footnotes paragraph html
+	htmlStr = ""
+	cssStr = ""
 	for iFtn:=0; iFtn<len(dObj.docFtnotes); iFtn++ {
-//		htmlStr = ""
 		idStr := dObj.docFtnotes[iFtn].id
-		ftnDiv.bodyHtml += htmlStr
-		htmlStr = fmt.Sprintf("<!-- FTnote: %d %s -->\n", iFtn, idStr)
+//		ftnDiv.bodyHtml += htmlStr
+		// reset htmlStr
 		docFt, ok := doc.Footnotes[idStr]
 		if !ok {
 			htmlStr += fmt.Sprintf("<!-- error ftnote %d not found! -->\n", iFtn)
 			continue
 		}
-
+		htmlStr = fmt.Sprintf("<!-- FTnote: %d %s els: %d -->\n", iFtn, idStr, len(docFt.Content))
+		htmlStr +="<li>\n"
 		ftnDiv.bodyHtml += htmlStr
 		// presumably footnotes are paragraphs only
 		for el:=0; el<len(docFt.Content); el++ {
+			htmlStr = ""
+			cssStr = ""
 			elObj := docFt.Content[el]
 			if elObj.Paragraph == nil {continue}
 			par := elObj.Paragraph
-			htmlStr += fmt.Sprintf"<p class=\"%s_p\">\n", dObj.docName)
+			pidStr := idStr[5:]
+			htmlStr += fmt.Sprintf("<p class=\"%s_p %s_pft\" id=\"%s\">\n", dObj.docName, dObj.docName, pidStr)
 
 			for parEl:=0; parEl< len(par.Elements); parEl++ {
 				parElObj := par.Elements[parEl]
-				thtml, tcss, err := cvtParEl(parElObj)
+				thtml, tcss, err := dObj.cvtParEl(parElObj)
 				if err != nil {
 					htmlStr += fmt.Sprintf("<!-- el: %d parel %d error %v -->\n", el, parEl, err)
 				}
@@ -2929,11 +2943,16 @@ func (dObj *GdocHtmlObj) createFootnoteDiv () (ftnoteDiv *dispObj, err error) {
 			addDispObj(&ftnDiv, tObj)
 */
 
-			htmlStr += "</p>"
+			htmlStr += "</p>\n"
+			ftnDiv.bodyHtml += htmlStr
+			ftnDiv.bodyCss += cssStr
 		}
+		htmlStr = "</li>\n"
+		ftnDiv.bodyHtml += htmlStr
+//		ftnDiv.bodyCss += cssStr
 	}
 
-	ftnDiv.bodyHtml += htmlStr
+	ftnDiv.bodyHtml += "</ol>\n"
 	ftnDiv.bodyHtml += "</div>\n"
 
 	return &ftnDiv, nil
@@ -3479,6 +3498,9 @@ func CreGdocHtmlAll(folderPath string, doc *docs.Document, options *OptObj)(err 
 	// named styles
 	outfil.WriteString(mainDiv.headCss)
 	outfil.WriteString(mainDiv.bodyCss)
+
+	outfil.WriteString(ftnoteDiv.bodyCss)
+
 	if toc {
 		outfil.WriteString(tocDiv.bodyCss)
 	}
