@@ -50,7 +50,7 @@ type GdocHtmlObj struct {
 	headCount int
 	secCount int
 	elCount int
-	ftNoteCount int
+	ftnoteCount int
 	inImgCount int
 	posImgCount int
 	htmlFil *os.File
@@ -1509,9 +1509,11 @@ func (dObj *GdocHtmlObj) initGdocHtml(doc *docs.Document, options *OptObj) (err 
 	dObj.h5.tocExist = false
 	dObj.h6.tocExist = false
 
-// section breaks
 	dObj.elCount = len(doc.Body.Content)
-	dObj.ftNoteCount = 0
+	// footnotes
+	dObj.ftnoteCount = 0
+
+	// section breaks
 	parHdEnd := 0
 	// last element of section
 	secPtEnd := 0
@@ -1582,7 +1584,6 @@ func (dObj *GdocHtmlObj) initGdocHtml(doc *docs.Document, options *OptObj) (err 
 			for parEl:=0; parEl<len(elObj.Paragraph.Elements); parEl++ {
 				parElObj := elObj.Paragraph.Elements[parEl]
 				if parElObj.FootnoteReference != nil {
-					dObj.ftNoteCount++
 					ftnote.el = el
 					ftnote.parel = parEl
 					ftnote.id = parElObj.FootnoteReference.FootnoteId
@@ -2326,12 +2327,9 @@ func (dObj *GdocHtmlObj) cvtParEl(parEl *docs.ParagraphElement)(htmlStr string, 
 		}
 
 		if parEl.FootnoteReference != nil {
-        	txtHtmlStr, txtCssStr, err := dObj.cvtParElText(parEl.TextRun)
-        	if err != nil {
-            	htmlStr += fmt.Sprintf("<!-- error cvtPelToHtml: %v -->\n",err)
-        	}
-        	htmlStr += txtHtmlStr
-			cssStr += txtCssStr
+			dObj.ftnoteCount++
+
+        	htmlStr += fmt.Sprintf("<span class=\"%s_ftno\">[%d]</span>",dObj.docName, dObj.ftnoteCount)
 		}
 
 		if parEl.PageBreak != nil {
@@ -2718,7 +2716,7 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 		cssStr += "  border-width: 1px;\n"
 	}
 
-	// add default text style
+	//css default text style
 	defTxtMap := new(textMap)
 	parStyl, txtStyl, err := dObj.getNamedStyl("NORMAL_TEXT")
 	if err != nil {
@@ -2733,7 +2731,6 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 	cssStr += cvtTxtMapCss(defTxtMap)
 	cssStr += "}\n"
 
-//plist
 	// paragraph default style
 	cssStr += fmt.Sprintf(".%s_p {\n", dObj.docName)
 	cssStr += "  display: block;\n"
@@ -2748,15 +2745,11 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 //fmt.Printf("txtmap: %v\n", defTxtMap)
 
 	cssStr += dObj.cvtParMapCss(defParMap)
-
-//	cssStr += txtCssStr
-
 	cssStr += "}\n"
 
 //	cssStr += fmt.Sprintf(".%s_p.list {display: inline;}\n", dObj.docName)
 
-// list css strings
-
+	// list css strings
 	for i:=0; i<len(dObj.docLists); i++ {
 		listid := dObj.docLists[i].listId
 		listClass := listid[4:]
@@ -2765,6 +2758,11 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 		switch dObj.docLists[i].ord {
 			case true:
 				cssStr += fmt.Sprintf(".%s_ol {\n", listClass)
+//ggg
+				glyphNum := "none"
+				cssStr += fmt.Sprintf("  list-style-type: %s;\n", glyphNum)
+				cssStr += fmt.Sprintf("  list-style-position: outside;\n")
+				cssStr += fmt.Sprintf("}\n")
 
 			case false:
 				cssStr += fmt.Sprintf(".%s_ul {\n", listClass)
@@ -2820,14 +2818,16 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 			cssStr += fmt.Sprintf("}\n")
 		}
 	}
-/*
-	if dObj.Options.Toc {
-		cssStr += fmt.Sprintf(".%s_toc {\n", dObj.docName)
-		cssStr += fmt.Sprintf("  margin-top: %.1fmm;\n", docstyl.MarginTop.Magnitude*PtTomm)
-		cssStr += fmt.Sprintf("  margin-bottom: %.1fmm;\n}\n", docstyl.MarginBottom.Magnitude*PtTomm)
-	}
-*/
+
 	headObj.bodyCss = cssStr
+
+	//css footnote
+	cssStr = fmt.Sprintf(".%s_ftno {\n", dObj.docName)
+//	cssStr += "vertical-align: super;"
+	cssStr += "color: purple;"
+	cssStr += "}\n"
+	headObj.bodyCss += cssStr
+
 	//gdoc division html
 	headObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div\">\n", dObj.docName)
 
