@@ -2254,9 +2254,9 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 								// html
 								listHtml = fmt.Sprintf("<ol class=\"%s_ol nL_%d\">\n", listid[4:], nl)
 								// css
-								listCss = fmt.Sprintf(".%s_ol.nL_%d {/n", listid[4:], nl)
+								listCss = fmt.Sprintf(".%s_ol.nL_%d {\n", listid[4:], nl)
 								listCss += fmt.Sprintf("  counter-reset: %s_nL_%d\n",listid[4:], nl)
-								listCss += "}/n"
+								listCss += "}\n"
 							} else {
 								// html
 								listHtml = fmt.Sprintf("<ul class=\"%s_ul nL_%d\">\n", listid[4:], nl)
@@ -2292,9 +2292,9 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 					// html
 					listHtml += fmt.Sprintf("<ol class=\"%s_ol nL_%d\">\n", listid[4:], nestIdx)
 					// css
-					listCss = fmt.Sprintf(".%s_ol.nL_%d {/n", listid[4:], nestIdx)
+					listCss = fmt.Sprintf(".%s_ol.nL_%d {\n", listid[4:], nestIdx)
 					listCss += fmt.Sprintf("  counter-reset: %s_nL_%d\n",listid[4:], nestIdx)
-					listCss += "}/n"
+					listCss += "}\n"
 				} else {
 					listHtml += fmt.Sprintf("<ul class=\"%s_ul nL_%d\">\n", listid[4:], nestIdx)
 				}
@@ -2765,9 +2765,8 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 		switch dObj.docLists[i].ord {
 			case true:
 				cssStr += fmt.Sprintf(".%s_ol {\n", listClass)
-//ggg
-				glyphNum := "none"
-				cssStr += fmt.Sprintf("  list-style-type: %s;\n", glyphNum)
+//				glyphNum := "none"
+				cssStr += fmt.Sprintf("  list-style-type: none;\n")
 				cssStr += fmt.Sprintf("  list-style-position: outside;\n")
 				cssStr += fmt.Sprintf("}\n")
 
@@ -2803,6 +2802,8 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 					cssStr += fmt.Sprintf(".%s_ul.nL_%d {\n", listClass, nl)
 			}
 
+//			cssStr += fmt.Sprintf("  list-style-type: %s;\n", glyphStr)
+			cssStr += dObj.cvtGlyph(nestLev)
 			idFl := nestLev.IndentFirstLine.Magnitude
 			idSt := nestLev.IndentStart.Magnitude
 			cssStr += fmt.Sprintf("  margin: 0 0 0 %.0fpt;\n", idFl)
@@ -2824,7 +2825,7 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 			cssStr += fmt.Sprintf(".%s_li.nL_%d::marker {\n", listClass, nl)
 			switch dObj.docLists[i].ord {
 				case true:
-					cssStr += fmt.Sprintf(" content: counter(%s_li_nL_%d);", listClass, nl)
+					cssStr += fmt.Sprintf(" content: counter(%s_li_nL_%d) \".\";", listClass, nl)
 				case false:
 
 			}
