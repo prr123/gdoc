@@ -2244,7 +2244,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 			case true:
 				switch {
 					case nestIdx > cNest:
-						for nl:=cNest; nl < nestIdx; nl++ {
+						for nl:=cNest +1; nl <= nestIdx; nl++ {
 							newList.cListId = listid
 							newList.cOrd = listOrd
 							newStack := pushLiStack(dObj.listStack, newList)
@@ -2580,7 +2580,7 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 		case "NORMAL_TEXT":
 			switch {
 				case isList:
-					prefix = "<span>"
+					prefix = "<span"
 					suffix = "</span>"
 				case alter:
 					cssPrefix = fmt.Sprintf(".%s_p_%d {\n",dObj.docName, dObj.parCount)
