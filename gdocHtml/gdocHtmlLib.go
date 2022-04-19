@@ -1010,6 +1010,53 @@ func addDispObj(src, add *dispObj) {
 	return
 }
 
+func getGlyphStr(nlev *docs.NestingLevel)(glyphTyp string) {
+
+	// ordered list
+	switch nlev.GlyphType {
+		case "DECIMAL":
+			glyphTyp = "decimal"
+		case "ZERO_DECIMAL":
+			glyphTyp = "decimal-leading-zero"
+		case "ALPHA":
+			glyphTyp = "lower-alpha"
+ 		case "UPPER_ALPHA":
+			glyphTyp = "upper-alpha"
+		case "ROMAN":
+			glyphTyp = "lower-roman"
+		case "UPPER_ROMAN":
+			glyphTyp = "upper-roman"
+		default:
+			glyphTyp = ""
+	}
+	if len(glyphTyp) > 0 {
+//		cssStr = "  list-style-type: " + glyphTyp +";\n"
+		return glyphTyp
+	}
+
+	// unordered list
+//	cssStr =fmt.Sprintf("/*-Glyph Symbol:%x - */\n",nlev.GlyphSymbol)
+	r, _ := utf8.DecodeRuneInString(nlev.GlyphSymbol)
+
+	switch r {
+		case 9679:
+			glyphTyp = "disc"
+		case 9675:
+			glyphTyp = "circle"
+		case 9632:
+			glyphTyp = "square"
+		default:
+			glyphTyp = ""
+	}
+	if len(glyphTyp) > 0 {
+//		cssStr = "  list-style-type: " + glyphTyp +";\n"
+		return glyphTyp
+	}
+//	cssStr = fmt.Sprintf("/* unknown GlyphType: %s Symbol: %s */\n", nlev.GlyphType, nlev.GlyphSymbol)
+	return glyphTyp
+}
+
+
 func getColor(color  *docs.Color)(outstr string) {
     outstr = ""
         if color != nil {
@@ -1669,7 +1716,6 @@ func (dObj *GdocHtmlObj) dlImages()(err error) {
 
 func (dObj *GdocHtmlObj) cvtGlyph(nlev *docs.NestingLevel)(cssStr string) {
 var glyphTyp string
-	
 
 	// ordered list
 	switch nlev.GlyphType {
@@ -2760,7 +2806,7 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 	for i:=0; i<len(dObj.docLists); i++ {
 		listid := dObj.docLists[i].listId
 		listClass := listid[4:]
-		list := dObj.doc.Lists[listid]
+		listProp := dObj.doc.Lists[listid].ListProperties
 
 		switch dObj.docLists[i].ord {
 			case true:
@@ -2782,19 +2828,19 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 		cssStr += fmt.Sprintf("  padding-left: 6pt;\n")
 		cssStr += fmt.Sprintf("}\n")
 
-		nestLev0 := list.ListProperties.NestingLevels[0]
+		nestLev0 := listProp.NestingLevels[0]
 		defGlyphTxtMap := new(textMap)
 		_, err = fillTxtMap(defGlyphTxtMap, nestLev0.TextStyle)
 		if err != nil { cssStr += "/* error def Glyph Text Style */\n" }
 
 		for nl:=0; nl <= int(dObj.docLists[i].maxNestLev); nl++ {
-			nestLev := list.ListProperties.NestingLevels[nl]
+			nestLev := listProp.NestingLevels[nl]
 			glyphTxtMap := defGlyphTxtMap
 			if nl > 0 {
 				_, err := fillTxtMap(glyphTxtMap, nestLev.TextStyle)
 				if err != nil { cssStr += "/* error def Glyph Text Style */\n" }
 			}
-
+			glyphStr := getGlyphStr(nestLev)
 			switch dObj.docLists[i].ord {
 				case true:
 					cssStr += fmt.Sprintf(".%s_ol.nL_%d {\n", listClass, nl)
@@ -2802,10 +2848,10 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 					cssStr += fmt.Sprintf(".%s_ul.nL_%d {\n", listClass, nl)
 			}
 
-//			cssStr += fmt.Sprintf("  list-style-type: %s;\n", glyphStr)
-			cssStr += dObj.cvtGlyph(nestLev)
+//			cssStr += dObj.cvtGlyph(nestLev)
 			idFl := nestLev.IndentFirstLine.Magnitude
 			idSt := nestLev.IndentStart.Magnitude
+// fmt.Printf("nl: %d Fl: %.0f St: %.0f\n", nl, idFl, idSt)
 			cssStr += fmt.Sprintf("  margin: 0 0 0 %.0fpt;\n", idFl)
 			cssStr += fmt.Sprintf("  padding-left: %.0fpt;\n", idSt-idFl - 6.0)
 			cssStr += fmt.Sprintf("}\n")
@@ -2817,7 +2863,8 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 					cssStr += fmt.Sprintf("  counter-increment: %s_li_nL_%d;\n", listClass, nl)
 //					cssStr += fmt.Sprintf("list-style-type: %s;\n", )
 				case false:
-					cssStr += dObj.cvtGlyph(nestLev)
+					cssStr += fmt.Sprintf("  list-style-type: %s;\n", glyphStr)
+//					cssStr += fmt.Sprintf dObj.cvtGlyph(nestLev)
 			}
 			cssStr += fmt.Sprintf("}\n")
 
@@ -2825,7 +2872,7 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 			cssStr += fmt.Sprintf(".%s_li.nL_%d::marker {\n", listClass, nl)
 			switch dObj.docLists[i].ord {
 				case true:
-					cssStr += fmt.Sprintf(" content: counter(%s_li_nL_%d) \".\";", listClass, nl)
+					cssStr += fmt.Sprintf(" content: counter(%s_li_nL_%d, glyphStr) \".\";", listClass, nl)
 				case false:
 
 			}
