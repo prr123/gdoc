@@ -353,10 +353,55 @@ func getGlyphOrd(nestLev *docs.NestingLevel)(bool) {
 		default:
 			ord = false
 	}
-//	if ord {return ord)
-//	if len(nestLev.GlyphSymbol) {
 	return ord
 }
+
+func getGlyphStr(nlev *docs.NestingLevel)(glyphTyp string) {
+
+	// ordered list
+	switch nlev.GlyphType {
+		case "DECIMAL":
+			glyphTyp = "decimal"
+		case "ZERO_DECIMAL":
+			glyphTyp = "decimal-leading-zero"
+		case "ALPHA":
+			glyphTyp = "lower-alpha"
+ 		case "UPPER_ALPHA":
+			glyphTyp = "upper-alpha"
+		case "ROMAN":
+			glyphTyp = "lower-roman"
+		case "UPPER_ROMAN":
+			glyphTyp = "upper-roman"
+		default:
+			glyphTyp = ""
+	}
+	if len(glyphTyp) > 0 {
+//		cssStr = "  list-style-type: " + glyphTyp +";\n"
+		return glyphTyp
+	}
+
+	// unordered list
+//	cssStr =fmt.Sprintf("/*-Glyph Symbol:%x - */\n",nlev.GlyphSymbol)
+	r, _ := utf8.DecodeRuneInString(nlev.GlyphSymbol)
+
+	switch r {
+		case 9679:
+			glyphTyp = "disc"
+		case 9675:
+			glyphTyp = "circle"
+		case 9632:
+			glyphTyp = "square"
+		default:
+			glyphTyp = ""
+	}
+	if len(glyphTyp) > 0 {
+//		cssStr = "  list-style-type: " + glyphTyp +";\n"
+		return glyphTyp
+	}
+//	cssStr = fmt.Sprintf("/* unknown GlyphType: %s Symbol: %s */\n", nlev.GlyphType, nlev.GlyphSymbol)
+	return glyphTyp
+}
+
 
 func printTxtMap(txtMap *textMap) {
 
@@ -1010,53 +1055,6 @@ func addDispObj(src, add *dispObj) {
 	return
 }
 
-func getGlyphStr(nlev *docs.NestingLevel)(glyphTyp string) {
-
-	// ordered list
-	switch nlev.GlyphType {
-		case "DECIMAL":
-			glyphTyp = "decimal"
-		case "ZERO_DECIMAL":
-			glyphTyp = "decimal-leading-zero"
-		case "ALPHA":
-			glyphTyp = "lower-alpha"
- 		case "UPPER_ALPHA":
-			glyphTyp = "upper-alpha"
-		case "ROMAN":
-			glyphTyp = "lower-roman"
-		case "UPPER_ROMAN":
-			glyphTyp = "upper-roman"
-		default:
-			glyphTyp = ""
-	}
-	if len(glyphTyp) > 0 {
-//		cssStr = "  list-style-type: " + glyphTyp +";\n"
-		return glyphTyp
-	}
-
-	// unordered list
-//	cssStr =fmt.Sprintf("/*-Glyph Symbol:%x - */\n",nlev.GlyphSymbol)
-	r, _ := utf8.DecodeRuneInString(nlev.GlyphSymbol)
-
-	switch r {
-		case 9679:
-			glyphTyp = "disc"
-		case 9675:
-			glyphTyp = "circle"
-		case 9632:
-			glyphTyp = "square"
-		default:
-			glyphTyp = ""
-	}
-	if len(glyphTyp) > 0 {
-//		cssStr = "  list-style-type: " + glyphTyp +";\n"
-		return glyphTyp
-	}
-//	cssStr = fmt.Sprintf("/* unknown GlyphType: %s Symbol: %s */\n", nlev.GlyphType, nlev.GlyphSymbol)
-	return glyphTyp
-}
-
-
 func getColor(color  *docs.Color)(outstr string) {
     outstr = ""
         if color != nil {
@@ -1671,6 +1669,7 @@ func (dObj *GdocHtmlObj) initGdocHtml(doc *docs.Document, options *OptObj) (err 
 		for i:=0; i< len(dObj.docLists); i++ {
 			fmt.Printf("list %3d id: %s max level: %d ordered: %t\n", i, dObj.docLists[i].listId, dObj.docLists[i].maxNestLev, dObj.docLists[i].ord)
 		}
+		fmt.Printf("\n************ Footnotes in Document: %2d ***********\n", len(dObj.docFtnotes))
 		for i:=0; i< len(dObj.docFtnotes); i++ {
 			ftn := dObj.docFtnotes[i]
 			fmt.Printf("ft %3d: Number: %-4s id: %-15s el: %3d parel: %3d\n", i, ftn.numStr, ftn.id, ftn.el, ftn.parel)
@@ -2932,6 +2931,9 @@ func (dObj *GdocHtmlObj) createFootnoteDiv () (ftnoteDiv *dispObj, err error) {
 	var htmlStr, cssStr string
 
 	doc := dObj.doc
+	if len(dObj.docFtnotes) == 0 {
+		return nil, nil
+	}
 
 	//html div footnote
 	htmlStr = fmt.Sprintf("<!-- Footnotes: %d -->\n", len(dObj.docFtnotes))
@@ -3575,7 +3577,7 @@ func CreGdocHtmlAll(folderPath string, doc *docs.Document, options *OptObj)(err 
 	outfil.WriteString(mainDiv.headCss)
 	outfil.WriteString(mainDiv.bodyCss)
 
-	outfil.WriteString(ftnoteDiv.bodyCss)
+	if ftnoteDiv != nil {outfil.WriteString(ftnoteDiv.bodyCss)}
 
 	if toc {
 		outfil.WriteString(tocDiv.bodyCss)
@@ -3586,7 +3588,7 @@ func CreGdocHtmlAll(folderPath string, doc *docs.Document, options *OptObj)(err 
 	if toc {outfil.WriteString(tocDiv.bodyHtml)}
 	outfil.WriteString(mainDiv.bodyHtml)
 
-	outfil.WriteString(ftnoteDiv.bodyHtml)
+	if ftnoteDiv != nil {outfil.WriteString(ftnoteDiv.bodyHtml)}
 
 	outfil.WriteString("</body>\n</html>\n")
 	outfil.Close()
