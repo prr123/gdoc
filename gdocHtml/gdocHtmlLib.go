@@ -2872,7 +2872,7 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 			cssStr += fmt.Sprintf(".%s_li.nL_%d::marker {\n", listClass, nl)
 			switch dObj.docLists[i].ord {
 				case true:
-					cssStr += fmt.Sprintf(" content: counter(%s_li_nL_%d, glyphStr) \".\";", listClass, nl)
+					cssStr += fmt.Sprintf(" content: counter(%s_li_nL_%d, %s) \".\";", listClass, nl, glyphStr)
 				case false:
 
 			}
