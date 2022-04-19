@@ -2254,7 +2254,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 			case true:
 				switch {
 					case nestIdx > cNest:
-						for nl:=cNest +1; nl <= nestIdx; nl++ {
+						for nl:=cNest + 1; nl <= nestIdx; nl++ {
 							newList.cListId = listid
 							newList.cOrd = listOrd
 							newStack := pushLiStack(dObj.listStack, newList)
@@ -2273,7 +2273,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 								// css
 							}
 						}
-				listHtml += fmt.Sprintf("<!-- same list increase %s new NL %d  old Nl %d -->\n", listid, nestIdx, cNest)
+						listHtml += fmt.Sprintf("<!-- same list increase %s new NL %d  old Nl %d -->\n", listid, nestIdx, cNest)
 //				fmt.Printf("<!-- same list increase %s new NL %d  old Nl %d -->\n", listid, nestIdx, cNest)
 //	printLiStack(dObj.listStack)
 
@@ -2797,6 +2797,8 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 		_, err = fillTxtMap(defGlyphTxtMap, nestLev0.TextStyle)
 		if err != nil { cssStr += "/* error def Glyph Text Style */\n" }
 
+		cumIndent := 0.0
+
 		for nl:=0; nl <= int(dObj.docLists[i].maxNestLev); nl++ {
 			nestLev := listProp.NestingLevels[nl]
 			glyphTxtMap := defGlyphTxtMap
@@ -2812,13 +2814,13 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 					cssStr += fmt.Sprintf(".%s_ul.nL_%d {\n", listClass, nl)
 			}
 
-//			cssStr += dObj.cvtGlyph(nestLev)
-			idFl := nestLev.IndentFirstLine.Magnitude
-			idSt := nestLev.IndentStart.Magnitude
-// fmt.Printf("nl: %d Fl: %.0f St: %.0f\n", nl, idFl, idSt)
+			idFl := nestLev.IndentFirstLine.Magnitude - cumIndent
+			idSt := nestLev.IndentStart.Magnitude - cumIndent
 			cssStr += fmt.Sprintf("  margin: 0 0 0 %.0fpt;\n", idFl)
 			cssStr += fmt.Sprintf("  padding-left: %.0fpt;\n", idSt-idFl - 6.0)
 			cssStr += fmt.Sprintf("}\n")
+
+			cumIndent += idSt
 //lll
 			// Css <li nest level>
 			cssStr += fmt.Sprintf(".%s_li.nL_%d {\n", listClass, nl)
