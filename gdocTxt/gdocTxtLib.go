@@ -69,6 +69,29 @@ func createImgFolder(filnam string)(err error) {
 	return nil
 }
 
+func getGlyphOrd(nestLev *docs.NestingLevel)(bool) {
+
+    ord := false
+    glyphTyp := nestLev.GlyphType
+    switch glyphTyp {
+        case "DECIMAL":
+            ord = true
+        case "ZERO_DECIMAL":
+            ord = true
+        case "UPPER_ALPHA":
+            ord = true
+        case "ALPHA":
+            ord = true
+        case "UPPER_ROMAN":
+            ord = true
+        case "ROMAN":
+            ord = true
+        default:
+            ord = false
+    }
+    return ord
+}
+
 func findDocList(list []docList, listid string) (res int) {
 
     res = -1
@@ -83,6 +106,7 @@ func findDocList(list []docList, listid string) (res int) {
 func (dObj *gdocTxtObj) InitGdocTxt() (err error) {
 	var listItem docList
 
+	doc := dObj.doc
 	body := dObj.doc.Body
 
 	if dObj == nil {
@@ -99,9 +123,12 @@ func (dObj *gdocTxtObj) InitGdocTxt() (err error) {
             if elObj.Paragraph.Bullet != nil {
                 listId := elObj.Paragraph.Bullet.ListId
                 found := findDocList(dObj.docLists, listId)
+                nestlev := elObj.Paragraph.Bullet.NestingLevel
                 if found < 0 {
                     listItem.listId = listId
                     listItem.maxNestLev = elObj.Paragraph.Bullet.NestingLevel
+                    nestL := doc.Lists[listId].ListProperties.NestingLevels[nestlev]
+                    listItem.ord = getGlyphOrd(nestL)
                     dObj.docLists = append(dObj.docLists, listItem)
                 } else {
                     nestlev := elObj.Paragraph.Bullet.NestingLevel
