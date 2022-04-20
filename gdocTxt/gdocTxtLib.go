@@ -1,16 +1,14 @@
 //  gdocTxtLib
 //  reads gdoc file and writes text version to outfile
 //  author PRR
-//  created 2022
+//  created 1/1/2022
 //
-//  13/1/2022 added unicode for glyphtype
-//	add empty line before each list
+// copyright 2022 prr, azul software
 //
-//  24/2/2022 inline objects
+// license see https://github.com/prr123/gdoc/tree/master/gdocTxt
 //
-//  21/3/2022 fomatting update
 
-package gdocToText
+package gdocTxtLib
 
 import (
 	"fmt"
@@ -382,7 +380,7 @@ func (dObj *gdocTxtObj) dispPar(par *docs.Paragraph)(outstr string, err error) {
 	} else {
 		outstr += fmt.Sprintf(" *** Paragraph with %d Sub-Elements ***\n", len(par.Elements))
 	}
-//xxx
+
 	if par.ParagraphStyle != nil {
 		tstr,err := dObj.dispParStyl(par.ParagraphStyle, 4)
 		if err != nil {
@@ -393,83 +391,16 @@ func (dObj *gdocTxtObj) dispPar(par *docs.Paragraph)(outstr string, err error) {
 		outstr += "    *** no Pargraph Style ***\n"
 	}
 	outstr += fmt.Sprintf("\n  *** Paragraph Elements: %d ***\n", len(par.Elements))
-	for p:=0; p< len(par.Elements); p++ {
-		parDet := par.Elements[p]
-		outstr += fmt.Sprintf("  Par-El[%d]: (%d-%d): ", p, parDet.StartIndex, parDet.EndIndex)
-		if parDet.TextRun != nil {
-			cLen := len(parDet.TextRun.Content)
-			outstr += fmt.Sprintf("cl: %d", cLen)
-			if cLen > 0 {
-				if cLen > 21 {
-					outstr += fmt.Sprintf("    \"%s ...\"",parDet.TextRun.Content[0:20])
-				} else {
-					if parDet.TextRun.Content[cLen-1:cLen] == "\n" {
-						outstr += fmt.Sprintf("    \"%s\"",parDet.TextRun.Content[:cLen-1])
-					} else {
-						outstr += fmt.Sprintf("    \"%s\"",parDet.TextRun.Content[:cLen])
-					}
-				}
-			}
-			outstr += fmt.Sprintf(" Last Char: %q\n",parDet.TextRun.Content[cLen-1:cLen])
-			if (parDet.TextRun.TextStyle != nil) {
-				tstr, err := dObj.dispTxtStyl(parDet.TextRun.TextStyle, 4)
-				if err != nil {
-					outstr += fmt.Sprintf("/* error disp Text Style: %v */\n", err)
-				}
-				outstr += tstr
-			}
-		} else { outstr +="\n" }
-		if parDet.ColumnBreak != nil {
-			outstr += "    *** Column Break ***\n"
-		} else {
-			outstr += "    *** no Column Break ***\n"
+	for pEl:=0; pEl< len(par.Elements); pEl++ {
+		parDet := par.Elements[pEl]
+		outstr += fmt.Sprintf("    *** Par-El[%d]: [%d-%d] ", pEl, parDet.StartIndex, parDet.EndIndex)
+		t2str, err := dObj.dispParEl(parDet)
+		if err != nil {
+			outstr += fmt.Sprintf("error dispParEl %d: %v\n", pEl, err)
 		}
-		if parDet.InlineObjectElement != nil {
-			outstr += "    *** Inline Object ***\n"
-		} else {
-			outstr += "    *** no Inline Object ***\n"
-		}
-		if parDet.Person != nil {
-			outstr += fmt.Sprintf("    *** Has Person ***\n")
-		} else {
-			outstr += "    *** no Person ***\n"
-		}
-		if parDet.RichLink != nil {
-			outstr += fmt.Sprintf("    *** Has Rich Text ***\n")
-		} else {
-			outstr += "    *** no Rich Text ***\n"
-		}
-		if parDet.PageBreak != nil {
-			outstr += fmt.Sprintf("    *** Has Page Break ***\n")
-		} else {
-			outstr += "    *** no Page Break ***\n"
-		}
-		if parDet.AutoText != nil {
-			outstr += fmt.Sprintf("    *** Has AutoText ***\n")
-		} else {
-			outstr += "    *** no AutoText ***\n"
-		}
-		if parDet.Equation != nil {
-			outstr += fmt.Sprintf("    *** Has Equation ***\n")
-		} else {
-			outstr += "    *** no Equation ***\n"
-		}
-		if parDet.HorizontalRule != nil {
-			outstr += fmt.Sprintf("    *** Has Horizontal Rule ***\n")
-		} else {
-			outstr += "    *** no Horizontal Rule ***\n"
-		}
-		if parDet.FootnoteReference != nil {
-			ftref := parDet.FootnoteReference
-			outstr += fmt.Sprintf("    *** Has Footnote Reference ***\n")
-			outstr += fmt.Sprintf("       Id:     %s\n", ftref.FootnoteId)
-			outstr += fmt.Sprintf("       Number: %s\n", ftref.FootnoteNumber)
-			tstr, err := dObj.dispTxtStyl(ftref.TextStyle, 8)
-			if err == nil {outstr += tstr} else { outstr += fmt.Sprintf("     *** error %v\n", err) }
-		} else {
-			outstr += "    *** no Footnote Reference ***\n"
-		}
+		outstr += t2str
 	}
+
 	if par.PositionedObjectIds != nil {
 		outstr += fmt.Sprintf("    *** Has Positioned Objects: %d ***\n", len(par.PositionedObjectIds))
 		for id:=0; id< len(par.PositionedObjectIds); id++ {
@@ -477,6 +408,116 @@ func (dObj *gdocTxtObj) dispPar(par *docs.Paragraph)(outstr string, err error) {
 		}
 	}
 
+	return outstr, nil
+}
+
+func (dObj *gdocTxtObj) dispParEl(parDet *docs.ParagraphElement)(outstr string, err error) {
+
+	if parDet.TextRun != nil {
+		cLen := len(parDet.TextRun.Content)
+		outstr += fmt.Sprintf("cl: %d", cLen)
+		if cLen > 0 {
+			if cLen > 21 {
+				outstr += fmt.Sprintf("    \"%s ...\"",parDet.TextRun.Content[0:20])
+			} else {
+				if parDet.TextRun.Content[cLen-1:cLen] == "\n" {
+					outstr += fmt.Sprintf("    \"%s\"",parDet.TextRun.Content[:cLen-1])
+				} else {
+					outstr += fmt.Sprintf("    \"%s\"",parDet.TextRun.Content[:cLen])
+				}
+			}
+		}
+		outstr += fmt.Sprintf("   Last Char: %q\n",parDet.TextRun.Content[cLen-1:cLen])
+
+		if (parDet.TextRun.TextStyle != nil) {
+			tstr, err := dObj.dispTxtStyl(parDet.TextRun.TextStyle, 6)
+			if err != nil {
+				outstr += fmt.Sprintf("/* error disp Text Style: %v */\n", err)
+			}
+			outstr += tstr
+		}
+	} else { outstr +="\n" }
+
+	if parDet.ColumnBreak != nil {
+		outstr += "    *** Column Break ***\n"
+	} else {
+		outstr += "    *** no Column Break ***\n"
+	}
+
+	if parDet.InlineObjectElement != nil {
+		outstr += fmt.Sprintf("    *** Inline Object with id: %s ***\n", parDet.InlineObjectElement.InlineObjectId)
+	} else {
+		outstr += "    *** no Inline Object ***\n"
+	}
+
+	if parDet.Person != nil {
+		outstr += fmt.Sprintf("    *** Has Person with id ***\n", parDet.Person.PersonId)
+	} else {
+		outstr += "    *** no Person ***\n"
+	}
+
+	if parDet.RichLink != nil {
+		outstr += fmt.Sprintf("    *** Has Rich Text ***\n")
+	} else {
+		outstr += "    *** no Rich Text ***\n"
+	}
+
+	if parDet.PageBreak != nil {
+		insTxt := "without"
+		if (parDet.PageBreak.TextStyle != nil) {
+			insTxt = "with"
+		}
+		outstr += fmt.Sprintf("    *** Has Page Break %s txtstyle ***\n", insTxt)
+		if (parDet.PageBreak.TextStyle != nil) {
+			tstr, err := dObj.dispTxtStyl(parDet.HorizontalRule.TextStyle, 6)
+			if err != nil {
+				outstr += fmt.Sprintf("/* error disp Text Style: %v */\n", err)
+			}
+			outstr += tstr
+		}
+	} else {
+		outstr += "    *** no Page Break ***\n"
+	}
+
+	if parDet.AutoText != nil {
+		outstr += fmt.Sprintf("    *** Has AutoText ***\n")
+	} else {
+		outstr += "    *** no AutoText ***\n"
+	}
+
+	if parDet.Equation != nil {
+		outstr += fmt.Sprintf("    *** Has Equation ***\n")
+	} else {
+		outstr += "    *** no Equation ***\n"
+	}
+
+	if parDet.HorizontalRule != nil {
+		insTxt := "without"
+		if (parDet.HorizontalRule.TextStyle != nil) {
+			insTxt = "with"
+		}
+		outstr += fmt.Sprintf("    *** Has Horizontal Rule %s txtstyle ***\n", insTxt)
+		if (parDet.HorizontalRule.TextStyle != nil) {
+			tstr, err := dObj.dispTxtStyl(parDet.HorizontalRule.TextStyle, 6)
+			if err != nil {
+				outstr += fmt.Sprintf("/* error disp Text Style: %v */\n", err)
+			}
+			outstr += tstr
+		}
+	} else {
+		outstr += "    *** no Horizontal Rule ***\n"
+	}
+
+	if parDet.FootnoteReference != nil {
+		ftref := parDet.FootnoteReference
+		outstr += fmt.Sprintf("    *** Has Footnote Reference ***\n")
+		outstr += fmt.Sprintf("       Id:     %s\n", ftref.FootnoteId)
+		outstr += fmt.Sprintf("       Number: %s\n", ftref.FootnoteNumber)
+		tstr, err := dObj.dispTxtStyl(ftref.TextStyle, 8)
+		if err == nil {outstr += tstr} else { outstr += fmt.Sprintf("     *** error %v\n", err) }
+	} else {
+			outstr += "    *** no Footnote Reference ***\n"
+	}
 
 	return outstr, nil
 }
