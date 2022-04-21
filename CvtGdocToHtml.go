@@ -13,6 +13,7 @@ package main
 import (
         "fmt"
         "os"
+		"strings"
 		gdocApi "google/gdoc/gdocApi"
 		gdocHtml "google/gdoc/gdocHtml"
 )
@@ -50,7 +51,9 @@ func main() {
 	err := gd.InitGdocApi()
 	srv := gd.Svc
 
-	outfilPath := "output" + os.Args[2]
+	outfilPath:= os.Args[2]
+
+	if strings.Index(os.Args[2], "output/")< 0 {outfilPath = "output/" + os.Args[2]}
 	fmt.Printf("*************** CctGdocToHtml ************\n")
 	fmt.Printf("output folder: %s option: %s\n", outfilPath, opt)
 
