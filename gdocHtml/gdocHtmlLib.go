@@ -172,12 +172,14 @@ type parBorder struct {
 	dash string
 }
 
+/*
 type parStylRetObj struct {
 	prefix string
 	suffix string
 	parId string
 	cssStr string
 }
+*/
 
 type tabStop struct {
 	tabAlign string
@@ -210,7 +212,7 @@ type OptObj struct {
 	ImgFold bool
     Verb bool
 	Toc bool
-	MultiSect bool
+	Sections bool
 	DivBorders bool
 	Divisions []string
 	DocMargin [4]int
@@ -220,7 +222,6 @@ type OptObj struct {
 func getDefOption(opt *OptObj) {
 
 	opt.BaseFontSize = 0
-	opt.MultiSect = false
 	opt.DivBorders = false
 	opt.DefLinSpacing = 1.2
 	opt.DivBorders = false
@@ -228,6 +229,8 @@ func getDefOption(opt *OptObj) {
 	opt.ImgFold = true
 	opt.Verb = true
 	opt.Toc = true
+	opt.Sections = true
+
 	for i:=0; i< 4; i++ {opt.ElMargin[i] = 0}
 
 	opt.Divisions = []string{"Summary", "Main"}
@@ -238,7 +241,7 @@ func printOptions (opt *OptObj) {
 
 	fmt.Printf("\n************ Option Values ***********\n")
 	fmt.Printf("  Base Font Size:       %d\n", opt.BaseFontSize)
-	fmt.Printf("  Sections as <div>:    %t\n", opt.MultiSect)
+	fmt.Printf("  Sections as <div>:    %t\n", opt.Sections)
 	fmt.Printf("  Browser Line Spacing: %.1f\n",opt. DefLinSpacing)
 	fmt.Printf("  <div> Borders:        %t\n", opt.DivBorders)
 	fmt.Printf("  Divisions: %d\n", len(opt.Divisions))
@@ -1740,14 +1743,16 @@ func (dObj *GdocHtmlObj) initGdocHtml(doc *docs.Document, options *OptObj) (err 
 			} // end headings
 
 			// footnotes
-			for parEl:=0; parEl<len(elObj.Paragraph.Elements); parEl++ {
-				parElObj := elObj.Paragraph.Elements[parEl]
-				if parElObj.FootnoteReference != nil {
-					ftnote.el = el
-					ftnote.parel = parEl
-					ftnote.id = parElObj.FootnoteReference.FootnoteId
-					ftnote.numStr = parElObj.FootnoteReference.FootnoteNumber
-					dObj.docFtnotes = append(dObj.docFtnotes, ftnote)
+			if len(doc.Footnotes)> 0 {
+				for parEl:=0; parEl<len(elObj.Paragraph.Elements); parEl++ {
+					parElObj := elObj.Paragraph.Elements[parEl]
+					if parElObj.FootnoteReference != nil {
+						ftnote.el = el
+						ftnote.parel = parEl
+						ftnote.id = parElObj.FootnoteReference.FootnoteId
+						ftnote.numStr = parElObj.FootnoteReference.FootnoteNumber
+						dObj.docFtnotes = append(dObj.docFtnotes, ftnote)
+					}
 				}
 			}
 
@@ -3623,6 +3628,7 @@ func CreGdocHtmlAll(folderPath string, doc *docs.Document, options *OptObj)(err 
 
 //	dObj.sections
 	var mainDiv dispObj
+
 	for ipage:=0; ipage<len(dObj.sections); ipage++ {
 		pageStr := fmt.Sprintf("Pg_%d", ipage)
 		idStr := fmt.Sprintf("%s_pg_%d", dObj.docName, ipage)
