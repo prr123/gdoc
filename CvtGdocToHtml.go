@@ -35,7 +35,10 @@ func main() {
 			fmt.Println("assuming 'opt = all'!")
 			opt = "all"
 		case 3:
-			opt = os.Args[2]
+
+		case 4:
+			opt = os.Args[3]
+
 		default:
         	fmt.Println("error - too many arguments!")
           	fmt.Printf("%s usage is:\n  %s docId opt [sumary, main, all]\n", cmd[2:], cmd)
@@ -47,6 +50,10 @@ func main() {
 	err := gd.InitGdocApi()
 	srv := gd.Svc
 
+	outfilPath := "output" + os.Args[2]
+	fmt.Printf("*************** CctGdocToHtml ************\n")
+	fmt.Printf("output folder: %s option: %s\n", outfilPath, opt)
+
 	doc, err := srv.Documents.Get(docId).Do()
 	if err != nil {
 		fmt.Println("Unable to retrieve data from document: ", err)
@@ -56,7 +63,7 @@ func main() {
 
 	switch opt {
 	case "heading":
-		err = gdocHtml.CreGdocHtmlSection("", "output", doc, nil)
+		err = gdocHtml.CreGdocHtmlSection("", outfilPath, doc, nil)
 		if err != nil {
 			fmt.Println("error main: CreGdocHtmlSummary -- cannot convert gdoc doc: ", err)
 			os.Exit(1)
@@ -65,7 +72,7 @@ func main() {
 		os.Exit(0)
 
 	case "main":
-		err = gdocHtml.CreGdocHtmlMain("output", doc, nil)
+		err = gdocHtml.CreGdocHtmlMain(outfilPath, doc, nil)
 		if err != nil {
 			fmt.Println("error main CreGdocHtmlMain -- cannot convert gdoc file: ", err)
 			os.Exit(1)
@@ -74,7 +81,7 @@ func main() {
 		os.Exit(0)
 
 	case "doc":
-		err = gdocHtml.CreGdocHtmlDoc("output", doc, nil)
+		err = gdocHtml.CreGdocHtmlDoc(outfilPath, doc, nil)
 		if err != nil {
 			fmt.Println("error CreGdocHtmlDoc -- cannot convert gdoc file: ", err)
 			os.Exit(1)
@@ -84,7 +91,7 @@ func main() {
 		os.Exit(0)
 
 	case "all":
-		err = gdocHtml.CreGdocHtmlAll("output", doc, nil)
+		err = gdocHtml.CreGdocHtmlAll(outfilPath, doc, nil)
 		if err != nil {
 			fmt.Println("error CreGdocHtmlAll -- cannot convert gdoc file: ", err)
 			os.Exit(1)
@@ -100,4 +107,3 @@ func main() {
 	}
 	
 }
-
