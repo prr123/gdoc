@@ -1139,25 +1139,26 @@ func CreateDocFolder(path, foldnam string)(fullPath string, existDir bool, err e
 
 	// check whether foldnam folder exists
 	fullPath =""
-	if len(path) == 0 {
-		fullPath = foldnam
-	}
+	switch {
+		case len(path) == 0:
+			fullPath = foldnam
 
-			if path[0] == '/' {
-				return "", false, fmt.Errorf("error -- absolute path!")
-			}
-			if path[len(path)  -1] == '/'{
+		case path[0] == '/':
+			return "", false, fmt.Errorf("error -- absolute path!")
+
+		case path[len(path)  -1] == '/':
 				fullPath = path + foldnam
-			} else {
+
+		default:
 				fullPath = path + "/" + foldnam
-			}
+	}
 //	fmt.Printf("full path1: %s\n", fullPath)
 
 			// check path with folder name
 			// add trimming wsp to left
-			if _, err1 := os.Stat(fullPath); !os.IsNotExist(err1) {
-				return fullPath, true, nil
-			}
+	if _, err1 := os.Stat(fullPath); !os.IsNotExist(err1) {
+		return fullPath, true, nil
+	}
 
 //	fmt.Printf("full path2: %s\n", fullPath)
 
@@ -3604,9 +3605,18 @@ func CreGdocHtmlAll(folderPath string, doc *docs.Document, options *OptObj)(err 
 		return fmt.Errorf("initGdocHtml %v", err)
 	}
 
-	err = dObj.createHtmlFolder(folderPath)
+	fPath, fexist, err := CreateDocFolder(folderPath, dObj.docName)
 	if err!= nil {
-		return fmt.Errorf("createHtmlFolder: %v", err)
+		return fmt.Errorf("createHtmlFolder %v", err)
+	}
+	dObj.folderPath = fPath
+
+	if dObj.Options.Verb {
+		fmt.Println("******************* Output File ************")
+		fmt.Printf("folder path: %s ", fPath)
+		fstr := "is new!"
+		if fexist { fstr = "exists!" }
+		fmt.Printf("%s\n", fstr)
 	}
 
 	err = dObj.createOutFil("")
