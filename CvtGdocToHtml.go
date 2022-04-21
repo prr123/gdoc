@@ -51,9 +51,21 @@ func main() {
 	err := gd.InitGdocApi()
 	srv := gd.Svc
 
-	outfilPath:= os.Args[2]
+	outfilPath:= ""
+	switch {
+		case os.Args[2] == "output":
+			outfilPath = os.Args[2]
+		case strings.Index(os.Args[2], "output/")< 0:
+ 			outfilPath = "output/" + os.Args[2]
+		case strings.Index(os.Args[2], "output/") == 0:
+			outfilPath = os.Args[2]
+		case os.Args[2] == "":
+			outfilPath = "output"
+		default:
+			fmt.Printf("no valid input folder: %s", os.Args[2])
+			os.Exit(1)
+	}
 
-	if strings.Index(os.Args[2], "output/")< 0 {outfilPath = "output/" + os.Args[2]}
 	fmt.Printf("*************** CctGdocToHtml ************\n")
 	fmt.Printf("output folder: %s option: %s\n", outfilPath, opt)
 
