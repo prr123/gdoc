@@ -1119,6 +1119,109 @@ func tcell_vert_align (alStr string) (outstr string) {
 	return outstr
 }
 
+func CreateDocFolder(path, foldnam string)(fullPath string, existDir bool, err error) {
+
+	// check if foldenam is valid -> no whitespaces
+	fnamValid := true
+	for i:=0; i< len(foldnam); i++ {
+		if foldnam[i] == ' ' {
+			fnamValid = false
+			break
+		}
+	}
+
+	if !fnamValid {
+		return "", false, fmt.Errorf("error -- not a valid foldnam string!")
+	}
+
+	// check whether foldnam folder exists
+	fullPath =""
+	if len(path) == 0 {
+		fullPath = foldnam
+	}
+
+			if path[0] == '/' {
+				return "", false, fmt.Errorf("error -- absolute path!")
+			}
+			if path[len(path)  -1] == '/'{
+				fullPath = path + foldnam
+			} else {
+				fullPath = path + "/" + foldnam
+			}
+//	fmt.Printf("full path1: %s\n", fullPath)
+
+			// check path with folder name
+			// add trimming wsp to left
+			if _, err1 := os.Stat(fullPath); !os.IsNotExist(err1) {
+				return fullPath, true, nil
+			}
+
+//	fmt.Printf("full path2: %s\n", fullPath)
+
+	// path does not exist, we need to create path
+	ist:=0
+	for i:=0; i<len(fullPath); i++ {
+		if fullPath[i] == '/' {
+			parPath := string(fullPath[ist:i])
+//	fmt.Printf("path %d: %s\n", i, parPath)
+			if _, err1 := os.Stat(parPath); os.IsNotExist(err1) {
+				err2 := os.Mkdir(parPath, os.ModePerm)
+				if err2 != nil {
+					return "", false, fmt.Errorf("os.Mkdir: lev %d %v", err2, i)
+				}
+//			ist = i + 1
+			}
+		}
+	}
+	err = os.Mkdir(fullPath, os.ModePerm)
+	if err != nil {
+		return "", false, fmt.Errorf("full Path os.Mkdir: %v", err)
+	}
+
+	return fullPath, false, nil
+}
+/*
+    if os.IsNotExist(err) {
+        err1 := os.Mkdir(foldnam, os.ModePerm)
+        if err1 != nil {
+            return fmt.Errorf("os.Mkdir: could not create html folder! %v", err1)
+        }
+        newDir = true
+    } else {
+        if err != nil {
+            return fmt.Errorf("os.Stat: could not find html folder! %v", err)
+        }
+    }
+
+
+	lenPath := len(path)
+	if lenPath > 0 {
+		if path[lenPath -1] != '/' { path += "/"}
+		foldnam = path + filnam
+	} else {
+		foldnam = filnam
+	}
+
+    // check whether dir folder exists, if not create one
+    newDir := false
+
+    // open directory
+/*
+    if !newDir {
+        err = os.RemoveAll(foldnam)
+        if err != nil {
+            return fmt.Errorf("os.RemoveAll: could not delete files in html folder! %v", err)
+        }
+        err = os.Mkdir(foldnam, os.ModePerm)
+        if err != nil {
+            return fmt.Errorf("os.Mkdir:: could not create html folder! %v", err)
+        }
+    }
+*/
+//    dObj.folderName = filnam
+//    dObj.folderPath = foldnam
+
+
 func creHtmlHead()(outstr string, err error) {
 	outstr = "<!DOCTYPE html>\n"
 //	outstr += fmt.Sprintf("<!-- file: %s -->\n", dObj.docName)
@@ -1140,6 +1243,7 @@ func (dObj *GdocHtmlObj) printHeadings() {
 			dObj.headings[i].hdElStart, dObj.headings[i].hdElEnd)
 	}
 }
+
 
 func (dObj *GdocHtmlObj) cvtParMapCss(pMap *parMap)(cssStr string) {
 	cssStr =""
@@ -1336,10 +1440,15 @@ func (dObj *GdocHtmlObj) createOutFil(divNam string) (err error) {
 		fnam = dObj.docName
 	}
 	filpath := dObj.folderPath + "/" + fnam + ".html"
-	if dObj.Options.Verb {
-		fmt.Println("******************* Output File ************")
-		fmt.Printf("file path: %s\n\n", filpath)
+//dd
+    _, err = os.Stat(filpath)
+    if !os.IsNotExist(err) {
+		err1:= os.Remove(filpath)
+		if err1 != nil {
+			return fmt.Errorf("os.Remove: cannot remove html file: %s! error: %v", filpath, err)
+		}
 	}
+
 	outfil, err := os.Create(filpath)
 	if err != nil {
 		return fmt.Errorf("os.Create: cannot create html file: %v", err)
@@ -1347,7 +1456,6 @@ func (dObj *GdocHtmlObj) createOutFil(divNam string) (err error) {
 	dObj.htmlFil = outfil
 	return nil
 }
-
 
 func (dObj *GdocHtmlObj) createHtmlFolder(path string)(err error) {
 	var filnam, foldnam string
@@ -1401,6 +1509,7 @@ func (dObj *GdocHtmlObj) createHtmlFolder(path string)(err error) {
 
     return nil
 }
+
 
 func (dObj *GdocHtmlObj) createImgFolder()(err error) {
 
@@ -3242,12 +3351,26 @@ func CreGdocHtmlDoc(folderPath string, doc *docs.Document, options *OptObj)(err 
 	if err != nil {
 		return fmt.Errorf("initGdocHtml %v", err)
 	}
+//fff
+	fPath, fexist, err := CreateDocFolder(folderPath, dObj.docName)
+	if err!= nil {
+		return fmt.Errorf("createHtmlFolder %v", err)
+	}
+	dObj.folderPath = fPath
 
+	if dObj.Options.Verb {
+		fmt.Println("******************* Output File ************")
+		fmt.Printf("folder path: %s ", fPath)
+		fstr := "is new!"
+		if fexist { fstr = "exists!" }
+		fmt.Printf("%s\n", fstr)
+	}
+/*
 	err = dObj.createHtmlFolder(folderPath)
 	if err!= nil {
 		return fmt.Errorf("createHtmlFolder %v", err)
 	}
-
+*/
 	err = dObj.createOutFil("")
 	if err!= nil {
 		return fmt.Errorf("createOutFil %v", err)
