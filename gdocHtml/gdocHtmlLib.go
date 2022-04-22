@@ -2755,9 +2755,9 @@ func (dObj *GdocHtmlObj) cvtTxtStylCss(txtStyl *docs.TextStyle, head bool)(cssSt
 		}
 	}
 	if txtStyl.Bold {
-		tcssStr += "  font-weight: bold;\n"
+		tcssStr += "  font-weight: 800;\n"
 	} else {
-		if head {tcssStr += "  font-weight: normal;\n"}
+		if head {tcssStr += "  font-weight: 400;\n"}
 	}
 	if txtStyl.Italic { tcssStr += "  font-style: italic;\n"}
 	if txtStyl.Underline { tcssStr += "  text-decoration: underline;\n"}
@@ -2765,9 +2765,9 @@ func (dObj *GdocHtmlObj) cvtTxtStylCss(txtStyl *docs.TextStyle, head bool)(cssSt
 
 	if txtStyl.WeightedFontFamily != nil {
 		font := txtStyl.WeightedFontFamily.FontFamily
-		weight := txtStyl.WeightedFontFamily.Weight
+//		weight := txtStyl.WeightedFontFamily.Weight
 		tcssStr += fmt.Sprintf("  font-family: %s;\n", font)
-		tcssStr += fmt.Sprintf("  font-weight: %d;\n", weight)
+//		tcssStr += fmt.Sprintf("  font-weight: %d;\n", weight)
 	}
 	if txtStyl.FontSize != nil {
 		mag := txtStyl.FontSize.Magnitude
@@ -2786,9 +2786,6 @@ func (dObj *GdocHtmlObj) cvtTxtStylCss(txtStyl *docs.TextStyle, head bool)(cssSt
             tcssStr += getColor(txtStyl.BackgroundColor.Color)
 		}
 	}
-
-//	if txtStyl.Link != nil {
-	//txtHtmlStr = txtHtmlStr + '<a href = "' + partAtts.LINK_URL + '">'
 
 	if len(tcssStr) > 0 {
 		cssStr = tcssStr
@@ -2825,12 +2822,12 @@ func (dObj *GdocHtmlObj) createDivHead(divName, idStr string) (divObj dispObj, e
 
 func (dObj *GdocHtmlObj) createSectionHead() (secHd dispObj) {
 
-	htmlStr := fmt.Sprintf("<div class=\"%s_div secDiv\">",dObj.docName)
-	htmlStr += fmt.Sprintf("<p class=\"%s_title\">Sections</p>",dObj.docName)
+	htmlStr := fmt.Sprintf("<div class=\"%s_div top\" id=\"%s_sectoc\">\n", dObj.docName, dObj.docName)
+	htmlStr += fmt.Sprintf("<p class=\"%s_title %s_leftTitle_UL\">Sections</p>\n",dObj.docName)
 	for i:=0; i< len(dObj.sections); i++ {
-		htmlStr += fmt.Sprintf("<p class=\"%s_div\"><a href=\"#%s_sec_%d\">Page %3d</a></p>", dObj.docName, dObj.docName, i, i)
+		htmlStr += fmt.Sprintf("  <p class=\"%s_p\"><a href=\"#%s_sec_%d\">Page: %3d</a></p>\n", dObj.docName, dObj.docName, i, i)
 	}
-	htmlStr +="</div>"
+	htmlStr +="</div>\n"
 	secHd.bodyHtml = htmlStr
 	return secHd
 }
@@ -2842,7 +2839,7 @@ func (dObj *GdocHtmlObj) createSectionDiv(ipage int) (secObj dispObj) {
 
 	// html
 	secObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div sec_%d\" id=\"%s_sec_%d\">\n", dObj.docName, ipage, dObj.docName, ipage)
-	secObj.bodyHtml += fmt.Sprintf("<p class=\"%s_p section\">Page %d</p>", dObj.docName, ipage)
+	secObj.bodyHtml += fmt.Sprintf("<p class=\"%s_page\"><a href=\"#%s_sectoc\">Page %d</a></p>", dObj.docName, dObj.docName, ipage)
 
 	return secObj
 }
@@ -2850,7 +2847,7 @@ func (dObj *GdocHtmlObj) createSectionDiv(ipage int) (secObj dispObj) {
 func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 	var cssStr string
 	//gdoc division css
-	cssStr = fmt.Sprintf(".%s_div {\n", dObj.docName)
+	cssStr = fmt.Sprintf(".%s_doc {\n", dObj.docName)
 
     docstyl := dObj.doc.DocumentStyle
 	if dObj.Options.Toc {
@@ -2871,8 +2868,11 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 		cssStr += "  border: solid red;\n"
 		cssStr += "  border-width: 1px;\n"
 	}
+	cssStr += "}\n"
+	headObj.bodyCss = cssStr
 
 	//css default text style
+	cssStr = fmt.Sprintf(".%s_div {\n", dObj.docName)
 	defTxtMap := new(textMap)
 	parStyl, txtStyl, err := dObj.getNamedStyl("NORMAL_TEXT")
 	if err != nil {
@@ -2883,12 +2883,18 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 	if err != nil {
 		return headObj, fmt.Errorf("creHeadCss: %v", err)
 	}
-
+	cssStr += "  display:block;"
+	cssStr += "  margin 0;"
+	if dObj.Options.DivBorders {
+		cssStr += "  border: solid green;\n"
+		cssStr += "  border-width: 1px;\n"
+	}
 	cssStr += cvtTxtMapCss(defTxtMap)
 	cssStr += "}\n"
+	headObj.bodyCss = cssStr
 
 	// paragraph default style
-	cssStr += fmt.Sprintf(".%s_p {\n", dObj.docName)
+	cssStr = fmt.Sprintf(".%s_p {\n", dObj.docName)
 	cssStr += "  display: block;\n"
 
 	defParMap := new(parMap)
@@ -2902,10 +2908,48 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 
 	cssStr += dObj.cvtParMapCss(defParMap)
 	cssStr += "}\n"
+	headObj.bodyCss = cssStr
 
-//	cssStr += fmt.Sprintf(".%s_p.list {display: inline;}\n", dObj.docName)
+	if dObj.Options.Toc || dObj.Options.Sections {
+		cssStr = fmt.Sprintf(".%s_div.top {\n", dObj.docName)
+		cssStr += "  padding: 10px 0 10px 0;\n"
+		cssStr += "}\n"
+
+		cssStr += fmt.Sprintf(".%s_title.leftTitle_UL {\n", dObj.docName)
+		cssStr += "  text-align: start;\n"
+		cssStr += "	text-decoration-line: underline;\n"
+		cssStr += "}\n"
+
+		cssStr += fmt.Sprintf(".%s_title.leftTitle {\n", dObj.docName)
+		cssStr += "  text-align: start;\n"
+		cssStr += "	text-decoration-line: none;\n"
+		cssStr += "}\n"
+
+		cssStr += fmt.Sprintf(".%s_noUl {", dObj.docName)
+		cssStr += "text-decoration: none; "
+		cssStr += "}\n"
+
+		headObj.bodyCss = cssStr
+	}
+
+	if dObj.Options.Toc {
+		cssStr = fmt.Sprintf(".%s_div.toc {\n", dObj.docName)
+		cssStr += "}\n"
+		headObj.bodyCss = cssStr
+	}
+
+	if dObj.Options.Sections {
+		cssStr = fmt.Sprintf(".%s_div.sec {\n", dObj.docName)
+		cssStr += "}\n"
+		cssStr += fmt.Sprintf(".%s_page {\n", dObj.docName)
+		cssStr += "  text-align: right;"
+		cssStr += "  margin: 0;"
+		cssStr += "}\n"
+		headObj.bodyCss = cssStr
+	}
 
 	// list css strings
+	cssStr = ""
 	for i:=0; i<len(dObj.docLists); i++ {
 		listid := dObj.docLists[i].listId
 		listClass := listid[4:]
@@ -2996,7 +3040,7 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 	headObj.bodyCss += cssStr
 
 	//gdoc division html
-	headObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div\">\n", dObj.docName)
+	headObj.bodyHtml = fmt.Sprintf("<div class=\"%s_doc\">\n", dObj.docName)
 
 	return headObj, nil
 }
@@ -3148,46 +3192,15 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 	var htmlStr, cssStr string
 
 	doc := dObj.doc
-//	docStyl := doc.DocumentStyle
+
 	//html
-	htmlStr = fmt.Sprintf("<div class=\"%s_div %s_toc\">\n", dObj.docName, dObj.docName)
-	htmlStr += fmt.Sprintf("<p class=\"%s_div %s_title %s_toctitle\">Table of Contents</p>\n", dObj.docName, dObj.docName, dObj.docName)
+	htmlStr = fmt.Sprintf("<div class=\"%s_div top\">\n", dObj.docName, dObj.docName)
+	htmlStr += fmt.Sprintf("<p class=\"%s_title %s_toctitle\">Table of Contents</p>\n", dObj.docName, dObj.docName, dObj.docName)
 	tocDiv.bodyHtml = htmlStr
 
-	// div css
-	cssStr = fmt.Sprintf(".%s_div.%s_toc  {\n", dObj.docName, dObj.docName)
-//	cssStr += "  margin-top: 10mm;\n"
-//	cssStr += "  margin-bottom: 10mm;\n"
-//    cssStr += fmt.Sprintf("  margin-right: %.2fmm; \n",docStyl.MarginRight.Magnitude*PtTomm)
-//    cssStr += fmt.Sprintf("  margin-left: %.2fmm; \n",docStyl.MarginLeft.Magnitude*PtTomm)
+	// div css moved to createHead()
 
-	if dObj.Options.DivBorders {
-		cssStr += "  border: solid green;\n"
-		cssStr += "  border-width: 1px;\n"
-	}
-	cssStr += "  padding-top:10px;\n  padding-bottom:10px;\n"
-	cssStr += "}\n"
-
-	// title css
-	// still need to add case where there is not title def.
-	// if dObj.title.exists
-	cssStr += fmt.Sprintf(".%s_div.%s_title.%s_toctitle {", dObj.docName, dObj.docName, dObj.docName)
-	cssStr += "text-align: start;"
-	cssStr += "text-decoration-line: underline; "
-	cssStr += "}\n"
-
-	cssStr += fmt.Sprintf(".%s_div.%s_title.%s_tocIlTitle {", dObj.docName, dObj.docName, dObj.docName)
-	cssStr += "text-align: start;"
-	cssStr += "text-decoration-line: none; "
-	cssStr += "}\n"
-
-	cssStr += fmt.Sprintf(".%s_noUl {", dObj.docName)
-	cssStr += "text-decoration: none; "
-	cssStr += "}\n"
-
-	tocDiv.bodyCss = cssStr
-
-//	var tocDiv dispObj
+	//html all headings are entries to toc table of content
 	for ihead:=0; ihead<len(dObj.headings); ihead++ {
 		cssStr = ""
 		htmlStr = ""
@@ -3199,11 +3212,11 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 		text := dObj.headings[ihead].text
 		switch parNamedStyl {
 		case "TITLE":
-			prefix := fmt.Sprintf("<p class=\"%s_div %s_title %s_tocIlTitle\">", dObj.docName, dObj.docName, dObj.docName)
+			prefix := fmt.Sprintf("<p class=\"%s_title %s_leftTitle_UL\">", dObj.docName, dObj.docName)
 			middle := fmt.Sprintf("<a href=\"#%s\" class=\"%s_noUl\">%s</a>", hdId, dObj.docName, text)
 			suffix := "</p>\n"
 			htmlStr = prefix + middle + suffix
-//			cssStr =fmt.Sprintf(".%s_title {\n",)
+
 		case "SUBTITLE":
 			prefix := fmt.Sprintf("<p class=\"%s_subtitle\">", dObj.docName)
 			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
