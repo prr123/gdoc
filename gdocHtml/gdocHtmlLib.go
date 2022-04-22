@@ -3214,7 +3214,7 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 
 	//html
 	htmlStr = fmt.Sprintf("<div class=\"%s_div top\">\n", dObj.docName)
-	htmlStr += fmt.Sprintf("<p class=\"%s_title %s_toctitle\">Table of Contents</p>\n", dObj.docName, dObj.docName)
+	htmlStr += fmt.Sprintf("<p class=\"%s_title %s_leftTitle\">Table of Contents</p>\n", dObj.docName, dObj.docName)
 	tocDiv.bodyHtml = htmlStr
 
 	// div css moved to createHead()
@@ -3231,7 +3231,7 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 		text := dObj.headings[ihead].text
 		switch parNamedStyl {
 		case "TITLE":
-			prefix := fmt.Sprintf("<p class=\"%s	parmap.hasBorders = true_title %s_leftTitle_UL\">", dObj.docName, dObj.docName)
+			prefix := fmt.Sprintf("<p class=\"%s_title %s_leftTitle_UL\">", dObj.docName, dObj.docName)
 			middle := fmt.Sprintf("<a href=\"#%s\" class=\"%s_noUl\">%s</a>", hdId, dObj.docName, text)
 			suffix := "</p>\n"
 			htmlStr = prefix + middle + suffix
