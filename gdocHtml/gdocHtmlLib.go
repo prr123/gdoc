@@ -499,15 +499,16 @@ func fillTxtMap(txtMap *textMap, txtStyl *docs.TextStyle)(alter bool, err error)
 func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 
 	alter := false
-
+	fmt.Printf("*** align ***\n")
 	if parStyl.Alignment != parmap.halign {
 		fmt.Printf("align: %s %s \n", parmap.halign, parStyl.Alignment)
 		parmap.halign = parStyl.Alignment
 		alter = true
 	}
-	fmt.Printf("align: %s\n", parmap.halign)
+	fmt.Printf("align: %s \n", parmap.halign)
 
-	parmap.direct = true
+//	parmap.direct = true
+	fmt.Printf("*** indent ***\n")
 	if (parStyl.IndentStart != nil) {
 		if parStyl.IndentStart.Magnitude != parmap.indStart {
 			fmt.Printf("indent start: %.1fpt %.1fpt\n", parmap.indStart, parStyl.IndentStart.Magnitude)
@@ -517,6 +518,7 @@ func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 	}
 	fmt.Printf("indent start: %.1fpt\n", parmap.indStart)
 
+	fmt.Printf("*** indent end***\n")
 	if (parStyl.IndentEnd != nil) {
 		if parStyl.IndentEnd.Magnitude != parmap.indEnd {
 			fmt.Printf("indent end: %.1f %.1f \n", parmap.indEnd, parStyl.IndentEnd.Magnitude)
@@ -526,6 +528,7 @@ func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 	}
 	fmt.Printf("indent end: %.1fpt\n", parmap.indEnd)
 
+	fmt.Printf("*** indent first line ***\n")
 	if (parStyl.IndentFirstLine != nil) {
 		if parStyl.IndentFirstLine.Magnitude != parmap.indFlin {
 			fmt.Printf("indent first line: %.1f %.1f \n", parmap.indFlin, parStyl.IndentFirstLine.Magnitude)
@@ -535,24 +538,28 @@ func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 	}
 	fmt.Printf("indent first line: %.1fpt\n", parmap.indFlin)
 
+	fmt.Printf("*** line spacing ***\n")
 	if parStyl.LineSpacing/100.0 != parmap.linSpac {
 		fmt.Printf("line spacing: %.2f %.2f \n", parmap.linSpac, parStyl.LineSpacing/100.0)
 		parmap.linSpac = parStyl.LineSpacing/100.0; alter = true;
 	}
 	fmt.Printf("line spacing: %.2fpt\n", parmap.linSpac)
 
+	fmt.Printf("*** keep lines ***\n")
 	if parStyl.KeepLinesTogether != parmap.keepLines {
 		fmt.Printf("keep Lines: %t %t\n", parmap.keepLines, parStyl.KeepLinesTogether)
 		parmap.keepLines = parStyl.KeepLinesTogether; alter = true;
 	}
 	fmt.Printf("keep Lines: %t\n", parmap.keepLines)
 
+	fmt.Printf("*** keep next ***\n")
 	if parStyl.KeepWithNext != parmap.keepNext {
-		fmt.Printf("keep With: %t %tf \n", parmap.keepNext, parStyl.KeepWithNext)
+		fmt.Printf("keep With: %t %t\n", parmap.keepNext, parStyl.KeepWithNext)
 		parmap.keepNext = parStyl.KeepWithNext; alter = true;
 	}
 	fmt.Printf("keep With: %t\n", parmap.keepNext)
 
+	fmt.Printf("*** space above ***\n")
 	if (parStyl.SpaceAbove != nil) {
 		if parStyl.SpaceAbove.Magnitude != parmap.spaceTop {
 			fmt.Printf("space above: %.1fpt %.1fpt\n", parmap.spaceTop, parStyl.SpaceAbove.Magnitude)
@@ -562,6 +569,7 @@ func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 	}
 	fmt.Printf("space above: %.1fpt\n", parmap.spaceTop)
 
+	fmt.Printf("*** space below ***\n")
 	if (parStyl.SpaceBelow != nil) {
 		if parStyl.SpaceBelow.Magnitude != parmap.spaceBelow {
 			fmt.Printf("space below: %.1f %.1f \n", parmap.spaceBelow, parStyl.SpaceBelow.Magnitude)
@@ -571,6 +579,7 @@ func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 	}
 	fmt.Printf("space below: %.1fpt\n", parmap.spaceBelow)
 
+	fmt.Printf("*** space mode ***\n")
 	if parStyl.SpacingMode != parmap.spaceMode {
 		fmt.Printf("spacing mode: %s %s \n", parmap.spaceMode, parStyl.SpacingMode)
 		parmap.spaceMode = parStyl.SpacingMode
@@ -594,19 +603,25 @@ func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 		return
 	}
 
-	fmt.Println("has Borders!\n")
+	fmt.Println("\n*** has Borders! ***\n")
 	parmap.hasBorders = true
+
+	alter = false
+	bordalter := false
+//	fmt.Printf("*** borders between ***\n")
 	if parStyl.BorderBetween != nil {
 		if parStyl.BorderBetween.Width != nil {
 			if parStyl.BorderBetween.Width.Magnitude != parmap.bordBet.width {
 				parmap.bordBet.width = parStyl.BorderBetween.Width.Magnitude
 				alter = true
+				fmt.Printf("width: %.1f\n",parmap.bordBet.width)
 			}
 		}
 		if parStyl.BorderBetween.Padding != nil {
 			if parStyl.BorderBetween.Padding.Magnitude != parmap.bordBet.pad {
 				parmap.bordBet.pad = parStyl.BorderBetween.Padding.Magnitude
 				alter = true
+				fmt.Printf("padding: %.1f\n",parmap.bordBet.pad)
 			}
 		}
 		if parStyl.BorderBetween.Color != nil {
@@ -615,17 +630,27 @@ func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 				if color != parmap.bordBet.color {
 					parmap.bordBet.color = color
 					alter = true
+					fmt.Printf("color: %s\n",parmap.bordBet.color)
 				}
 			}
 		}
-		if parStyl.BorderBetween.DashStyle != parmap.bordBet.dash {parmap.bordBet.dash = parStyl.BorderBetween.DashStyle; alter = true;}
+		if parStyl.BorderBetween.DashStyle != parmap.bordBet.dash {
+			parmap.bordBet.dash = parStyl.BorderBetween.DashStyle;
+			alter = true;
+			fmt.Printf("dash: %s\n",parmap.bordBet.dash)
+		}
 	}
+	fmt.Printf("*** border between alter: %t ***\n", alter)
+	if alter {bordalter = true}
 
+	alter = false
+//	fmt.Printf("*** border top ***\n")
 	if parStyl.BorderTop != nil {
 		if parStyl.BorderTop.Width != nil {
 			if parStyl.BorderTop.Width.Magnitude != parmap.bordTop.width {
 				parmap.bordTop.width = parStyl.BorderTop.Width.Magnitude
 				alter = true
+				fmt.Printf("width: %.1f\n",parmap.bordTop.width)
 			}
 		}
 		if parStyl.BorderTop.Padding != nil {
@@ -645,7 +670,11 @@ func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 		}
 		if parStyl.BorderTop.DashStyle != parmap.bordTop.dash {parmap.bordTop.dash = parStyl.BorderTop.DashStyle; alter = true;}
 	}
+	fmt.Printf("*** border top alter: %t ***\n", alter)
+	if alter {bordalter = true}
 
+	alter = false
+//	fmt.Printf("*** border right ***\n")
 	if parStyl.BorderRight != nil {
 		if parStyl.BorderRight.Width != nil {
 			if parStyl.BorderRight.Width.Magnitude != parmap.bordRight.width {
@@ -673,7 +702,11 @@ func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 			alter = true
 		}
 	}
+	fmt.Printf("*** border right alter: %t ***\n", alter)
+	if alter {bordalter = true}
 
+	alter = false
+//	fmt.Printf("*** border bottom ***\n")
 	if parStyl.BorderBottom != nil {
 		if parStyl.BorderBottom.Width != nil {
 			if parStyl.BorderBottom.Width.Magnitude != parmap.bordBot.width {
@@ -698,7 +731,11 @@ func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 		}
 		if parStyl.BorderBottom.DashStyle != parmap.bordBot.dash {parmap.bordBot.dash = parStyl.BorderBottom.DashStyle; alter = true;}
 	}
+	fmt.Printf("*** border bottom alter: %t ***\n", alter)
+	if alter {bordalter = true}
 
+	alter = false
+//	fmt.Printf("*** border left ***\n")
 	if parStyl.BorderLeft != nil {
 		if parStyl.BorderLeft.Width != nil {
 			if parStyl.BorderLeft.Width.Magnitude != parmap.bordLeft.width {
@@ -723,6 +760,10 @@ func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 		}
 		if parStyl.BorderLeft.DashStyle != parmap.bordLeft.dash {parmap.bordLeft.dash = parStyl.BorderLeft.DashStyle; alter = true;}
 	}
+	fmt.Printf("*** border left alter: %t ***\n", alter)
+	if alter {bordalter = true}
+
+	alter = bordalter
 
 	bb2 := true
 	bb2 = bb2 && (parmap.bordBet.width == 0.0)
@@ -731,7 +772,7 @@ func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 	bb2 = bb2 && (parmap.bordBot.width == 0.0)
 	bb2 = bb2 && (parmap.bordLeft.width == 0.0)
 
-	if bb2 {parmap.hasBorders = false}
+	if bb2 {parmap.hasBorders = false; alter = false;}
 
 	fmt.Printf("alter borders: %t\n", alter)
 
@@ -866,16 +907,18 @@ func fillParMap(parmap *parMap, parStyl *docs.ParagraphStyle)(alter bool, err er
 			}
 		}
 	}
-
-	if bb {
-		parmap.hasBorders = false
 //fmt.Printf("no border return: %t\n", alter)
 //fmt.Printf("fillParMap 3: %t\n", alter)
+
+	parmap.hasBorders = true
+	if !bb {
+		parmap.hasBorders = false
+	}
+
+	if !parmap.hasBorders {
 		return alter, nil
 	}
 
-
-	parmap.hasBorders = true
 	if parStyl.BorderBetween != nil {
 		if parStyl.BorderBetween.Width != nil {
 			if parStyl.BorderBetween.Width.Magnitude != parmap.bordBet.width {
@@ -1033,15 +1076,17 @@ func cvtTxtMapCss(txtMap *textMap)(cssStr string) {
 				cssStr += fmt.Sprintf("/* Baseline Offset unknown: %s */\n", txtMap.baseOffset)
 		}
 	}
-	if txtMap.bold {
-		cssStr += "  font-weight: bold;\n"
-	}
+
 	if txtMap.italic { cssStr += "  font-style: italic;\n"}
 	if txtMap.underline { cssStr += "  text-decoration: underline;\n"}
 	if txtMap.strike { cssStr += "  text-decoration: line-through;\n"}
 
 	if len(txtMap.fontType) >0 { cssStr += fmt.Sprintf("  font-family: %s;\n", txtMap.fontType)}
-	if txtMap.fontWeight > 0 {cssStr += fmt.Sprintf("  font-weight: %d;\n", txtMap.fontWeight)}
+	if txtMap.bold {
+		cssStr += "  font-weight: 800;\n"
+	} else {
+		if txtMap.fontWeight > 0 {cssStr += fmt.Sprintf("  font-weight: %d;\n", txtMap.fontWeight)}
+	}
 	if txtMap.fontSize >0 {cssStr += fmt.Sprintf("  font-size: %.2fpt;\n", txtMap.fontSize)}
 	if len(txtMap.txtColor) >0 {cssStr += fmt.Sprintf("  color: %s;\n", txtMap.txtColor)}
 	if len(txtMap.bckColor) >0 {cssStr += fmt.Sprintf("  background-color: %s;\n", txtMap.bckColor)}
@@ -1184,46 +1229,6 @@ func CreateDocFolder(path, foldnam string)(fullPath string, existDir bool, err e
 
 	return fullPath, false, nil
 }
-/*
-    if os.IsNotExist(err) {
-        err1 := os.Mkdir(foldnam, os.ModePerm)
-        if err1 != nil {
-            return fmt.Errorf("os.Mkdir: could not create html folder! %v", err1)
-        }
-        newDir = true
-    } else {
-        if err != nil {
-            return fmt.Errorf("os.Stat: could not find html folder! %v", err)
-        }
-    }
-
-
-	lenPath := len(path)
-	if lenPath > 0 {
-		if path[lenPath -1] != '/' { path += "/"}
-		foldnam = path + filnam
-	} else {
-		foldnam = filnam
-	}
-
-    // check whether dir folder exists, if not create one
-    newDir := false
-
-    // open directory
-/*
-    if !newDir {
-        err = os.RemoveAll(foldnam)
-        if err != nil {
-            return fmt.Errorf("os.RemoveAll: could not delete files in html folder! %v", err)
-        }
-        err = os.Mkdir(foldnam, os.ModePerm)
-        if err != nil {
-            return fmt.Errorf("os.Mkdir:: could not create html folder! %v", err)
-        }
-    }
-*/
-//    dObj.folderName = filnam
-//    dObj.folderPath = foldnam
 
 
 func creHtmlHead()(outstr string, err error) {
@@ -2460,8 +2465,7 @@ func (dObj *GdocHtmlObj) cvtParEl(parEl *docs.ParagraphElement)(htmlStr string, 
 
 		if parEl.FootnoteReference != nil {
 			dObj.ftnoteCount++
-
-        	htmlStr += fmt.Sprintf("<span class=\"%s_ftno\">[%d]</span>",dObj.docName, dObj.ftnoteCount)
+        	htmlStr += fmt.Sprintf("<span class=\"%s_ftnote\">[%d]</span>",dObj.docName, dObj.ftnoteCount)
 		}
 
 		if parEl.PageBreak != nil {
@@ -2501,10 +2505,6 @@ func (dObj *GdocHtmlObj) cvtNamedStyl(namedStylTyp string)(cssStr string, err er
 	txtmap := new(textMap)
 
 	_, err = fillParMap(parmap, namParStyl)
-	if err != nil {
-		cssComment = fmt.Sprintf("  /* cvtNamedStyle: error fillParMap */\n")
-		return cssComment, nil
-	}
 
 	_, err = fillTxtMap(txtmap, namTxtStyl)
 	if err != nil {
@@ -2522,7 +2522,7 @@ func (dObj *GdocHtmlObj) cvtNamedStyl(namedStylTyp string)(cssStr string, err er
 
 		case "SUBTITLE":
 			if !(dObj.subtitle.exist) {
-				cssPrefix =fmt.Sprintf(".%s_subtitle {\n",dObj.docName)
+				cssPrefix = fmt.Sprintf(".%s_subtitle {\n",dObj.docName)
 				dObj.subtitle.exist = true
 			}
 		case "HEADING_1":
@@ -2603,8 +2603,26 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 	}
  //fmt.Printf("*** parstyle %s alter: %t\n", parStyl.NamedStyleType, alter)
 
-//ppp
-//	printParMap(parmap, parStyl)
+// for testing
+/*
+	if parStyl.NamedStyleType == "TITLE" {
+		parmap2 := new(parMap)
+		_, err = fillParMap(parmap2, namParStyl)
+		printParMap(parmap2, parStyl)
+	}
+*/
+	//css text style
+/*
+	namParStyl, namTxtStyl, err := dObj.getNamedStyl(parStyl.NamedStyleType)
+
+	defTxtMap := new(textMap)
+	_, err = fillTxtMap(defTxtMap, namTxtStyl)
+	if err != nil {
+		cssComment = fmt.Sprintf("//* Paragraph Style: no named Style * ")
+		cssComment, "", "", nil
+	}
+	cssDefTxt := cvtTxtMapCss(defTxtMap)
+*/
 	// NamedStyle Type
 	isListClass := ""
 	if isList {
@@ -2622,8 +2640,8 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 				prefix = fmt.Sprintf("<p class=\"%s_title%s\"", dObj.docName, isListClass)
 			}
 			if alter {
-				cssPrefix = fmt.Sprintf(".%s_title_%d {\n",dObj.docName, dObj.title.count)
-				prefix = fmt.Sprintf("<p class=\"%s_title_%d\"", dObj.docName, dObj.title.count)
+				cssPrefix = fmt.Sprintf(".%s_title.%s_title_%d {\n", dObj.docName, dObj.docName, dObj.title.count)
+				prefix = fmt.Sprintf("<p class=\"%s_title %s_title_%d\"", dObj.docName, dObj.docName, dObj.title.count)
 				dObj.title.count++
 			}
 			suffix = "</p>"
@@ -2633,8 +2651,8 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 				prefix = fmt.Sprintf("<p class=\"%s_subtitle\"", dObj.docName)
 			}
 			if alter {
-				cssPrefix = fmt.Sprintf(".s_subtitle_%d {\n",dObj.docName, dObj.subtitle.count)
-				prefix = fmt.Sprintf("<p class=\"%s_subtitle_%d\"", dObj.docName, dObj.subtitle.count)
+				cssPrefix = fmt.Sprintf(".s_subtitle.s_subtitle_%d {\n", dObj.docName, dObj.docName, dObj.subtitle.count)
+				prefix = fmt.Sprintf("<p class=\"%s_subtitle %s_subtitle_%d\"", dObj.docName, dObj.docName, dObj.subtitle.count)
 				dObj.subtitle.count++
 			}
 			suffix = "</p>"
@@ -2644,8 +2662,8 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 				prefix = fmt.Sprintf("<h1 class=\"%s_h1\"", dObj.docName)
 			}
 			if alter {
-				cssPrefix = fmt.Sprintf(".%s_h1_%d {\n",dObj.docName, dObj.h1.count)
-				prefix = fmt.Sprintf("<h1 class=\"%s_h1_%d\"", dObj.docName, dObj.h1.count)
+				cssPrefix = fmt.Sprintf(".%s_h1.%s_h1_%d {\n",dObj.docName, dObj.docName, dObj.h1.count)
+				prefix = fmt.Sprintf("<h1 class=\"%s_h1 %s_h1_%d\"", dObj.docName, dObj.docName, dObj.h1.count)
 				dObj.h1.count++
 			}
 			suffix = "</h1>"
@@ -2654,8 +2672,8 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 				prefix = fmt.Sprintf("<h2 class=\"%s_h2\"", dObj.docName)
 			}
 			if alter {
-				cssPrefix = fmt.Sprintf(".%s_h2_%d {\n",dObj.docName, dObj.h2.count)
-				prefix = fmt.Sprintf("<h2 class=\"%s_h2_%d\"", dObj.docName, dObj.h2.count)
+				cssPrefix = fmt.Sprintf(".%s_h2.%s_h2_%d {\n",dObj.docName, dObj.docName, dObj.h2.count)
+				prefix = fmt.Sprintf("<h2 class=\"%s_h2 %s_h2_%d\"", dObj.docName, dObj.docName, dObj.h2.count)
 				dObj.h2.count++
 			}
 			suffix = "</h2>"
@@ -2664,8 +2682,8 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 				prefix = fmt.Sprintf("<h3 class=\"%s_h3\"", dObj.docName)
 			}
 			if alter {
-				cssPrefix = fmt.Sprintf(".%s_h3_%d {\n",dObj.docName, dObj.h3.count)
-				prefix = fmt.Sprintf("<h3 class=\"%s_h3_%d\"", dObj.docName, dObj.h3.count)
+				cssPrefix = fmt.Sprintf(".%s_h3.%s_h3_%d {\n",dObj.docName, dObj.docName, dObj.h3.count)
+				prefix = fmt.Sprintf("<h3 class=\"%s_h3 %s_h3_%d\"", dObj.docName, dObj.docName, dObj.h3.count)
 				dObj.h3.count++
 			}
 			suffix = "</h3>"
@@ -2675,8 +2693,8 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 				dObj.h4.exist = true
 			}
 			if alter {
-				cssPrefix = fmt.Sprintf(".%s_h4_%d {\n",dObj.docName, dObj.h4.count)
-				prefix = fmt.Sprintf("<h4 class=\"%s_h4_%d\"", dObj.docName, dObj.h4.count)
+				cssPrefix = fmt.Sprintf(".%s_h4.%s_h4_%d {\n",dObj.docName, dObj.docName, dObj.h4.count)
+				prefix = fmt.Sprintf("<h4 class=\"%s_h4 %s_h4_%d\"", dObj.docName, dObj.docName, dObj.h4.count)
 				dObj.h4.count++
 			}
 			suffix = "</h4>"
@@ -2686,8 +2704,8 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 				dObj.h5.exist = true
 			}
 			if alter {
-				cssPrefix = fmt.Sprintf(".%s_h5_%d {\n",dObj.docName, dObj.h5.count)
-				prefix = fmt.Sprintf("<h5 class=\"%s_h5_%d\"", dObj.docName, dObj.h5.count)
+				cssPrefix = fmt.Sprintf(".%s_h5.%s_h5_%d {\n",dObj.docName, dObj.docName, dObj.h5.count)
+				prefix = fmt.Sprintf("<h5 class=\"%s_h5 %s_h5_%d\"", dObj.docName, dObj.docName, dObj.h5.count)
 				dObj.h5.count++
 			}
 			suffix = "</h5>"
@@ -2697,8 +2715,8 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 				dObj.h6.exist = true
 			}
 			if alter {
-				cssPrefix = fmt.Sprintf(".%s_h6_%d {\n",dObj.docName, dObj.h6.count)
-				prefix = fmt.Sprintf("<h6 class=\"%s_h6_%d\"", dObj.docName, dObj.h6.count)
+				cssPrefix = fmt.Sprintf("%s_h6.%s_h6_%d {\n",dObj.docName, dObj.docName, dObj.h6.count)
+				prefix = fmt.Sprintf("<h6 class=\"%s_h6 %s_h6_%d\"", dObj.docName, dObj.docName, dObj.h6.count)
 				dObj.h6.count++
 			}
 			suffix = "</h6>"
@@ -2708,12 +2726,12 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 					prefix = "<span"
 					suffix = "</span>"
 				case alter:
-					cssPrefix = fmt.Sprintf(".%s_p_%d {\n",dObj.docName, dObj.parCount)
-					prefix = fmt.Sprintf("<p class=\"%s_p_%d\"",dObj.docName, dObj.parCount)
-					suffix = "\n</p>"
+					cssPrefix = fmt.Sprintf(".%s_p.%s_p_%d {\n",dObj.docName, dObj.docName, dObj.parCount)
+					prefix = fmt.Sprintf("<p class=\"%s_p %s_p_%d\"",dObj.docName, dObj.docName, dObj.parCount)
+					suffix = "</p>"
 				default:
 					prefix = fmt.Sprintf("<p class=\"%s_p\"", dObj.docName)
-					suffix = "\n</p>"
+					suffix = "</p>"
 			}
 		case "NAMED_STYLE_TYPE_UNSPECIFIED":
 //			namTypValid = false
@@ -2728,6 +2746,7 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 		prefix = prefix + ">"
 	}
 //fmt.Printf("parstyl: %s %s %s\n", parStyl.NamedStyleType, prefix, suffix)
+//	if (len(cssPrefix) > 0) {cssStr = cssComment + cssPrefix + cssParAtt + cssDefTxt + "\n}\n"}
 	if (len(cssPrefix) > 0) {cssStr = cssComment + cssPrefix + cssParAtt + "}\n"}
 
 // test for a valid namestyl type
@@ -2839,7 +2858,7 @@ func (dObj *GdocHtmlObj) createSectionDiv(ipage int) (secObj dispObj) {
 
 	// html
 	secObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div sec_%d\" id=\"%s_sec_%d\">\n", dObj.docName, ipage, dObj.docName, ipage)
-	secObj.bodyHtml += fmt.Sprintf("<p class=\"%s_page\"><a href=\"#%s_sectoc\">Page %d</a></p>", dObj.docName, dObj.docName, ipage)
+	secObj.bodyHtml += fmt.Sprintf("<p class=\"%s_page\"><a href=\"#%s_sectoc\">Page %d</a></p>\n", dObj.docName, dObj.docName, ipage)
 
 	return secObj
 }
@@ -2869,7 +2888,7 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 		cssStr += "  border-width: 1px;\n"
 	}
 	cssStr += "}\n"
-	headObj.bodyCss = cssStr
+	headObj.bodyCss += cssStr
 
 	//css default text style
 	cssStr = fmt.Sprintf(".%s_div {\n", dObj.docName)
@@ -2891,7 +2910,7 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 	}
 	cssStr += cvtTxtMapCss(defTxtMap)
 	cssStr += "}\n"
-	headObj.bodyCss = cssStr
+	headObj.bodyCss += cssStr
 
 	// paragraph default style
 	cssStr = fmt.Sprintf(".%s_p {\n", dObj.docName)
@@ -2908,7 +2927,7 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 
 	cssStr += dObj.cvtParMapCss(defParMap)
 	cssStr += "}\n"
-	headObj.bodyCss = cssStr
+	headObj.bodyCss += cssStr
 
 	if dObj.Options.Toc || dObj.Options.Sections {
 		cssStr = fmt.Sprintf(".%s_div.top {\n", dObj.docName)
@@ -2917,35 +2936,35 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 
 		cssStr += fmt.Sprintf(".%s_title.leftTitle_UL {\n", dObj.docName)
 		cssStr += "  text-align: start;\n"
-		cssStr += "	text-decoration-line: underline;\n"
+		cssStr += "  text-decoration-line: underline;\n"
 		cssStr += "}\n"
 
 		cssStr += fmt.Sprintf(".%s_title.leftTitle {\n", dObj.docName)
 		cssStr += "  text-align: start;\n"
-		cssStr += "	text-decoration-line: none;\n"
+		cssStr += "  text-decoration-line: none;\n"
 		cssStr += "}\n"
 
-		cssStr += fmt.Sprintf(".%s_noUl {", dObj.docName)
-		cssStr += "text-decoration: none; "
+		cssStr += fmt.Sprintf(".%s_noUl {\n", dObj.docName)
+		cssStr += "  text-decoration: none;\n"
 		cssStr += "}\n"
 
-		headObj.bodyCss = cssStr
+		headObj.bodyCss += cssStr
 	}
 
 	if dObj.Options.Toc {
 		cssStr = fmt.Sprintf(".%s_div.toc {\n", dObj.docName)
 		cssStr += "}\n"
-		headObj.bodyCss = cssStr
+		headObj.bodyCss += cssStr
 	}
 
 	if dObj.Options.Sections {
 		cssStr = fmt.Sprintf(".%s_div.sec {\n", dObj.docName)
 		cssStr += "}\n"
 		cssStr += fmt.Sprintf(".%s_page {\n", dObj.docName)
-		cssStr += "  text-align: right;"
-		cssStr += "  margin: 0;"
+		cssStr += "  text-align: right;\n"
+		cssStr += "  margin: 0;\n"
 		cssStr += "}\n"
-		headObj.bodyCss = cssStr
+		headObj.bodyCss += cssStr
 	}
 
 	// list css strings
@@ -3030,12 +3049,12 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 		}
 	}
 
-	headObj.bodyCss = cssStr
+	headObj.bodyCss += cssStr
 
 	//css footnote
-	cssStr = fmt.Sprintf(".%s_ftno {\n", dObj.docName)
+	cssStr = fmt.Sprintf(".%s_ftnote {\n", dObj.docName)
 //	cssStr += "vertical-align: super;"
-	cssStr += "color: purple;"
+	cssStr += "  color: purple;\n"
 	cssStr += "}\n"
 	headObj.bodyCss += cssStr
 
@@ -3194,8 +3213,8 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 	doc := dObj.doc
 
 	//html
-	htmlStr = fmt.Sprintf("<div class=\"%s_div top\">\n", dObj.docName, dObj.docName)
-	htmlStr += fmt.Sprintf("<p class=\"%s_title %s_toctitle\">Table of Contents</p>\n", dObj.docName, dObj.docName, dObj.docName)
+	htmlStr = fmt.Sprintf("<div class=\"%s_div top\">\n", dObj.docName)
+	htmlStr += fmt.Sprintf("<p class=\"%s_title %s_toctitle\">Table of Contents</p>\n", dObj.docName, dObj.docName)
 	tocDiv.bodyHtml = htmlStr
 
 	// div css moved to createHead()
@@ -3212,7 +3231,7 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 		text := dObj.headings[ihead].text
 		switch parNamedStyl {
 		case "TITLE":
-			prefix := fmt.Sprintf("<p class=\"%s_title %s_leftTitle_UL\">", dObj.docName, dObj.docName)
+			prefix := fmt.Sprintf("<p class=\"%s	parmap.hasBorders = true_title %s_leftTitle_UL\">", dObj.docName, dObj.docName)
 			middle := fmt.Sprintf("<a href=\"#%s\" class=\"%s_noUl\">%s</a>", hdId, dObj.docName, text)
 			suffix := "</p>\n"
 			htmlStr = prefix + middle + suffix
@@ -3231,7 +3250,7 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 			//css
 			if !dObj.h1.tocExist {
 				cssStr = fmt.Sprintf(".%s_h1.toc_h1 {\n",dObj.docName)
- 				cssStr += "  padding-left: 10px;\n  margin: 0px;"
+ 				cssStr += "  padding-left: 10px;\n  margin: 0px;\n"
 				cssStr += "}\n"
 				dObj.h1.tocExist = true
 			}
@@ -3242,7 +3261,7 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 			htmlStr = prefix + middle + suffix
 			if !dObj.h2.tocExist {
 				cssStr = fmt.Sprintf(".%s_h2.toc_h2 {\n",dObj.docName)
-				cssStr += " padding-left: 20px;\n  margin: 0px;"
+				cssStr += " padding-left: 20px;\n  margin: 0px;\n"
 				cssStr += "}\n"
 				dObj.h2.tocExist = true
 			}
@@ -3253,7 +3272,7 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 			htmlStr = prefix + middle + suffix
 			if !dObj.h3.tocExist {
 				cssStr = fmt.Sprintf(".%s_h3.toc_h3 {\n",dObj.docName)
-				cssStr += " padding-left: 40px;\n  margin: 0px;"
+				cssStr += " padding-left: 40px;\n  margin: 0px;\n"
 				cssStr += "}\n"
 				dObj.h3.tocExist = true
 			}
@@ -3264,7 +3283,7 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 			htmlStr = prefix + middle + suffix
 			if !dObj.h4.tocExist {
 				cssStr = fmt.Sprintf(".%s_h4.toc_h4 {\n",dObj.docName)
-				cssStr += " padding-left: 60px;\n  margin: 0px;"
+				cssStr += " padding-left: 60px;\n  margin: 0px;\n"
 				cssStr += "}\n"
 				dObj.h4.tocExist = true
 			}
@@ -3275,7 +3294,7 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 			htmlStr = prefix + middle + suffix
 			if !dObj.h5.tocExist {
 				cssStr = fmt.Sprintf(".%s_h5.toc_h5 {\n",dObj.docName)
-				cssStr += " padding-left: 80px;\n  margin: 0px;"
+				cssStr += " padding-left: 80px;\n  margin: 0px;\n"
 				cssStr += "}\n"
 				dObj.h5.tocExist = true
 			}
@@ -3286,7 +3305,7 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 			htmlStr = prefix + middle + suffix
 			if !dObj.h6.tocExist {
 				cssStr = fmt.Sprintf(".%s_h6.toc_h6 {\n",dObj.docName)
-				cssStr += " padding-left: 100px;\n  margin: 0px;"
+				cssStr += " padding-left: 100px;\n  margin: 0px;\n"
 				cssStr += "}\n"
 				dObj.h6.tocExist = true
 			}
