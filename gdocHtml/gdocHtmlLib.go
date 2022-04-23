@@ -67,13 +67,10 @@ type namStyl struct {
 	tocExist bool
 }
 
-
 type dispObj struct {
 	headCss string
 	bodyHtml string
 	bodyCss string
-//	tocHtml string
-//	tocCss string
 }
 
 type sect struct {
@@ -171,15 +168,6 @@ type parBorder struct {
 	color string
 	dash string
 }
-
-/*
-type parStylRetObj struct {
-	prefix string
-	suffix string
-	parId string
-	cssStr string
-}
-*/
 
 type tabStop struct {
 	tabAlign string
@@ -1454,7 +1442,7 @@ func (dObj *GdocHtmlObj) createOutFil(divNam string) (err error) {
     if !os.IsNotExist(err) {
 		err1:= os.Remove(filpath)
 		if err1 != nil {
-			return fmt.Errorf("os.Remove: cannot remove html file: %s! error: %v", filpath, err)
+			return fmt.Errorf("os.Remove: cannot remove html file: %s! error: %v", filpath, err1)
 		}
 	}
 
