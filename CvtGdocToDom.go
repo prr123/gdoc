@@ -4,6 +4,8 @@
 // author: prr
 // copyright 2022 prr azul software
 //
+//		gdocHtml "google/gdoc/gdocHtml"
+
 
 package main
 
@@ -110,7 +112,7 @@ func main() {
 		os.Exit(0)
 
 	case "all":
-		err = gdocDom.CreGdocAll(outfilPath, doc, nil)
+		err = gdocDom.CreGdocDomAll(outfilPath, doc, nil)
 		if err != nil {
 			fmt.Println("error CreGdocDomAll -- cannot convert gdoc file: ", err)
 			os.Exit(1)
