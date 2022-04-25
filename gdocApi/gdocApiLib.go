@@ -1,7 +1,13 @@
+// gdocApiLib
+// author: prr
+// date: v3 11/Jan 2022
+// copyright 2022 prr azul software
+//
 // v1 from rd_Gdocv3
 // v2 added ext parameter to CreTxtOutFile
 // v3
 // 11 Jan 2022 added more error routines to Init
+//
 
 package gdocApiLib
 
@@ -10,10 +16,8 @@ import (
         "encoding/json"
         "fmt"
         "io/ioutil"
-//        "log"
         "net/http"
         "os"
-
         "golang.org/x/oauth2"
         "golang.org/x/oauth2/google"
         "google.golang.org/api/docs/v1"
@@ -82,37 +86,73 @@ func saveToken(path string, token *oauth2.Token) {
 }
 
 // create text file to dump document file
-func (gdoc *GdocApiStruct) CreTxtOutFile(filnam string, ext string)(outfil *os.File, err error) {
+// no need for mthod 
+func (gdoc *GdocApiStruct) CreOutFile(filnam string, ext string)(outfil *os.File, err error) {
+	// function create a file with the filname "filnam.ext" 
+	// returns a file pointer
+	//
 
-	// convert white spaces in file name to underscore
+	if !(len(filnam)>0) {return nil, fmt.Errorf("error CreOutFile:: no filnam!")}
+	// check for dir
 	bfil := []byte(filnam)
-	for i:=0; i<len(filnam); i++ {
-		if bfil[i] == ' ' {
-			bfil[i] = '_'
+	fst := 0
+	for i:=len(filnam)-1; i>0; i-- {
+		if bfil[i] == '/' {
+			fst = i
+			break
+		}
+		if bfil[i] == '.' {
+			return nil, fmt.Errorf("error CreOutFile:: found period in filnam!")
 		}
 	}
 
-    filinfo, err := os.Stat("output")
+	if fst > (len(filnam)-1) {return nil, fmt.Errorf("error CreOutFile:: not a valid filenam end!")}
+
+
+	// convert white spaces in file name to underscore
+	outfilb := bfil[fst+1:]
+	for i:=0; i<len(outfilb); i++ {
+		if outfilb[i] == ' ' {
+			outfilb[i] = '_'
+		}
+	}
+	outfilnam := string(outfilb[:])
+	outfildir := string(bfil[:fst])
+	if !(len(outfildir)>0) {outfildir = "output"}
+//	fmt.Printf("dir: %s file: %s\n", outfildir, outfilnam)
+
+//    newDir := false
+    _, err = os.Stat(outfildir)
     if os.IsNotExist(err) {
-        return nil, fmt.Errorf("error CreTxtOutFile: sub-dir \"output\" does not exist!")
-    }
-    if err != nil {
-        return nil, fmt.Errorf("error CreTxtOutFile: %v \n", err)
-    }
-    if !filinfo.IsDir() {
-        return nil, fmt.Errorf("error CreTxtOutFile -- file \"output\" is not a directory!")
+        err1 := os.Mkdir(outfildir, os.ModePerm)
+        if err1 != nil {
+            return nil, fmt.Errorf("error CreOutFile:: could not create folder! %v", err1)
+        }
+//        newDir = true
+    } else {
+        if err != nil {
+            return nil, fmt.Errorf("error CreOutFile:: dir exists, but could not get info! %v", err)
+        }
     }
 
-	path:= "output/" + string(bfil[:]) + "." +ext
-	outfil, err = os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+	path:= fmt.Sprintf("%s/%s.%s", outfildir, outfilnam, ext)
+	fmt.Println("output file path: ", path)
+	_, err = os.Stat(path)
+	if !os.IsNotExist(err) {
+		err1 := os.Remove(path)
+		if err1 != nil {
+			return nil, fmt.Errorf("error CreOutFile: cannot remove old output file: %v!", err1)
+		}
+	}
+	outfil, err = os.Create(path)
 	if err != nil {
-		return nil, fmt.Errorf("cannot open output text file: %v!", err)
+		return nil, fmt.Errorf("error CreOutFile: cannot create output text file: %v!", err)
 	}
 	return outfil, nil
 }
 
 
-func (gdoc *GdocApiStruct) Init() (err error) {
+func (gdoc *GdocApiStruct) InitGdocApi() (err error) {
         ctx := context.Background()
         b, err := ioutil.ReadFile("credGdoc.json")
         if err != nil {
