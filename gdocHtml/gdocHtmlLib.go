@@ -207,7 +207,7 @@ type OptObj struct {
 	ElMargin [4]int
 }
 
-func getDefOption(opt *OptObj) {
+func GetDefOption(opt *OptObj) {
 
 	opt.BaseFontSize = 0
 	opt.DivBorders = false
@@ -225,7 +225,7 @@ func getDefOption(opt *OptObj) {
 	return
 }
 
-func printOptions (opt *OptObj) {
+func PrintOptions (opt *OptObj) {
 
 	fmt.Printf("\n************ Option Values ***********\n")
 	fmt.Printf("  Base Font Size:       %d\n", opt.BaseFontSize)
@@ -1633,8 +1633,8 @@ func (dObj *GdocHtmlObj) initGdocHtml(doc *docs.Document, options *OptObj) (err 
 
 	if options == nil {
 		defOpt := new(OptObj)
-		getDefOption(defOpt)
-		if defOpt.Verb {printOptions(defOpt)}
+		GetDefOption(defOpt)
+		if defOpt.Verb {PrintOptions(defOpt)}
 		dObj.Options = defOpt
 	} else {
 		dObj.Options = options
