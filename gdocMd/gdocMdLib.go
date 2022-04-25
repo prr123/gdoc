@@ -158,7 +158,7 @@ func (dObj *gdocMdObj) createImgFolder()(err error) {
 		imgFoldPath = string(foldNamb[:idx]) + "/" + imgFoldNam
 	}
 
-	fmt.Println("img folder path: ", imgFoldPath)
+//	fmt.Println("img folder path: ", imgFoldPath)
 
 	// check whether dir folder exists, if not create one
     newDir := false
