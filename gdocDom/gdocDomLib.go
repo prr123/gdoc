@@ -62,10 +62,11 @@ func (domObj *GdocDomObj) initGdocDom (doc *docs.Document, option *gd.OptObj) {
 }
 
 
+
 func CreGdocDomAll(folderPath string, doc *docs.Document, options *gd.OptObj)(err error) {
 
 // function that creates an html fil from the named section
-    var tocDiv *jsDomObj
+//    var tocDiv *jsDomObj
     var dObj gd.GdocHtmlObj
 	var domObj GdocDomObj
 
@@ -159,7 +160,7 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *gd.OptObj)(er
         return fmt.Errorf("outfil is nil!")
     }
 */
-    docHeadStr := creHtmlHead()
+    docHeadStr,_ := gd.CreHtmlHead()
     outfil.WriteString(docHeadStr)
 
     //css
