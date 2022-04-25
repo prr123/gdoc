@@ -13,15 +13,24 @@ package gdocDom
 import (
     "fmt"
     "os"
-    "net/http"
-    "io"
-    "unicode/utf8"
+//    "net/http"
+//    "io"
+//    "unicode/utf8"
     "google.golang.org/api/docs/v1"
-	gd "gdocHtml/gdocHtmlLib"
+	gd "google/gdoc/gdocHtml"
+	util "github.com/prr123/util"
 )
 
 type GdocDomObj struct {
-	doc *doc.Document
+	doc *docs.Document
+	docName string
+	folderPath string
+	outfil *os.File
+}
+
+type jsDomObj struct {
+	jsStr string
+	cssStr string
 }
 
 func creHtmlHead(docName string)(outstr string) {
@@ -36,28 +45,40 @@ func creHtmlHead(docName string)(outstr string) {
 }
 
 func (domObj *GdocDomObj) initGdocDom (doc *docs.Document, option *gd.OptObj) {
+
 	domObj.doc = doc
 
+   // need to transform file name
+    // replace spaces with underscore
+    dNam := doc.Title
+    x := []byte(dNam)
+    for i:=0; i<len(x); i++ {
+        if x[i] == ' ' {
+            x[i] = '_'
+        }
+    }
+    domObj.docName = string(x[:])
+	return
 }
 
 
 func CreGdocDomAll(folderPath string, doc *docs.Document, options *gd.OptObj)(err error) {
 
 // function that creates an html fil from the named section
-    var tocDiv *gd.dispObj
+    var tocDiv *jsDomObj
     var dObj gd.GdocHtmlObj
-	var dom GdocDomObj
+	var domObj GdocDomObj
 
-    err = dom.initGdocDom(doc, options)
+    domObj.initGdocDom(doc, options)
     if err != nil {
-        return fmt.Errorf("initGdocHtml %v", err)
+        return fmt.Errorf("initGdocDom %v", err)
     }
 
-    fPath, fexist, err := gd.CreateDocFolder(folderPath, dObj.docName)
+    fPath, fexist, err := util.CreateFileFolder(folderPath, domObj.docName)
     if err!= nil {
-        return fmt.Errorf("createHtmlFolder %v", err)
+        return fmt.Errorf("util.CreateFileFolder %v", err)
     }
-    dObj.folderPath = fPath
+    domObj.folderPath = fPath
 
     if dObj.Options.Verb {
         fmt.Println("******************* Output File ************")
@@ -67,18 +88,19 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *gd.OptObj)(er
         fmt.Printf("%s\n", fstr)
     }
 
-    err = dObj.createOutFil("")
+    outfil, err := util.CreateOutFil(fPath, domObj.docName,"html")
     if err!= nil {
-        return fmt.Errorf("createOutFil %v", err)
+        return fmt.Errorf("util.CreateOutFil %v", err)
     }
-
+	domObj.outfil = outfil
+/*
     if dObj.Options.ImgFold {
         err = dObj.dlImages()
         if err != nil {
             fmt.Errorf("dlImages: %v", err)
         }
     }
-/*
+
 // footnotes
     ftnoteDiv, err := dObj.createFootnoteDiv()
     if err != nil {
@@ -136,41 +158,45 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *gd.OptObj)(er
     if outfil == nil {
         return fmt.Errorf("outfil is nil!")
     }
-
-    docHeadStr,_ := creHtmlHead()
+*/
+    docHeadStr := creHtmlHead()
     outfil.WriteString(docHeadStr)
 
     //css
-    outfil.WriteString(headObj.bodyCss)
+//    outfil.WriteString(headObj.bodyCss)
 
     //css of named styles
-    outfil.WriteString(mainDiv.headCss)
-    outfil.WriteString(mainDiv.bodyCss)
+//    outfil.WriteString(mainDiv.headCss)
+//    outfil.WriteString(mainDiv.bodyCss)
 
     //css footnotes
-    if ftnoteDiv != nil {outfil.WriteString(ftnoteDiv.bodyCss)}
+//    if ftnoteDiv != nil {outfil.WriteString(ftnoteDiv.bodyCss)}
 
     //css toc
-    if toc {
-        outfil.WriteString(tocDiv.bodyCss)
-    }
-*/
-    outfil.WriteString("</style>\n</head>\n<body>\n")
+//    if toc {
+//        outfil.WriteString(tocDiv.bodyCss)
+//    }
+
+    outfil.WriteString("</style>\n<script>\n")
+
+    outfil.WriteString("/// begin of script\n")
+
+    outfil.WriteString("</script>\n</head>\n<body>\n")
 
     // html
-    outfil.WriteString(headObj.bodyHtml)
+//    outfil.WriteString(headObj.bodyHtml)
     // html toc
-    if toc {outfil.WriteString(tocDiv.bodyHtml)}
+//    if toc {outfil.WriteString(tocDiv.bodyHtml)}
 
-    if dObj.Options.Sections {outfil.WriteString(secDiv.bodyHtml)}
+//    if dObj.Options.Sections {outfil.WriteString(secDiv.bodyHtml)}
 
     // html main document
-    outfil.WriteString(mainDiv.bodyHtml)
+//    outfil.WriteString(mainDiv.bodyHtml)
 
     // html footnotes
-    if ftnoteDiv != nil {outfil.WriteString(ftnoteDiv.bodyHtml)}
- 
-   outfil.WriteString("</body>\n</html>\n")
+//    if ftnoteDiv != nil {outfil.WriteString(ftnoteDiv.bodyHtml)}
+
+	outfil.WriteString("</body>\n</html>\n")
     outfil.Close()
     return nil
 }
