@@ -12,8 +12,8 @@ import (
         "os"
 		"strings"
 		gdocApi "google/gdoc/gdocApi"
-		gdocHtml "google/gdoc/gdocHtml"
 		gdocDom "google/gdoc/gdocDom"
+//		gdocHtml "google/gdoc/gdocHtml"
 )
 
 
@@ -64,7 +64,7 @@ func main() {
 			os.Exit(1)
 	}
 
-	fmt.Printf("*************** CctGdocToHtml ************\n")
+	fmt.Printf("*************** CctGdocToDom ************\n")
 	fmt.Printf("output folder: %s option: %s\n", outfilPath, opt)
 
 	doc, err := srv.Documents.Get(docId).Do()
@@ -76,7 +76,9 @@ func main() {
 
 	switch opt {
 	case "heading":
-		err = gdocHtml.CreGdocHtmlSection("", outfilPath, doc, nil)
+		fmt.Printf("*** not implemented yet ***\n")
+		os.Exit(1)
+//		err = gdocHtml.CreGdocHtmlSection("", outfilPath, doc, nil)
 		if err != nil {
 			fmt.Println("error main: CreGdocHtmlSummary -- cannot convert gdoc doc: ", err)
 			os.Exit(1)
@@ -85,7 +87,9 @@ func main() {
 		os.Exit(0)
 
 	case "main":
-		err = gdocHtml.CreGdocHtmlMain(outfilPath, doc, nil)
+		fmt.Printf("*** not implemented yet ***\n")
+		os.Exit(1)
+//		err = gdocHtml.CreGdocHtmlMain(outfilPath, doc, nil)
 		if err != nil {
 			fmt.Println("error main CreGdocHtmlMain -- cannot convert gdoc file: ", err)
 			os.Exit(1)
@@ -94,7 +98,9 @@ func main() {
 		os.Exit(0)
 
 	case "doc":
-		err = gdocHtml.CreGdocHtmlDoc(outfilPath, doc, nil)
+		fmt.Printf("*** not implemented yet ***\n")
+		os.Exit(1)
+//		err = gdocHtml.CreGdocHtmlDoc(outfilPath, doc, nil)
 		if err != nil {
 			fmt.Println("error CreGdocHtmlDoc -- cannot convert gdoc file: ", err)
 			os.Exit(1)
@@ -104,9 +110,9 @@ func main() {
 		os.Exit(0)
 
 	case "all":
-		err = gdocHtml.CreGdocHtmlAll(outfilPath, doc, nil)
+		err = gdocDom.CreGdocAll(outfilPath, doc, nil)
 		if err != nil {
-			fmt.Println("error CreGdocHtmlAll -- cannot convert gdoc file: ", err)
+			fmt.Println("error CreGdocDomAll -- cannot convert gdoc file: ", err)
 			os.Exit(1)
 		}
 
@@ -114,9 +120,8 @@ func main() {
 		os.Exit(0)
 
 	default:
-		fmt.Printf("did not provide a valid opt: %s\n", opt)
-		fmt.Println("failure!")
+		fmt.Printf("%s is not a valid comand line opt!\n", opt)
+		fmt.Println("exiting!")
 		os.Exit(1)
 	}
-	
 }
