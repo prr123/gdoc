@@ -26,6 +26,7 @@ type GdocDomObj struct {
 	docName string
 	folderPath string
 	outfil *os.File
+	Options *gd.OptObj
 }
 
 type jsDomObj struct {
@@ -44,7 +45,7 @@ func creHtmlHead(docName string)(outstr string) {
     return outstr
 }
 
-func (domObj *GdocDomObj) initGdocDom (doc *docs.Document, option *gd.OptObj) {
+func (domObj *GdocDomObj) initGdocDom (doc *docs.Document, options *gd.OptObj) {
 
 	domObj.doc = doc
 
@@ -58,16 +59,66 @@ func (domObj *GdocDomObj) initGdocDom (doc *docs.Document, option *gd.OptObj) {
         }
     }
     domObj.docName = string(x[:])
+
+    if options == nil {
+        defOpt := new(gd.OptObj)
+        gd.GetDefOption(defOpt)
+        if defOpt.Verb {gd.PrintOptions(defOpt)}
+        domObj.Options = defOpt
+    } else {
+        domObj.Options = options
+    }
+
 	return
 }
 
+func creHtmlHead() (htmlStr string) {
+	htmlStr = "<!DOCTYPE html>\n<head>\n<style>\n"
+	return htmlStr
+}
 
+func creHtmlScript () (htmlStr string) {
+	htmlStr = "</style><script>\n"
+	return htmlStr
+}
+
+func creHtmlBody () (htmlStr string) {
+	htmlStr = "</script>/n<body>\n</body>\n</html>\n"
+	return htmlStr
+}
+
+func (domObj *GdocDomObj) creCssDocDiv ()(cssStr string) {
+
+	cssStr = fmt.Sprintf(".%s_doc {/n", domObj.docName)
+	cssStr += fmt.Sprintf("min-height: 95vh;\n")
+//	cssStr += fmt.Sprintf("width: %.1fpt;\n", )
+	cssStr += fmt.Sprintf("width: 95vw;\n")
+
+	cssStr += fmt.Sprintf("margin: 10px 30px 10px 30px;\n")
+//	cssStr += fmt.Sprintf()
+//	if domObj.Options.DivBorders {
+	cssStr += fmt.Sprintf("border: purple solid 1px;\n")
+
+	cssStr +="}\n"
+	return cssStr
+}
+
+func (domObj *GdocDomObj) creJsDocDiv ()(jStr string) {
+
+	jStr = "function dispDoc() {/n"
+	jStr += "let div = document.createElement('div');\n"
+	jStr += fmt.Sprintf("div.classList.add('%s_doc');\n", domObj.docName)
+	jStr += "document.body.appendChild(div);\n"
+	jStr += "}\n"
+	jStr += "document.addEventListener(\"DOMContentLoaded\", dispDoc);\n"
+	return jsStr
+}
 
 func CreGdocDomAll(folderPath string, doc *docs.Document, options *gd.OptObj)(err error) {
 
 // function that creates an html fil from the named section
 //    var tocDiv *jsDomObj
-    var dObj gd.GdocHtmlObj
+//    var dObj gd.GdocHtmlObj
 	var domObj GdocDomObj
 
     domObj.initGdocDom(doc, options)
@@ -81,19 +132,40 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *gd.OptObj)(er
     }
     domObj.folderPath = fPath
 
-    if dObj.Options.Verb {
+
+	// change output file name to distinguish from pure html file
+	outfilNam := domObj.docName + "_js"
+    outfil, err := util.CreateOutFil(fPath, outfilNam,"html")
+    if err!= nil {
+        return fmt.Errorf("util.CreateOutFil %v", err)
+    }
+	domObj.outfil = outfil
+
+    if domObj.Options.Verb {
         fmt.Println("******************* Output File ************")
         fmt.Printf("folder path: %s ", fPath)
         fstr := "is new!"
         if fexist { fstr = "exists!" }
         fmt.Printf("%s\n", fstr)
+		fmt.Printf("file name:  %s\n", outfilNam)
+        fmt.Println("********************************************")
     }
 
-    outfil, err := util.CreateOutFil(fPath, domObj.docName,"html")
-    if err!= nil {
-        return fmt.Errorf("util.CreateOutFil %v", err)
-    }
-	domObj.outfil = outfil
+	htmlStr := creHtmlHead()
+    outfil.WriteString(htmlStr)
+// div css
+	cssStr := domObj.creCssDocDiv()
+    outfil.WriteString(cssStr)
+
+	htmlStr = creHtmlScript()
+    outfil.WriteString(htmlStr)
+
+	jStr := domObj.creJsDocDiv()
+    outfil.WriteString(jStr)
+
+	htmlStr = creHtmlBody()
+    outfil.WriteString(htmlStr)
+
 /*
     if dObj.Options.ImgFold {
         err = dObj.dlImages()
@@ -160,8 +232,8 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *gd.OptObj)(er
         return fmt.Errorf("outfil is nil!")
     }
 */
-    docHeadStr,_ := gd.CreHtmlHead()
-    outfil.WriteString(docHeadStr)
+//    docHeadStr,_ := gd.CreHtmlHead()
+//    outfil.WriteString(docHeadStr)
 
     //css
 //    outfil.WriteString(headObj.bodyCss)
@@ -178,11 +250,11 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *gd.OptObj)(er
 //        outfil.WriteString(tocDiv.bodyCss)
 //    }
 
-    outfil.WriteString("</style>\n<script>\n")
+//    outfil.WriteString("</style>\n<script>\n")
 
-    outfil.WriteString("/// begin of script\n")
+//    outfil.WriteString("/// begin of script\n")
 
-    outfil.WriteString("</script>\n</head>\n<body>\n")
+//    outfil.WriteString("</script>\n</head>\n<body>\n")
 
     // html
 //    outfil.WriteString(headObj.bodyHtml)
@@ -197,7 +269,7 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *gd.OptObj)(er
     // html footnotes
 //    if ftnoteDiv != nil {outfil.WriteString(ftnoteDiv.bodyHtml)}
 
-	outfil.WriteString("</body>\n</html>\n")
+//	outfil.WriteString("</body>\n</html>\n")
     outfil.Close()
     return nil
 }
