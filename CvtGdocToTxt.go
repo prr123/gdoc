@@ -29,27 +29,24 @@ func main() {
     numArgs := len(os.Args)
 
 	cmd := os.Args[0]
-    if numArgs < 2 {
-        fmt.Printf("*** error %s:: -- no gdoc id!\n", string(cmd[2:]))
-  		  fmt.Printf(" usage is: \"%s docId\"\n", cmd)
-        os.Exit(2)
-    }
 
  	switch numArgs {
         case 1:
             fmt.Println("error - no comand line arguments!")
-            fmt.Printf("%s usage is:\n  %s docId\n", cmd[2:], cmd)
+            fmt.Printf("%s usage is:\n  %s docId folder\n", cmd[2:], cmd)
             os.Exit(1)
         case 2:
-
+		// doc id
+		case 3:
+		// output folder
 		default:
             fmt.Println("error - too many arguments!")
-            fmt.Printf("%s usage is:\n  %s docId\n", cmd[2:], cmd)
+            fmt.Printf("%s usage is:\n  %s folder docId\n", cmd[2:], cmd)
             os.Exit(1)
 	}
 
     docId := os.Args[1]
-	
+
 	err := gd.InitGdocApi()
 	srv := gd.Svc
 
