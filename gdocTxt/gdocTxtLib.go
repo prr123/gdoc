@@ -15,6 +15,7 @@ import (
 	"os"
 	"unicode/utf8"
 	"google.golang.org/api/docs/v1"
+    util "github.com/prr123/util"
 )
 
 const (
@@ -33,6 +34,9 @@ type gdocTxtObj struct {
 	DocName string
 	headingId []string
 	docLists []docList
+	folderPath string
+	outfil *os.File
+	DocOpt	bool
 }
 
 type docList struct {
@@ -41,10 +45,13 @@ type docList struct {
     ord bool
 }
 
-func createImgFolder(filnam string)(err error) {
+func createImgFolder(filPath, filnam string)(err error) {
 
-	if len(filnam) < 2 {
-		return fmt.Errorf("error createIMgFolder:: filename %s too short!", filnam)
+	if !(len(filnam) >0) {
+		return fmt.Errorf("error - filename %s too short!", filnam)
+	}
+	if !(len(filPath) >0) {
+		return fmt.Errorf("error - filePath %s too short!", filPath)
 	}
 
 	bf := []byte(filnam)
@@ -52,16 +59,16 @@ func createImgFolder(filnam string)(err error) {
 	for i:= 0; i< len(filnam); i++ {
 		if bf[i] == ' ' {bf[i]='_'}
 		if bf[i] == '.' {
-			return fmt.Errorf("error createImgFolder:: filnam has period!")
+			return fmt.Errorf("error - filnam has period!")
 		}
 	}
 
-	imgFoldNam := "output/img_" + string(bf)
+	imgFoldNam := filPath + "/img_" + string(bf)
 
 	if _, err := os.Stat(imgFoldNam); os.IsNotExist(err) {
 		err1:= os.Mkdir(imgFoldNam, os.ModePerm)
 		if err1 != nil {
-			return fmt.Errorf("error createImgFolder:: could not create folder! %v", err1)
+			return fmt.Errorf("error os.Mkdir: could not create folder! %v", err1)
 		}
 	}
 	return nil
@@ -854,46 +861,65 @@ func (dObj *gdocTxtObj) dispContentElShort(elStr *docs.StructuralElement)(outstr
 	return outstr, nil
 }
 
-func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
+func CvtGdocToTxt(folderPath string, doc *docs.Document)(err error) {
 	var outstr string
 
     docObj := new(gdocTxtObj)
     docObj.doc = doc
+	docObj.DocOpt = true
     err = docObj.InitGdocTxt()
     if err != nil {
         return fmt.Errorf("error Cvt Txt Init %v", err)
     }
+
 	if !(len(doc.Title) >0) {
 		return fmt.Errorf("error CvtGdocToTxt:: the string doc.Title %s is too short!", doc.Title)
 	}
-	_, err = outfil.WriteString("*** Document Title: " + doc.Title + " ***\n")
-	if err != nil {
-		return fmt.Errorf("error CvtGdocToTxt -- cannot write to file: %v", err)
-	}
+	outstr = fmt.Sprintf("*** Document Title: %s ***\n", doc.Title)
+
+    fPath, fexist, err := util.CreateFileFolder(folderPath, docObj.DocName)
+    if err!= nil {
+        return fmt.Errorf("util.CreateFileFolder %v", err)
+    }
+    docObj.folderPath = fPath
+
+	// create output file path/outfilNam.txt
+    outfilNam := docObj.DocName
+    outfil, err := util.CreateOutFil(fPath, outfilNam,"txt")
+    if err!= nil {
+        return fmt.Errorf("util.CreateOutFil %v", err)
+    }
+    docObj.outfil = outfil
+
+    if docObj.DocOpt {
+        fmt.Println("******************* Output File ************")
+        fmt.Printf("folder path: %s ", fPath)
+        fstr := "is new!"
+        if fexist { fstr = "exists!" }
+        fmt.Printf("%s\n", fstr)
+        fmt.Printf("file name:  %s\n", outfilNam)
+        fmt.Println("********************************************")
+    }
 
 	outstr = fmt.Sprintf("Document Id: %s \n", doc.DocumentId)
 	outstr += fmt.Sprintf("Revision Id: %s \n", doc.RevisionId)
+	outfil.WriteString(outstr)
 
-// Inline Objects
-
+	// external objects
 	inObjLen := len(doc.InlineObjects)
 	posObjLen := len(doc.PositionedObjects)
-/*
-	if (inObjLen + posObjLen) > 0 {
-		err = createImgFolder(doc.Title)
-		if err != nil {
-			return fmt.Errorf("error CvtGdocToTxt:: cannot create image folder: %v",err)
-		}
-	}
-*/
-	outstr += fmt.Sprintf("\n*** Inline Objects: %d ***\n", inObjLen)
+
+	// Inline Objects
+	outstr = fmt.Sprintf("\n*** Inline Objects: %d ***\n", inObjLen)
 	for key,inlObj :=  range doc.InlineObjects {
 		emObj := inlObj.InlineObjectProperties.EmbeddedObject
 		outstr+= fmt.Sprintf("key: %s Title: %s H: %.2f W:%.2f\n", key, emObj.Title, emObj.Size.Height.Magnitude,emObj.Size.Width.Magnitude)
 		outstr+= fmt.Sprintf("  Content Uri: %s Source Uri: %s\n", emObj.ImageProperties.ContentUri, emObj.ImageProperties.SourceUri )
 	}
+	outfil.WriteString(outstr)
 
-	outstr += fmt.Sprintf("\n*** Positioned Objects: %d ***\n",posObjLen)
+	// positioned objects
+	outstr = fmt.Sprintf("\n*** Positioned Objects: %d ***\n",posObjLen)
 	for key, posObj :=  range doc.PositionedObjects {
 		emObj := posObj.PositionedObjectProperties.EmbeddedObject
 		objPos := posObj.PositionedObjectProperties.Positioning
@@ -903,9 +929,11 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 			emObj.MarginLeft.Magnitude)
 		outstr += fmt.Sprintf("    Layout: %s Pos Top: %.2f Left: %.2f\n", objPos.Layout, objPos.TopOffset.Magnitude, objPos.LeftOffset.Magnitude)
 	}
+	outfil.WriteString(outstr)
 
+	// headers
 	headLen := len(doc.Headers)
-	outstr += fmt.Sprintf("\n*** Headers: %d ****\n",headLen)
+	outstr = fmt.Sprintf("\n*** Headers: %d ****\n",headLen)
 	knum := 0
 	for key, header := range doc.Headers {
 		knum++
@@ -916,9 +944,11 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 			if err == nil {outstr += tstr} else {outstr += fmt.Sprintf("error %v", err)}
 		}
 	}
+	outfil.WriteString(outstr)
 
+	// footers
 	footLen := len(doc.Footers)
-	outstr += fmt.Sprintf("\n*** Footers: %d ***\n",footLen)
+	outstr = fmt.Sprintf("\n*** Footers: %d ***\n",footLen)
 	knum = 0
 	for key, footer := range doc.Footers {
 		knum++
@@ -929,9 +959,11 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 			if err == nil {outstr += tstr} else {outstr += fmt.Sprintf("error %v", err)}
 		}
 	}
+	outfil.WriteString(outstr)
 
+	// footnotes
 	ftnoteLen := len(doc.Footnotes)
-	outstr += fmt.Sprintf("\n*** Footnotes: %d ***\n",ftnoteLen)
+	outstr = fmt.Sprintf("\n*** Footnotes: %d ***\n",ftnoteLen)
 	knum = 0
 	for key, ftnote := range doc.Footnotes {
 		knum++
@@ -983,6 +1015,7 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 	}
 	outfil.WriteString(outstr)
 
+	// named ranges
 	nrLen := len(doc.NamedRanges)
 	outstr = fmt.Sprintf("\n*** NamedRanges: %d ***\n",nrLen)
 	knum = 0
@@ -993,26 +1026,13 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 
 	outfil.WriteString(outstr)
 
+	// named styles
 	hdstyles := doc.NamedStyles
 	hdstyLen := len(hdstyles.Styles)
 	outstr = fmt.Sprintf("\n*** Named Styles: %d ***\n", hdstyLen)
 	for i:=0; i<hdstyLen; i++ {
 		stylel := hdstyles.Styles[i]
 		outstr += fmt.Sprintf("    Style[%1d]: %s \n", i,  stylel.NamedStyleType)
-/*
-		parStyl := stylel.ParagraphStyle
-		parstr, err := docObj.dispParStyl(parStyl, 4)
-		if err != nil {
-			return fmt.Errorf("error dispParStyl %d: %v", i, err)
-		}
-		outstr += parstr
-		txtStyl:= stylel.TextStyle
-		txtstr,err := docObj.dispTxtStyl(txtStyl, 4)
-		if err != nil {
-			return fmt.Errorf("error dispTxtStyl %d: %v", i, err)
-		}
-		outstr += txtstr
-*/
 	}
 
 	body := doc.Body
