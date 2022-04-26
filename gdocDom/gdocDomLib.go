@@ -1,11 +1,10 @@
-// golang library that creates a html file from a gdoc file
+// golang library that creates a html file from a gdoc file.
+// uses js to build the dom
 // author: prr
 // created: 22/04/2021
 // copyright 2022 prr, Peter Riemenschneider
 //
 // for changes see github
-//
-// start: CreGdocHtmlTil
 //
 
 package gdocDom
@@ -34,14 +33,14 @@ type jsDomObj struct {
 	cssStr string
 }
 
-func creHtmlHead(docName string)(outstr string) {
+func creHtmlTest(docName string)(outstr string) {
     outstr = "<!DOCTYPE html>\n"
   	outstr += fmt.Sprintf("<!-- file: %s -->\n", docName)
     outstr += "<head>\n<script>\n"
 	outstr += "windows.onload"
     outstr += "</script>\n</head>\n<body>\n"
 	outstr += fmt.Sprintf("<div class=\"%s_doc\">\n",docName)
-	outstr += "</div>/n</body></html>/n"
+	outstr += "</div>\n</body></html>\n"
     return outstr
 }
 
@@ -83,21 +82,21 @@ func creHtmlScript () (htmlStr string) {
 }
 
 func creHtmlBody () (htmlStr string) {
-	htmlStr = "</script>/n<body>\n</body>\n</html>\n"
+	htmlStr = "</script>\n<body>\n</body>\n</html>\n"
 	return htmlStr
 }
 
 func (domObj *GdocDomObj) creCssDocDiv ()(cssStr string) {
 
-	cssStr = fmt.Sprintf(".%s_doc {/n", domObj.docName)
-	cssStr += fmt.Sprintf("min-height: 95vh;\n")
+	cssStr = fmt.Sprintf(".%s_doc {\n", domObj.docName)
+	cssStr += fmt.Sprintf("  min-height: 95vh;\n")
 //	cssStr += fmt.Sprintf("width: %.1fpt;\n", )
-	cssStr += fmt.Sprintf("width: 95vw;\n")
+	cssStr += fmt.Sprintf("  width: 95vw;\n")
 
-	cssStr += fmt.Sprintf("margin: 10px 30px 10px 30px;\n")
+	cssStr += fmt.Sprintf("  margin: 10px 30px 10px 30px;\n")
 //	cssStr += fmt.Sprintf()
 //	if domObj.Options.DivBorders {
-	cssStr += fmt.Sprintf("border: purple solid 1px;\n")
+	cssStr += fmt.Sprintf("  border: purple solid 1px;\n")
 
 	cssStr +="}\n"
 	return cssStr
@@ -105,13 +104,13 @@ func (domObj *GdocDomObj) creCssDocDiv ()(cssStr string) {
 
 func (domObj *GdocDomObj) creJsDocDiv ()(jStr string) {
 
-	jStr = "function dispDoc() {/n"
-	jStr += "let div = document.createElement('div');\n"
-	jStr += fmt.Sprintf("div.classList.add('%s_doc');\n", domObj.docName)
-	jStr += "document.body.appendChild(div);\n"
+	jStr = "function dispDoc() {\n"
+	jStr += "  let div = document.createElement('div');\n"
+	jStr += fmt.Sprintf("  div.classList.add('%s_doc');\n", domObj.docName)
+	jStr += "  document.body.appendChild(div);\n"
 	jStr += "}\n"
 	jStr += "document.addEventListener(\"DOMContentLoaded\", dispDoc);\n"
-	return jsStr
+	return jStr
 }
 
 func CreGdocDomAll(folderPath string, doc *docs.Document, options *gd.OptObj)(err error) {
@@ -162,6 +161,7 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *gd.OptObj)(er
 
 	jStr := domObj.creJsDocDiv()
     outfil.WriteString(jStr)
+	fmt.Println("js: ", jStr)
 
 	htmlStr = creHtmlBody()
     outfil.WriteString(htmlStr)
