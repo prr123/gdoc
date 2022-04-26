@@ -54,6 +54,11 @@ func main() {
     docId := os.Args[1]
 
 	err := gd.InitGdocApi()
+	if err != nil {
+		fmt.Printf("error - InitGdocApi: %v!", err)
+		os.Exit(1)
+	}
+
 	srv := gd.Svc
 
 	outfilPath:= ""
@@ -89,7 +94,7 @@ func main() {
 		os.Exit(1)
 //		err = gdocHtml.CreGdocHtmlSection("", outfilPath, doc, nil)
 		if err != nil {
-			fmt.Println("error main: CreGdocHtmlSummary -- cannot convert gdoc doc: ", err)
+			fmt.Println("error main: CreGdocDomSummary -- cannot convert gdoc doc: ", err)
 			os.Exit(1)
 		}
 		fmt.Println("*** success summary ***!")
@@ -100,7 +105,7 @@ func main() {
 		os.Exit(1)
 //		err = gdocHtml.CreGdocHtmlMain(outfilPath, doc, nil)
 		if err != nil {
-			fmt.Println("error main CreGdocHtmlMain -- cannot convert gdoc file: ", err)
+			fmt.Println("error main CreGdocDomMain -- cannot convert gdoc file: ", err)
 			os.Exit(1)
 		}
 		fmt.Println("*** success main ***!")
@@ -111,7 +116,7 @@ func main() {
 		os.Exit(1)
 //		err = gdocHtml.CreGdocHtmlDoc(outfilPath, doc, nil)
 		if err != nil {
-			fmt.Println("error CreGdocHtmlDoc -- cannot convert gdoc file: ", err)
+			fmt.Println("error CreGdocDomDoc -- cannot convert gdoc file: ", err)
 			os.Exit(1)
 		}
 
@@ -133,4 +138,5 @@ func main() {
 		fmt.Println("exiting!")
 		os.Exit(1)
 	}
+	fmt.Println("Success!")
 }
