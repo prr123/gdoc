@@ -21,11 +21,16 @@ import (
 
 func main() {
 	var gd gdocApi.GdocApiStruct
+	// initialise default values
+	baseFolder := "output"
+	baseFolderSlash := baseFolder + "/"
+	opt:=""
 
     numArgs := len(os.Args)
 //	fmt.Printf("args: %d\n", numArgs)
 	cmd := os.Args[0]
-	opt:=""
+
+
 	switch numArgs {
 		case 1:
        		fmt.Println("error - no comand line arguments!")
@@ -53,20 +58,22 @@ func main() {
 
 	outfilPath:= ""
 	switch {
-		case os.Args[2] == "output":
+		case numArgs == 2:
+			outfilPath = baseFolder
+		case os.Args[2] == baseFolder:
 			outfilPath = os.Args[2]
-		case strings.Index(os.Args[2], "output/")< 0:
- 			outfilPath = "output/" + os.Args[2]
-		case strings.Index(os.Args[2], "output/") == 0:
+		case strings.Index(os.Args[2], baseFolderSlash)< 0:
+ 			outfilPath = baseFolderSlash + os.Args[2]
+		case strings.Index(os.Args[2], baseFolderSlash) == 0:
 			outfilPath = os.Args[2]
 		case os.Args[2] == "":
-			outfilPath = "output"
+			outfilPath = baseFolder
 		default:
 			fmt.Printf("no valid input folder: %s", os.Args[2])
 			os.Exit(1)
 	}
 
-	fmt.Printf("*************** CctGdocToDom ************\n")
+	fmt.Printf("*************** CvtGdocToDom ************\n")
 	fmt.Printf("output folder: %s option: %s\n", outfilPath, opt)
 
 	doc, err := srv.Documents.Get(docId).Do()
@@ -108,7 +115,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		fmt.Println("*** success all ***!")
+		fmt.Println("*** success doc ***!")
 		os.Exit(0)
 
 	case "all":
