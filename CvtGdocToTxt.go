@@ -48,6 +48,10 @@ func main() {
     docId := os.Args[1]
 
 	err := gd.InitGdocApi()
+    if err != nil {
+        fmt.Printf("error - InitGdocApi: %v!", err)
+        os.Exit(1)
+    }
 	srv := gd.Svc
 
     outfilPath:= ""
