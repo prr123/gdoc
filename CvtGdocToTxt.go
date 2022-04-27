@@ -83,6 +83,7 @@ func main() {
 
     fmt.Printf("*************** CvtGdocToTxt ************\n")
 	fmt.Printf("The title of the doc is: %s\n", doc.Title)
+	fmt.Printf("Destination folder: %s\n", outfilPath)
 
 	err = gdocTxt.CvtGdocToTxt(outfilPath, doc)
 	if err != nil {
@@ -91,5 +92,4 @@ func main() {
 	}
 
 	fmt.Println("Success!")
-	os.Exit(0)
 }
