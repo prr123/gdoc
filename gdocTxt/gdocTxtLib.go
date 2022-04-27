@@ -15,7 +15,7 @@ import (
 	"os"
 	"unicode/utf8"
 	"google.golang.org/api/docs/v1"
-    util "github.com/prr123/util"
+    util "google/gdoc/gdocUtil"
 )
 
 const (
@@ -36,6 +36,8 @@ type gdocTxtObj struct {
 	docLists []docList
 	folderPath string
 	outfil *os.File
+    imgFoldNam string
+    imgFoldPath string
 	DocOpt	bool
 }
 
@@ -111,12 +113,12 @@ func findDocList(list []docList, listid string) (res int) {
 func (dObj *gdocTxtObj) InitGdocTxt() (err error) {
 	var listItem docList
 
-	doc := dObj.doc
-	body := dObj.doc.Body
-
 	if dObj == nil {
 		return fmt.Errorf("error Init: dObj is nil!")
 	}
+
+	doc := dObj.doc
+	body := dObj.doc.Body
 
     dNam := doc.Title
     x := []byte(dNam)
@@ -877,15 +879,18 @@ func CvtGdocToTxt(folderPath string, doc *docs.Document)(err error) {
     docObj := new(gdocTxtObj)
     docObj.doc = doc
 	docObj.DocOpt = true
-    err = docObj.InitGdocTxt()
-
-    if err != nil {
-        return fmt.Errorf("error Cvt Txt Init %v", err)
-    }
 
 	if !(len(doc.Title) >0) {
 		return fmt.Errorf("error CvtGdocToTxt:: the string doc.Title %s is too short!", doc.Title)
 	}
+
+
+	// initialise docObj
+    err = docObj.InitGdocTxt()
+    if err != nil {
+        return fmt.Errorf("error Cvt Txt Init %v", err)
+    }
+
 	outstr = fmt.Sprintf("*** Document Title: %s ***\n", doc.Title)
 
     fPath, fexist, err := util.CreateFileFolder(folderPath, docObj.DocName)
