@@ -117,6 +117,16 @@ func (dObj *gdocTxtObj) InitGdocTxt() (err error) {
 	if dObj == nil {
 		return fmt.Errorf("error Init: dObj is nil!")
 	}
+
+    dNam := doc.Title
+    x := []byte(dNam)
+    for i:=0; i<len(x); i++ {
+        if x[i] == ' ' {
+            x[i] = '_'
+        }
+    }
+    dObj.DocName = string(x[:])
+
 	dObj.parCount = 0
 	dObj.posImgCount = 0
 	dObj.inImgCount = 0
@@ -868,6 +878,7 @@ func CvtGdocToTxt(folderPath string, doc *docs.Document)(err error) {
     docObj.doc = doc
 	docObj.DocOpt = true
     err = docObj.InitGdocTxt()
+
     if err != nil {
         return fmt.Errorf("error Cvt Txt Init %v", err)
     }
@@ -885,6 +896,7 @@ func CvtGdocToTxt(folderPath string, doc *docs.Document)(err error) {
 
 	// create output file path/outfilNam.txt
     outfilNam := docObj.DocName
+
     outfil, err := util.CreateOutFil(fPath, outfilNam,"txt")
     if err!= nil {
         return fmt.Errorf("util.CreateOutFil %v", err)
