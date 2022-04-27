@@ -737,7 +737,7 @@ func CvtGdocToMd(folderPath string, doc *docs.Document, options *util.OptObj)(er
     // create output file path/outfilNam.txt
     outfilNam := docObj.DocName
 
-    outfil, err := util.CreateOutFil(fPath, outfilNam,"txt")
+    outfil, err := util.CreateOutFil(fPath, outfilNam,"md")
     if err!= nil {
         return fmt.Errorf("util.CreateOutFil %v", err)
     }
