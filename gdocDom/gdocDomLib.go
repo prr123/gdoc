@@ -17,7 +17,7 @@ import (
 //    "unicode/utf8"
     "google.golang.org/api/docs/v1"
 	gd "google/gdoc/gdocHtml"
-	util "github.com/prr123/util"
+	util "google/gdoc/gdocUtil"
 )
 
 type GdocDomObj struct {
