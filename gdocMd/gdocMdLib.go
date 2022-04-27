@@ -1,7 +1,9 @@
 // gdocMdLib.go
+// library to convert gdoc document to markdown document
+//
 // author: prr
-// created 10/2021
-// copyright 2022 prr
+// created 1/10/2021
+// copyright 2022 prr, azul software
 //
 //
 
@@ -14,6 +16,7 @@ import (
 	"net/http"
 	"io"
 	"google.golang.org/api/docs/v1"
+    util "google/gdoc/gdocUtil"
 )
 
 const (
@@ -32,10 +35,12 @@ type gdocMdObj struct {
 	listmap  map[string][]int
 	listid	string
 	nestlev int
-	folder *os.File
+	folderPath string
+	outfil *os.File
 	imgFoldNam string
 	imgFoldPath string
 	verb bool
+    Options *util.OptObj
 }
 
 func (dObj *gdocMdObj) downloadImg()(err error) {
@@ -50,7 +55,7 @@ func (dObj *gdocMdObj) downloadImg()(err error) {
 	fmt.Printf("*** Inline Imgs: %d ***\n", len(doc.InlineObjects))
 	for k, inlObj := range doc.InlineObjects {
 		imgProp := inlObj.InlineObjectProperties.EmbeddedObject.ImageProperties
-		if verb {
+		if dObj.Options.Verb {
 			fmt.Printf("Source: %s Obj %s\n", k, imgProp.SourceUri)
 			fmt.Printf("Content: %s Obj %s\n", k, imgProp.ContentUri)
 		}
@@ -58,7 +63,7 @@ func (dObj *gdocMdObj) downloadImg()(err error) {
 			return fmt.Errorf("error downloadImg:: image %s has no URI\n", k)
 		}
 		imgNam := imgFoldPath + k[4:] + ".jpeg"
-		if verb	{fmt.Printf("image path: %s\n", imgNam)}
+		if dObj.Options.Verb {fmt.Printf("image path: %s\n", imgNam)}
 		URL := imgProp.ContentUri
 		httpResp, err := http.Get(URL)
     	if err != nil {
@@ -87,7 +92,7 @@ func (dObj *gdocMdObj) downloadImg()(err error) {
 	fmt.Printf("*** Positioned Imgs: %d ***\n", len(doc.PositionedObjects))
 	for k, posObj := range doc.PositionedObjects {
 		imgProp := posObj.PositionedObjectProperties.EmbeddedObject.ImageProperties
-		if verb {
+		if dObj.Options.Verb {
 			fmt.Printf("Source: %s Obj %s\n", k, imgProp.SourceUri)
 			fmt.Printf("Content: %s Obj %s\n", k, imgProp.ContentUri)
 		}
@@ -95,7 +100,7 @@ func (dObj *gdocMdObj) downloadImg()(err error) {
 			return fmt.Errorf("error downloadImg:: image %s has no URI\n", k)
 		}
 		imgNam := imgFoldPath + k[4:] + ".jpeg"
-		if verb	{fmt.Printf("image path: %s\n", imgNam)}
+		if dObj.Options.Verb {fmt.Printf("image path: %s\n", imgNam)}
 		URL := imgProp.ContentUri
 		httpResp, err := http.Get(URL)
     	if err != nil {
@@ -128,23 +133,24 @@ func (dObj *gdocMdObj) downloadImg()(err error) {
 func (dObj *gdocMdObj) createImgFolder()(err error) {
 
 	filnam :=dObj.DocName
-    if len(filnam) < 2 {
-        return fmt.Errorf("error createImgFolder:: filename %s too short!", filnam)
+    if !(len(filnam) >0) {
+        return fmt.Errorf("error filename %s is empty!", filnam)
     }
 
+	// this check should be moved to docname creation
     bf := []byte(filnam)
     // replace empty space with underscore
     for i:= 0; i< len(filnam); i++ {
         if bf[i] == ' ' {bf[i]='_'}
         if bf[i] == '.' {
-            return fmt.Errorf("error createImgFolder:: filnam has period!")
+            return fmt.Errorf("error filnam has period!")
         }
     }
 
     imgFoldNam := "imgs_" + string(bf)
 
-	fmt.Println("output file name: ", dObj.folder.Name())
-	foldNamb := []byte(dObj.folder.Name())
+	fmt.Println("output file name: ", dObj.outfil.Name())
+	foldNamb := []byte(dObj.outfil.Name())
 	idx := 0
 	for i:=len(foldNamb)-1; i> 0; i-- {
 		if foldNamb[i] == '/' {
@@ -193,17 +199,35 @@ func (dObj *gdocMdObj) createImgFolder()(err error) {
 }
 
 
-func (dObj *gdocMdObj) InitGdocMd() (err error) {
+func (dObj *gdocMdObj) InitGdocMd(doc *docs.Document, options *util.OptObj) (err error) {
+
     if dObj == nil {
         return fmt.Errorf("error gdocMD::Init: dObj is nil!")
     }
-	doc := dObj.doc
-	dObj.DocName = doc.Title
+	dObj.doc = doc
 	dObj.inImgCount = len(doc.InlineObjects)
 	dObj.posImgCount = len(doc.PositionedObjects)
-	totObjNum := dObj.inImgCount + dObj.posImgCount
     dObj.parCount = len(doc.Body.Content)
 
+	dNam := doc.Title
+    x := []byte(dNam)
+    for i:=0; i<len(x); i++ {
+        if x[i] == ' ' {
+            x[i] = '_'
+        }
+    }
+    dObj.DocName = string(x[:])
+
+    if options == nil {
+        defOpt := new(util.OptObj)
+        util.GetDefOption(defOpt)
+        if defOpt.Verb {util.PrintOptions(defOpt)}
+        dObj.Options = defOpt
+    } else {
+        dObj.Options = options
+    }
+
+	totObjNum := dObj.inImgCount + dObj.posImgCount
 	if totObjNum == 0 {return nil}
 
 	err = dObj.createImgFolder()
@@ -692,15 +716,43 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 }
 
 
-func CvtGdocToMd(outfil *os.File, doc *docs.Document, toc bool)(err error) {
+func CvtGdocToMd(folderPath string, doc *docs.Document, options *util.OptObj)(err error) {
 	var outstr, tocstr string
+
     docObj := new(gdocMdObj)
     docObj.doc = doc
-	docObj.folder = outfil
-    err = docObj.InitGdocMd()
+//	docObj.folder = outfil
+
+    err = docObj.InitGdocMd(doc, options)
     if err != nil {
         return fmt.Errorf("error CvtGdocToMd: could not initialise! %v", err)
     }
+
+    fPath, fexist, err := util.CreateFileFolder(folderPath, docObj.DocName)
+    if err!= nil {
+        return fmt.Errorf("util.CreateFileFolder %v", err)
+    }
+    docObj.folderPath = fPath
+
+    // create output file path/outfilNam.txt
+    outfilNam := docObj.DocName
+
+    outfil, err := util.CreateOutFil(fPath, outfilNam,"txt")
+    if err!= nil {
+        return fmt.Errorf("util.CreateOutFil %v", err)
+    }
+    docObj.outfil = outfil
+
+    if docObj.Options.Verb {
+        fmt.Println("******************* Output File ************")
+        fmt.Printf("folder path: %s ", fPath)
+        fstr := "is new!"
+        if fexist { fstr = "exists!" }
+        fmt.Printf("%s\n", fstr)
+        fmt.Printf("file name:  %s\n", outfilNam)
+        fmt.Println("********************************************")
+    }
+
 	outstr = "[//]: * (Document Title: " + doc.Title + ")\n"
 
 	outstr += fmt.Sprintf("[//]: * (Document Id: %s)\n", doc.DocumentId)
@@ -761,7 +813,7 @@ func CvtGdocToMd(outfil *os.File, doc *docs.Document, toc bool)(err error) {
 
 	}
 
-	if toc {
+	if docObj.Options.Toc {
 		tocstr += "\n\n"
 		outfil.WriteString(tocstr)
 	}
