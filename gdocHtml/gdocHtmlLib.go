@@ -17,6 +17,7 @@ import (
 	"io"
 	"unicode/utf8"
 	"google.golang.org/api/docs/v1"
+    util "google/gdoc/gdocUtil"
 )
 
 const (
@@ -58,7 +59,7 @@ type GdocHtmlObj struct {
 	folderPath string
     imgFoldNam string
     imgFoldPath string
-	Options *OptObj
+	Options *util.OptObj
 }
 
 type namStyl struct {
@@ -193,6 +194,7 @@ type linkMap struct {
 	bookmark string
 }
 
+/*
 type OptObj struct {
 	DefLinSpacing float64
 	BaseFontSize int
@@ -225,7 +227,8 @@ func GetDefOption(opt *OptObj) {
 	return
 }
 
-func PrintOptions (opt *OptObj) {
+
+func PrintOptions (opt *util.OptObj) {
 
 	fmt.Printf("\n************ Option Values ***********\n")
 	fmt.Printf("  Base Font Size:       %d\n", opt.BaseFontSize)
@@ -245,7 +248,7 @@ func PrintOptions (opt *OptObj) {
 	fmt.Printf("\n")
 	fmt.Printf("***************************************\n\n")
 }
-
+*/
 func findDocList(list []docList, listid string) (res int) {
 
 	res = -1
@@ -1611,7 +1614,7 @@ func (dObj *GdocHtmlObj) findListProp (listId string) (listProp *docs.ListProper
 	return nil
 }
 
-func (dObj *GdocHtmlObj) initGdocHtml(doc *docs.Document, options *OptObj) (err error) {
+func (dObj *GdocHtmlObj) initGdocHtml(doc *docs.Document, options *util.OptObj) (err error) {
 	var listItem docList
 	var heading heading
 	var sec sect
@@ -1632,9 +1635,9 @@ func (dObj *GdocHtmlObj) initGdocHtml(doc *docs.Document, options *OptObj) (err 
 	dObj.docName = string(x[:])
 
 	if options == nil {
-		defOpt := new(OptObj)
-		GetDefOption(defOpt)
-		if defOpt.Verb {PrintOptions(defOpt)}
+		defOpt := new(util.OptObj)
+		util.GetDefOption(defOpt)
+		if defOpt.Verb {util.PrintOptions(defOpt)}
 		dObj.Options = defOpt
 	} else {
 		dObj.Options = options
@@ -3392,7 +3395,7 @@ func (dObj *GdocHtmlObj) cvtBodySec(elSt, elEnd int) (bodyObj *dispObj, err erro
 	return bodyObj, nil
 }
 
-func CreGdocHtmlDoc(folderPath string, doc *docs.Document, options *OptObj)(err error) {
+func CreGdocHtmlDoc(folderPath string, doc *docs.Document, options *util.OptObj)(err error) {
 	// function which converts the entire document into an hmlt file
 	var tocDiv *dispObj
 	var dObj GdocHtmlObj
@@ -3478,7 +3481,7 @@ func CreGdocHtmlDoc(folderPath string, doc *docs.Document, options *OptObj)(err 
 	return nil
 }
 
-func CreGdocHtmlMain(folderPath string, doc *docs.Document, options *OptObj)(err error) {
+func CreGdocHtmlMain(folderPath string, doc *docs.Document, options *util.OptObj)(err error) {
 // function that converts the main part of a gdoc document into an html file
 // excludes everything before the "main" heading or
 // excludes sections titled "summary" and "keywords"
@@ -3550,7 +3553,7 @@ func CreGdocHtmlMain(folderPath string, doc *docs.Document, options *OptObj)(err
 	return nil
 }
 
-func CreGdocHtmlSection(heading, folderPath string, doc *docs.Document, options *OptObj)(err error) {
+func CreGdocHtmlSection(heading, folderPath string, doc *docs.Document, options *util.OptObj)(err error) {
 // function that creates an html fil from the named section
 	var tocDiv *dispObj
 	var dObj GdocHtmlObj
@@ -3639,7 +3642,7 @@ func CreGdocHtmlSection(heading, folderPath string, doc *docs.Document, options 
 	return nil
 }
 
-func CreGdocHtmlAll(folderPath string, doc *docs.Document, options *OptObj)(err error) {
+func CreGdocHtmlAll(folderPath string, doc *docs.Document, options *util.OptObj)(err error) {
 // function that creates an html fil from the named section
 	var tocDiv *dispObj
 	var dObj GdocHtmlObj
