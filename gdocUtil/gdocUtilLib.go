@@ -3,13 +3,14 @@
 //
 // author: prr
 // date: 27/4/2022
-// copyright 2022 prr azul software
+// copyright 2022 prr, azul software
 //
 package gdocUtilLib
 
 import (
 	"fmt"
 	"os"
+	"gopkg.in/yaml.v3"
 )
 
 type OptObj struct {
@@ -26,6 +27,54 @@ type OptObj struct {
     ElMargin [4]int
 }
 
+type OptYaml struct {
+	BaseFont font_desc `yaml:"BaseFont"`
+	Doc doc_desc `yaml:"Doc"`
+}
+
+type font_desc struct {
+	Name string `yaml:"Font"`
+	Size string `yaml:"Size"`
+}
+type doc_desc struct {
+	DocId string `yaml:"DocId"`
+}
+
+type out_opt struct {
+	Verb bool `yaml:"Verbose"`
+	Toc bool `yaml:"TOC"`
+	Sec bool `yaml:"Sections"`
+}
+
+func ReadYamlFil(filepath, filnam string)(opt *OptYaml, err error) {
+	var optyaml OptYaml
+
+	filpath, size, err := CheckFil(filepath, filnam)
+	if err != nil {
+		return nil, fmt.Errorf("checkFil: %v", err)
+	}
+
+	infil, err := os.Open(filpath)
+	if err != nil {
+		return nil, fmt.Errorf("error - os.Open: %v", err)
+	}
+	defer infil.Close()
+
+	inbuf := make([]byte, size)
+	_, err = infil.Read(inbuf)
+	if err != nil {
+		return nil, fmt.Errorf("error - infil.Read: %v", err)
+	}
+
+	err = yaml.Unmarshal(inbuf, &optyaml)
+	if err != nil {
+		fmt.Printf("unmarshall error: %v\n", err)
+		return nil, fmt.Errorf("error - Unmarshal: %v", err)
+	}
+//	fmt.Printf("opt: %v", optyaml)
+	return &optyaml, nil
+}
+
 func FatErr(fs string, msg string, err error) {
 // function that displays a console error message and exits program
     if err != nil {
@@ -34,6 +83,61 @@ func FatErr(fs string, msg string, err error) {
         fmt.Printf("error %s:: %s!\n", fs, msg)
     }
     os.Exit(2)
+}
+
+func CheckFil(folderPath, filnam string)(filPath string, size int64, err error) {
+
+//	fmt.Printf("folderPath: %s filnam: %s\n", folderPath, filnam)
+	fullFilNam := ""
+	flen := len(filnam)
+	if !(flen > 0) {
+		return "", 0, fmt.Errorf("error - no filnam provided!")
+	}
+
+	// check whether filnam contains the yaml extension
+	extExist := false
+	if flen > 5 {
+		if filnam[flen-5:flen] == ".yaml" {
+			fullFilNam = filnam
+			extExist = true
+		}
+	}
+	if !extExist {
+		fullFilNam = filnam + ".yaml"
+	}
+
+//	fmt.Printf("fullFilNam: %s\n", fullFilNam)
+
+	// check whether Folder Path is a viable folder
+    lenFP := len(folderPath)
+    if lenFP > 0 {
+        filinfo, err := os.Stat(folderPath)
+        if err != nil {
+            if os.IsNotExist(err) {
+                return "", 0, fmt.Errorf("folderPath %s is not valid!", folderPath)
+            }
+        }
+        if !filinfo.IsDir() {
+            return "", 0, fmt.Errorf("folderPath %s is not a folder!", folderPath)
+        }
+		if lenFP > 1 {
+	        if folderPath[lenFP-1] == '/' {
+    	        filPath = folderPath + fullFilNam
+        	} else {
+            	filPath = folderPath + "/" + fullFilNam
+        	}
+		}
+    } else {
+        filPath = fullFilNam
+    }
+//	fmt.Printf("filPath: %s\n",filPath)
+    // check whether file exists
+    filinfo, err := os.Stat(filPath)
+    if os.IsNotExist(err) {
+		return "", 0, fmt.Errorf("file %s does not exist!", filPath)
+	}
+	size = filinfo.Size()
+	return filPath, size, nil
 }
 
 func CreateOutFil(folderPath, filNam, filExt string) (outfil *os.File, err error) {
