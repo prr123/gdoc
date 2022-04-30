@@ -11,7 +11,6 @@ import (
 //    "fmt"
     "testing"
 	"os"
-//	util "utility/utilLib"
 
 )
 
@@ -102,6 +101,48 @@ func TestCreateOutFil(t *testing.T) {
 	_, err =  os.Stat(outfilNam)
 	if os.IsNotExist(err) {
 		t.Error("file should exist!")
+	}
+
+	os.RemoveAll("test")
+
+}
+
+func TestCheckFil(t *testing.T) {
+	filpath, _, err := CheckFil("","testopt")
+	if err != nil {
+		t.Error("error executing CheckFil!")
+	}
+	if filpath != "testopt.yaml" {
+		t.Error("file should be testopt.yaml")
+	}
+
+}
+
+func TestReadYamlFile(t *testing.T) {
+	_, err := ReadYamlFil("","testopt")
+	if err != nil {
+		t.Error("could not read yaml file!")
+	}
+}
+
+func TestCreateImgFolder(t *testing.T) {
+
+	fpath, _, err := CreateFileFolder("test", "newfold")
+	if err != nil {
+		t.Error("should be nil!")
+	}
+
+	if fpath != "test/newfold" {
+		t.Error("folder path is incorrect!")
+	}
+
+	imgfoldpath, err := CreateImgFolder(fpath, "testSimple")
+	if err != nil {
+		t.Error("could not create img folder!")
+	}
+
+	if imgfoldpath != "test/newfold/testSimple_img" {
+		t.Error("imgfolderpath incorrect!")
 	}
 
 	os.RemoveAll("test")
