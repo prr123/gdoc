@@ -140,6 +140,52 @@ func CheckFil(folderPath, filnam string)(filPath string, size int64, err error) 
 	return filPath, size, nil
 }
 
+func CreateImgFolder(folderPath, docNam string)(imgFolderPath string, err error) {
+
+	// we assume folderPath is correct
+	// any last slash has already been stripped from folderPath
+	lenFP := len(folderPath)
+	switch {
+		case lenFP == 0:
+			imgFolderPath = docNam + "_img"
+		case lenFP > 0:
+			imgFolderPath = folderPath + "/" + docNam + "_img"
+	}
+
+ //   fmt.Println("img folder path: ", imgFolderPath)
+
+    // check whether dir folder exists, if not create one
+    newDir := false
+    _, err = os.Stat(imgFolderPath)
+    if os.IsNotExist(err) {
+        err1 := os.Mkdir(imgFolderPath, os.ModePerm)
+        if err1 != nil {
+            return "", fmt.Errorf("os.Mkdir: could not create img folder! %v", err1)
+        }
+        newDir = true
+    } else {
+        if err != nil {
+            return "", fmt.Errorf("os.Stat: general error but not find! %v", err)
+        }
+    }
+
+	// img folder is presumed to exist now
+	// if img folder is not a new dir, all image files need to be deleted
+    // removeAll also removes the folder, so we have to create a new folder
+    if !newDir {
+        err = os.RemoveAll(imgFolderPath)
+        if err != nil {
+            return "", fmt.Errorf("os.RemoveAll: could not delete files in image folder! %v", err)
+        }
+        err = os.Mkdir(imgFolderPath, os.ModePerm)
+        if err != nil {
+            return "", fmt.Errorf("os.Mkdir: could not create img folder! %v", err)
+        }
+    }
+
+    return imgFolderPath, nil
+}
+
 func CreateOutFil(folderPath, filNam, filExt string) (outfil *os.File, err error) {
     var fullFilNam, filpath string
 
