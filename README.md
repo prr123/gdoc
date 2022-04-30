@@ -14,10 +14,10 @@ This library contains the subroutines to access the google docs api.
 ## gdocHtmlLib.go
 library that converts a Gdoc document file to a html file with a css section or a html file and a css file
 
-## gdocDomLib
+## gdocDomLib.go
 library that converts a Gdoc document to a base html file with a a js section and a css section.
 The js builds the dom to convert the gdoc file into a web file.# gdoc
 
-## gdocUtilLib
+## gdocUtilLib.go
 utility library for the options object and file/ file folder creation
 
