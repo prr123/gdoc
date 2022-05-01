@@ -37,9 +37,9 @@ type gdocMdObj struct {
 	nestlev int
 	folderPath string
 	outfil *os.File
-	imgFoldNam string
-	imgFoldPath string
-	verb bool
+//	imgFoldNam string
+//	imgFoldPath string
+//	verb bool
     Options *util.OptObj
 }
 
@@ -200,12 +200,12 @@ func (dObj *gdocMdObj) createImgFolder()(err error) {
 }
 */
 
-func (dObj *gdocMdObj) InitGdocMd(doc *docs.Document, options *util.OptObj) (err error) {
+func (dObj *gdocMdObj) InitGdocMd(folderPath string, options *util.OptObj) (err error) {
 
     if dObj == nil {
         return fmt.Errorf("error gdocMD::Init: dObj is nil!")
     }
-	dObj.doc = doc
+	doc := dObj.doc
 	dObj.inImgCount = len(doc.InlineObjects)
 	dObj.posImgCount = len(doc.PositionedObjects)
 
@@ -229,15 +229,33 @@ func (dObj *gdocMdObj) InitGdocMd(doc *docs.Document, options *util.OptObj) (err
         dObj.Options = options
     }
 
+    fPath, fexist, err := util.CreateFileFolder(folderPath, dObj.DocName)
+    if err!= nil {
+        return fmt.Errorf("error -- util.CreateFileFolder: %v", err)
+    }
+    dObj.folderPath = fPath
+
+    // create output file path/outfilNam.txt
+    outfilNam := dObj.DocName
+
+    outfil, err := util.CreateOutFil(fPath, dObj.DocName,"txt")
+    if err!= nil {
+        return fmt.Errorf("error -- util.CreateOutFil: %v", err)
+    }
+    dObj.outfil = outfil
+
+
 	totObjNum := dObj.inImgCount + dObj.posImgCount
 //	if totObjNum == 0 {return nil}
 
+
 	if dObj.Options.CreImgFolder && (totObjNum > 0) {
-		imgFoldPath, err := util.CreateImgFolder( , dObj.DocName)
+		imgFoldPath, err := util.CreateImgFolder(fPath ,dObj.DocName)
 		if err != nil {
 			return fmt.Errorf("error -- CreateImgFolder: could create ImgFolder: %v!", err)
 		}
-		err = util.DownloadImages(doc, imgFoldPath, defOpt)
+//		dObj.imgFoldPath = imgFoldPath
+		err = util.DownloadImages(doc, imgFoldPath, dObj.Options)
 		if err != nil {
 			return fmt.Errorf("error -- downloadImages could download images: %v!", err)
 		}
@@ -348,14 +366,18 @@ func (dObj *gdocMdObj) InitGdocMd(doc *docs.Document, options *util.OptObj) (err
    if dObj.Options.Verb {
         fmt.Printf("********** Headings in Document: %2d ***********\n", len(dObj.headings))
         for i:=0; i< len(dObj.headings); i++ {
-            fmt.Printf("  heading %3d  Id: %-15s text: %-20s El Start:%3d End:%3d\n", i, dObj.headings[i].id, dObj.headings[i].>        }
+            fmt.Printf("  heading %3d  Id: %-15s text: %-20s El Start:%3d End:%3d\n", i, dObj.headings[i].id, dObj.headings[i].text, 
+				dObj.headings[i].hdElStart, dObj.headings[i].hdElEnd)
+		}
         fmt.Printf("\n********** Pages in Document: %2d ***********\n", len(dObj.sections))
         for i:=0; i< len(dObj.sections); i++ {
             fmt.Printf("  Page %3d  El Start:%3d End:%3d\n", i, dObj.sections[i].secElStart, dObj.sections[i].secElEnd)
         }
         fmt.Printf("\n************ Lists in Document: %2d ***********\n", len(dObj.docLists))
         for i:=0; i< len(dObj.docLists); i++ {
-            fmt.Printf("list %3d id: %s max level: %d ordered: %t\n", i, dObj.docLists[i].listId, dObj.docLists[i].maxNestLev, >        }
+            fmt.Printf("list %3d id: %s max level: %d ordered: %t\n", i, dObj.docLists[i].listId, 
+			dObj.docLists[i].maxNestLev, dObj.docLists[i].ord)
+		}
         fmt.Printf("\n************ Footnotes in Document: %2d ***********\n", len(dObj.docFtnotes))
         for i:=0; i< len(dObj.docFtnotes); i++ {
             ftn := dObj.docFtnotes[i]
@@ -850,7 +872,7 @@ func CvtGdocToMd(folderPath string, doc *docs.Document, options *util.OptObj)(er
     docObj.doc = doc
 //	docObj.folder = outfil
 
-    err = docObj.InitGdocMd(doc, options)
+    err = docObj.InitGdocMd(folderPath, options)
     if err != nil {
         return fmt.Errorf("error CvtGdocToMd: could not initialise! %v", err)
     }
