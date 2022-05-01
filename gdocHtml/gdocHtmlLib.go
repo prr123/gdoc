@@ -15,7 +15,7 @@ import (
 	"os"
 	"net/http"
 	"io"
-	"unicode/utf8"
+//	"unicode/utf8"
 	"google.golang.org/api/docs/v1"
     util "google/gdoc/gdocUtil"
 )
@@ -194,61 +194,6 @@ type linkMap struct {
 	bookmark string
 }
 
-/*
-type OptObj struct {
-	DefLinSpacing float64
-	BaseFontSize int
-	CssFil bool
-	ImgFold bool
-    Verb bool
-	Toc bool
-	Sections bool
-	DivBorders bool
-	Divisions []string
-	DocMargin [4]int
-	ElMargin [4]int
-}
-
-func GetDefOption(opt *OptObj) {
-
-	opt.BaseFontSize = 0
-	opt.DivBorders = false
-	opt.DefLinSpacing = 1.2
-	opt.DivBorders = false
-	opt.CssFil = false
-	opt.ImgFold = true
-	opt.Verb = true
-	opt.Toc = true
-	opt.Sections = true
-
-	for i:=0; i< 4; i++ {opt.ElMargin[i] = 0}
-
-	opt.Divisions = []string{"Summary", "Main"}
-	return
-}
-
-
-func PrintOptions (opt *util.OptObj) {
-
-	fmt.Printf("\n************ Option Values ***********\n")
-	fmt.Printf("  Base Font Size:       %d\n", opt.BaseFontSize)
-	fmt.Printf("  Sections as <div>:    %t\n", opt.Sections)
-	fmt.Printf("  Browser Line Spacing: %.1f\n",opt. DefLinSpacing)
-	fmt.Printf("  <div> Borders:        %t\n", opt.DivBorders)
-	fmt.Printf("  Divisions: %d\n", len(opt.Divisions))
-	for i:=0; i < len(opt.Divisions); i++ {
-		fmt.Printf("    div: %s\n", opt.Divisions[i])
-	}
-	fmt.Printf("  Separate CSS File:    %t\n", opt.CssFil)
-	fmt.Printf("  Image Folder:         %t\n", opt.ImgFold)
-	fmt.Printf("  Table of Content:     %t\n", opt.Toc)
-	fmt.Printf("  Verbose output:       %t\n", opt.Verb)
-	fmt.Printf("  Element Margin: ")
-	for i:=0; i<4; i++ { fmt.Printf(" %3d",opt.ElMargin[i])}
-	fmt.Printf("\n")
-	fmt.Printf("***************************************\n\n")
-}
-*/
 func findDocList(list []docList, listid string) (res int) {
 
 	res = -1
@@ -325,75 +270,6 @@ func printLiStackItem(listAtt cList, cNest int){
 			fmt.Printf(" id: %s ordered: %t", listAtt.cListId, listAtt.cOrd)
 		}
 		fmt.Printf("\n")
-}
-
-func getGlyphOrd(nestLev *docs.NestingLevel)(bool) {
-
-	ord := false
-	glyphTyp := nestLev.GlyphType
-	switch glyphTyp {
-		case "DECIMAL":
-			ord = true
-		case "ZERO_DECIMAL":
-			ord = true
-		case "UPPER_ALPHA":
-			ord = true
-		case "ALPHA":
-			ord = true
-		case "UPPER_ROMAN":
-			ord = true
-		case "ROMAN":
-			ord = true
-		default:
-			ord = false
-	}
-	return ord
-}
-
-func getGlyphStr(nlev *docs.NestingLevel)(glyphTyp string) {
-
-	// ordered list
-	switch nlev.GlyphType {
-		case "DECIMAL":
-			glyphTyp = "decimal"
-		case "ZERO_DECIMAL":
-			glyphTyp = "decimal-leading-zero"
-		case "ALPHA":
-			glyphTyp = "lower-alpha"
- 		case "UPPER_ALPHA":
-			glyphTyp = "upper-alpha"
-		case "ROMAN":
-			glyphTyp = "lower-roman"
-		case "UPPER_ROMAN":
-			glyphTyp = "upper-roman"
-		default:
-			glyphTyp = ""
-	}
-	if len(glyphTyp) > 0 {
-//		cssStr = "  list-style-type: " + glyphTyp +";\n"
-		return glyphTyp
-	}
-
-	// unordered list
-//	cssStr =fmt.Sprintf("/*-Glyph Symbol:%x - */\n",nlev.GlyphSymbol)
-	r, _ := utf8.DecodeRuneInString(nlev.GlyphSymbol)
-
-	switch r {
-		case 9679:
-			glyphTyp = "disc"
-		case 9675:
-			glyphTyp = "circle"
-		case 9632:
-			glyphTyp = "square"
-		default:
-			glyphTyp = ""
-	}
-	if len(glyphTyp) > 0 {
-//		cssStr = "  list-style-type: " + glyphTyp +";\n"
-		return glyphTyp
-	}
-//	cssStr = fmt.Sprintf("/* unknown GlyphType: %s Symbol: %s */\n", nlev.GlyphType, nlev.GlyphSymbol)
-	return glyphTyp
 }
 
 
@@ -1684,7 +1560,6 @@ func (dObj *GdocHtmlObj) initGdocHtml(doc *docs.Document, options *util.OptObj) 
 		elObj:= doc.Body.Content[el]
 		if elObj.SectionBreak != nil {
 			if elObj.SectionBreak.SectionStyle.SectionType == "NEXT_PAGE" {
-//sss
 				sec.secElStart = el
 				dObj.sections = append(dObj.sections, sec)
 				seclen := len(dObj.sections)
@@ -1707,7 +1582,7 @@ func (dObj *GdocHtmlObj) initGdocHtml(doc *docs.Document, options *util.OptObj) 
 					listItem.listId = listId
 					listItem.maxNestLev = elObj.Paragraph.Bullet.NestingLevel
 					nestL := doc.Lists[listId].ListProperties.NestingLevels[nestlev]
-					listItem.ord = getGlyphOrd(nestL)
+					listItem.ord = util.GetGlyphOrd(nestL)
 					dObj.docLists = append(dObj.docLists, listItem)
 				} else {
 					if dObj.docLists[found].maxNestLev < nestlev { dObj.docLists[found].maxNestLev = nestlev }
@@ -1827,7 +1702,7 @@ func (dObj *GdocHtmlObj) dlImages()(err error) {
 func (dObj *GdocHtmlObj) cvtGlyph(nLev *docs.NestingLevel)(cssStr string) {
 var glyphTyp string
 
-	glyphTyp = getGlyphStr(nLev)
+	glyphTyp = util.GetGlyphStr(nLev)
 	if len(glyphTyp) == 0 {
 		cssStr = fmt.Sprintf("/* unknown GlyphType: %s Symbol: %s */\n", nLev.GlyphType, nLev.GlyphSymbol)
 	} else {
@@ -2341,7 +2216,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 
 		// retrieve the list properties from the doc.Lists map
 		nestL := dObj.doc.Lists[listid].ListProperties.NestingLevels[nestIdx]
-		listOrd := getGlyphOrd(nestL)
+		listOrd := util.GetGlyphOrd(nestL)
 
 		// A. check whether need new <ul> or <ol>
 		// listHtml contains the <ul> <ol> element
@@ -2999,7 +2874,7 @@ func (dObj *GdocHtmlObj) createHead() (headObj dispObj, err error) {
 				_, err := fillTxtMap(glyphTxtMap, nestLev.TextStyle)
 				if err != nil { cssStr += "/* error def Glyph Text Style */\n" }
 			}
-			glyphStr := getGlyphStr(nestLev)
+			glyphStr := util.GetGlyphStr(nestLev)
 			switch dObj.docLists[i].ord {
 				case true:
 					cssStr += fmt.Sprintf(".%s_ol.nL_%d {\n", listClass, nl)
