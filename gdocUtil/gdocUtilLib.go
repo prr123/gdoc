@@ -34,20 +34,147 @@ type OptObj struct {
 type OptYaml struct {
 	BaseFont font_desc `yaml:"BaseFont"`
 	Doc doc_desc `yaml:"Doc"`
+	Option out_opt `yaml:"Option"`
 }
 
 type font_desc struct {
 	Name string `yaml:"Font"`
 	Size string `yaml:"Size"`
+	LinSpace float64 `yaml:"LineSpacing"`
 }
+
 type doc_desc struct {
 	DocId string `yaml:"DocId"`
+	DocMargin []string `yaml:"Doc Margin"`
+	ElMargin []string `yaml:"El Margin"`
+	Divisions []string `yaml:"Division"`
 }
 
 type out_opt struct {
 	Verb bool `yaml:"Verbose"`
 	Toc bool `yaml:"TOC"`
 	Sec bool `yaml:"Sections"`
+	ImgFold bool `yaml:"Img Folder"`
+	CssFil bool `yaml:"Css File"`
+}
+
+
+func GetGlyphOrd(nestLev *docs.NestingLevel)(bool) {
+
+    ord := false
+    glyphTyp := nestLev.GlyphType
+    switch glyphTyp {
+        case "DECIMAL":
+            ord = true
+        case "ZERO_DECIMAL":
+            ord = true
+        case "UPPER_ALPHA":
+            ord = true
+        case "ALPHA":
+            ord = true
+        case "UPPER_ROMAN":
+            ord = true
+        case "ROMAN":
+            ord = true
+        default:
+            ord = false
+    }
+    return ord
+}
+
+func ReadYamlFil(filepath, filnam string)(opt *OptYaml, err error) {
+	var optyaml OptYaml
+
+	filpath, size, err := CheckFil(filepath, filnam)
+	if err != nil {
+		return nil, fmt.Errorf("checkFil: %v", err)
+	}
+
+	infil, err := os.Open(filpath)
+	if err != nil {
+		return nil, fmt.Errorf("error - os.Open: %v", err)
+	}
+	defer infil.Close()
+
+	inbuf := make([]byte, size)
+	_, err = infil.Read(inbuf)
+	if err != nil {
+		return nil, fmt.Errorf("error - infil.Read: %v", err)
+	}
+
+	err = yaml.Unmarshal(inbuf, &optyaml)
+	if err != nil {
+		fmt.Printf("unmarshall error: %v\n", err)
+		return nil, fmt.Errorf("error - Unmarshal: %v", err)
+	}
+//	fmt.Printf("opt: %v", optyaml)
+	return &optyaml, nil
+}
+
+func FatErr(fs string, msg string, err error) {
+// function that displays a console error message and exits program
+    if err != nil {
+        fmt.Printf("error %s:: %s!%v\n", fs, msg, err)
+    } else {
+        fmt.Printf("error %s:: %s!\n", fs, msg)
+    }
+    os.Exit(2)
+}
+
+
+func CheckFil(folderPath, filnam string)(filPath string, size int64, err error) {
+
+//	fmt.Printf("folderPath: %s filnam: %s\n", folderPath, filnam)
+	fullFilNam := ""
+	flen := len(filnam)
+	if !(flen > 0) {
+		return "", 0, fmt.Errorf("error - no filnam provided!")
+	}
+
+	// check whether filnam contains the yaml extension
+	extExist := false
+	if flen > 5 {
+		if filnam[flen-5:flen] == ".yaml" {
+			fullFilNam = filnam
+			extExist = true
+		}
+	}
+	if !extExist {
+		fullFilNam = filnam + ".yaml"
+	}
+
+//	fmt.Printf("fullFilNam: %s\n", fullFilNam)
+
+	// check whether Folder Path is a viable folder
+    lenFP := len(folderPath)
+    if lenFP > 0 {
+        filinfo, err := os.Stat(folderPath)
+        if err != nil {
+            if os.IsNotExist(err) {
+                return "", 0, fmt.Errorf("folderPath %s is not valid!", folderPath)
+            }
+        }
+        if !filinfo.IsDir() {
+            return "", 0, fmt.Errorf("folderPath %s is not a folder!", folderPath)
+        }
+		if lenFP > 1 {
+	        if folderPath[lenFP-1] == '/' {
+    	        filPath = folderPath + fullFilNam
+        	} else {
+            	filPath = folderPath + "/" + fullFilNam
+        	}
+		}
+    } else {
+        filPath = fullFilNam
+    }
+//	fmt.Printf("filPath: %s\n",filPath)
+    // check whether file exists
+    filinfo, err := os.Stat(filPath)
+    if os.IsNotExist(err) {
+		return "", 0, fmt.Errorf("file %s does not exist!", filPath)
+	}
+	size = filinfo.Size()
+	return filPath, size, nil
 }
 
 func DownloadImages(doc *docs.Document, imgFoldPath string, opt *OptObj)(err error) {
@@ -144,103 +271,6 @@ func DownloadImages(doc *docs.Document, imgFoldPath string, opt *OptObj)(err err
     }
 
     return nil
-}
-
-
-
-
-func ReadYamlFil(filepath, filnam string)(opt *OptYaml, err error) {
-	var optyaml OptYaml
-
-	filpath, size, err := CheckFil(filepath, filnam)
-	if err != nil {
-		return nil, fmt.Errorf("checkFil: %v", err)
-	}
-
-	infil, err := os.Open(filpath)
-	if err != nil {
-		return nil, fmt.Errorf("error - os.Open: %v", err)
-	}
-	defer infil.Close()
-
-	inbuf := make([]byte, size)
-	_, err = infil.Read(inbuf)
-	if err != nil {
-		return nil, fmt.Errorf("error - infil.Read: %v", err)
-	}
-
-	err = yaml.Unmarshal(inbuf, &optyaml)
-	if err != nil {
-		fmt.Printf("unmarshall error: %v\n", err)
-		return nil, fmt.Errorf("error - Unmarshal: %v", err)
-	}
-//	fmt.Printf("opt: %v", optyaml)
-	return &optyaml, nil
-}
-
-func FatErr(fs string, msg string, err error) {
-// function that displays a console error message and exits program
-    if err != nil {
-        fmt.Printf("error %s:: %s!%v\n", fs, msg, err)
-    } else {
-        fmt.Printf("error %s:: %s!\n", fs, msg)
-    }
-    os.Exit(2)
-}
-
-func CheckFil(folderPath, filnam string)(filPath string, size int64, err error) {
-
-//	fmt.Printf("folderPath: %s filnam: %s\n", folderPath, filnam)
-	fullFilNam := ""
-	flen := len(filnam)
-	if !(flen > 0) {
-		return "", 0, fmt.Errorf("error - no filnam provided!")
-	}
-
-	// check whether filnam contains the yaml extension
-	extExist := false
-	if flen > 5 {
-		if filnam[flen-5:flen] == ".yaml" {
-			fullFilNam = filnam
-			extExist = true
-		}
-	}
-	if !extExist {
-		fullFilNam = filnam + ".yaml"
-	}
-
-//	fmt.Printf("fullFilNam: %s\n", fullFilNam)
-
-	// check whether Folder Path is a viable folder
-    lenFP := len(folderPath)
-    if lenFP > 0 {
-        filinfo, err := os.Stat(folderPath)
-        if err != nil {
-            if os.IsNotExist(err) {
-                return "", 0, fmt.Errorf("folderPath %s is not valid!", folderPath)
-            }
-        }
-        if !filinfo.IsDir() {
-            return "", 0, fmt.Errorf("folderPath %s is not a folder!", folderPath)
-        }
-		if lenFP > 1 {
-	        if folderPath[lenFP-1] == '/' {
-    	        filPath = folderPath + fullFilNam
-        	} else {
-            	filPath = folderPath + "/" + fullFilNam
-        	}
-		}
-    } else {
-        filPath = fullFilNam
-    }
-//	fmt.Printf("filPath: %s\n",filPath)
-    // check whether file exists
-    filinfo, err := os.Stat(filPath)
-    if os.IsNotExist(err) {
-		return "", 0, fmt.Errorf("file %s does not exist!", filPath)
-	}
-	size = filinfo.Size()
-	return filPath, size, nil
 }
 
 func CreateImgFolder(folderPath, docNam string)(imgFolderPath string, err error) {
