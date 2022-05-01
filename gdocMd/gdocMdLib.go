@@ -87,28 +87,6 @@ func findDocList(list []docList, listid string) (res int) {
     return res
 }
 
-func getGlyphOrd(nestLev *docs.NestingLevel)(bool) {
-
-    ord := false
-    glyphTyp := nestLev.GlyphType
-    switch glyphTyp {
-        case "DECIMAL":
-            ord = true
-        case "ZERO_DECIMAL":
-            ord = true
-        case "UPPER_ALPHA":
-            ord = true
-        case "ALPHA":
-            ord = true
-        case "UPPER_ROMAN":
-            ord = true
-        case "ROMAN":
-            ord = true
-        default:
-            ord = false
-    }
-    return ord
-}
 /*
 func (dObj *gdocMdObj) downloadImg()(err error) {
 
