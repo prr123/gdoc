@@ -10,7 +10,10 @@ package gdocUtilLib
 import (
 	"fmt"
 	"os"
+	"net/http"
+	"io"
 	"gopkg.in/yaml.v3"
+	"google.golang.org/api/docs/v1"
 )
 
 type OptObj struct {
@@ -45,6 +48,105 @@ type out_opt struct {
 	Toc bool `yaml:"TOC"`
 	Sec bool `yaml:"Sections"`
 }
+
+func DownloadImages(doc *docs.Document, imgFoldPath string, opt *OptObj)(err error) {
+
+    if !(len(imgFoldPath) >0) {
+        return fmt.Errorf("error -- no imgFoldPath provided!")
+    }
+
+	_, err = os.Stat(imgFoldPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("error -- folder %s does not exist!", imgFoldPath)
+		}
+		return fmt.Errorf("error -- accessing folder %s! %v", imgFoldPath, err)
+	}
+
+	verb := true
+	if opt != nil { verb = opt.Verb}
+
+	// inline images
+	if verb {fmt.Printf("*** Inline Imgs: %d ***\n", len(doc.InlineObjects))}
+    for k, inlObj := range doc.InlineObjects {
+        imgProp := inlObj.InlineObjectProperties.EmbeddedObject.ImageProperties
+        if verb {
+            fmt.Printf("Source: %s Obj %s\n", k, imgProp.SourceUri)
+            fmt.Printf("Content: %s Obj %s\n", k, imgProp.ContentUri)
+        }
+        if !(len(imgProp.SourceUri) > 0) {
+            return fmt.Errorf("error -- image %s has no URI\n", k)
+        }
+        imgNam := imgFoldPath + k[4:] + ".jpeg"
+        if verb {fmt.Printf("image path: %s\n", imgNam)}
+        URL := imgProp.ContentUri
+        httpResp, err := http.Get(URL)
+        if err != nil {
+            return fmt.Errorf("error -- http.Get could not fetch %s! %v", URL, err)
+        }
+        defer httpResp.Body.Close()
+//  fmt.Printf("http got %s!\n", URL)
+        if httpResp.StatusCode != 200 {
+            return fmt.Errorf("error -- httpResp: Received non-200 response code %d!", httpResp.StatusCode)
+        }
+//  fmt.Printf("http status: %d\n ", httpResp.StatusCode)
+    //Create a empty file
+        outfil, err := os.Create(imgNam)
+        if err != nil {
+            return fmt.Errorf("error -- os.Create cannot create img file! %v", err)
+        }
+        defer outfil.Close()
+//  fmt.Println("created dir")
+        //Write the bytes to the fiel
+        _, err = io.Copy(outfil, httpResp.Body)
+        if err != nil {
+            return fmt.Errorf("error -- io.Copy cannot copy img file content from httpRespBody! %v", err)
+        }
+    }
+
+	// positioned images
+	fmt.Printf("*** Positioned Imgs: %d ***\n", len(doc.PositionedObjects))
+    for k, posObj := range doc.PositionedObjects {
+        imgProp := posObj.PositionedObjectProperties.EmbeddedObject.ImageProperties
+        if verb {
+            fmt.Printf("Source: %s Obj %s\n", k, imgProp.SourceUri)
+            fmt.Printf("Content: %s Obj %s\n", k, imgProp.ContentUri)
+        }
+        if !(len(imgProp.SourceUri) > 0) {
+            return fmt.Errorf("error -- image %s has no URI\n", k)
+        }
+        imgNam := imgFoldPath + k[4:] + ".jpeg"
+        if verb {fmt.Printf("image path: %s\n", imgNam)}
+        URL := imgProp.ContentUri
+        httpResp, err := http.Get(URL)
+        if err != nil {
+            return fmt.Errorf("error -- httpGet: could not get %s! %v", URL, err)
+        }
+        defer httpResp.Body.Close()
+//  fmt.Printf("http got %s!\n", URL)
+        if httpResp.StatusCode != 200 {
+            return fmt.Errorf("error -- hhtpResp: Received non-200 response code %d!", httpResp.StatusCode)
+        }
+//  fmt.Printf("http status: %d\n ", httpResp.StatusCode)
+    //Create a empty file
+        outfil, err := os.Create(imgNam)
+        if err != nil {
+            return fmt.Errorf("error -- osCreate: cannot create img file! %v", err)
+        }
+        defer outfil.Close()
+//  fmt.Println("created dir")
+        //Write the bytes to the fiel
+        _, err = io.Copy(outfil, httpResp.Body)
+        if err != nil {
+            return fmt.Errorf("error -- ioCopy: cannot copy img file content! %v", err)
+        }
+    }
+
+    return nil
+}
+
+
+
 
 func ReadYamlFil(filepath, filnam string)(opt *OptYaml, err error) {
 	var optyaml OptYaml
