@@ -25,6 +25,7 @@ type OptObj struct {
     Toc bool
     Sections bool
     DivBorders bool
+	CreImgFolder bool
     Divisions []string
     DocMargin [4]int
     ElMargin [4]int
