@@ -12,6 +12,7 @@ import (
 	"os"
 	"net/http"
 	"io"
+    "unicode/utf8"
 	"gopkg.in/yaml.v3"
 	"google.golang.org/api/docs/v1"
 )
@@ -56,6 +57,52 @@ type out_opt struct {
 	Sec bool `yaml:"Sections"`
 	ImgFold bool `yaml:"Img Folder"`
 	CssFil bool `yaml:"Css File"`
+}
+
+func GetGlyphStr(nlev *docs.NestingLevel)(glyphTyp string) {
+
+    // ordered list
+    switch nlev.GlyphType {
+        case "DECIMAL":
+            glyphTyp = "decimal"
+        case "ZERO_DECIMAL":
+            glyphTyp = "decimal-leading-zero"
+        case "ALPHA":
+            glyphTyp = "lower-alpha"
+        case "UPPER_ALPHA":
+            glyphTyp = "upper-alpha"
+        case "ROMAN":
+            glyphTyp = "lower-roman"
+        case "UPPER_ROMAN":
+            glyphTyp = "upper-roman"
+        default:
+            glyphTyp = ""
+    }
+    if len(glyphTyp) > 0 {
+//      cssStr = "  list-style-type: " + glyphTyp +";\n"
+        return glyphTyp
+    }
+
+    // unordered list
+//  cssStr =fmt.Sprintf("/*-Glyph Symbol:%x - */\n",nlev.GlyphSymbol)
+    r, _ := utf8.DecodeRuneInString(nlev.GlyphSymbol)
+
+    switch r {
+        case 9679:
+            glyphTyp = "disc"
+        case 9675:
+            glyphTyp = "circle"
+        case 9632:
+            glyphTyp = "square"
+        default:
+            glyphTyp = ""
+    }
+    if len(glyphTyp) > 0 {
+//      cssStr = "  list-style-type: " + glyphTyp +";\n"
+        return glyphTyp
+    }
+//  cssStr = fmt.Sprintf("/* unknown GlyphType: %s Symbol: %s */\n", nlev.GlyphType, nlev.GlyphSymbol)
+    return glyphTyp
 }
 
 
