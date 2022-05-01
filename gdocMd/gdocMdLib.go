@@ -13,8 +13,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"net/http"
-	"io"
+//	"net/http"
+//	"io"
 	"google.golang.org/api/docs/v1"
     util "google/gdoc/gdocUtil"
 )
@@ -43,6 +43,7 @@ type gdocMdObj struct {
     Options *util.OptObj
 }
 
+/*
 func (dObj *gdocMdObj) downloadImg()(err error) {
 
 	doc := dObj.doc
@@ -197,7 +198,7 @@ func (dObj *gdocMdObj) createImgFolder()(err error) {
 
     return nil
 }
-
+*/
 
 func (dObj *gdocMdObj) InitGdocMd(doc *docs.Document, options *util.OptObj) (err error) {
 
@@ -207,6 +208,7 @@ func (dObj *gdocMdObj) InitGdocMd(doc *docs.Document, options *util.OptObj) (err
 	dObj.doc = doc
 	dObj.inImgCount = len(doc.InlineObjects)
 	dObj.posImgCount = len(doc.PositionedObjects)
+
     dObj.parCount = len(doc.Body.Content)
 
 	dNam := doc.Title
@@ -228,16 +230,141 @@ func (dObj *gdocMdObj) InitGdocMd(doc *docs.Document, options *util.OptObj) (err
     }
 
 	totObjNum := dObj.inImgCount + dObj.posImgCount
-	if totObjNum == 0 {return nil}
+//	if totObjNum == 0 {return nil}
 
-	err = dObj.createImgFolder()
-	if err != nil {
-		return fmt.Errorf("error gdocMd::Init: could create ImgFolder: %v!", err)
+	if dObj.Options.CreImgFolder && (totObjNum > 0) {
+		imgFoldPath, err := util.CreateImgFolder( , dObj.DocName)
+		if err != nil {
+			return fmt.Errorf("error -- CreateImgFolder: could create ImgFolder: %v!", err)
+		}
+		err = util.DownloadImages(doc, imgFoldPath, defOpt)
+		if err != nil {
+			return fmt.Errorf("error -- downloadImages could download images: %v!", err)
+		}
 	}
-	err = dObj.downloadImg()
-	if err != nil {
-		return fmt.Errorf("error gdocMd::Init: could download images: %v!", err)
-	}
+
+    dObj.elCount = len(doc.Body.Content)
+    // footnotes
+    dObj.ftnoteCount = 0
+
+    // section breaks
+    parHdEnd := 0
+    // last element of section
+    secPtEnd := 0
+    // set up first page
+    sec.secElStart = 0
+    dObj.sections = append(dObj.sections, sec)
+    seclen := len(dObj.sections)
+//      fmt.Println("el: ", el, "section len: ", seclen, " secPtEnd: ", secPtEnd)
+
+    for el:=0; el<dObj.elCount; el++ {
+        elObj:= doc.Body.Content[el]
+        if elObj.SectionBreak != nil {
+            if elObj.SectionBreak.SectionStyle.SectionType == "NEXT_PAGE" {
+//sss
+                sec.secElStart = el
+                dObj.sections = append(dObj.sections, sec)
+                seclen := len(dObj.sections)
+//      fmt.Println("el: ", el, "section len: ", seclen, " secPtEnd: ", secPtEnd)
+                if seclen > 1 {
+                    dObj.sections[seclen-2].secElEnd = secPtEnd
+                }
+            }
+        }
+
+       if elObj.Paragraph != nil {
+
+            if elObj.Paragraph.Bullet != nil {
+
+            // lists
+                listId := elObj.Paragraph.Bullet.ListId
+                found := findDocList(dObj.docLists, listId)
+                nestlev := elObj.Paragraph.Bullet.NestingLevel
+                if found < 0 {
+                    listItem.listId = listId
+                    listItem.maxNestLev = elObj.Paragraph.Bullet.NestingLevel
+                    nestL := doc.Lists[listId].ListProperties.NestingLevels[nestlev]
+                    listItem.ord = getGlyphOrd(nestL)
+                    dObj.docLists = append(dObj.docLists, listItem)
+                } else {
+                    if dObj.docLists[found].maxNestLev < nestlev { dObj.docLists[found].maxNestLev = nestlev }
+                }
+
+            }
+
+            // headings
+            text := ""
+            if len(elObj.Paragraph.ParagraphStyle.HeadingId) > 0 {
+                heading.id = elObj.Paragraph.ParagraphStyle.HeadingId
+                heading.hdElStart = el
+
+                for parel:=0; parel<len(elObj.Paragraph.Elements); parel++ {
+                    if elObj.Paragraph.Elements[parel].TextRun != nil {
+                        text += elObj.Paragraph.Elements[parel].TextRun.Content
+                    }
+                }
+                txtlen:= len(text)
+                if text[txtlen -1] == '\n' { text = text[:txtlen-1] }
+//  fmt.Printf(" text: %s %d\n", text, txtlen)
+                heading.text = text
+
+                dObj.headings = append(dObj.headings, heading)
+                hdlen := len(dObj.headings)
+//      fmt.Println("el: ", el, "hdlen: ", hdlen, "parHdEnd: ", parHdEnd)
+                if hdlen > 1 {
+                    dObj.headings[hdlen-2].hdElEnd = parHdEnd
+                }
+            } // end headings
+
+            // footnotes
+            if len(doc.Footnotes)> 0 {
+                for parEl:=0; parEl<len(elObj.Paragraph.Elements); parEl++ {
+                    parElObj := elObj.Paragraph.Elements[parEl]
+                    if parElObj.FootnoteReference != nil {
+                        ftnote.el = el
+                        ftnote.parel = parEl
+                        ftnote.id = parElObj.FootnoteReference.FootnoteId
+                        ftnote.numStr = parElObj.FootnoteReference.FootnoteNumber
+                        dObj.docFtnotes = append(dObj.docFtnotes, ftnote)
+                    }
+                }
+            }
+
+            parHdEnd = el
+            secPtEnd = el
+        } // end paragraph
+    } // end el loop
+
+    hdlen := len(dObj.headings)
+    if hdlen > 0 {
+        dObj.headings[hdlen-1].hdElEnd = parHdEnd
+    }
+
+    seclen = len(dObj.sections)
+    if seclen > 0 {
+        dObj.sections[seclen-1].secElEnd = secPtEnd
+    }
+
+   if dObj.Options.Verb {
+        fmt.Printf("********** Headings in Document: %2d ***********\n", len(dObj.headings))
+        for i:=0; i< len(dObj.headings); i++ {
+            fmt.Printf("  heading %3d  Id: %-15s text: %-20s El Start:%3d End:%3d\n", i, dObj.headings[i].id, dObj.headings[i].>        }
+        fmt.Printf("\n********** Pages in Document: %2d ***********\n", len(dObj.sections))
+        for i:=0; i< len(dObj.sections); i++ {
+            fmt.Printf("  Page %3d  El Start:%3d End:%3d\n", i, dObj.sections[i].secElStart, dObj.sections[i].secElEnd)
+        }
+        fmt.Printf("\n************ Lists in Document: %2d ***********\n", len(dObj.docLists))
+        for i:=0; i< len(dObj.docLists); i++ {
+            fmt.Printf("list %3d id: %s max level: %d ordered: %t\n", i, dObj.docLists[i].listId, dObj.docLists[i].maxNestLev, >        }
+        fmt.Printf("\n************ Footnotes in Document: %2d ***********\n", len(dObj.docFtnotes))
+        for i:=0; i< len(dObj.docFtnotes); i++ {
+            ftn := dObj.docFtnotes[i]
+            fmt.Printf("ft %3d: Number: %-4s id: %-15s el: %3d parel: %3d\n", i, ftn.numStr, ftn.id, ftn.el, ftn.parel)
+        }
+
+        fmt.Printf("**************************************************\n\n")
+    }
+
 
     return nil
 }
@@ -764,7 +891,9 @@ func CvtGdocToMd(folderPath string, doc *docs.Document, options *util.OptObj)(er
 	}
 
 	outstr = ""
-	tocstr = "<p style=\"font-size:20pt; text-align:center\">Table of Contents</p>\n"
+	if docObj.Options.Toc {
+		tocstr = "<p style=\"font-size:20pt; text-align:center\">Table of Contents</p>\n"
+	}
 
 	body := doc.Body
 	elNum := len(body.Content)
