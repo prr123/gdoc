@@ -37,12 +37,78 @@ type gdocMdObj struct {
 	nestlev int
 	folderPath string
 	outfil *os.File
-//	imgFoldNam string
+	imgFoldNam string
 //	imgFoldPath string
-//	verb bool
+	docLists []docList
+    headings []heading
+    sections []sect
+    docFtnotes []docFtnote
+    headCount int
+    secCount int
+    elCount int
+    ftnoteCount int
     Options *util.OptObj
 }
 
+type sect struct {
+    sNum int
+    secElStart int
+    secElEnd int
+}
+
+type heading struct {
+    hdElEnd int
+    hdElStart int
+    id string
+    text string
+}
+
+type docFtnote struct {
+    el int
+    parel int
+    id string
+    numStr string
+}
+
+type docList struct {
+    listId string
+    maxNestLev int64
+    ord bool
+}
+
+func findDocList(list []docList, listid string) (res int) {
+
+    res = -1
+    for i:=0; i< len(list); i++ {
+        if list[i].listId == listid {
+            return i
+        }
+    }
+    return res
+}
+
+func getGlyphOrd(nestLev *docs.NestingLevel)(bool) {
+
+    ord := false
+    glyphTyp := nestLev.GlyphType
+    switch glyphTyp {
+        case "DECIMAL":
+            ord = true
+        case "ZERO_DECIMAL":
+            ord = true
+        case "UPPER_ALPHA":
+            ord = true
+        case "ALPHA":
+            ord = true
+        case "UPPER_ROMAN":
+            ord = true
+        case "ROMAN":
+            ord = true
+        default:
+            ord = false
+    }
+    return ord
+}
 /*
 func (dObj *gdocMdObj) downloadImg()(err error) {
 
@@ -201,6 +267,10 @@ func (dObj *gdocMdObj) createImgFolder()(err error) {
 */
 
 func (dObj *gdocMdObj) InitGdocMd(folderPath string, options *util.OptObj) (err error) {
+    var listItem docList
+    var heading heading
+    var sec sect
+    var ftnote docFtnote
 
     if dObj == nil {
         return fmt.Errorf("error gdocMD::Init: dObj is nil!")
@@ -229,15 +299,14 @@ func (dObj *gdocMdObj) InitGdocMd(folderPath string, options *util.OptObj) (err 
         dObj.Options = options
     }
 
-    fPath, fexist, err := util.CreateFileFolder(folderPath, dObj.DocName)
+//    fPath, fexist, err := util.CreateFileFolder(folderPath, dObj.DocName)
+    fPath, _, err := util.CreateFileFolder(folderPath, dObj.DocName)
     if err!= nil {
         return fmt.Errorf("error -- util.CreateFileFolder: %v", err)
     }
     dObj.folderPath = fPath
 
     // create output file path/outfilNam.txt
-    outfilNam := dObj.DocName
-
     outfil, err := util.CreateOutFil(fPath, dObj.DocName,"txt")
     if err!= nil {
         return fmt.Errorf("error -- util.CreateOutFil: %v", err)
@@ -254,7 +323,7 @@ func (dObj *gdocMdObj) InitGdocMd(folderPath string, options *util.OptObj) (err 
 		if err != nil {
 			return fmt.Errorf("error -- CreateImgFolder: could create ImgFolder: %v!", err)
 		}
-//		dObj.imgFoldPath = imgFoldPath
+		dObj.imgFoldNam = imgFoldPath
 		err = util.DownloadImages(doc, imgFoldPath, dObj.Options)
 		if err != nil {
 			return fmt.Errorf("error -- downloadImages could download images: %v!", err)
