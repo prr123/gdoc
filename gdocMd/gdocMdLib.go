@@ -349,7 +349,7 @@ func (dObj *gdocMdObj) InitGdocMd(folderPath string, options *util.OptObj) (err 
                     listItem.listId = listId
                     listItem.maxNestLev = elObj.Paragraph.Bullet.NestingLevel
                     nestL := doc.Lists[listId].ListProperties.NestingLevels[nestlev]
-                    listItem.ord = getGlyphOrd(nestL)
+                    listItem.ord = util.GetGlyphOrd(nestL)
                     dObj.docLists = append(dObj.docLists, listItem)
                 } else {
                     if dObj.docLists[found].maxNestLev < nestlev { dObj.docLists[found].maxNestLev = nestlev }
