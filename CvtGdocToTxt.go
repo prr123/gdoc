@@ -85,7 +85,7 @@ func main() {
 	fmt.Printf("The title of the doc is: %s\n", doc.Title)
 	fmt.Printf("Destination folder: %s\n", outfilPath)
 
-	err = gdocTxt.CvtGdocToTxt(outfilPath, doc)
+	err = gdocTxt.CvtGdocToTxt(outfilPath, doc, nil)
 	if err != nil {
 		fmt.Println("error main -- cannot convert gdoc file: ", err)
 		os.Exit(1)
