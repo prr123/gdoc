@@ -59,6 +59,71 @@ type out_opt struct {
 	CssFil bool `yaml:"Css File"`
 }
 
+
+func GetColor(color  *docs.Color)(outstr string) {
+    outstr = ""
+        if color != nil {
+            blue := int(color.RgbColor.Blue*255.0)
+            red := int(color.RgbColor.Red*255.0)
+            green := int(color.RgbColor.Green*255)
+            outstr += fmt.Sprintf("rgb(%d, %d, %d)", red, green, blue)
+            return outstr
+        }
+    outstr = "/*no color*/\n"
+    return outstr
+}
+
+func GetDash(dashStyle string)(outstr string) {
+
+    switch dashStyle {
+        case "SOLID":
+            outstr = "solid"
+        case "DOT":
+            outstr = "dotted"
+        case "DASH":
+            outstr = "dashed"
+        default:
+            outstr = "none"
+    }
+
+    return outstr
+}
+
+func GetImgLayout (layout string) (ltyp int, err error) {
+
+    switch layout {
+        case "WRAP_TEXT":
+
+        case "BREAK_LEFT":
+
+        case "BREAK_RIGHT":
+
+        case "BREAK_LEFT_RIGHT":
+
+        case "IN_FRONT_OF_TEXT":
+
+        case "BEHIND_TEXT":
+
+        default:
+            return -1, fmt.Errorf("layout %s not implemented!", layout)
+    }
+    return ltyp, nil
+}
+
+func Get_vert_align (alStr string) (outstr string) {
+    switch alStr {
+        case "TOP":
+            outstr = "top"
+        case "Middle":
+            outstr = "middle"
+        case "BOTTOM":
+            outstr = "bottom"
+        default:
+            outstr = "baseline"
+    }
+    return outstr
+}
+
 func GetGlyphStr(nlev *docs.NestingLevel)(glyphTyp string) {
 
     // ordered list
