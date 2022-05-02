@@ -970,13 +970,29 @@ func addDispObj(src, add *dispObj) {
 }
 
 
-func CreHtmlHead()(outstr string, err error) {
+func CreHtmlDocHead(docNam string)(outstr string) {
 	outstr = "<!DOCTYPE html>\n"
-//	outstr += fmt.Sprintf("<!-- file: %s -->\n", dObj.docName)
+	outstr += fmt.Sprintf("<!-- file: %s -->\n", docNam)
 	outstr += "<head>\n<style>\n"
-	return outstr, nil
+	return outstr
 }
 
+func CreHtmlScript()(outstr string) {
+
+	outstr = "</style><script>\n"
+	return outstr
+}
+
+func CreHtmlBody()(outstr string) {
+
+	outstr = "document.addEventListener(\"DOMContentLoaded\", dispDoc);\n"
+	outstr += "</script><body>\n"
+	return outstr
+}
+
+func CreHtmlDocEnd()(string) {
+	return "</body></html>/n"
+}
 
 func (dObj *GdocDomObj) printHeadings() {
 
@@ -3102,7 +3118,7 @@ func CreGdocHtmlDoc(folderPath string, doc *docs.Document, options *util.OptObj)
 
 	// create html file
 	outfil := dObj.htmlFil
-	docHeadStr,_ := CreHtmlHead()
+	docHeadStr := CreHtmlDocHead(dObj.docName)
 	outfil.WriteString(docHeadStr)
 
 	// div Css and named styles used
@@ -3161,7 +3177,8 @@ func CreGdocHtmlMain(folderPath string, doc *docs.Document, options *util.OptObj
 	// create html file
 	outfil := dObj.htmlFil
 	if outfil == nil {return fmt.Errorf("outfil is nil!")}
-	docHeadStr,_ := CreHtmlHead()
+
+	docHeadStr := CreHtmlDocHead(dObj.docName)
 	outfil.WriteString(docHeadStr)
 	// basic Css
 	outfil.WriteString(headObj.bodyCss)
@@ -3234,7 +3251,7 @@ func CreGdocHtmlSection(heading, folderPath string, doc *docs.Document, options 
 	outfil := dObj.htmlFil
 	if outfil == nil {return fmt.Errorf("outfil is nil!")}
 
-	docHeadStr,_ := CreHtmlHead()
+	docHeadStr := CreHtmlDocHead(dObj.docName)
 	outfil.WriteString(docHeadStr)
 	// basic Css
 	outfil.WriteString(headObj.bodyCss)
@@ -3327,7 +3344,7 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *util.OptObj)(
 		return fmt.Errorf("outfil is nil!")
 	}
 
-	docHeadStr,_ := CreHtmlHead()
+	docHeadStr := CreHtmlDocHead(dObj.docName)
 	outfil.WriteString(docHeadStr)
 
 	//css
