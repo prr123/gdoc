@@ -970,32 +970,38 @@ func addDispObj(src, add *dispObj) {
 }
 
 
-func CreHtmlDocHead(docNam string)(outstr string) {
+func creHtmlDocHead(docNam string)(outstr string) {
 	outstr = "<!DOCTYPE html>\n"
 	outstr += fmt.Sprintf("<!-- file: %s -->\n", docNam)
 	outstr += "<head>\n<style>\n"
 	return outstr
 }
 
-func CreHtmlScript()(outstr string) {
-
+func creHtmlScript()(outstr string) {
 	outstr = "</style><script>\n"
 	return outstr
 }
 
-func CreHtmlBody()(outstr string) {
-
-	outstr = "document.addEventListener(\"DOMContentLoaded\", dispDoc);\n"
-	outstr += "</script><body>\n"
+func creHtmlBody()(outstr string) {
+	outstr = "</script>\n<body>\n"
 	return outstr
 }
 
-func CreHtmlDocEnd()(string) {
-	return "</body></html>/n"
+func creHtmlDocEnd()(string) {
+	return "</body></html>\n"
+}
+
+func (dObj *GdocDomObj) creDocScript()(jsStr string) {
+
+	outstr := "let divDoc = document.createElement('div');\n"
+	outstr += fmt.Sprintf("divDoc.classList.add('%s_doc');\n", dObj.docName)
+	outstr += "document.body.appendChild(divDoc);\n"
+	outstr += "document.addEventListener(\"DOMContentLoaded\", dispDoc);\n"
+
+	return outstr
 }
 
 func (dObj *GdocDomObj) printHeadings() {
-
 	if len(dObj.headings) == 0 {
 		fmt.Println("*** no Headings ***")
 		return
@@ -1441,25 +1447,32 @@ func (dObj *GdocDomObj) initGdocDom(folderPath string, options *util.OptObj) (er
 	}
 
 	if dObj.Options.Verb {
-		fmt.Printf("********** Headings in Document: %2d ***********\n", len(dObj.headings))
+		fmt.Printf("********** Prorcessing Document %s *************\n", dObj.docName)
+		fmt.Printf("  Headings in Document: %2d\n", len(dObj.headings))
 		for i:=0; i< len(dObj.headings); i++ {
-			fmt.Printf("  heading %3d  Id: %-15s text: %-20s El Start:%3d End:%3d\n", i, dObj.headings[i].id, dObj.headings[i].text, dObj.headings[i].hdElStart, dObj.headings[i].hdElEnd)
+			fmt.Printf("    heading %3d  Id: %-15s text: %-20s El Start:%3d End:%3d\n", i, dObj.headings[i].id, dObj.headings[i].text, dObj.headings[i].hdElStart, dObj.headings[i].hdElEnd)
 		}
-		fmt.Printf("\n********** Pages in Document: %2d ***********\n", len(dObj.sections))
-		for i:=0; i< len(dObj.sections); i++ {
-			fmt.Printf("  Page %3d  El Start:%3d End:%3d\n", i, dObj.sections[i].secElStart, dObj.sections[i].secElEnd)
+		if !dObj.Options.Sections {
+			fmt.Printf("  no Pages\n")
+		} else {
+			fmt.Printf("  Pages in Document: %2d\n", len(dObj.sections))
+			if len(dObj.sections) > 1 {
+				for i:=0; i< len(dObj.sections); i++ {
+					fmt.Printf("    Page %3d  El Start:%3d End:%3d\n", i, dObj.sections[i].secElStart, dObj.sections[i].secElEnd)
+				}
+			}
 		}
-		fmt.Printf("\n************ Lists in Document: %2d ***********\n", len(dObj.docLists))
+		fmt.Printf("  Lists in Document: %2d\n", len(dObj.docLists))
 		for i:=0; i< len(dObj.docLists); i++ {
-			fmt.Printf("list %3d id: %s max level: %d ordered: %t\n", i, dObj.docLists[i].listId, dObj.docLists[i].maxNestLev, dObj.docLists[i].ord)
+			fmt.Printf("    list %3d id: %s max level: %d ordered: %t\n", i, dObj.docLists[i].listId, dObj.docLists[i].maxNestLev, dObj.docLists[i].ord)
 		}
-		fmt.Printf("\n************ Footnotes in Document: %2d ***********\n", len(dObj.docFtnotes))
+		fmt.Printf("  Footnotes in Document: %2d\n", len(dObj.docFtnotes))
 		for i:=0; i< len(dObj.docFtnotes); i++ {
 			ftn := dObj.docFtnotes[i]
-			fmt.Printf("ft %3d: Number: %-4s id: %-15s el: %3d parel: %3d\n", i, ftn.numStr, ftn.id, ftn.el, ftn.parel)
+			fmt.Printf("    ft %3d: Number: %-4s id: %-15s el: %3d parel: %3d\n", i, ftn.numStr, ftn.id, ftn.el, ftn.parel)
 		}
 
-		fmt.Printf("**************************************************\n\n")
+		fmt.Printf("******************************************************\n")
 	}
 
 
@@ -1483,8 +1496,9 @@ func (dObj *GdocDomObj) initGdocDom(folderPath string, options *util.OptObj) (er
 		fmt.Printf("%s\n", fstr)
 	}
 
-    // create output file path/outfilNam.txt
-    outfil, err := util.CreateOutFil(fPath, dObj.docName,"html")
+    // create output file path/outfilNam.html
+	outFilNam := dObj.docName + "_js"
+    outfil, err := util.CreateOutFil(fPath, outFilNam,"html")
     if err!= nil {
         return fmt.Errorf("error -- util.CreateOutFil: %v", err)
     }
@@ -2894,14 +2908,13 @@ func (dObj *GdocDomObj) createTocDiv () (tocObj *dispObj, err error) {
 	var tocDiv dispObj
 	var htmlStr, cssStr string
 
-   if dObj.Options.Toc != true { return nil, nil }
-
-    if dObj.Options.Verb {
-        if len(dObj.headings) < 2 {
-            fmt.Printf("*** no TOC insufficient headings: %d ***\n", len(dObj.headings))
-            return nil, nil
-        }
-        fmt.Printf("*** creating TOC Div ***\n")
+	if dObj.Options.Toc != true { return nil, nil }
+	if dObj.Options.Verb {
+       	if len(dObj.headings) < 2 {
+           	fmt.Printf("*** no TOC insufficient headings: %d ***\n", len(dObj.headings))
+           	return nil, nil
+       	}
+       	fmt.Printf("*** creating TOC Div ***\n")
     }
 
     if len(dObj.headings) < 2 {
@@ -2927,7 +2940,7 @@ func (dObj *GdocDomObj) createTocDiv () (tocObj *dispObj, err error) {
 //		elEnd := dObj.headings[ihead].hdElEnd
 		par := doc.Body.Content[elStart].Paragraph
 		parNamedStyl := par.ParagraphStyle.NamedStyleType
-		hdId := dObj.headings[ihead].id[3:]
+		hdId := dObj.headings[ihead].id
 		text := dObj.headings[ihead].text
 		switch parNamedStyl {
 		case "TITLE":
@@ -3139,7 +3152,7 @@ func CreGdocHtmlDoc(folderPath string, doc *docs.Document, options *util.OptObj)
 
 	// create html file
 	outfil := dObj.htmlFil
-	docHeadStr := CreHtmlDocHead(dObj.docName)
+	docHeadStr := creHtmlDocHead(dObj.docName)
 	outfil.WriteString(docHeadStr)
 
 	// div Css and named styles used
@@ -3196,7 +3209,7 @@ func CreGdocHtmlMain(folderPath string, doc *docs.Document, options *util.OptObj
 	outfil := dObj.htmlFil
 	if outfil == nil {return fmt.Errorf("outfil is nil!")}
 
-	docHeadStr := CreHtmlDocHead(dObj.docName)
+	docHeadStr := creHtmlDocHead(dObj.docName)
 	outfil.WriteString(docHeadStr)
 	// basic Css
 	outfil.WriteString(headObj.bodyCss)
@@ -3266,7 +3279,7 @@ func CreGdocHtmlSection(heading, folderPath string, doc *docs.Document, options 
 	outfil := dObj.htmlFil
 	if outfil == nil {return fmt.Errorf("outfil is nil!")}
 
-	docHeadStr := CreHtmlDocHead(dObj.docName)
+	docHeadStr := creHtmlDocHead(dObj.docName)
 	outfil.WriteString(docHeadStr)
 	// basic Css
 	outfil.WriteString(headObj.bodyCss)
@@ -3349,7 +3362,7 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *util.OptObj)(
 		return fmt.Errorf("outfil is nil!")
 	}
 
-	docHeadStr := CreHtmlDocHead(dObj.docName)
+	docHeadStr := creHtmlDocHead(dObj.docName)
 	outfil.WriteString(docHeadStr)
 
 	//css
@@ -3365,14 +3378,20 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *util.OptObj)(
 	//css toc
 	if tocDiv != nil {outfil.WriteString(tocDiv.bodyCss)}
 
-	outfil.WriteString("</style>\n</head>\n<body>\n")
+	scriptStart := creHtmlScript()
+	outfil.WriteString(scriptStart)
 
+	scriptStr := dObj.creDocScript()
+	outfil.WriteString(scriptStr)
+
+	bodyStart := creHtmlBody()
+	outfil.WriteString(bodyStart)
 	// html
 	outfil.WriteString(headObj.bodyHtml)
 	// html toc
 	if tocDiv != nil {outfil.WriteString(tocDiv.bodyHtml)}
 
-	if dObj.Options.Sections {outfil.WriteString(secDiv.bodyHtml)}
+	if secDiv != nil {outfil.WriteString(secDiv.bodyHtml)}
 
 	// html main document
 	outfil.WriteString(mainDiv.bodyHtml)
@@ -3380,7 +3399,8 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *util.OptObj)(
 	// html footnotes
 	if ftnoteDiv != nil {outfil.WriteString(ftnoteDiv.bodyHtml)}
 
-	outfil.WriteString("</body>\n</html>\n")
+	docEndStr := creHtmlDocEnd()
+	outfil.WriteString(docEndStr)
 	outfil.Close()
 	return nil
 }
