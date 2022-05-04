@@ -36,6 +36,7 @@ type OptYaml struct {
 	BaseFont font_desc `yaml:"BaseFont"`
 	Doc doc_desc `yaml:"Doc"`
 	Option out_opt `yaml:"Option"`
+	Files fil_opt `yaml:"Files"`
 }
 
 type font_desc struct {
@@ -59,6 +60,12 @@ type out_opt struct {
 	CssFil bool `yaml:"Css File"`
 }
 
+type fil_opt struct {
+	CssFil bool `yaml:"CssFile"`
+	ScriptFil bool `yaml:"ScriptFile"`
+	SummaryFil bool `yaml:"SummaryFile"`
+	TagFil bool `yaml:"TagFile"`
+}
 
 func GetColor(color  *docs.Color)(outstr string) {
     outstr = ""
@@ -221,6 +228,14 @@ func ReadYamlFil(filepath, filnam string)(opt *OptYaml, err error) {
 	}
 //	fmt.Printf("opt: %v", optyaml)
 	return &optyaml, nil
+}
+
+func PrintOptYaml(opt *OptYaml) {
+
+	fmt.Printf("******** Options ***********\n")
+
+
+	fmt.Println("***************************\n")
 }
 
 func FatErr(fs string, msg string, err error) {
@@ -568,10 +583,9 @@ func GetDefOption(opt *OptObj) {
     opt.Verb = true
     opt.Toc = true
     opt.Sections = true
-
     for i:=0; i< 4; i++ {opt.ElMargin[i] = 0}
+    opt.Divisions = []string{"Main"}
 
-    opt.Divisions = []string{"Summary", "Main"}
     return
 }
 
