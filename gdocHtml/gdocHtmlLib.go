@@ -39,7 +39,6 @@ type GdocHtmlObj struct {
 	h4 namStyl
 	h5 namStyl
 	h6 namStyl
-    spanCount int
 	listStack *[]cList
 	docLists []docList
 	headings []heading
@@ -49,6 +48,7 @@ type GdocHtmlObj struct {
 	headCount int
 	secCount int
 	elCount int
+	spanCount int
 	ftnoteCount int
 	inImgCount int
 	posImgCount int
@@ -62,8 +62,8 @@ type GdocHtmlObj struct {
 
 type namStyl struct {
 	count int
-	exist bool
-	tocExist bool
+//	exist bool
+//	tocExist bool
 }
 
 type dispObj struct {
@@ -81,6 +81,7 @@ type sect struct {
 type heading struct {
 	hdElEnd int
 	hdElStart int
+	namedStyl string
 	id string
 	text string
 }
@@ -1028,23 +1029,6 @@ func creHtmlDocDiv(docName string)(htmlStr string) {
 	return htmlStr
 }
 
-func (dObj *GdocHtmlObj) creNamStylCss()(cssStr string) {
-	errStr :=""
-	for namedTyp, res := range dObj.namStylMap {
-		if namedTyp == "NORMAL_TEXT" { continue}
-		if res {
-			hdcss, err := dObj.cvtNamedStyl(namedTyp)
-			if err != nil {
-				errStr = fmt.Sprintf("%v", err)
-			}
-		cssStr += hdcss + errStr
-		}
-	}
-
-	return cssStr
-}
-
-
 func (dObj *GdocHtmlObj) printHeadings() {
 
 	if len(dObj.headings) == 0 {
@@ -1054,8 +1038,8 @@ func (dObj *GdocHtmlObj) printHeadings() {
 
 	fmt.Printf("**** Headings: %d ****\n", len(dObj.headings))
 	for i:=0; i< len(dObj.headings); i++ {
-		fmt.Printf("  heading %3d  Id: %-15s El Start:%3d End:%3d\n", i, dObj.headings[i].id,
-			dObj.headings[i].hdElStart, dObj.headings[i].hdElEnd)
+		fmt.Printf("  heading %3d  Id: %-15s named Styl: %-12s El Start:%3d End:%3d\n", i, dObj.headings[i].id,
+			dObj.headings[i].namedStyl, dObj.headings[i].hdElStart, dObj.headings[i].hdElEnd)
 	}
 }
 
@@ -1206,16 +1190,7 @@ func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *util.OptObj) (
 // initialise heading use
 // each heading has a default paragraph style
 // no reason to  create css if heading is not used
-	dObj.title.exist = false
-	dObj.subtitle.exist = false
-	dObj.h1.exist = false
-	dObj.h2.exist = false
-	dObj.h3.exist = false
-	dObj.h4.exist = false
-	dObj.h5.exist = false
-	dObj.h6.exist = false
-
-
+/*
 	dObj.title.tocExist = false
 	dObj.subtitle.tocExist = false
 	dObj.h1.tocExist = false
@@ -1224,9 +1199,10 @@ func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *util.OptObj) (
 	dObj.h4.tocExist = false
 	dObj.h5.tocExist = false
 	dObj.h6.tocExist = false
-	dObj.elCount = len(doc.Body.Content)
-
+*/
 	//named styles
+	dObj.namStylMap = make(map[string]bool, 8)
+
 	dObj.namStylMap["NORMAL_TEXT"] = true
 	dObj.namStylMap["TITLE"] = false
 	dObj.namStylMap["SUBTITLE"] = false
@@ -1236,6 +1212,9 @@ func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *util.OptObj) (
 	dObj.namStylMap["HEADING_4"] = false
 	dObj.namStylMap["HEADING_5"] = false
 	dObj.namStylMap["HEADING_6"] = false
+
+	// elements
+	dObj.elCount = len(doc.Body.Content)
 
 	// footnotes
 	dObj.ftnoteCount = 0
@@ -1250,6 +1229,7 @@ func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *util.OptObj) (
 	seclen := len(dObj.sections)
 //		fmt.Println("el: ", el, "section len: ", seclen, " secPtEnd: ", secPtEnd)
 
+
 	for el:=0; el<dObj.elCount; el++ {
 		elObj:= doc.Body.Content[el]
 		if elObj.SectionBreak != nil {
@@ -1257,15 +1237,15 @@ func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *util.OptObj) (
 				sec.secElStart = el
 				dObj.sections = append(dObj.sections, sec)
 				seclen := len(dObj.sections)
-//		fmt.Println("el: ", el, "section len: ", seclen, " secPtEnd: ", secPtEnd)
+				//	fmt.Println("el: ", el, "section len: ", seclen, " secPtEnd: ", secPtEnd)
 				if seclen > 1 {
 					dObj.sections[seclen-2].secElEnd = secPtEnd
 				}
 			}
 		}
+
 		// paragraphs and lists
 		if elObj.Paragraph != nil {
-
 			if elObj.Paragraph.Bullet != nil {
 			// lists
 				listId := elObj.Paragraph.Bullet.ListId
@@ -1304,13 +1284,16 @@ func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *util.OptObj) (
 				}
 				txtlen:= len(text)
 				if text[txtlen -1] == '\n' { text = text[:txtlen-1] }
+
+				// assign attribute to heading
 				heading.text = text
+				heading.namedStyl = namedStyl
 
 				dObj.headings = append(dObj.headings, heading)
-				hdlen := len(dObj.headings)
-				if hdlen > 1 {
-					dObj.headings[hdlen-2].hdElEnd = parHdEnd
-				}
+//				hdlen := len(dObj.headings)
+//				if hdlen > 1 {
+//					dObj.headings[hdlen-2].hdElEnd = parHdEnd
+//				}
 			} // end headings
 
 			// footnotes
@@ -1342,27 +1325,39 @@ func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *util.OptObj) (
 	}
 
 	if dObj.Options.Verb {
-		fmt.Printf("********** Headings in Document: %2d ***********\n", len(dObj.headings))
+		fmt.Printf("************ Headings: %2d **************\n", len(dObj.headings))
 		for i:=0; i< len(dObj.headings); i++ {
 			fmt.Printf("  heading %3d  Id: %-15s text: %-20s El Start:%3d End:%3d\n", i, dObj.headings[i].id, dObj.headings[i].text, 
 				dObj.headings[i].hdElStart, dObj.headings[i].hdElEnd)
 		}
-		fmt.Printf("\n********** Pages in Document: %2d ***********\n", len(dObj.sections))
-		for i:=0; i< len(dObj.sections); i++ {
-			fmt.Printf("  Page %3d  El Start:%3d End:%3d\n", i, dObj.sections[i].secElStart, dObj.sections[i].secElEnd)
+
+		fmt.Printf("***********  Named Styles: %2d **********\n", len(dObj.headings))
+		for namedTyp, val := range dObj.namStylMap {
+			if val {
+				fmt.Printf("Style: %s\n", namedTyp)
+			}
 		}
-		fmt.Printf("\n************ Lists in Document: %2d ***********\n", len(dObj.docLists))
+
+		fmt.Printf("************ Doc Pages: %2d *************\n", len(dObj.sections))
+		if len(dObj.sections) > 1 {
+			for i:=0; i< len(dObj.sections); i++ {
+				fmt.Printf("  Page %3d  El Start:%3d End:%3d\n", i, dObj.sections[i].secElStart, dObj.sections[i].secElEnd)
+			}
+		}
+
+		fmt.Printf("************ Lists: %2d *****************\n", len(dObj.docLists))
 		for i:=0; i< len(dObj.docLists); i++ {
 			fmt.Printf("list %3d id: %s max level: %d ordered: %t\n", i, dObj.docLists[i].listId, dObj.docLists[i].maxNestLev, 
 			dObj.docLists[i].ord)
 		}
-		fmt.Printf("\n************ Footnotes in Document: %2d ***********\n", len(dObj.docFtnotes))
+
+		fmt.Printf("************ Footnotes: %2d *************\n", len(dObj.docFtnotes))
 		for i:=0; i< len(dObj.docFtnotes); i++ {
 			ftn := dObj.docFtnotes[i]
 			fmt.Printf("ft %3d: Number: %-4s id: %-15s el: %3d parel: %3d\n", i, ftn.numStr, ftn.id, ftn.el, ftn.parel)
 		}
 
-		fmt.Printf("**************************************************\n\n")
+		fmt.Printf("****************************************\n\n")
 	}
 
 
@@ -1379,11 +1374,12 @@ func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *util.OptObj) (
     dObj.folderPath = fPath
 
 	if dObj.Options.Verb {
-		fmt.Println("******************* Output File ************")
+		fmt.Println("*************** Output File ****************")
 		fmt.Printf("folder path: %s ", fPath)
 		fstr := "is new!"
 		if fexist { fstr = "exists!" }
 		fmt.Printf("%s\n", fstr)
+		fmt.Println("********************************************")
 	}
 
     // create output file path/outfilNam.txt
@@ -1869,6 +1865,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 	// *** important *** cvtNamedStyl needs to be run before CvtParStyle
 
 	// add css for named style  found in doc
+/*
 	if namedTyp != "NORMAL_TEXT" {
 		hdcss, err := dObj.cvtNamedStyl(namedTyp)
 		if err != nil {
@@ -1876,7 +1873,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 		}
 		parObj.headCss += hdcss + errStr
 	}
-
+*/
 	if par.Bullet == nil {
 		// normal (no list) paragraph element
 		parHtmlStr += fmt.Sprintf("\n<!-- Paragraph %d %s -->\n", dObj.parCount, namedTyp)
@@ -2073,81 +2070,65 @@ func (dObj *GdocHtmlObj) cvtParEl(parEl *docs.ParagraphElement)(htmlStr string, 
 	return htmlStr, cssStr, nil
 }
 
-func (dObj *GdocHtmlObj) cvtNamedStyl(namedStylTyp string)(cssStr string, err error) {
-
-	cssComment:=""
-	namParStyl, namTxtStyl, err := dObj.getNamedStyl(namedStylTyp)
-	if err != nil {
-		cssComment = fmt.Sprintf("  /* cvtNamedStyle: named Style not recognized */\n")
-		return cssComment, nil
-	}
 
 
+func (dObj *GdocHtmlObj) cvtDocNamedStyles()(cssStr string, err error) {
+
+//	cssComment:=""
 	parmap := new(parMap)
 	txtmap := new(textMap)
+	for namedTyp, res := range dObj.namStylMap {
+		if namedTyp == "NORMAL_TEXT" { continue}
+		if !res {continue}
 
-	_, err = fillParMap(parmap, namParStyl)
+		namParStyl, namTxtStyl, err := dObj.getNamedStyl(namedTyp)
+		if err != nil {
+			cssStr += fmt.Sprintf("  /* cvtNamedStyle: named Style not recognized */\n")
+			continue
+		}
 
-	_, err = fillTxtMap(txtmap, namTxtStyl)
-	if err != nil {
-		cssComment = fmt.Sprintf("  /* cvtNamedStyle: named Style not recognized */\n")
-		return cssComment, nil
-	}
+		fillParMap(parmap, namParStyl)
+		fillTxtMap(txtmap, namTxtStyl)
 
-	cssPrefix := ""
-	switch namedStylTyp {
+		cssPrefix := ""
+		switch namedTyp {
 		case "TITLE":
-			if !(dObj.title.exist)  {
-				cssPrefix = fmt.Sprintf(".%s_title {\n", dObj.docName)
-				dObj.title.exist = true
-			}
+			cssPrefix = fmt.Sprintf(".%s_title {\n", dObj.docName)
 
 		case "SUBTITLE":
-			if !(dObj.subtitle.exist) {
-				cssPrefix = fmt.Sprintf(".%s_subtitle {\n",dObj.docName)
-				dObj.subtitle.exist = true
-			}
+			cssPrefix = fmt.Sprintf(".%s_subtitle {\n",dObj.docName)
+
 		case "HEADING_1":
-			if !(dObj.h1.exist) {
-				cssPrefix =fmt.Sprintf(".%s_h1 {\n",dObj.docName)
-				dObj.h1.exist = true
-			}
+			cssPrefix =fmt.Sprintf(".%s_h1 {\n",dObj.docName)
+
 		case "HEADING_2":
-			if !(dObj.h2.exist) {
-				cssPrefix =fmt.Sprintf(".%s_h2 {\n",dObj.docName)
-				dObj.h2.exist = true
-			}
+			cssPrefix =fmt.Sprintf(".%s_h2 {\n",dObj.docName)
+
 		case "HEADING_3":
-			if !(dObj.h3.exist) {
-				cssPrefix =fmt.Sprintf(".%s_h3 {\n",dObj.docName)
-				dObj.h3.exist = true
-			}
+			cssPrefix =fmt.Sprintf(".%s_h3 {\n",dObj.docName)
+
 		case "HEADING_4":
-			if !(dObj.h4.exist) {
-				cssPrefix =fmt.Sprintf(".%s_h4 {\n",dObj.docName)
-				dObj.h4.exist = true
-			}
+			cssPrefix =fmt.Sprintf(".%s_h4 {\n",dObj.docName)
+
 		case "HEADING_5":
-			if !(dObj.h5.exist) {
-				cssPrefix =fmt.Sprintf(".%s_h5 {\n",dObj.docName)
-				dObj.h5.exist = true
-			}
+			cssPrefix =fmt.Sprintf(".%s_h5 {\n",dObj.docName)
+
 		case "HEADING_6":
-			if !(dObj.h6.exist) {
-				cssPrefix =fmt.Sprintf(".%s_h6 {\n",dObj.docName)
-				dObj.h6.exist = true
-			}
+			cssPrefix =fmt.Sprintf(".%s_h6 {\n",dObj.docName)
+
 		case "NORMAL_TEXT":
 
 		case "NAMED_STYLE_TYPE_UNSPECIFIED":
 
 		default:
 
-	}
-	if len(cssPrefix) > 0 {
-		parCss := dObj.cvtParMapCss(parmap)
-		txtCss := cvtTxtMapCss(txtmap)
-		cssStr += cssPrefix + parCss + txtCss + "}\n"
+		}
+
+		if len(cssPrefix) > 0 {
+			parCss := dObj.cvtParMapCss(parmap)
+			txtCss := cvtTxtMapCss(txtmap)
+			cssStr += cssPrefix + parCss + txtCss + "}\n"
+		}
 	}
 	return cssStr, nil
 }
@@ -2218,7 +2199,7 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 
 	switch parStyl.NamedStyleType {
 		case "TITLE":
-			if dObj.title.exist && !alter {
+			if dObj.namStylMap["TITLE"] && !alter {
 				prefix = fmt.Sprintf("<p class=\"%s_title%s\"", dObj.docName, isListClass)
 			}
 			if alter {
@@ -2229,7 +2210,7 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 			suffix = "</p>"
 
 		case "SUBTITLE":
-			if dObj.subtitle.exist && !alter {
+			if dObj.namStylMap["SUBTITLE"] && !alter {
 				prefix = fmt.Sprintf("<p class=\"%s_subtitle\"", dObj.docName)
 			}
 			if alter {
@@ -2240,7 +2221,7 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 			suffix = "</p>"
 
 		case "HEADING_1":
-			if dObj.h1.exist && !alter {
+			if dObj.namStylMap["HEADING_1"] && !alter {
 				prefix = fmt.Sprintf("<h1 class=\"%s_h1\"", dObj.docName)
 			}
 			if alter {
@@ -2250,7 +2231,7 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 			}
 			suffix = "</h1>"
 		case "HEADING_2":
-			if dObj.h2.exist && !alter {
+			if dObj.namStylMap["HEADING_2"] && !alter {
 				prefix = fmt.Sprintf("<h2 class=\"%s_h2\"", dObj.docName)
 			}
 			if alter {
@@ -2260,7 +2241,7 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 			}
 			suffix = "</h2>"
 		case "HEADING_3":
-			if dObj.h3.exist && !alter {
+			if dObj.namStylMap["HEADING_3"] && !alter {
 				prefix = fmt.Sprintf("<h3 class=\"%s_h3\"", dObj.docName)
 			}
 			if alter {
@@ -2270,9 +2251,8 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 			}
 			suffix = "</h3>"
 		case "HEADING_4":
-			if dObj.h4.exist && !alter {
+			if dObj.namStylMap["HEADING_4"] && !alter {
 				prefix = fmt.Sprintf("<h4 class=\"%s_h4\"", dObj.docName)
-				dObj.h4.exist = true
 			}
 			if alter {
 				cssPrefix = fmt.Sprintf(".%s_h4.%s_h4_%d {\n",dObj.docName, dObj.docName, dObj.h4.count)
@@ -2281,9 +2261,8 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 			}
 			suffix = "</h4>"
 		case "HEADING_5":
-			if dObj.h5.exist && !alter {
+			if dObj.namStylMap["HEADING_5"] && !alter {
 				prefix = fmt.Sprintf("<h5 class=\"%s_h5\"", dObj.docName)
-				dObj.h5.exist = true
 			}
 			if alter {
 				cssPrefix = fmt.Sprintf(".%s_h5.%s_h5_%d {\n",dObj.docName, dObj.docName, dObj.h5.count)
@@ -2292,9 +2271,8 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 			}
 			suffix = "</h5>"
 		case "HEADING_6":
-			if dObj.h6.exist && !alter {
+			if dObj.namStylMap["HEADING_6"] && !alter {
 				prefix = fmt.Sprintf("<h6 class=\"%s_h6\"", dObj.docName)
-				dObj.h6.exist = true
 			}
 			if alter {
 				cssPrefix = fmt.Sprintf("%s_h6.%s_h6_%d {\n",dObj.docName, dObj.docName, dObj.h6.count)
@@ -2327,11 +2305,9 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 	} else {
 		prefix = prefix + ">"
 	}
-//fmt.Printf("parstyl: %s %s %s\n", parStyl.NamedStyleType, prefix, suffix)
-//	if (len(cssPrefix) > 0) {cssStr = cssComment + cssPrefix + cssParAtt + cssDefTxt + "\n}\n"}
+	//fmt.Printf("parstyl: %s %s %s\n", parStyl.NamedStyleType, prefix, suffix)
 	if (len(cssPrefix) > 0) {cssStr = cssComment + cssPrefix + cssParAtt + "}\n"}
 
-// test for a valid namestyl type
 	return cssStr, prefix, suffix, nil
 }
 
@@ -2485,8 +2461,8 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 	if err != nil {
 		return headCss, fmt.Errorf("creHeadCss: %v", err)
 	}
-	cssStr += "  display:block;"
-	cssStr += "  margin: 0 0 0 0;"
+	cssStr += "  display:block;\n"
+	cssStr += "  margin: 0 0 0 0;\n"
 	if dObj.Options.DivBorders {
 		cssStr += "  border: solid green;\n"
 		cssStr += "  border-width: 1px;\n"
@@ -2495,6 +2471,14 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 	cssStr += "}\n"
 	headCss += cssStr
 
+	hdcss, err := dObj.cvtDocNamedStyles()
+	if err != nil {
+		errStr = fmt.Sprintf("%v", err)
+	}
+	headCss += hdcss + errStr
+
+/*
+	cssStr = ""
 	for namedTyp, res := range dObj.namStylMap {
 		if namedTyp == "NORMAL_TEXT" { continue}
 		if res {
@@ -2506,7 +2490,7 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 		}
 	}
 	headCss += cssStr
-
+*/
 	// paragraph default style
 	cssStr = fmt.Sprintf(".%s_p {\n", dObj.docName)
 	cssStr += "  display: block;\n"
@@ -2763,7 +2747,7 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 
 	if dObj.Options.Verb {
 		if len(dObj.headings) < 2 {
-			fmt.Printf("*** no TOC insufficient headings: %d ***\n", len(dObj.headings))
+//			fmt.Printf("*** no TOC insufficient headings: %d ***\n", len(dObj.headings))
 			return nil, nil
 		}
 		fmt.Printf("*** creating TOC Div ***\n")
@@ -2774,7 +2758,49 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 		return nil, nil
 	}
 
-	doc := dObj.doc
+	//css
+	cssStr = ""
+	for namStyl, val := range dObj.namStylMap {
+
+		if !val {continue}
+
+		switch namStyl {
+			case "HEADING_1":
+				cssStr = fmt.Sprintf(".%s_h1.toc_h1 {\n",dObj.docName)
+ 				cssStr += "  padding-left: 10px;\n  margin: 0px;\n"
+				cssStr += "}\n"
+
+			case "HEADING_2":
+				cssStr = fmt.Sprintf(".%s_h2.toc_h2 {\n",dObj.docName)
+				cssStr += " padding-left: 20px;\n  margin: 0px;\n"
+				cssStr += "}\n"
+
+			case "HEADING_3":
+				cssStr = fmt.Sprintf(".%s_h3.toc_h3 {\n",dObj.docName)
+				cssStr += " padding-left: 40px;\n  margin: 0px;\n"
+				cssStr += "}\n"
+
+			case "HEADING_4":
+				cssStr = fmt.Sprintf(".%s_h4.toc_h4 {\n",dObj.docName)
+				cssStr += " padding-left: 60px;\n  margin: 0px;\n"
+				cssStr += "}\n"
+
+			case "HEADING_5":
+				cssStr = fmt.Sprintf(".%s_h5.toc_h5 {\n",dObj.docName)
+				cssStr += " padding-left: 80px;\n  margin: 0px;\n"
+				cssStr += "}\n"
+
+			case "HEADING_6":
+				cssStr = fmt.Sprintf(".%s_h6.toc_h6 {\n",dObj.docName)
+				cssStr += " padding-left: 100px;\n  margin: 0px;\n"
+				cssStr += "}\n"
+
+			default:
+
+		}
+	}
+
+	tocDiv.bodyCss = cssStr
 
 	//html
 	htmlStr = fmt.Sprintf("<div class=\"%s_div top\">\n", dObj.docName)
@@ -2785,13 +2811,11 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 	for ihead:=0; ihead<len(dObj.headings); ihead++ {
 		cssStr = ""
 		htmlStr = ""
-		elStart := dObj.headings[ihead].hdElStart
-//		elEnd := dObj.headings[ihead].hdElEnd
-		par := doc.Body.Content[elStart].Paragraph
-		parNamedStyl := par.ParagraphStyle.NamedStyleType
+//		elStart := dObj.headings[ihead].hdElStart
+		namedStyl := dObj.headings[ihead].namedStyl
 		hdId := dObj.headings[ihead].id[3:]
 		text := dObj.headings[ihead].text
-		switch parNamedStyl {
+		switch namedStyl {
 		case "TITLE":
 			prefix := fmt.Sprintf("<p class=\"%s_title %s_leftTitle_UL\">", dObj.docName, dObj.docName)
 			middle := fmt.Sprintf("<a href=\"#%s\" class=\"%s_noUl\">%s</a>", hdId, dObj.docName, text)
@@ -2803,80 +2827,43 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
 			suffix := "</p>\n"
 			htmlStr = prefix + middle + suffix
+
 		case "HEADING_1":
 			//html
 			prefix := fmt.Sprintf("<h1 class=\"%s_h1 toc_h1\">", dObj.docName)
 			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
 			suffix := "</h1>\n"
 			htmlStr = prefix + middle + suffix
-			//css
-			if !dObj.h1.tocExist {
-				cssStr = fmt.Sprintf(".%s_h1.toc_h1 {\n",dObj.docName)
- 				cssStr += "  padding-left: 10px;\n  margin: 0px;\n"
-				cssStr += "}\n"
-				dObj.h1.tocExist = true
-			}
 		case "HEADING_2":
 			prefix := fmt.Sprintf("<h2 class=\"%s_h2 toc_h2\">", dObj.docName)
 			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
 			suffix := "</h2>\n"
 			htmlStr = prefix + middle + suffix
-			if !dObj.h2.tocExist {
-				cssStr = fmt.Sprintf(".%s_h2.toc_h2 {\n",dObj.docName)
-				cssStr += " padding-left: 20px;\n  margin: 0px;\n"
-				cssStr += "}\n"
-				dObj.h2.tocExist = true
-			}
 		case "HEADING_3":
 			prefix := fmt.Sprintf("<h3 class=\"%s_h3 toc_h3\">", dObj.docName)
 			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
 			suffix := "</h3>\n"
 			htmlStr = prefix + middle + suffix
-			if !dObj.h3.tocExist {
-				cssStr = fmt.Sprintf(".%s_h3.toc_h3 {\n",dObj.docName)
-				cssStr += " padding-left: 40px;\n  margin: 0px;\n"
-				cssStr += "}\n"
-				dObj.h3.tocExist = true
-			}
 		case "HEADING_4":
 			prefix := fmt.Sprintf("<h4 class=\"%s_h4 toc_h4\">", dObj.docName)
 			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
 			suffix := "</h4>\n"
 			htmlStr = prefix + middle + suffix
-			if !dObj.h4.tocExist {
-				cssStr = fmt.Sprintf(".%s_h4.toc_h4 {\n",dObj.docName)
-				cssStr += " padding-left: 60px;\n  margin: 0px;\n"
-				cssStr += "}\n"
-				dObj.h4.tocExist = true
-			}
 		case "HEADING_5":
 			prefix := fmt.Sprintf("<h5 class=\"%s_h5 toc_h5\">", dObj.docName)
 			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
 			suffix := "</h5>\n"
 			htmlStr = prefix + middle + suffix
-			if !dObj.h5.tocExist {
-				cssStr = fmt.Sprintf(".%s_h5.toc_h5 {\n",dObj.docName)
-				cssStr += " padding-left: 80px;\n  margin: 0px;\n"
-				cssStr += "}\n"
-				dObj.h5.tocExist = true
-			}
 		case "HEADING_6":
 			prefix := fmt.Sprintf("<h6 class=\"%s_h6 toc_h6\">", dObj.docName)
 			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
 			suffix := "</h6>\n"
 			htmlStr = prefix + middle + suffix
-			if !dObj.h6.tocExist {
-				cssStr = fmt.Sprintf(".%s_h6.toc_h6 {\n",dObj.docName)
-				cssStr += " padding-left: 100px;\n  margin: 0px;\n"
-				cssStr += "}\n"
-				dObj.h6.tocExist = true
-			}
 		case "NORMAL_TEXT":
 
 		default:
 
 		}
-		tocDiv.bodyCss += cssStr
 		tocDiv.bodyHtml += htmlStr
 
 	} // end loop
@@ -2900,7 +2887,7 @@ func (dObj *GdocHtmlObj) cvtBody() (bodyObj *dispObj, err error) {
 
 	bodyObj = new(dispObj)
 
-	bodyObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div\">", dObj.docName)
+	bodyObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div\">\n", dObj.docName)
 
 	elNum := len(body.Content)
 	for el:=0; el< elNum; el++ {
