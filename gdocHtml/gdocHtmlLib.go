@@ -53,6 +53,7 @@ type GdocHtmlObj struct {
 	inImgCount int
 	posImgCount int
 	htmlFil *os.File
+	cssFil *os.File
 	folderName string
 	folderPath string
     imgFoldNam string
@@ -1187,20 +1188,6 @@ func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *util.OptObj) (
 	}
 
 
-// initialise heading use
-// each heading has a default paragraph style
-// no reason to  create css if heading is not used
-/*
-	dObj.title.tocExist = false
-	dObj.subtitle.tocExist = false
-	dObj.h1.tocExist = false
-	dObj.h2.tocExist = false
-	dObj.h3.tocExist = false
-	dObj.h4.tocExist = false
-	dObj.h5.tocExist = false
-	dObj.h6.tocExist = false
-*/
-	//named styles
 	dObj.namStylMap = make(map[string]bool, 8)
 
 	dObj.namStylMap["NORMAL_TEXT"] = true
