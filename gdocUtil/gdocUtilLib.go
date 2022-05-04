@@ -35,7 +35,7 @@ type OptObj struct {
 type OptYaml struct {
 	BaseFont font_desc `yaml:"BaseFont"`
 	Doc doc_desc `yaml:"Doc"`
-	Option out_opt `yaml:"Option"`
+	Output out_opt `yaml:"Output"`
 	Files fil_opt `yaml:"Files"`
 }
 
@@ -233,8 +233,10 @@ func ReadYamlFil(filepath, filnam string)(opt *OptYaml, err error) {
 func PrintOptYaml(opt *OptYaml) {
 
 	fmt.Printf("******** Options ***********\n")
-
-
+	fmt.Printf("Base Font:\n")
+	fmt.Printf("  Name: %s\n", opt.BaseFont.Name)
+	fmt.Printf("Output:\n")
+	fmt.Printf("  Verbose: %t\n", opt.Output.Verb)
 	fmt.Println("***************************\n")
 }
 
