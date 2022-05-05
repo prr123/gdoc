@@ -1046,11 +1046,13 @@ func creHtmlDocDiv(docName string)(htmlStr string) {
 	return htmlStr
 }
 
-func (dObj *GdocDomObj) creDocDivScript()(jsStr string) {
+func creDocDivScript(docName string)(jsStr string) {
 
-    jsStr = "let divDoc = document.createElement('div');\n"
-    jsStr += fmt.Sprintf("divDoc.classList.add('%s_doc');\n", dObj.docName)
-    jsStr += "document.body.appendChild(divDoc);\n"
+	jsStr = "function dispDoc() {\n"
+    jsStr += "  let divDoc = document.createElement('div');\n"
+    jsStr += fmt.Sprintf("  divDoc.classList.add('%s_doc');\n", docName)
+    jsStr += "  document.body.appendChild(divDoc);\n"
+	jsStr += "}\n"
     jsStr += "document.addEventListener(\"DOMContentLoaded\", dispDoc);\n"
     return jsStr
 }
@@ -2603,7 +2605,6 @@ func (dObj *GdocDomObj) creCssDocHead() (headCss string, err error) {
 	headCss += cssStr
 
 	//gdoc division html
-//	headObj.bodyHtml = fmt.Sprintf("<div class=\"%s_doc\">\n", dObj.docName)
 
 	return headCss, nil
 }
@@ -3070,8 +3071,8 @@ func CreGdocHtmlDoc(folderPath string, doc *docs.Document, options *util.OptObj)
 
 
 	// html doc div
-	htmlStr := creHtmlDocDiv(dObj.docName)
-	outfil.WriteString(htmlStr)
+//	htmlStr := creHtmlDocDiv(dObj.docName)
+//	outfil.WriteString(htmlStr)
 
 	// html toc
 	if tocDiv != nil  {outfil.WriteString(tocDiv.bodyHtml)}
@@ -3447,6 +3448,9 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *util.OptObj)(
 	jsStr := "<script>\n"
 	outfil.WriteString(jsStr)
 
+	//js create doc div
+	jsStr = creDocDivScript(dObj.docName)
+	outfil.WriteString(jsStr)
 
 	//script end
 	jsStr = "</script>\n"
@@ -3459,8 +3463,8 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *util.OptObj)(
 
 
 	// html doc div
-	htmlStr = creHtmlDocDiv(dObj.docName)
-	outfil.WriteString(htmlStr)
+//	htmlStr = creHtmlDocDiv(dObj.docName)
+//	outfil.WriteString(htmlStr)
 
 	// html toc
 	if tocDiv != nil  {outfil.WriteString(tocDiv.bodyHtml)}
@@ -3481,3 +3485,4 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *util.OptObj)(
 	outfil.Close()
 	return nil
 }
+
