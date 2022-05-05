@@ -1183,7 +1183,7 @@ func (dObj *GdocDomObj) findListProp (listId string) (listProp *docs.ListPropert
 	return nil
 }
 
-func (dObj *GdocDomObj) initGdocHtml(folderPath string, options *util.OptObj) (err error) {
+func (dObj *GdocDomObj) initGdocDom(folderPath string, options *util.OptObj) (err error) {
 	var listItem docList
 	var heading heading
 	var sec sect
@@ -2976,7 +2976,7 @@ func CreGdocHtmlDoc(folderPath string, doc *docs.Document, options *util.OptObj)
 	dObj.doc = doc
 
 	// further initialization
-	err = dObj.initGdocHtml(folderPath, options)
+	err = dObj.initGdocDom(folderPath, options)
 	if err != nil {
 		return fmt.Errorf("initGdocHtml %v", err)
 	}
@@ -3102,7 +3102,7 @@ func CreGdocHtmlMain(folderPath string, doc *docs.Document, options *util.OptObj
 	dObj.doc = doc
 
 	// further initialization
-	err = dObj.initGdocHtml(folderPath, options)
+	err = dObj.initGdocDom(folderPath, options)
 	if err != nil {
 		return fmt.Errorf("initGdocHtml %v", err)
 	}
@@ -3227,7 +3227,7 @@ func CreGdocHtmlSection(heading, folderPath string, doc *docs.Document, options 
 	dObj.doc = doc
 
 	// further initialization
-	err = dObj.initGdocHtml(folderPath, options)
+	err = dObj.initGdocDom(folderPath, options)
 	if err != nil {
 		return fmt.Errorf("initGdocHtml %v", err)
 	}
@@ -3352,7 +3352,7 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *util.OptObj)(
 	dObj.doc = doc
 
 	// further initialization
-	err = dObj.initGdocHtml(folderPath, options)
+	err = dObj.initGdocDom(folderPath, options)
 	if err != nil {
 		return fmt.Errorf("initGdocHtml %v", err)
 	}
@@ -3374,7 +3374,6 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *util.OptObj)(
 			if err != nil {
 				return fmt.Errorf("cvtBodySec %d %v", ipage, err)
 			}
-//			mainDiv.headCss += pgBody.headCss
 			mainDiv.bodyCss += pgBody.bodyCss
 			mainDiv.bodyHtml += pgHd.bodyHtml + pgBody.bodyHtml
 		}
@@ -3383,7 +3382,6 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *util.OptObj)(
 		if err != nil {
 			return fmt.Errorf("cvtBody: %v", err)
 		}
-//		mainDiv.headCss += mBody.headCss
 		mainDiv.bodyCss += mBody.bodyCss
 		mainDiv.bodyHtml += mBody.bodyHtml
 	}
