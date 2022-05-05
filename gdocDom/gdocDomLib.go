@@ -971,7 +971,7 @@ func addDispObj(src, add *dispObj) {
 
 func creHtmlDocHead(docNam string)(outstr string) {
     outstr = "<!DOCTYPE html>\n"
-    outstr += fmt.Sprintf("<!-- file: %s -->\n", docNam)
+    outstr += fmt.Sprintf("<!-- file: %s -->\n", docNam + "Dom")
     outstr += "<head>\n<style>\n"
     return outstr
 }
