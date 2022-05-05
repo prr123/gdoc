@@ -3439,12 +3439,27 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *util.OptObj)(
 		outfil.WriteString(cssStr)
 	}
 
+	// css end
+	cssStr := "</style>\n"
+	outfil.WriteString(cssStr)
+
+	//script start
+	jsStr := "<script>\n"
+	outfil.WriteString(jsStr)
+
+
+	//script end
+	jsStr = "</script>\n"
+	outfil.WriteString(jsStr)
+
+
 	// html start body
-	outfil.WriteString("</style>\n</head>\n<body>\n")
+	htmlStr := "<body>\n"
+	outfil.WriteString(htmlStr)
 
 
 	// html doc div
-	htmlStr := creHtmlDocDiv(dObj.docName)
+	htmlStr = creHtmlDocDiv(dObj.docName)
 	outfil.WriteString(htmlStr)
 
 	// html toc
@@ -3460,7 +3475,9 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *util.OptObj)(
 	if ftnoteDiv != nil {outfil.WriteString(ftnoteDiv.bodyHtml)}
 
 	// html ends doc div
-	outfil.WriteString("</div>\n</body>\n</html>\n")
+	htmlStr = creHtmlDocEnd()
+	outfil.WriteString(htmlStr)
+//	outfil.WriteString("</div>\n</body>\n</html>\n")
 	outfil.Close()
 	return nil
 }
