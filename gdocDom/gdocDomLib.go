@@ -1394,8 +1394,9 @@ func (dObj *GdocDomObj) initGdocDom(folderPath string, options *util.OptObj) (er
 		fmt.Println("********************************************")
 	}
 
-    // create output file path/outfilNam.txt
-    outfil, err := util.CreateOutFil(fPath, dObj.docName,"html")
+    // create output file path/outfilNam.html
+	outfilNam := dObj.docName + "Dom"
+    outfil, err := util.CreateOutFil(fPath, outfilNam, "html")
     if err!= nil {
         return fmt.Errorf("error -- util.CreateOutFil: %v", err)
     }
