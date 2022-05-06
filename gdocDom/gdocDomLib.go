@@ -195,6 +195,15 @@ type linkMap struct {
 	bookmark string
 }
 
+type elScriptObj struct {
+	typ string
+	text string
+	cl1 string
+	cl2 string
+	id string
+	parent string
+}
+
 func findDocList(list []docList, listid string) (res int) {
 
 	res = -1
@@ -1047,8 +1056,18 @@ func creHtmlDocDiv(docName string)(htmlStr string) {
 }
 
 func creDocDivScript(docName string)(jsStr string) {
+	jsStr = "function addEl(elObj) {\n"
+	jsStr += "  let el = document.createElement(elObj.typ);\n"
+	jsStr += "  if (elObj.cl1 != null) {el.classList.add(elObj.cl1);}\n"
+	jsStr += "  if (elObj.cl2 != null) {el.classList.add(elObj.cl2);}\n"
+	jsStr += "  if (elObj.idStr != null) {el.setAttribute(\"id\", elObj.idStr);}\n"
+	jsStr += "  if (elObj.txt != null) {\n"
+	jsStr += "    var text =  document.createTextNode(elObj.txt);\n"
+	jsStr += "    el.appendChild(text);\n}\n"
+	jsStr += "  elObj.parent.appendChild(el)\n"
+	jsStr += "  return el\n}\n\n"
 
-	jsStr = "function dispDoc() {\n"
+	jsStr += "function dispDoc() {\n"
     jsStr += "  let divDoc = document.createElement('div');\n"
     jsStr += fmt.Sprintf("  divDoc.classList.add('%s_doc');\n", docName)
     jsStr += "  document.body.appendChild(divDoc);\n"
@@ -1056,6 +1075,19 @@ func creDocDivScript(docName string)(jsStr string) {
     jsStr += "document.addEventListener(\"DOMContentLoaded\", dispDoc);\n"
     return jsStr
 }
+
+
+func addParScript(docName string)(jsStr string) {
+
+	jsStr = "function addPar(txt, idStr, cl1, cl2) {\n"
+    jsStr += "  let par = document.createElement('p');\n"
+    jsStr += fmt.Sprintf("  p.classList.add('%s_p');\n", docName)
+    jsStr += "  divMain.appendChild(par);\n"
+	jsStr += "}\n"
+    return jsStr
+}
+
+
 
 func (dObj *GdocDomObj) printHeadings() {
 
@@ -2387,27 +2419,33 @@ func (dObj *GdocDomObj) cvtTxtStylCss(txtStyl *docs.TextStyle, head bool)(cssStr
 
 
 func (dObj *GdocDomObj) createDivHead(divName, idStr string) (divObj dispObj, err error) {
-	var htmlStr, cssStr string
+	var htmlStr, cssStr, script string
 	//gdoc division css
 
 	if len(divName) == 0 { return divObj, fmt.Errorf("createDivHead: no divNam!") }
-	cssStr = fmt.Sprintf(".%s_div.%s {\n", dObj.docName, divName)
 
-	// html
+	// css
+	cssStr = fmt.Sprintf(".%s_main.%s {\n", dObj.docName, divName)
+
+	// script
 	if len(divName) == 0 {
-		htmlStr = fmt.Sprintf("<div class=\"%s_div\"", dObj.docName)
+//		htmlStr = fmt.Sprintf("<div class=\"%s_main\"", dObj.docName)
+//		script = 
 	} else {
-		htmlStr = fmt.Sprintf("<div class=\"%s_div %s\"", dObj.docName, divName)
+		
+//		htmlStr = fmt.Sprintf("<div class=\"%s_main %s\"", dObj.docName, divName)
 	}
 
 	if len(idStr) > 0 {
-		htmlStr += fmt.Sprintf(" id=\"%s\"", idStr)
+
+//		htmlStr += fmt.Sprintf(" id=\"%s\"", idStr)
 	}
 
 	htmlStr += ">\n"
-	// css
+
 	divObj.bodyCss = cssStr
-	divObj.bodyHtml = htmlStr
+//	divObj.bodyHtml = htmlStr
+	divObj.script = script
 
 	return divObj, nil
 }
