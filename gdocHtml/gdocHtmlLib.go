@@ -1475,9 +1475,8 @@ func (dObj *GdocHtmlObj) cvtParElText(parElTxt *docs.TextRun)(htmlStr string, cs
 	}
 	if len(spanCssStr)>0 {
 		dObj.spanCount++
-		spanIdStr := fmt.Sprintf("%s_sp%d", dObj.docName, dObj.spanCount)
-		cssStr = fmt.Sprintf("#%s {\n", spanIdStr) + spanCssStr + "}\n"
-		htmlStr = fmt.Sprintf("<span id=\"%s\">",spanIdStr) + linkPrefix + parElTxt.Content + linkSuffix + "</span>"
+		cssStr = fmt.Sprintf("#%s_sp%d {\n", dObj.docName, dObj.spanCount) + spanCssStr + "}\n"
+		htmlStr = fmt.Sprintf("<span id=\"%s_sp%d\">",dObj.docName, dObj.spanCount) + linkPrefix + parElTxt.Content + linkSuffix + "</span>"
 	} else {
 		htmlStr = linkPrefix + parElTxt.Content + linkSuffix
 	}
