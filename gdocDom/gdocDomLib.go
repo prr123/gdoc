@@ -203,6 +203,7 @@ type elScriptObj struct {
 	idStr string
 	href string
 	parent string
+	newEl string
 }
 
 func findDocList(list []docList, listid string) (res int) {
@@ -1120,14 +1121,14 @@ func creElFuncScript() (jsStr string) {
 	jsStr += "  if (elObj.cl1 != null) {el.classList.add(elObj.cl1);}\n"
 	jsStr += "  if (elObj.cl2 != null) {el.classList.add(elObj.cl2);}\n"
 	jsStr += "  if (elObj.idStr != null) {el.setAttribute(\"id\", elObj.idStr);}\n"
-	jsStr += "  if (elObj.href != null) {el.href=\"elObj.href\";\n"
+	jsStr += "  if (elObj.href != null) {el.href=elObj.href};\n"
 	jsStr += "  if (elObj.txt != null) {\n"
 	jsStr += "    var text =  document.createTextNode(elObj.txt);\n"
 	jsStr += "    el.appendChild(text);\n"
 	jsStr += "  }\n"
 	jsStr += "  elp = elObj.parent;\n"
 	jsStr += "  elp.appendChild(el);\n"
-	jsStr += "  return\n}\n\n"
+	jsStr += "  return el\n}\n\n"
 	jsStr += "function addBodyElScript(divDoc) {\n"
 	jsStr += "  const elObj = {};\n"
 	return jsStr
@@ -1144,7 +1145,7 @@ func addElToDom(elObj elScriptObj)(script string) {
 	if len(elObj.txt) > 0 {script += fmt.Sprintf("  elObj.txt = '%s';\n", elObj.txt)}
 	script += fmt.Sprintf("  elObj.parent = %s;\n", elObj.parent)
 	script += fmt.Sprintf("  elObj.typ = '%s';\n", elObj.typ)
-	script += "  addEl(elObj);\n"
+	script += fmt.Sprintf("  %s = addEl(elObj);\n", elObj.newEl)
 	return script
 }
 
@@ -1169,6 +1170,16 @@ func creDocDivScript(docName string)(jsStr string) {
     return jsStr
 }
 
+func cvtText(inp string) (out string) {
+
+	ilen := len(inp)
+	if inp[ilen -1] == '\n' {
+		out = inp[:ilen-1]
+	} else {
+		out = inp
+	}
+	return out
+}
 
 func addParScript(docName string)(jsStr string) {
 
@@ -2262,13 +2273,28 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph, parent string)(parObj d
 	// par elements: text and css for text
 	var parElSumDisp dispObj
 	numParEl := len(par.Elements)
-    for pEl:=0; pEl< numParEl; pEl++ {
-        parEl := par.Elements[pEl]
-		parElDisp, err := dObj.cvtParElDom(parEl)
-		if err != nil { parHtmlStr += fmt.Sprintf("<!-- error cvtParEl: %v -->\n",err)}
-		addDispObj(&parElSumDisp, &parElDisp)
-	} // loop par el
+	if numParEl == 1 {
+		parEl := par.Elements[0]
+		if parEl.TextRun != nil {
+			elObj.txt = cvtText(parEl.TextRun.Content)
+		}
+		if par.Bullet == nil {
+			elObj.parent = "divMain"
+			elObj.newEl = "parel"
+			parObj.script = addElToDom(elObj)
+			return parObj, nil
+		}
+	}
 
+
+	if numParEl > 1 {
+    	for pEl:=0; pEl< numParEl; pEl++ {
+        	parEl := par.Elements[pEl]
+			parElDisp, err := dObj.cvtParElDom(parEl)
+			if err != nil { parHtmlStr += fmt.Sprintf("<!-- error cvtParEl: %v -->\n",err)}
+			addDispObj(&parElSumDisp, &parElDisp)
+		} // loop par el
+	}
 // lists
     if par.Bullet != nil {
 
@@ -2642,7 +2668,7 @@ func (dObj *GdocDomObj) cvtParStylDom(parStyl, namParStyl *docs.ParagraphStyle, 
 //					prefix = fmt.Sprintf("<p class=\"%s_p\"", dObj.docName)
 //					suffix = "</p>"
 				elObj.typ = "p"
-				elObj.cl1 = fmt.Sprintf("%s_h1", dObj.docName)
+				elObj.cl1 = fmt.Sprintf("%s_p", dObj.docName)
 			}
 		case "NAMED_STYLE_TYPE_UNSPECIFIED":
 //			namTypValid = false
@@ -3192,6 +3218,7 @@ func (dObj *GdocDomObj) cvtBodyDom() (bodyObj *dispObj, err error) {
 	divMain.typ = "div"
 	divMain.parent = "divDoc"
 	divMain.cl1 =dObj.docName + "_main"
+	divMain.newEl = "divMain"
 	bodyObj.script = addElToDom(divMain)
 
 	elNum := len(body.Content)
