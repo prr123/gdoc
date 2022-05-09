@@ -1542,7 +1542,7 @@ func (dObj *GdocDomObj) cvtInlineImg(imgEl *docs.InlineObjectElement)(htmlStr st
 	return htmlStr, cssStr, nil
 }
 
-func (dObj *GdocDomObj) cvtParDomElTextold(parElTxt *docs.TextRun)(htmlStr string, cssStr string, err error) {
+func (dObj *GdocDomObj) cvtParElTextold(parElTxt *docs.TextRun)(htmlStr string, cssStr string, err error) {
 
    if parElTxt == nil {
         return "","", fmt.Errorf("cvtPelText -- parElTxt is nil!")
@@ -1586,6 +1586,12 @@ func (dObj *GdocDomObj) cvtParDomElText(parElTxt *docs.TextRun)(scriptStr string
 	if err != nil {
 		spanCssStr = fmt.Sprintf("/*error parEl Css %v*/\n", err) + spanCssStr
 	}
+	// need to create an a element
+	if parElTxt.TextStyle.Link != nil {
+
+		return script, cssStr
+	}
+
 
 
 	return scriptStr, cssStr
