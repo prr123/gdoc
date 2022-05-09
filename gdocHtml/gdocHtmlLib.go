@@ -1468,15 +1468,16 @@ var glyphTyp string
 	return cssStr
 }
 
-func (dObj *GdocHtmlObj) cvtInlineImg(imgEl *docs.InlineObjectElement)(htmlStr string, cssStr string, err error) {
+func (dObj *GdocHtmlObj) renderInlineImg(imgEl *docs.InlineObjectElement)(imgDisp *dispObj, err error) {
+	var imgDispObj dispObj
 
 	if imgEl == nil {
-		return "","", fmt.Errorf("cvtInlineImg:: imgEl is nil!")
+		return nil, fmt.Errorf("cvtInlineImg:: imgEl is nil!")
 	}
 	doc := dObj.doc
 
 	imgElId := imgEl.InlineObjectId
-	if !(len(imgElId) > 0) {return "","", fmt.Errorf("cvtInlineImg:: no InlineObjectId found!")}
+	if !(len(imgElId) > 0) {return nil, fmt.Errorf("cvtInlineImg:: no InlineObjectId found!")}
 
 	// need to remove first part of the id
 	idx := 0
@@ -1491,8 +1492,8 @@ func (dObj *GdocHtmlObj) cvtInlineImg(imgEl *docs.InlineObjectElement)(htmlStr s
 		imgId = "img_" + imgElId[idx:]
 	}
 
-	// need to change for imagefolder
-	htmlStr = fmt.Sprintf("<!-- inline image %s -->\n", imgElId)
+	//html
+	htmlStr := fmt.Sprintf("<!-- inline image %s -->\n", imgElId)
 	imgObj := doc.InlineObjects[imgElId].InlineObjectProperties.EmbeddedObject
 
 	if dObj.Options.ImgFold {
@@ -1501,10 +1502,15 @@ func (dObj *GdocHtmlObj) cvtInlineImg(imgEl *docs.InlineObjectElement)(htmlStr s
 	} else {
 		htmlStr +=fmt.Sprintf("<img src=\"%s\" id=\"%s\" alt=\"%s\">\n", imgObj.ImageProperties.SourceUri, imgId, imgObj.Title)
 	}
-	cssStr = fmt.Sprintf("#%s {\n",imgId)
+
+	//css
+	cssStr := fmt.Sprintf("#%s {\n",imgId)
 	cssStr += fmt.Sprintf(" width:%.1fpt; height:%.1fpt; \n}\n", imgObj.Size.Width.Magnitude, imgObj.Size.Height.Magnitude )
 	// todo add margin
-	return htmlStr, cssStr, nil
+
+	imgDispObj.bodyHtml = htmlStr
+	imgDispObj.bodyCss = cssStr
+	return &imgDispObj, nil
 }
 
 func (dObj *GdocHtmlObj) cvtParElText(parElTxt *docs.TextRun)(htmlStr string, cssStr string, err error) {
@@ -2069,12 +2075,12 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 func (dObj *GdocHtmlObj) cvtParEl(parEl *docs.ParagraphElement)(htmlStr string, cssStr string, err error) {
 
 		if parEl.InlineObjectElement != nil {
-        	imgHtmlStr, imgCssStr, err := dObj.cvtInlineImg(parEl.InlineObjectElement)
+        	imgDisp, err := dObj.renderInlineImg(parEl.InlineObjectElement)
         	if err != nil {
             	htmlStr += fmt.Sprintf("<!-- error cvtPelToHtml: %v -->\n",err)
         	}
-        	htmlStr += imgHtmlStr
-			cssStr += imgCssStr
+        	htmlStr += imgDisp.bodyHtml
+			cssStr += imgDisp.bodyCss
 		}
 
 		if parEl.TextRun != nil {
