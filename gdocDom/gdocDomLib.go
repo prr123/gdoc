@@ -1708,11 +1708,13 @@ func (dObj *GdocDomObj) closeList(nl int)(htmlStr string) {
 	return htmlStr
 }
 
-func (dObj *GdocDomObj) renderPosImg(posImg docs.PositionedObject, posId string)(htmlStr, cssStr string, err error) {
+func (dObj *GdocDomObj) renderPosImg(posImg docs.PositionedObject, posId string)(imgDisp *dispObj, err error) {
+	var imgDispObj dispObj
 
+	// html
 	posObjProp := posImg.PositionedObjectProperties
 	imgProp := posObjProp.EmbeddedObject
-	htmlStr += fmt.Sprintf("\n<!-- Positioned Image %s -->\n", posId)
+	htmlStr := fmt.Sprintf("\n<!-- Positioned Image %s -->\n", posId)
 	imgDivId := fmt.Sprintf("%s_%s", dObj.docName, posId[4:])
 	imgId := imgDivId + "_img"
 	pimgId := imgDivId +"_p"
@@ -1727,6 +1729,8 @@ func (dObj *GdocDomObj) renderPosImg(posImg docs.PositionedObject, posId string)
 		imgSrc = dObj.imgFoldNam + "/" + posId[4:] + ".jpeg"
 	}
 
+	//css
+	cssStr := ""
 	switch layout {
 		case "WRAP_TEXT", "BREAK_LEFT":
 			cssStr += fmt.Sprintf("#%s {\n", imgId)
@@ -1775,13 +1779,14 @@ func (dObj *GdocDomObj) renderPosImg(posImg docs.PositionedObject, posId string)
 //	htmlStr += fmt.Sprintf("     <p id=\"%s\">%s</p>\n", pimgId, imgProp.Title)
 	htmlStr += "  </div>\n"
 
-	return htmlStr, cssStr, nil
+	imgDispObj.bodyHtml = htmlStr
+	imgDispObj.bodyCss = cssStr
+	return &imgDispObj, nil
 }
 
-// table element
-// 	tObj, _ := dObj.cvtTableToHtml(tableEl)
 
 func (dObj *GdocDomObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
+// table element
 	var htmlStr, cssStr string
 	var tabWidth float64
 	var icol, trow int64
@@ -2210,13 +2215,13 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph, parent string)(parObj d
 		posObj, ok := dObj.doc.PositionedObjects[posId]
 		if !ok {return parObj, fmt.Errorf("cvtPar: could not find positioned Object with id: ", posId)}
 
-		imgHtmlStr, imgCssStr, err := dObj.renderPosImg(posObj, posId)
+		imgDisp, err := dObj.renderPosImg(posObj, posId)
 		if err != nil {
-			parHtmlStr += fmt.Sprintf("<!-- error cvtPar:: render pos img %v -->\n", err) + imgHtmlStr
-			parCssStr += imgCssStr
+			parHtmlStr += fmt.Sprintf("<!-- error cvtPar:: render pos img %v -->\n", err) + imgDisp.bodyHtml
+			parCssStr += imgDisp.bodyCss
 		} else {
-			parHtmlStr += imgHtmlStr
-			parCssStr += imgCssStr
+			parHtmlStr += imgDisp.bodyHtml
+			parCssStr += imgDisp.bodyCss
 		}
 	}
 
