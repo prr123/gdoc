@@ -1063,7 +1063,7 @@ func addElFuncScript() (jsStr string) {
 	jsStr += "  if (elObj.idStr != null) {el.setAttribute(\"id\", elObj.idStr);}\n"
 	jsStr += "  if (elObj.txt != null) {\n"
 	jsStr += "    var text =  document.createTextNode(elObj.txt);\n"
-	jsStr += "    el.appendChild(text);\n}\n"
+	jsStr += "    el.appendChild(text);\n  }\n"
 	jsStr += "  elp = elObj.parent;\n"
 	jsStr += "  elp.appendChild(el);\n"
 	jsStr += "  return elp\n}\n\n"
