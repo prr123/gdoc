@@ -201,6 +201,7 @@ type elScriptObj struct {
 	cl1 string
 	cl2 string
 	idStr string
+	href string
 	parent string
 }
 
@@ -992,7 +993,7 @@ func cvtTxtStylCss(txtStyl *docs.TextStyle)(cssStr string) {
 	if txtStyl.Bold {
 		tcssStr += "  font-weight: 800;\n"
 	} else {
-		tcssStr += "  font-weight: 400;\n"}
+		tcssStr += "  font-weight: 400;\n"
 	}
 	if txtStyl.Italic { tcssStr += "  font-style: italic;\n"}
 	if txtStyl.Underline { tcssStr += "  text-decoration: underline;\n"}
@@ -1000,9 +1001,7 @@ func cvtTxtStylCss(txtStyl *docs.TextStyle)(cssStr string) {
 
 	if txtStyl.WeightedFontFamily != nil {
 		font := txtStyl.WeightedFontFamily.FontFamily
-//		weight := txtStyl.WeightedFontFamily.Weight
 		tcssStr += fmt.Sprintf("  font-family: %s;\n", font)
-//		tcssStr += fmt.Sprintf("  font-weight: %d;\n", weight)
 	}
 	if txtStyl.FontSize != nil {
 		mag := txtStyl.FontSize.Magnitude
@@ -1115,12 +1114,13 @@ func creHtmlDocDiv(docName string)(htmlStr string) {
 	return htmlStr
 }
 //sss
-func addElFuncScript() (jsStr string) {
+func creElFuncScript() (jsStr string) {
 	jsStr = "function addEl(elObj) {\n"
 	jsStr += "  let el = document.createElement(elObj.typ);\n"
 	jsStr += "  if (elObj.cl1 != null) {el.classList.add(elObj.cl1);}\n"
 	jsStr += "  if (elObj.cl2 != null) {el.classList.add(elObj.cl2);}\n"
 	jsStr += "  if (elObj.idStr != null) {el.setAttribute(\"id\", elObj.idStr);}\n"
+	jsStr += "  if (elObj.href != null) {el.href=\"elObj.href\";\n"
 	jsStr += "  if (elObj.txt != null) {\n"
 	jsStr += "    var text =  document.createTextNode(elObj.txt);\n"
 	jsStr += "    el.appendChild(text);\n"
@@ -1613,10 +1613,7 @@ func (dObj *GdocDomObj) cvtParElTextold(parElTxt *docs.TextRun)(htmlStr string, 
 
 	// need to compare text style with the default style
 
-	spanCssStr, err := dObj.cvtTxtStylCss(parElTxt.TextStyle, false)
-	if err != nil {
-		spanCssStr = fmt.Sprintf("/*error parEl Css %v*/\n", err) + spanCssStr
-	}
+	spanCssStr := cvtTxtStylCss(parElTxt.TextStyle)
 
 	linkPrefix := ""
 	linkSuffix := ""
@@ -1642,20 +1639,37 @@ func (dObj *GdocDomObj) cvtParDomElText(parElTxt *docs.TextRun)(scriptStr string
 	if parElTxt == nil { return "cvtPelText -- parElTxt is nil!", ""}
 	if !(len(parElTxt.Content) > 0)  { return "",""}
 
-	spanCssStr, err := dObj.cvtTxtStylCss(parElTxt.TextStyle, false)
-	if err != nil {
-		spanCssStr = fmt.Sprintf("/*error parEl Css %v*/\n", err) + spanCssStr
-	}
+	spanCssStr := cvtTxtStylCss(parElTxt.TextStyle)
+
+	if len(spanCssStr) > 0 {
+	// create span element
+		dObj.spanCount++
+		spanIdStr := fmt.Sprintf("%s_sp%d", dObj.docName, dObj.spanCount)
+		// script
+		var spanEl elScriptObj
+		spanEl.parent = "p"
+		spanEl.idStr = spanIdStr
+		spanEl.typ = "span"
+		spanEl.txt = parElTxt.Content
+		scriptStr = addElToDom(spanEl)
+		//css
+		cssStr = fmt.Sprintf("#%s {\n", spanIdStr) + spanCssStr + "}\n"
+
 	// need to create an a element
-	if parElTxt.TextStyle.Link != nil {
+		if parElTxt.TextStyle.Link != nil {
+			var linEl elScriptObj
+			linEl.parent = "p"
+			linEl.idStr = spanIdStr
+			linEl.typ = "a"
+			linEl.href = parElTxt.TextStyle.Link.Url
+			linEl.txt = parElTxt.Content
+			scriptStr = addElToDom(linEl)
+		}
 
-		return script, cssStr
 	}
-
-
-
 	return scriptStr, cssStr
 }
+
 
 func (dObj *GdocDomObj) closeList(nl int)(htmlStr string) {
 	// ends a list
@@ -2211,6 +2225,8 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph, parent string)(parObj d
 				return parObj, nil
 			}
 		}
+		//
+
 	}
 
 
@@ -2231,8 +2247,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph, parent string)(parObj d
 	}
 
 	// get paragraph style
-	parStylCss :=""
-	parStylCss, prefix, suffix, err = dObj.cvtParStyl(par.ParagraphStyle, namParStyl, isList)
+	parStylCss, elObj, err := dObj.cvtParStylDom(par.ParagraphStyle, namParStyl, isList)
 	if err != nil {
 		errStr = fmt.Sprintf("/* error cvtParStyl: %v */\n",err)
 	}
@@ -2482,13 +2497,14 @@ func (dObj *GdocDomObj) cvtDocNamedStyles()(cssStr string, err error) {
 	return cssStr, nil
 }
 
-func (dObj *GdocDomObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, isList bool)(cssStr, prefix, suffix string, err error) {
+func (dObj *GdocDomObj) cvtParStylDom(parStyl, namParStyl *docs.ParagraphStyle, isList bool)(cssStr string, elObj elScriptObj, err error) {
 
+//	var prefix, suffix string
 	cssComment:=""
 	if namParStyl == nil {
 		// def error the default is that the normal_text paragraph style is passed
 		cssComment = fmt.Sprintf("/* Paragraph Style: no named Style */\n")
-		return cssComment, "", "", nil
+		return cssComment, elObj, nil
 	}
 
 	cssComment = fmt.Sprintf("/* Paragraph Style: %s */\n", parStyl.NamedStyleType )
@@ -2502,7 +2518,6 @@ func (dObj *GdocDomObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, isL
 		cssComment += "/* erro fill Parmap namparstyl */" + fmt.Sprintf("%v\n", err)
 	}
 
-// fmt.Printf("begin fillparmap parstyl %s: %t\n", parStyl.NamedStyleType, alter)
 
 	if parStyl == nil || isList {
 		cssParAtt = dObj.cvtParMapCss(parmap)
@@ -2513,151 +2528,140 @@ func (dObj *GdocDomObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, isL
 		}
 		if alter {cssParAtt = dObj.cvtParMapCss(parmap)}
 	}
- //fmt.Printf("*** parstyle %s alter: %t\n", parStyl.NamedStyleType, alter)
 
-// for testing
-/*
-	if parStyl.NamedStyleType == "TITLE" {
-		parmap2 := new(parMap)
-		_, err = fillParMap(parmap2, namParStyl)
-		printParMap(parmap2, parStyl)
-	}
-*/
-	//css text style
-/*
-	namParStyl, namTxtStyl, err := dObj.getNamedStyl(parStyl.NamedStyleType)
-
-	defTxtMap := new(textMap)
-	_, err = fillTxtMap(defTxtMap, namTxtStyl)
-	if err != nil {
-		cssComment = fmt.Sprintf("//* Paragraph Style: no named Style * ")
-		cssComment, "", "", nil
-	}
-	cssDefTxt := cvtTxtMapCss(defTxtMap)
-*/
 	// NamedStyle Type
-	isListClass := ""
+//	isListClass := ""
 	if isList {
-		isListClass = " list"
+//		isListClass = " list"
 	}
 
-	prefix = ""
-	suffix = ""
 	cssPrefix := ""
 	headingId := parStyl.HeadingId
 
 	switch parStyl.NamedStyleType {
 		case "TITLE":
+			elObj.typ = "p"
 			if dObj.namStylMap["TITLE"] && !alter {
-				prefix = fmt.Sprintf("<p class=\"%s_title%s\"", dObj.docName, isListClass)
+//				prefix = fmt.Sprintf("<p class=\"%s_title%s\"", dObj.docName, isListClass)
+				elObj.cl1 = fmt.Sprintf("%s_title", dObj.docName)
 			}
 			if alter {
 				cssPrefix = fmt.Sprintf(".%s_title.%s_title_%d {\n", dObj.docName, dObj.docName, dObj.title.count)
-				prefix = fmt.Sprintf("<p class=\"%s_title %s_title_%d\"", dObj.docName, dObj.docName, dObj.title.count)
+//				prefix = fmt.Sprintf("<p class=\"%s_title %s_title_%d\"", dObj.docName, dObj.docName, dObj.title.count)
+				elObj.cl1 = fmt.Sprintf("%s_title", dObj.docName)
+				elObj.cl2 = fmt.Sprintf("%s_title_%d", dObj.docName, dObj.title.count)
 				dObj.title.count++
 			}
-			suffix = "</p>"
+//			suffix = "</p>"
 
 		case "SUBTITLE":
 			if dObj.namStylMap["SUBTITLE"] && !alter {
-				prefix = fmt.Sprintf("<p class=\"%s_subtitle\"", dObj.docName)
+//				prefix = fmt.Sprintf("<p class=\"%s_subtitle\"", dObj.docName)
 			}
 			if alter {
 				cssPrefix = fmt.Sprintf(".s_subtitle.s_subtitle_%d {\n", dObj.docName, dObj.docName, dObj.subtitle.count)
-				prefix = fmt.Sprintf("<p class=\"%s_subtitle %s_subtitle_%d\"", dObj.docName, dObj.docName, dObj.subtitle.count)
+//				prefix = fmt.Sprintf("<p class=\"%s_subtitle %s_subtitle_%d\"", dObj.docName, dObj.docName, dObj.subtitle.count)
 				dObj.subtitle.count++
 			}
-			suffix = "</p>"
+//			suffix = "</p>"
 
 		case "HEADING_1":
+			elObj.typ = "h1"
 			if dObj.namStylMap["HEADING_1"] && !alter {
-				prefix = fmt.Sprintf("<h1 class=\"%s_h1\"", dObj.docName)
+//				prefix = fmt.Sprintf("<h1 class=\"%s_h1\"", dObj.docName)
+				elObj.cl1 = fmt.Sprintf("%s_h1", dObj.docName)
 			}
 			if alter {
 				cssPrefix = fmt.Sprintf(".%s_h1.%s_h1_%d {\n",dObj.docName, dObj.docName, dObj.h1.count)
-				prefix = fmt.Sprintf("<h1 class=\"%s_h1 %s_h1_%d\"", dObj.docName, dObj.docName, dObj.h1.count)
+//				prefix = fmt.Sprintf("<h1 class=\"%s_h1 %s_h1_%d\"", dObj.docName, dObj.docName, dObj.h1.count)
+				elObj.cl1 = fmt.Sprintf("%s_h1", dObj.docName)
+				elObj.cl2 = fmt.Sprintf("%s_h1_%d", dObj.docName, dObj.title.count)
 				dObj.h1.count++
 			}
-			suffix = "</h1>"
+//			suffix = "</h1>"
 		case "HEADING_2":
 			if dObj.namStylMap["HEADING_2"] && !alter {
-				prefix = fmt.Sprintf("<h2 class=\"%s_h2\"", dObj.docName)
+//				prefix = fmt.Sprintf("<h2 class=\"%s_h2\"", dObj.docName)
 			}
 			if alter {
 				cssPrefix = fmt.Sprintf(".%s_h2.%s_h2_%d {\n",dObj.docName, dObj.docName, dObj.h2.count)
-				prefix = fmt.Sprintf("<h2 class=\"%s_h2 %s_h2_%d\"", dObj.docName, dObj.docName, dObj.h2.count)
+//				prefix = fmt.Sprintf("<h2 class=\"%s_h2 %s_h2_%d\"", dObj.docName, dObj.docName, dObj.h2.count)
 				dObj.h2.count++
 			}
-			suffix = "</h2>"
+//			suffix = "</h2>"
 		case "HEADING_3":
 			if dObj.namStylMap["HEADING_3"] && !alter {
-				prefix = fmt.Sprintf("<h3 class=\"%s_h3\"", dObj.docName)
+//				prefix = fmt.Sprintf("<h3 class=\"%s_h3\"", dObj.docName)
 			}
 			if alter {
 				cssPrefix = fmt.Sprintf(".%s_h3.%s_h3_%d {\n",dObj.docName, dObj.docName, dObj.h3.count)
-				prefix = fmt.Sprintf("<h3 class=\"%s_h3 %s_h3_%d\"", dObj.docName, dObj.docName, dObj.h3.count)
+//				prefix = fmt.Sprintf("<h3 class=\"%s_h3 %s_h3_%d\"", dObj.docName, dObj.docName, dObj.h3.count)
 				dObj.h3.count++
 			}
-			suffix = "</h3>"
+//			suffix = "</h3>"
 		case "HEADING_4":
 			if dObj.namStylMap["HEADING_4"] && !alter {
-				prefix = fmt.Sprintf("<h4 class=\"%s_h4\"", dObj.docName)
+//				prefix = fmt.Sprintf("<h4 class=\"%s_h4\"", dObj.docName)
 			}
 			if alter {
 				cssPrefix = fmt.Sprintf(".%s_h4.%s_h4_%d {\n",dObj.docName, dObj.docName, dObj.h4.count)
-				prefix = fmt.Sprintf("<h4 class=\"%s_h4 %s_h4_%d\"", dObj.docName, dObj.docName, dObj.h4.count)
+//				prefix = fmt.Sprintf("<h4 class=\"%s_h4 %s_h4_%d\"", dObj.docName, dObj.docName, dObj.h4.count)
 				dObj.h4.count++
 			}
-			suffix = "</h4>"
+//			suffix = "</h4>"
 		case "HEADING_5":
 			if dObj.namStylMap["HEADING_5"] && !alter {
-				prefix = fmt.Sprintf("<h5 class=\"%s_h5\"", dObj.docName)
+//				prefix = fmt.Sprintf("<h5 class=\"%s_h5\"", dObj.docName)
 			}
 			if alter {
 				cssPrefix = fmt.Sprintf(".%s_h5.%s_h5_%d {\n",dObj.docName, dObj.docName, dObj.h5.count)
-				prefix = fmt.Sprintf("<h5 class=\"%s_h5 %s_h5_%d\"", dObj.docName, dObj.docName, dObj.h5.count)
+//				prefix = fmt.Sprintf("<h5 class=\"%s_h5 %s_h5_%d\"", dObj.docName, dObj.docName, dObj.h5.count)
 				dObj.h5.count++
 			}
-			suffix = "</h5>"
+//			suffix = "</h5>"
 		case "HEADING_6":
 			if dObj.namStylMap["HEADING_6"] && !alter {
-				prefix = fmt.Sprintf("<h6 class=\"%s_h6\"", dObj.docName)
+//				prefix = fmt.Sprintf("<h6 class=\"%s_h6\"", dObj.docName)
 			}
 			if alter {
 				cssPrefix = fmt.Sprintf("%s_h6.%s_h6_%d {\n",dObj.docName, dObj.docName, dObj.h6.count)
-				prefix = fmt.Sprintf("<h6 class=\"%s_h6 %s_h6_%d\"", dObj.docName, dObj.docName, dObj.h6.count)
+//				prefix = fmt.Sprintf("<h6 class=\"%s_h6 %s_h6_%d\"", dObj.docName, dObj.docName, dObj.h6.count)
 				dObj.h6.count++
 			}
-			suffix = "</h6>"
+//			suffix = "</h6>"
 		case "NORMAL_TEXT":
 			switch {
 				case isList:
-					prefix = "<span"
-					suffix = "</span>"
+//					prefix = "<span"
+//					suffix = "</span>"
 				case alter:
 					cssPrefix = fmt.Sprintf(".%s_p.%s_p_%d {\n",dObj.docName, dObj.docName, dObj.parCount)
-					prefix = fmt.Sprintf("<p class=\"%s_p %s_p_%d\"",dObj.docName, dObj.docName, dObj.parCount)
-					suffix = "</p>"
+//					prefix = fmt.Sprintf("<p class=\"%s_p %s_p_%d\"",dObj.docName, dObj.docName, dObj.parCount)
+//					suffix = "</p>"
 				default:
-					prefix = fmt.Sprintf("<p class=\"%s_p\"", dObj.docName)
-					suffix = "</p>"
+//					prefix = fmt.Sprintf("<p class=\"%s_p\"", dObj.docName)
+//					suffix = "</p>"
+				elObj.typ = "p"
+				elObj.cl1 = fmt.Sprintf("%s_h1", dObj.docName)
 			}
 		case "NAMED_STYLE_TYPE_UNSPECIFIED":
 //			namTypValid = false
-
+			elObj.typ = "p"
+			elObj.cl1 = fmt.Sprintf("%s_h1", dObj.docName)
 		default:
 //			namTypValid = false
 	}
 
 	if len(headingId) > 0 {
-		prefix = fmt.Sprintf("%s id=\"%s\">", prefix, headingId[3:])
+//		prefix = fmt.Sprintf("%s id=\"%s\">", prefix, headingId[3:])
+		elObj.idStr = headingId[3:]
 	} else {
-		prefix = prefix + ">"
+//		prefix = prefix + ">"
 	}
 	//fmt.Printf("parstyl: %s %s %s\n", parStyl.NamedStyleType, prefix, suffix)
 	if (len(cssPrefix) > 0) {cssStr = cssComment + cssPrefix + cssParAtt + "}\n"}
 
-	return cssStr, prefix, suffix, nil
+	return cssStr, elObj, nil
 }
 
 
@@ -3737,7 +3741,7 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *util.OptObj)(
 	outfil.WriteString(jsStr)
 
 	//js create doc div
-	jsStr = addElFuncScript()
+	jsStr = creElFuncScript()
 	outfil.WriteString(jsStr)
 
 	jsStr = mainDiv.script
