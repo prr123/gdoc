@@ -1067,8 +1067,8 @@ func addElFuncScript() (jsStr string) {
 	jsStr += "  }\n"
 	jsStr += "  elp = elObj.parent;\n"
 	jsStr += "  elp.appendChild(el);\n"
-	jsStr += "  return elp\n}\n\n"
-	jsStr += "function addBodyElScript() {\n"
+	jsStr += "  return\n}\n\n"
+	jsStr += "function addBodyElScript(divDoc) {\n"
 	jsStr += "  const elObj = {};\n"
 	return jsStr
 }
@@ -1078,13 +1078,13 @@ func addElToDom(elObj elScriptObj)(script string) {
 
 	if !(len(elObj.typ) >0) {return "//// no el type provided!"}
 	if !(len(elObj.parent) > 0) {return "//// no el parent provided!"}
-	if len(elObj.cl1) > 0 {script += fmt.Sprintf("elObj.cl1 = '%s';\n", elObj.cl1)}
-	if len(elObj.cl2) > 0 {script += fmt.Sprintf("elObj.cl2 = '%s';\n", elObj.cl2)}
-	if len(elObj.idStr) > 0 {script += fmt.Sprintf("elObj.idStr = '%s';\n", elObj.idStr)}
-	if len(elObj.txt) > 0 {script += fmt.Sprintf("elObj.txt = '%s';\n", elObj.txt)}
-	script += fmt.Sprintf("elObj.parent = %s;\n", elObj.parent)
-	script += fmt.Sprintf("elObj.type = '%s';\n", elObj.typ)
-	script += "elp = addEl(elObj);\n"
+	if len(elObj.cl1) > 0 {script += fmt.Sprintf("  elObj.cl1 = '%s';\n", elObj.cl1)}
+	if len(elObj.cl2) > 0 {script += fmt.Sprintf("  elObj.cl2 = '%s';\n", elObj.cl2)}
+	if len(elObj.idStr) > 0 {script += fmt.Sprintf("  elObj.idStr = '%s';\n", elObj.idStr)}
+	if len(elObj.txt) > 0 {script += fmt.Sprintf("  elObj.txt = '%s';\n", elObj.txt)}
+	script += fmt.Sprintf("  elObj.parent = %s;\n", elObj.parent)
+	script += fmt.Sprintf("  elObj.typ = '%s';\n", elObj.typ)
+	script += "  addEl(elObj);\n"
 	return script
 }
 
@@ -1096,13 +1096,14 @@ func addDivMainScript(docName string) (jsStr string) {
 }
 
 func creDocDivScript(docName string)(jsStr string) {
-	jsStr = "}\n"
+
+	jsStr = "  return\n}\n"
 	jsStr += "function dispDoc() {\n"
     jsStr += "  let divDoc = document.createElement('div');\n"
     jsStr += fmt.Sprintf("  divDoc.classList.add('%s_doc');\n", docName)
     jsStr += "  document.body.appendChild(divDoc);\n"
 //	jsStr += addDivMainScript(docName)
-	jsStr += " addBodyElScript();\n"
+	jsStr += "  addBodyElScript(divDoc);\n"
 	jsStr += "}\n"
     jsStr += "document.addEventListener(\"DOMContentLoaded\", dispDoc);\n"
     return jsStr
@@ -3179,7 +3180,7 @@ func (dObj *GdocDomObj) cvtBodyDom() (bodyObj *dispObj, err error) {
 	var divMain elScriptObj
 	divMain.typ = "div"
 	divMain.parent = "divDoc"
-	divMain.cl1 ="divMain"
+	divMain.cl1 =dObj.docName + "_main"
 	bodyObj.script = addElToDom(divMain)
 
 	elNum := len(body.Content)
