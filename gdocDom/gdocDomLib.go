@@ -971,6 +971,66 @@ func cvtTxtMapCss(txtMap *textMap)(cssStr string) {
 	return cssStr
 }
 
+func cvtTxtStylCss(txtStyl *docs.TextStyle)(cssStr string) {
+	var tcssStr string
+
+	if len(txtStyl.BaselineOffset) > 0 {
+		valStr := "vertical-align: "
+		switch txtStyl.BaselineOffset {
+			case "SUPERSCRIPT":
+				valStr += "sub"
+			case "SUBSCRIPT":
+				valStr += "sup"
+			case "NONE":
+				valStr += "baseline"
+			default:
+				valStr = fmt.Sprintf("/* Baseline Offset unknown: %s */\n", txtStyl.BaselineOffset)
+		}
+		tcssStr = valStr + ";\n"
+	}
+
+	if txtStyl.Bold {
+		tcssStr += "  font-weight: 800;\n"
+	} else {
+		tcssStr += "  font-weight: 400;\n"}
+	}
+	if txtStyl.Italic { tcssStr += "  font-style: italic;\n"}
+	if txtStyl.Underline { tcssStr += "  text-decoration: underline;\n"}
+	if txtStyl.Strikethrough { tcssStr += "  text-decoration: line-through;\n"}
+
+	if txtStyl.WeightedFontFamily != nil {
+		font := txtStyl.WeightedFontFamily.FontFamily
+//		weight := txtStyl.WeightedFontFamily.Weight
+		tcssStr += fmt.Sprintf("  font-family: %s;\n", font)
+//		tcssStr += fmt.Sprintf("  font-weight: %d;\n", weight)
+	}
+	if txtStyl.FontSize != nil {
+		mag := txtStyl.FontSize.Magnitude
+		tcssStr += fmt.Sprintf("  font-size: %.2fpt;\n", mag)
+	}
+	if txtStyl.ForegroundColor != nil {
+		if txtStyl.ForegroundColor.Color != nil {
+			//0 to 1
+            tcssStr += "  color: "
+            tcssStr += util.GetColor(txtStyl.ForegroundColor.Color)
+		}
+	}
+	if txtStyl.BackgroundColor != nil {
+		if txtStyl.BackgroundColor.Color != nil {
+            tcssStr += "  background-color: "
+            tcssStr += util.GetColor(txtStyl.BackgroundColor.Color)
+		}
+	}
+
+	if len(tcssStr) > 0 {
+		cssStr = tcssStr
+	}
+	return cssStr
+}
+
+
+
+
 func addDispObj(src, add *dispObj) {
 	src.bodyHtml += add.bodyHtml
 	src.bodyCss += add.bodyCss
@@ -2598,65 +2658,6 @@ func (dObj *GdocDomObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, isL
 	if (len(cssPrefix) > 0) {cssStr = cssComment + cssPrefix + cssParAtt + "}\n"}
 
 	return cssStr, prefix, suffix, nil
-}
-
-
-func (dObj *GdocDomObj) cvtTxtStylCss(txtStyl *docs.TextStyle, head bool)(cssStr string, err error) {
-	var tcssStr string
-
-	if txtStyl == nil {
-		return "", fmt.Errorf("decode txtstyle: -- no Style")
-	}
-
-	if len(txtStyl.BaselineOffset) > 0 {
-		switch txtStyl.BaselineOffset {
-			case "SUPERSCRIPT":
-				tcssStr += "  vertical-align: sub;\n"
-			case "SUBSCRIPT":
-				tcssStr += "	vertical-align: sup;\n"
-			case "NONE":
-
-			default:
-				tcssStr += fmt.Sprintf("/* Baseline Offset unknown: %s */\n", txtStyl.BaselineOffset)
-		}
-	}
-	if txtStyl.Bold {
-		tcssStr += "  font-weight: 800;\n"
-	} else {
-		if head {tcssStr += "  font-weight: 400;\n"}
-	}
-	if txtStyl.Italic { tcssStr += "  font-style: italic;\n"}
-	if txtStyl.Underline { tcssStr += "  text-decoration: underline;\n"}
-	if txtStyl.Strikethrough { tcssStr += "  text-decoration: line-through;\n"}
-
-	if txtStyl.WeightedFontFamily != nil {
-		font := txtStyl.WeightedFontFamily.FontFamily
-//		weight := txtStyl.WeightedFontFamily.Weight
-		tcssStr += fmt.Sprintf("  font-family: %s;\n", font)
-//		tcssStr += fmt.Sprintf("  font-weight: %d;\n", weight)
-	}
-	if txtStyl.FontSize != nil {
-		mag := txtStyl.FontSize.Magnitude
-		tcssStr += fmt.Sprintf("  font-size: %.2fpt;\n", mag)
-	}
-	if txtStyl.ForegroundColor != nil {
-		if txtStyl.ForegroundColor.Color != nil {
-			//0 to 1
-            tcssStr += "  color: "
-            tcssStr += util.GetColor(txtStyl.ForegroundColor.Color)
-		}
-	}
-	if txtStyl.BackgroundColor != nil {
-		if txtStyl.BackgroundColor.Color != nil {
-            tcssStr += "  background-color: "
-            tcssStr += util.GetColor(txtStyl.BackgroundColor.Color)
-		}
-	}
-
-	if len(tcssStr) > 0 {
-		cssStr = tcssStr
-	}
-	return cssStr, nil
 }
 
 
