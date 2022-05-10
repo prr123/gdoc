@@ -204,6 +204,7 @@ type elScriptObj struct {
 	href string
 	parent string
 	newEl string
+	comment string
 }
 
 func findDocList(list []docList, listid string) (res int) {
@@ -1139,8 +1140,9 @@ func creElFuncScript() (jsStr string) {
 func addElToDom(elObj elScriptObj)(script string) {
 
 	script = "for key in elObj {elObj[key] = null;}/n"
-	if !(len(elObj.typ) >0) {return "//// no el type provided!"}
-	if !(len(elObj.parent) > 0) {return "//// no el parent provided!"}
+	if !(len(elObj.typ) >0) {return "// no el type provided!"}
+	if !(len(elObj.parent) > 0) {return "// no el parent provided!"}
+	if len(elObj.comment) > 0 {script += fmt.Sprintf("  // %s\n", elObj.comment)}
 	if len(elObj.cl1) > 0 {script += fmt.Sprintf("  elObj.cl1 = '%s';\n", elObj.cl1)}
 	if len(elObj.cl2) > 0 {script += fmt.Sprintf("  elObj.cl2 = '%s';\n", elObj.cl2)}
 	if len(elObj.idStr) > 0 {script += fmt.Sprintf("  elObj.idStr = '%s';\n", elObj.idStr)}
@@ -1184,18 +1186,25 @@ func cvtText(inp string) (out string) {
 
 func cvtTextjs(inp string) (out string) {
 	ilen := len(inp)
+	outb := make([]byte, ilen + 20, 100)
 	j:=0
+	ret :=0
 	for i:=0; i<ilen; i++ {
 		if inp[i] == '\n' {
-			out[j] = '\'
+			outb[j] = '\\'
 			j++
-			out[j] = 'r'
+			outb[j] = 'r'
+			ret++
+			if ret > 10 {
+				outb = append(outb, make([]byte, 20)...)
+				ret = 0
+			}
 		} else {
-			out[j] = inp[i]
+			outb[j] = inp[i]
 		}
 		j++
 	}
-	return out
+	return string(outb)
 }
 
 
@@ -2260,14 +2269,11 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph, parent string)(parObj d
 				elObj.parent = "divMain"
 				script := addElToDom(elObj)
 				parObj.script = script
-				parObj.bodyHtml = "<br>\n"
+//				parObj.bodyHtml = "<br>\n"
 				return parObj, nil
 			}
 		}
-		//
-
 	}
-
 
 	namedTyp := par.ParagraphStyle.NamedStyleType
 	namParStyl, _, err := dObj.getNamedStyl(namedTyp)
