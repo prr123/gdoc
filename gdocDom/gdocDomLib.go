@@ -306,6 +306,9 @@ func printTxtMap(txtMap *textMap) {
 }
 
 func fillTxtMap(txtMap *textMap, txtStyl *docs.TextStyle)(alter bool, err error) {
+//fmt.Println("alter pos1: ", alter)
+//fmt.Printf("txtmap: %s\n txtStyl: %s\n",txtMap.baseOffset, txtStyl.BaselineOffset)
+// fmt.Println("alter pos2: ", alter)
 
 	alter = false
 	if txtStyl == nil {
@@ -313,8 +316,10 @@ func fillTxtMap(txtMap *textMap, txtStyl *docs.TextStyle)(alter bool, err error)
 	}
 
 	if txtStyl.BaselineOffset != txtMap.baseOffset {
-		txtMap.baseOffset = txtStyl.BaselineOffset
-		alter = true
+		if (txtMap.baseOffset == "NONE") && (len(txtStyl.BaselineOffset) > 0) {
+			txtMap.baseOffset = txtStyl.BaselineOffset
+			alter = true
+		}
 	}
 
 	if txtStyl.Bold != txtMap.bold {
@@ -347,6 +352,7 @@ func fillTxtMap(txtMap *textMap, txtStyl *docs.TextStyle)(alter bool, err error)
 			alter = true
 		}
 	}
+
 	if txtStyl.FontSize != nil {
 		if txtStyl.FontSize.Magnitude != txtMap.fontSize {
 			txtMap.fontSize = txtStyl.FontSize.Magnitude
@@ -1064,7 +1070,7 @@ func creHtmlDocEnd()(string) {
 
 func creTocSecCss(docName string)(cssStr string) {
 
-	cssStr = fmt.Sprintf(".%s_div.top {\n", docName)
+	cssStr = fmt.Sprintf(".%s_main.top {\n", docName)
 	cssStr += "  padding: 10px 0 10px 0;\n"
 	cssStr += "}\n"
 
@@ -1094,7 +1100,7 @@ func creTocCss(docName string)(cssStr string) {
 
 func creSecCss(docName string)(cssStr string){
 
-	cssStr = fmt.Sprintf(".%s_div.sec {\n", docName)
+	cssStr = fmt.Sprintf(".%s_main.sec {\n", docName)
 	cssStr += "}\n"
 
 	cssStr += fmt.Sprintf(".%s_page {\n", docName)
@@ -2852,7 +2858,7 @@ func (dObj *GdocDomObj) createSectionDiv() (secHd *dispObj) {
 
 	if len(dObj.sections) < 2 {return nil}
 
-	htmlStr := fmt.Sprintf("<div class=\"%s_div top\" id=\"%s_sectoc\">\n", dObj.docName, dObj.docName)
+	htmlStr := fmt.Sprintf("<div class=\"%s_main top\" id=\"%s_sectoc\">\n", dObj.docName, dObj.docName)
 	htmlStr += fmt.Sprintf("<p class=\"%s_title %s_leftTitle_UL\">Sections</p>\n",dObj.docName, dObj.docName)
 	for i:=0; i< len(dObj.sections); i++ {
 		htmlStr += fmt.Sprintf("  <p class=\"%s_p\"><a href=\"#%s_sec_%d\">Page: %3d</a></p>\n", dObj.docName, dObj.docName, i, i)
@@ -2865,10 +2871,10 @@ func (dObj *GdocDomObj) createSectionDiv() (secHd *dispObj) {
 func (dObj *GdocDomObj) createSectionHeading(ipage int) (secObj dispObj) {
 // method that creates a distinct html dvision per section with a page heading
 
-	secObj.bodyCss = fmt.Sprintf(".%s_div.sec_%d {\n", dObj.docName, ipage)
+	secObj.bodyCss = fmt.Sprintf(".%s_main.sec_%d {\n", dObj.docName, ipage)
 
 	// html
-	secObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div sec_%d\" id=\"%s_sec_%d\">\n", dObj.docName, ipage, dObj.docName, ipage)
+	secObj.bodyHtml = fmt.Sprintf("<div class=\"%s_main sec_%d\" id=\"%s_sec_%d\">\n", dObj.docName, ipage, dObj.docName, ipage)
 	secObj.bodyHtml += fmt.Sprintf("<p class=\"%s_page\"><a href=\"#%s_sectoc\">Page %d</a></p>\n", dObj.docName, dObj.docName, ipage)
 
 	return secObj
@@ -2898,7 +2904,7 @@ func (dObj *GdocDomObj) creCssDocHead() (headCss string, err error) {
 	headCss += cssStr
 
 	//css default text style
-	cssStr = fmt.Sprintf(".%s_div {\n", dObj.docName)
+	cssStr = fmt.Sprintf(".%s_main {\n", dObj.docName)
 	defTxtMap := new(textMap)
 	parStyl, txtStyl, err := dObj.getNamedStyl("NORMAL_TEXT")
 	if err != nil {
@@ -3087,10 +3093,10 @@ func (dObj *GdocDomObj) createFootnoteDiv () (ftnoteDiv *dispObj, err error) {
 
 	//html div footnote
 	htmlStr = fmt.Sprintf("<!-- Footnotes: %d -->\n", len(dObj.docFtnotes))
-	htmlStr += fmt.Sprintf("<div class=\"%s_div %s_ftndiv\">\n", dObj.docName, dObj.docName)
+	htmlStr += fmt.Sprintf("<div class=\"%s_main %s_ftndiv\">\n", dObj.docName, dObj.docName)
 
 	//css div footnote
-	cssStr = fmt.Sprintf(".%s_div.%s_ftndiv  {\n", dObj.docName, dObj.docName)
+	cssStr = fmt.Sprintf(".%s_main.%s_ftndiv  {\n", dObj.docName, dObj.docName)
 
 	if dObj.Options.DivBorders {
 		cssStr += "  border: solid green;\n"
@@ -3101,11 +3107,11 @@ func (dObj *GdocDomObj) createFootnoteDiv () (ftnoteDiv *dispObj, err error) {
 	cssStr += "}\n"
 
 	//html footnote title
-	htmlStr += fmt.Sprintf("<p class=\"%s_div %s_title %s_ftTit\">Footnotes</p>\n", dObj.docName, dObj.docName, dObj.docName)
+	htmlStr += fmt.Sprintf("<p class=\"%s_main %s_title %s_ftTit\">Footnotes</p>\n", dObj.docName, dObj.docName, dObj.docName)
 //	ftnDiv.bodyHtml = htmlStr
 
 	//css footnote title
-	cssStr += fmt.Sprintf(".%s_div.%s_title.%s_ftTit {\n", dObj.docName, dObj.docName, dObj.docName)
+	cssStr += fmt.Sprintf(".%s_main.%s_title.%s_ftTit {\n", dObj.docName, dObj.docName, dObj.docName)
 	cssStr += "  color: purple;\n"
 	cssStr += "}\n"
 
@@ -3253,7 +3259,7 @@ func (dObj *GdocDomObj) createTocDiv () (tocObj *dispObj, err error) {
 	tocDiv.bodyCss = cssStr
 
 	//html
-	htmlStr = fmt.Sprintf("<div class=\"%s_div top\">\n", dObj.docName)
+	htmlStr = fmt.Sprintf("<div class=\"%s_main top\">\n", dObj.docName)
 	htmlStr += fmt.Sprintf("<p class=\"%s_title %s_leftTitle\">Table of Contents</p>\n", dObj.docName, dObj.docName)
 	tocDiv.bodyHtml = htmlStr
 
@@ -3337,7 +3343,7 @@ func (dObj *GdocDomObj) cvtBodyDom() (bodyObj *dispObj, err error) {
 
 	bodyObj = new(dispObj)
 
-//	bodyObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div\">\n", dObj.docName)
+//	bodyObj.bodyHtml = fmt.Sprintf("<div class=\"%s_main\">\n", dObj.docName)
 	var divMain elScriptObj
 	divMain.comment = "create main div"
 	divMain.typ = "div"
@@ -3390,7 +3396,7 @@ func (dObj *GdocDomObj) cvtBodySec(elSt, elEnd int) (bodyObj *dispObj, err error
 	bodyObj = new(dispObj)
 
 	// need to move
-//	bodyObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div\">\n", dObj.docName)
+//	bodyObj.bodyHtml = fmt.Sprintf("<div class=\"%s_main\">\n", dObj.docName)
 	bodyObj.bodyHtml = ""
 
 	for el:=elSt; el<= elEnd; el++ {
