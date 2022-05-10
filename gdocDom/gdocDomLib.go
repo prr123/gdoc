@@ -1132,7 +1132,9 @@ func creElFuncScript() (jsStr string) {
 	jsStr += "  elp = elObj.parent;\n"
 	jsStr += "  elp.appendChild(el);\n"
 	jsStr += "  return el\n}\n"
-	jsStr += "function clearObj(elObj) {for key in elObj {elObj[key] = null;}}\n"
+	jsStr += "function clearObj(elObj) {\n"
+	jsStr += "  for (key in elObj) {elObj[key] = null;}\n"
+	jsStr += "  return\n}\n"
 	jsStr += "function addTxt(elObj) {\n"
 	jsStr += "  let el = elObj.parent;\n"
 	jsStr += "  if (elObj.txt != null) {\n"
@@ -1156,10 +1158,10 @@ func addTxtElToDom(elObj elScriptObj)(script string) {
 		script += "// no text provided!\n"
 		return script
 	}
-	script = "for key in elObj {elObj[key] = null;}\n"
+	script = "    for (key in elObj) {elObj[key] = null;}\n"
 	script += fmt.Sprintf("  elObj.txt = '%s';\n", elObj.txt)
 	script += fmt.Sprintf("  elObj.parent = %s;\n", elObj.parent)
-	script += fmt.Sprintf("  addTxt(elObj);\n", elObj.newEl)
+	script += fmt.Sprintf("  addTxt(elObj);\n")
 	return script
 }
 
@@ -1175,7 +1177,7 @@ func addElToDom(elObj elScriptObj)(script string) {
 		script += "// no text provided!\n"
 		return script
 	}
-	script = "  for key in elObj {elObj[key] = null;}\n"
+	script = "  for (key in elObj) {elObj[key] = null;}\n"
 	if len(elObj.cl1) > 0 {script += fmt.Sprintf("  elObj.cl1 = '%s';\n", elObj.cl1)}
 	if len(elObj.cl2) > 0 {script += fmt.Sprintf("  elObj.cl2 = '%s';\n", elObj.cl2)}
 	if len(elObj.idStr) > 0 {script += fmt.Sprintf("  elObj.idStr = '%s';\n", elObj.idStr)}
@@ -1711,49 +1713,79 @@ func (dObj *GdocDomObj) cvtParElTextold(parElTxt *docs.TextRun)(htmlStr string, 
 	return htmlStr, cssStr, nil
 }
 
-func (dObj *GdocDomObj) cvtParDomElText(parElTxt *docs.TextRun)(parTxt dispObj) {
-	var scriptStr, cssStr string
+func (dObj *GdocDomObj) cvtParDomElText(parElTxt *docs.TextRun, namedTyp string)(parTxt dispObj) {
+	var scriptStr, cssStr, spanCssStr string
+	var spanEl, linkEl, txtEl elScriptObj
 
 	if parElTxt == nil {
 		parTxt.script = "//cvtPelText -- parElTxt is nil!"
 		return parTxt
 	}
-	if !(len(parElTxt.Content) > 0)  { 
+	if !(len(parElTxt.Content) > 0)  {
 		parTxt.script = "//cvtPelText -- no Content!"
 		return parTxt
 	}
+	if !(len(namedTyp) >0) {
+		parTxt.script = "//cvtPelText -- no Named Type!"
+		namedTyp = "NORMAL_TEXT"
+	}
 
-	spanCssStr := cvtTxtStylCss(parElTxt.TextStyle)
+//	namedTyp := parStyl.NamedStyleType
+
+	_, namedTxtStyl, err := dObj.getNamedStyl(namedTyp)
+	if err != nil {
+		parTxt.script = fmt.Sprintf("//cvtPelText -- invalid Named Type! %v", err)
+		return parTxt
+	}
+
+//cccc
+	txtMap := new(textMap)
+	_, err = fillTxtMap(txtMap, namedTxtStyl)
+	alter, err := fillTxtMap(txtMap, parElTxt.TextStyle)
+
+//	spanCssStr := cvtTxtStylCss(parElTxt.TextStyle)
+	if alter {spanCssStr = cvtTxtMapCss(txtMap)}
 
 	if len(spanCssStr) > 0 {
 	// create span element
 		dObj.spanCount++
 		spanIdStr := fmt.Sprintf("%s_sp%d", dObj.docName, dObj.spanCount)
 		// script
-		var spanEl elScriptObj
 		spanEl.comment = "spanEl"
 		spanEl.parent = "hdel"
 		spanEl.idStr = spanIdStr
 		spanEl.typ = "span"
 		spanEl.newEl = "spanEl"
-		spanEl.txt = cvtText(parElTxt.Content)
+//		spanEl.txt = cvtText(parElTxt.Content)
 		scriptStr = addElToDom(spanEl)
 		//css
 		cssStr = fmt.Sprintf("#%s {\n", spanIdStr) + spanCssStr + "}\n"
 
 	// need to create an a element
-		if parElTxt.TextStyle.Link != nil {
-			var linEl elScriptObj
-			linEl.parent = "spanEl"
-			linEl.idStr = spanIdStr
-			linEl.typ = "a"
-			linEl.newEl = "anchor"
-			linEl.href = parElTxt.TextStyle.Link.Url
-			linEl.txt = parElTxt.Content
-			scriptStr += addElToDom(linEl)
-		}
 
+	} else {
+		spanEl.comment = "spanEl"
+		spanEl.parent = "hdel"
+		spanEl.typ = "span"
+		spanEl.newEl = "spanEl"
+		scriptStr = addElToDom(spanEl)
+		//css
+		cssStr = ""
 	}
+
+	if parElTxt.TextStyle.Link != nil {
+		linkEl.parent = "spanEl"
+		linkEl.typ = "a"
+		linkEl.newEl = "anchor"
+		linkEl.href = parElTxt.TextStyle.Link.Url
+		linkEl.txt = parElTxt.Content
+		scriptStr += addElToDom(linkEl)
+	} else {
+		txtEl.parent = "spanEl"
+		txtEl.txt = cvtText(parElTxt.Content)
+		scriptStr += addTxtElToDom(txtEl)
+	}
+
 	parTxt.bodyCss = cssStr
 	parTxt.script = scriptStr
 	return parTxt
@@ -2476,6 +2508,7 @@ func (dObj *GdocDomObj) cvtParElDom(par *docs.Paragraph)(parDisp dispObj, err er
 //	hasList := false
 //	if par.Bullet != nil {hasList = true}
 
+	namedTyp := par.ParagraphStyle.NamedStyleType
     numParEl := len(par.Elements)
     for pEl:=0; pEl< numParEl; pEl++ {
         parEl := par.Elements[pEl]
@@ -2489,7 +2522,7 @@ func (dObj *GdocDomObj) cvtParElDom(par *docs.Paragraph)(parDisp dispObj, err er
 		}
 
 		if parEl.TextRun != nil {
-			txtObj := dObj.cvtParDomElText(parEl.TextRun)
+			txtObj := dObj.cvtParDomElText(parEl.TextRun, namedTyp)
 //        	if err != nil {
 //            	txtObj.bodyHtml += fmt.Sprintf("<!-- error cvtPelToHtml: %v -->\n",err)
 //        	}
