@@ -1128,7 +1128,8 @@ func creElFuncScript() (jsStr string) {
 	jsStr += "  }\n"
 	jsStr += "  elp = elObj.parent;\n"
 	jsStr += "  elp.appendChild(el);\n"
-	jsStr += "  return el\n}\n\n"
+	jsStr += "  return el\n}\n"
+//	jsStr += "function clearObj(elObj) {for key in elObj {elObj[key] = null;}}/n"
 	jsStr += "function addBodyElScript(divDoc) {\n"
 	jsStr += "  const elObj = {};\n"
 	return jsStr
@@ -1137,6 +1138,7 @@ func creElFuncScript() (jsStr string) {
 
 func addElToDom(elObj elScriptObj)(script string) {
 
+	script = "for key in elObj {elObj[key] = null;}/n"
 	if !(len(elObj.typ) >0) {return "//// no el type provided!"}
 	if !(len(elObj.parent) > 0) {return "//// no el parent provided!"}
 	if len(elObj.cl1) > 0 {script += fmt.Sprintf("  elObj.cl1 = '%s';\n", elObj.cl1)}
