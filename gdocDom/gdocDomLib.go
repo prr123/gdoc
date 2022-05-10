@@ -1132,13 +1132,13 @@ func creElFuncScript() (jsStr string) {
 	jsStr += "  elp = elObj.parent;\n"
 	jsStr += "  elp.appendChild(el);\n"
 	jsStr += "  return el\n}\n"
-	jsStr += "function clearObj(elObj) {for key in elObj {elObj[key] = null;}}/n"
+	jsStr += "function clearObj(elObj) {for key in elObj {elObj[key] = null;}}\n"
 	jsStr += "function addTxt(elObj) {\n"
 	jsStr += "  let el = elObj.parent;\n"
 	jsStr += "  if (elObj.txt != null) {\n"
 	jsStr += "    var text =  document.createTextNode(elObj.txt);\n"
 	jsStr += "    el.appendChild(text);\n"
-	jsStr += "  }\n"
+	jsStr += "  }\n}\n"
 	jsStr += "function addBodyElScript(divDoc) {\n"
 	jsStr += "  const elObj = {};\n"
 	return jsStr
@@ -1146,10 +1146,17 @@ func creElFuncScript() (jsStr string) {
 
 
 func addTxtElToDom(elObj elScriptObj)(script string) {
-
-	script = "for key in elObj {elObj[key] = null;}/n"
-	if !(len(elObj.parent) > 0) {return "// no el parent provided!"}
-	if !(len(elObj.txt) > 0) {return "// no text provided!"}
+	script = "//addTxtEl \n"
+	script += "//" + elObj.comment + "\n"
+	if !(len(elObj.parent) > 0) {
+		script += "// no el parent provided!\n"
+		return script
+	}
+	if !(len(elObj.txt) > 0) {
+		script += "// no text provided!\n"
+		return script
+	}
+	script = "for key in elObj {elObj[key] = null;}\n"
 	script += fmt.Sprintf("  elObj.txt = '%s';\n", elObj.txt)
 	script += fmt.Sprintf("  elObj.parent = %s;\n", elObj.parent)
 	script += fmt.Sprintf("  addTxt(elObj);\n", elObj.newEl)
@@ -1158,17 +1165,24 @@ func addTxtElToDom(elObj elScriptObj)(script string) {
 
 func addElToDom(elObj elScriptObj)(script string) {
 
-	script = "for key in elObj {elObj[key] = null;}/n"
-	if !(len(elObj.typ) >0) {return "// no el type provided!"}
-	if !(len(elObj.parent) > 0) {return "// no el parent provided!"}
-	if len(elObj.comment) > 0 {script += fmt.Sprintf("  // %s\n", elObj.comment)}
+	script = "//addEl \n"
+	script += "//" + elObj.comment + "\n"
+	if !(len(elObj.parent) > 0) {
+		script += "// no el parent provided!\n"
+		return script
+	}
+	if !(len(elObj.typ) > 0) {
+		script += "// no text provided!\n"
+		return script
+	}
+	script = "  for key in elObj {elObj[key] = null;}\n"
 	if len(elObj.cl1) > 0 {script += fmt.Sprintf("  elObj.cl1 = '%s';\n", elObj.cl1)}
 	if len(elObj.cl2) > 0 {script += fmt.Sprintf("  elObj.cl2 = '%s';\n", elObj.cl2)}
 	if len(elObj.idStr) > 0 {script += fmt.Sprintf("  elObj.idStr = '%s';\n", elObj.idStr)}
 	if len(elObj.txt) > 0 {script += fmt.Sprintf("  elObj.txt = '%s';\n", elObj.txt)}
 	script += fmt.Sprintf("  elObj.parent = %s;\n", elObj.parent)
 	script += fmt.Sprintf("  elObj.typ = '%s';\n", elObj.typ)
-	script += fmt.Sprintf("  addEl(elObj);\n", elObj.newEl)
+	script += fmt.Sprintf("  %s = addEl(elObj);\n", elObj.newEl)
 	return script
 }
 
@@ -1697,10 +1711,17 @@ func (dObj *GdocDomObj) cvtParElTextold(parElTxt *docs.TextRun)(htmlStr string, 
 	return htmlStr, cssStr, nil
 }
 
-func (dObj *GdocDomObj) cvtParDomElText(parElTxt *docs.TextRun)(scriptStr string, cssStr string) {
+func (dObj *GdocDomObj) cvtParDomElText(parElTxt *docs.TextRun)(parTxt dispObj) {
+	var scriptStr, cssStr string
 
-	if parElTxt == nil { return "cvtPelText -- parElTxt is nil!", ""}
-	if !(len(parElTxt.Content) > 0)  { return "",""}
+	if parElTxt == nil {
+		parTxt.script = "//cvtPelText -- parElTxt is nil!"
+		return parTxt
+	}
+	if !(len(parElTxt.Content) > 0)  { 
+		parTxt.script = "//cvtPelText -- no Content!"
+		return parTxt
+	}
 
 	spanCssStr := cvtTxtStylCss(parElTxt.TextStyle)
 
@@ -1710,10 +1731,12 @@ func (dObj *GdocDomObj) cvtParDomElText(parElTxt *docs.TextRun)(scriptStr string
 		spanIdStr := fmt.Sprintf("%s_sp%d", dObj.docName, dObj.spanCount)
 		// script
 		var spanEl elScriptObj
-		spanEl.parent = "p"
+		spanEl.comment = "spanEl"
+		spanEl.parent = "hdel"
 		spanEl.idStr = spanIdStr
 		spanEl.typ = "span"
-		spanEl.txt = parElTxt.Content
+		spanEl.newEl = "spanEl"
+		spanEl.txt = cvtText(parElTxt.Content)
 		scriptStr = addElToDom(spanEl)
 		//css
 		cssStr = fmt.Sprintf("#%s {\n", spanIdStr) + spanCssStr + "}\n"
@@ -1721,16 +1744,19 @@ func (dObj *GdocDomObj) cvtParDomElText(parElTxt *docs.TextRun)(scriptStr string
 	// need to create an a element
 		if parElTxt.TextStyle.Link != nil {
 			var linEl elScriptObj
-			linEl.parent = "p"
+			linEl.parent = "spanEl"
 			linEl.idStr = spanIdStr
 			linEl.typ = "a"
+			linEl.newEl = "anchor"
 			linEl.href = parElTxt.TextStyle.Link.Url
 			linEl.txt = parElTxt.Content
-			scriptStr = addElToDom(linEl)
+			scriptStr += addElToDom(linEl)
 		}
 
 	}
-	return scriptStr, cssStr
+	parTxt.bodyCss = cssStr
+	parTxt.script = scriptStr
+	return parTxt
 }
 
 
@@ -2463,7 +2489,6 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 }
 
 func (dObj *GdocDomObj) cvtParElDom(par *docs.Paragraph)(parDisp dispObj, err error) {
-	var htmlStr, cssStr, scriptStr string
 
 //	hasList := false
 //	if par.Bullet != nil {hasList = true}
@@ -2475,25 +2500,23 @@ func (dObj *GdocDomObj) cvtParElDom(par *docs.Paragraph)(parDisp dispObj, err er
 		if parEl.InlineObjectElement != nil {
     	    imgObj, err := dObj.renderInlineImg(parEl.InlineObjectElement)
         	if err != nil {
-				htmlStr += fmt.Sprintf("<!-- error cvtPelToHtml: %v -->\n",err)
+				imgObj.bodyHtml += fmt.Sprintf("<!-- error cvtPelToHtml: %v -->\n",err)
         	}
-			htmlStr += imgObj.bodyHtml
-			cssStr += imgObj.bodyCss
+			addDispObj(&parDisp, imgObj)
 		}
 
 		if parEl.TextRun != nil {
-			txtScript, txtCssStr:= dObj.cvtParDomElText(parEl.TextRun)
-        	if err != nil {
-            	htmlStr += fmt.Sprintf("<!-- error cvtPelToHtml: %v -->\n",err)
-        	}
-			scriptStr += txtScript
-//        	htmlStr += txtHtmlStr
-			cssStr += txtCssStr
+			txtObj := dObj.cvtParDomElText(parEl.TextRun)
+//        	if err != nil {
+//            	txtObj.bodyHtml += fmt.Sprintf("<!-- error cvtPelToHtml: %v -->\n",err)
+//        	}
+			addDispObj(&parDisp, &txtObj)
 		}
 
 		if parEl.FootnoteReference != nil {
 			dObj.ftnoteCount++
-        	htmlStr += fmt.Sprintf("<span class=\"%s_ftnote\">[%d]</span>",dObj.docName, dObj.ftnoteCount)
+//        	htmlStr += fmt.Sprintf("<span class=\"%s_ftnote\">[%d]</span>",dObj.docName, dObj.ftnoteCount)
+//			parDisp.bodyHtml += htmlStr
 		}
 
 		if parEl.PageBreak != nil {
@@ -2516,9 +2539,6 @@ func (dObj *GdocDomObj) cvtParElDom(par *docs.Paragraph)(parDisp dispObj, err er
 
 		}
 
-		parDisp.bodyHtml += htmlStr
-		parDisp.script += scriptStr
-		parDisp.bodyCss += cssStr
 	} //loop end parEl
 
 	return parDisp, nil
@@ -2768,8 +2788,9 @@ func (dObj *GdocDomObj) cvtParStylDom(parStyl *docs.ParagraphStyle, isList bool)
 
 	//fmt.Printf("parstyl: %s %s %s\n", parStyl.NamedStyleType, prefix, suffix)
 	if (len(cssPrefix) > 0) {cssStr = cssComment + cssPrefix + cssParAtt + "}\n"}
-
+	elObj.comment ="cvtParStyl"
 	elObj.parent = dObj.elDiv
+	elObj.newEl = "hdel"
 	parStylObj.script = addElToDom(elObj)
 	parStylObj.bodyCss = cssStr
 	return parStylObj, nil
@@ -3302,9 +3323,10 @@ func (dObj *GdocDomObj) cvtBodyDom() (bodyObj *dispObj, err error) {
 
 //	bodyObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div\">\n", dObj.docName)
 	var divMain elScriptObj
+	divMain.comment = "create main div"
 	divMain.typ = "div"
 	divMain.parent = "divDoc"
-	divMain.cl1 =dObj.docName + "_main"
+	divMain.cl1 = dObj.docName + "_main"
 	divMain.newEl = "divMain"
 	bodyObj.script = addElToDom(divMain)
 	dObj.elDiv = "divMain"
