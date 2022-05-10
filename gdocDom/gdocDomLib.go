@@ -1130,12 +1130,29 @@ func creElFuncScript() (jsStr string) {
 	jsStr += "  elp = elObj.parent;\n"
 	jsStr += "  elp.appendChild(el);\n"
 	jsStr += "  return el\n}\n"
-//	jsStr += "function clearObj(elObj) {for key in elObj {elObj[key] = null;}}/n"
+	jsStr += "function clearObj(elObj) {for key in elObj {elObj[key] = null;}}/n"
+	jsStr += "function addTxt(elObj) {\n"
+	jsStr += "  let el = elObj.parent;\n"
+	jsStr += "  if (elObj.txt != null) {\n"
+	jsStr += "    var text =  document.createTextNode(elObj.txt);\n"
+	jsStr += "    el.appendChild(text);\n"
+	jsStr += "  }\n"
 	jsStr += "function addBodyElScript(divDoc) {\n"
 	jsStr += "  const elObj = {};\n"
 	return jsStr
 }
 
+
+func addTxtElToDom(elObj elScriptObj)(script string) {
+
+	script = "for key in elObj {elObj[key] = null;}/n"
+	if !(len(elObj.parent) > 0) {return "// no el parent provided!"}
+	if !len(elObj.txt) > 0 {return "// no text provided!"}
+	script += fmt.Sprintf("  elObj.txt = '%s';\n", elObj.txt)
+	script += fmt.Sprintf("  elObj.parent = %s;\n", elObj.parent)
+	script += fmt.Sprintf("  addTxt(elObj);\n", elObj.newEl)
+	return script
+}
 
 func addElToDom(elObj elScriptObj)(script string) {
 
@@ -1149,7 +1166,7 @@ func addElToDom(elObj elScriptObj)(script string) {
 	if len(elObj.txt) > 0 {script += fmt.Sprintf("  elObj.txt = '%s';\n", elObj.txt)}
 	script += fmt.Sprintf("  elObj.parent = %s;\n", elObj.parent)
 	script += fmt.Sprintf("  elObj.typ = '%s';\n", elObj.typ)
-	script += fmt.Sprintf("  %s = addEl(elObj);\n", elObj.newEl)
+	script += fmt.Sprintf("  addEl(elObj);\n", elObj.newEl)
 	return script
 }
 
@@ -2441,56 +2458,62 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph, parent string)(parObj d
 	return parObj, nil
 }
 
-func (dObj *GdocDomObj) cvtParElDom(parEl *docs.ParagraphElement)(parDisp dispObj, err error) {
+func (dObj *GdocDomObj) cvtParElDom(par *docs.Paragraph)(parDisp dispObj, err error) {
 	var htmlStr, cssStr, scriptStr string
 
-	if parEl.InlineObjectElement != nil {
-        imgObj, err := dObj.renderInlineImg(parEl.InlineObjectElement)
-        if err != nil {
-			htmlStr += fmt.Sprintf("<!-- error cvtPelToHtml: %v -->\n",err)
-        }
-		htmlStr += imgObj.bodyHtml
-		cssStr += imgObj.bodyCss
-	}
+    numParEl := len(par.Elements)
+    for pEl:=0; pEl< numParEl; pEl++ {
+        parEl := par.Elements[pEl]
 
-	if parEl.TextRun != nil {
-		txtScript, txtCssStr:= dObj.cvtParDomElText(parEl.TextRun)
-        if err != nil {
+		if parEl.InlineObjectElement != nil {
+    	    imgObj, err := dObj.renderInlineImg(parEl.InlineObjectElement)
+        	if err != nil {
+				htmlStr += fmt.Sprintf("<!-- error cvtPelToHtml: %v -->\n",err)
+        	}
+			htmlStr += imgObj.bodyHtml
+			cssStr += imgObj.bodyCss
+		}
+
+		if parEl.TextRun != nil {
+			txtScript, txtCssStr:= dObj.cvtParDomElText(parEl.TextRun)
+        	if err != nil {
             	htmlStr += fmt.Sprintf("<!-- error cvtPelToHtml: %v -->\n",err)
-        }
-		scriptStr += txtScript
+        	}
+			scriptStr += txtScript
 //        	htmlStr += txtHtmlStr
-		cssStr += txtCssStr
-	}
+			cssStr += txtCssStr
+		}
 
-	if parEl.FootnoteReference != nil {
-		dObj.ftnoteCount++
-        htmlStr += fmt.Sprintf("<span class=\"%s_ftnote\">[%d]</span>",dObj.docName, dObj.ftnoteCount)
-	}
+		if parEl.FootnoteReference != nil {
+			dObj.ftnoteCount++
+        	htmlStr += fmt.Sprintf("<span class=\"%s_ftnote\">[%d]</span>",dObj.docName, dObj.ftnoteCount)
+		}
 
-	if parEl.PageBreak != nil {
+		if parEl.PageBreak != nil {
 
-	}
+		}
 
-	if parEl.HorizontalRule != nil {
+		if parEl.HorizontalRule != nil {
 
-	}
+		}
 
-	if parEl.ColumnBreak != nil {
+		if parEl.ColumnBreak != nil {
 
-	}
+		}
 
-	if parEl.Person != nil {
+		if parEl.Person != nil {
 
-	}
+		}
 
-	if parEl.RichLink != nil {
+		if parEl.RichLink != nil {
 
-	}
+		}
 
-	parDisp.bodyHtml = htmlStr
-	parDisp.script = scriptStr
-	parDisp.bodyCss = cssStr
+		parDisp.bodyHtml += htmlStr
+		parDisp.script += scriptStr
+		parDisp.bodyCss += cssStr
+	} loop
+
 	return parDisp, nil
 }
 
