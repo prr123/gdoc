@@ -2323,7 +2323,6 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 		if err != nil {
 			parStyl.bodyCss += fmt.Sprintf("/* error cvtParStyl: %v */\n", err)
 		}
-//fmt.Printf("par %d:  %s %s %s\n", dObj.parCount, prefix, suffix, namedTyp)
 		addDispObj(&parObj,&parStyl)
 	}
 
@@ -2331,9 +2330,8 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 	// headings are bookmarked for TOC
 
 	// par elements: text and css for text
-	var parElSumDisp dispObj
 
-	parElSumDisp, err = dObj.cvtParElDom(par)
+	parElSumDisp, err := dObj.cvtParElDom(par)
 	if err != nil {parElSumDisp.script += fmt.Sprintf("// error cvtParElDom: %v\n",err)}
 	addDispObj(&parObj, &parElSumDisp)
 /*
