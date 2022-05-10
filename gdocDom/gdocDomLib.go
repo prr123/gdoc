@@ -2253,7 +2253,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 // - ParagraphStyle
 // - Positioned Objects
 //
-	var parHtmlStr, parCssStr, parScript string
+	var parHtmlStr, parCssStr string
 	var prefix, suffix string
 	var listPrefix, listHtml, listCss, listSuffix string
 	var newList cList
@@ -2264,12 +2264,10 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 
 //	parent := dObj.elDiv
 
-	errStr := ""
 	dObj.parCount++
 
 	parHtmlStr = ""
 	parCssStr = ""
-	parScript = ""
 
 	isList := false
 	if par.Bullet != nil {isList = true}
@@ -2292,22 +2290,12 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 
 		imgDisp, err := dObj.renderPosImg(posObj, posId)
 		if err != nil {
-			parHtmlStr += fmt.Sprintf("<!-- error cvtPar:: render pos img %v -->\n", err) + imgDisp.bodyHtml
-			parCssStr += imgDisp.bodyCss
-		} else {
-			parHtmlStr += imgDisp.bodyHtml
-			parCssStr += imgDisp.bodyCss
+			imgDisp.bodyHtml = fmt.Sprintf("<!-- error cvtPar:: render pos img %v -->\n", err) + imgDisp.bodyHtml
 		}
+		addDispObj(&parObj, imgDisp)
 	}
 
-	parObj.bodyHtml += parHtmlStr
-	parObj.bodyCss += parCssStr
-	parObj.script += parScript
 
-	// need to reset
-	parHtmlStr = ""
-	parCssStr = ""
-	parScript = ""
 /*
 	// check for new line paragraph
 	if len(par.Elements) == 1 {
@@ -2333,17 +2321,14 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 	if par.ParagraphStyle != nil {
 		parStyl, err := dObj.cvtParStylDom(par.ParagraphStyle, isList)
 		if err != nil {
-			errStr = fmt.Sprintf("/* error cvtParStyl: %v */\n",err)
+			parStyl.bodyCss += fmt.Sprintf("/* error cvtParStyl: %v */\n", err)
 		}
 //fmt.Printf("par %d:  %s %s %s\n", dObj.parCount, prefix, suffix, namedTyp)
-		parObj.bodyCss += errStr + parStyl.bodyCss
-		parObj.script += parStyl.script
+		addDispObj(&parObj,&parStyl)
 	}
 
 	// Heading Id refers to a heading paragraph not just a normal paragraph
 	// headings are bookmarked for TOC
-
-	errStr = ""
 
 	// par elements: text and css for text
 	var parElSumDisp dispObj
