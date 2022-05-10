@@ -1147,7 +1147,7 @@ func addTxtElToDom(elObj elScriptObj)(script string) {
 
 	script = "for key in elObj {elObj[key] = null;}/n"
 	if !(len(elObj.parent) > 0) {return "// no el parent provided!"}
-	if !len(elObj.txt) > 0 {return "// no text provided!"}
+	if !(len(elObj.txt) > 0) {return "// no text provided!"}
 	script += fmt.Sprintf("  elObj.txt = '%s';\n", elObj.txt)
 	script += fmt.Sprintf("  elObj.parent = %s;\n", elObj.parent)
 	script += fmt.Sprintf("  addTxt(elObj);\n", elObj.newEl)
@@ -2323,7 +2323,11 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph, parent string)(parObj d
 
 	// par elements: text and css for text
 	var parElSumDisp dispObj
-	numParEl := len(par.Elements)
+
+	parElSumDisp, err = dObj.cvtParElDom(par)
+	if err != nil {parElSumDisp.script += fmt.Sprintf("// error cvtParElDom: %v\n",err)}
+	addDispObj(&parObj, &parElSumDisp)
+/*
 	if numParEl == 1 {
 		parEl := par.Elements[0]
 		if parEl.TextRun != nil {
@@ -2346,6 +2350,8 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph, parent string)(parObj d
 			addDispObj(&parElSumDisp, &parElDisp)
 		} // loop par el
 	}
+*/
+
 // lists
     if par.Bullet != nil {
 
@@ -2512,7 +2518,7 @@ func (dObj *GdocDomObj) cvtParElDom(par *docs.Paragraph)(parDisp dispObj, err er
 		parDisp.bodyHtml += htmlStr
 		parDisp.script += scriptStr
 		parDisp.bodyCss += cssStr
-	} loop
+	} //loop end parEl
 
 	return parDisp, nil
 }
@@ -3089,14 +3095,15 @@ func (dObj *GdocDomObj) createFootnoteDiv () (ftnoteDiv *dispObj, err error) {
 			htmlStr += fmt.Sprintf("<p class=\"%s_p %s_pft\" id=\"%s\">\n", dObj.docName, dObj.docName, pidStr)
 
 			var parElSumDisp *dispObj
-			for parEl:=0; parEl< len(par.Elements); parEl++ {
-				parElObj := par.Elements[parEl]
-				tDisp, err := dObj.cvtParElDom(parElObj)
+// need to change
+//			for parEl:=0; parEl< len(par.Elements); parEl++ {
+//				parElObj := par.Elements[parEl]
+				tDisp, err := dObj.cvtParElDom(par)
 				if err != nil {
-					htmlStr += fmt.Sprintf("<!-- el: %d parel %d error %v -->\n", el, parEl, err)
+					htmlStr += fmt.Sprintf("<!-- cvtPar error %v -->\n", err)
 				}
 				addDispObj(parElSumDisp, &tDisp)
-			}
+//			}
 /*
 			tObj, err := dObj.cvtContentEl(elObj)
 			if err != nil {
