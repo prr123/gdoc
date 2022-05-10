@@ -39,6 +39,8 @@ type GdocDomObj struct {
 	h4 namStyl
 	h5 namStyl
 	h6 namStyl
+	elDiv string
+	elNam string
 	listStack *[]cList
 	docLists []docList
 	headings []heading
@@ -1390,6 +1392,7 @@ func (dObj *GdocDomObj) initGdocDom(folderPath string, options *util.OptObj) (er
 		util.GetDefOption(defOpt)
 		if defOpt.Verb {util.PrintOptions(defOpt)}
 		dObj.Options = defOpt
+		dObj.Options.DivBorders = true
 	} else {
 		dObj.Options = options
 	}
@@ -2024,7 +2027,7 @@ fmt.Printf("table closing list!\n")
 	return tabObj, nil
 }
 
-func (dObj *GdocDomObj) cvtTableDom(tbl *docs.Table, parent string)(tabObj dispObj, err error) {
+func (dObj *GdocDomObj) cvtTableDom(tbl *docs.Table)(tabObj dispObj, err error) {
 	var htmlStr, cssStr string
 	var tabWidth float64
 	var icol, trow int64
@@ -2033,6 +2036,7 @@ func (dObj *GdocDomObj) cvtTableDom(tbl *docs.Table, parent string)(tabObj dispO
 
 	doc := dObj.doc
 	dObj.tableCount++
+//	parent := dObj.elDiv
 //	tblId := fmt.Sprintf("%s_tab_%d", dObj.docName, dObj.tableCount)
 
     docPg := doc.DocumentStyle
@@ -2195,7 +2199,7 @@ fmt.Printf("table closing list!\n")
 			elNum := len(tcell.Content)
 			for el:=0; el< elNum; el++ {
 				elObj := tcell.Content[el]
-				tObj, err:=dObj.cvtContentElDom(elObj, parent)
+				tObj, err:=dObj.cvtContentElDom(elObj)
 				if err != nil {
 					tabObj.bodyHtml = htmlStr
 					tabObj.bodyCss = cssStr
@@ -2216,7 +2220,7 @@ fmt.Printf("table closing list!\n")
 	return tabObj, nil
 }
 
-func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph, parent string)(parObj dispObj, err error) {
+func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err error) {
 // paragraph element par
 // - Bullet
 // - Elements
@@ -2224,7 +2228,6 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph, parent string)(parObj d
 // - Positioned Objects
 //
 	var parHtmlStr, parCssStr, parScript string
-	var elObj elScriptObj
 	var prefix, suffix string
 	var listPrefix, listHtml, listCss, listSuffix string
 	var newList cList
@@ -2232,6 +2235,8 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph, parent string)(parObj d
 	if par == nil {
         return parObj, fmt.Errorf("cvtPar -- parEl is nil!")
     }
+
+//	parent := dObj.elDiv
 
 	errStr := ""
 	dObj.parCount++
@@ -2277,7 +2282,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph, parent string)(parObj d
 	parHtmlStr = ""
 	parCssStr = ""
 	parScript = ""
-
+/*
 	// check for new line paragraph
 	if len(par.Elements) == 1 {
 		if par.Elements[0].TextRun != nil {
@@ -2291,30 +2296,23 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph, parent string)(parObj d
 			}
 		}
 	}
+*/
 
-	namedTyp := par.ParagraphStyle.NamedStyleType
-	namParStyl, _, err := dObj.getNamedStyl(namedTyp)
-	if err != nil {
-		return parObj, fmt.Errorf("cvtPar: %v", err)
-	}
-
-	// default style for each named style used in the document
-	// add css for named style at the begining of the style sheet
-	// normal_text is already defined as the default in the css for the <div>
-	// *** important *** cvtNamedStyl needs to be run before CvtParStyle
-
-	if par.Bullet == nil {
+//	if par.Bullet == nil {
 		// normal (no list) paragraph element
-		parHtmlStr += fmt.Sprintf("\n<!-- Paragraph %d %s -->\n", dObj.parCount, namedTyp)
-	}
+//		parHtmlStr += fmt.Sprintf("\n<!-- Paragraph %d %s -->\n", dObj.parCount, namedTyp)
+//	}
 
 	// get paragraph style
-	parStylCss, elObj, err := dObj.cvtParStylDom(par.ParagraphStyle, namParStyl, isList)
-	if err != nil {
-		errStr = fmt.Sprintf("/* error cvtParStyl: %v */\n",err)
-	}
+	if par.ParagraphStyle != nil {
+		parStyl, err := dObj.cvtParStylDom(par.ParagraphStyle, isList)
+		if err != nil {
+			errStr = fmt.Sprintf("/* error cvtParStyl: %v */\n",err)
+		}
 //fmt.Printf("par %d:  %s %s %s\n", dObj.parCount, prefix, suffix, namedTyp)
-	parObj.bodyCss += errStr + parStylCss
+		parObj.bodyCss += errStr + parStyl.bodyCss
+		parObj.script += parStyl.script
+	}
 
 	// Heading Id refers to a heading paragraph not just a normal paragraph
 	// headings are bookmarked for TOC
@@ -2467,6 +2465,9 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph, parent string)(parObj d
 func (dObj *GdocDomObj) cvtParElDom(par *docs.Paragraph)(parDisp dispObj, err error) {
 	var htmlStr, cssStr, scriptStr string
 
+//	hasList := false
+//	if par.Bullet != nil {hasList = true}
+
     numParEl := len(par.Elements)
     for pEl:=0; pEl< numParEl; pEl++ {
         parEl := par.Elements[pEl]
@@ -2586,14 +2587,28 @@ func (dObj *GdocDomObj) cvtDocNamedStyles()(cssStr string, err error) {
 	return cssStr, nil
 }
 
-func (dObj *GdocDomObj) cvtParStylDom(parStyl, namParStyl *docs.ParagraphStyle, isList bool)(cssStr string, elObj elScriptObj, err error) {
+func (dObj *GdocDomObj) cvtParStylDom(parStyl *docs.ParagraphStyle, isList bool)(parStylObj dispObj, err error) {
+	var elObj elScriptObj
+	var cssStr string
+
+	namedTyp := parStyl.NamedStyleType
+	namParStyl, _, err := dObj.getNamedStyl(namedTyp)
+	if err != nil {
+		return parStylObj, fmt.Errorf("getNamedStyl: %v", err)
+	}
+
+	// default style for each named style used in the document
+	// add css for named style at the begining of the style sheet
+	// normal_text is already defined as the default in the css for the <div>
+	// *** important *** cvtNamedStyl needs to be run before CvtParStyle
 
 //	var prefix, suffix string
 	cssComment:=""
 	if namParStyl == nil {
 		// def error the default is that the normal_text paragraph style is passed
 		cssComment = fmt.Sprintf("/* Paragraph Style: no named Style */\n")
-		return cssComment, elObj, nil
+		parStylObj.bodyCss = cssComment
+		return parStylObj, nil
 	}
 
 	cssComment = fmt.Sprintf("/* Paragraph Style: %s */\n", parStyl.NamedStyleType )
@@ -2609,20 +2624,23 @@ func (dObj *GdocDomObj) cvtParStylDom(parStyl, namParStyl *docs.ParagraphStyle, 
 
 
 	if parStyl == nil || isList {
+		// use named style that has been published
 		cssParAtt = dObj.cvtParMapCss(parmap)
 	} else {
+		// use par style
 		alter, err = fillParMap(parmap, parStyl)
 		if err != nil {
 			cssComment += "/* erro fill Parmap parstyl */" + fmt.Sprintf("%v\n", err)
 		}
+		// what if there is no alter?
 		if alter {cssParAtt = dObj.cvtParMapCss(parmap)}
 	}
 
 	// NamedStyle Type
 //	isListClass := ""
-	if isList {
+//	if isList {
 //		isListClass = " list"
-	}
+//	}
 
 	cssPrefix := ""
 	headingId := parStyl.HeadingId
@@ -2747,10 +2765,14 @@ func (dObj *GdocDomObj) cvtParStylDom(parStyl, namParStyl *docs.ParagraphStyle, 
 	} else {
 //		prefix = prefix + ">"
 	}
+
 	//fmt.Printf("parstyl: %s %s %s\n", parStyl.NamedStyleType, prefix, suffix)
 	if (len(cssPrefix) > 0) {cssStr = cssComment + cssPrefix + cssParAtt + "}\n"}
 
-	return cssStr, elObj, nil
+	elObj.parent = dObj.elDiv
+	parStylObj.script = addElToDom(elObj)
+	parStylObj.bodyCss = cssStr
+	return parStylObj, nil
 }
 
 
@@ -2983,16 +3005,17 @@ func (dObj *GdocDomObj) creCssDocHead() (headCss string, err error) {
 	return headCss, nil
 }
 
-func (dObj *GdocDomObj) cvtContentElDom(contEl *docs.StructuralElement, parent string) (GdocDomObj *dispObj, err error) {
+func (dObj *GdocDomObj) cvtContentElDom(contEl *docs.StructuralElement) (GdocDomObj *dispObj, err error) {
 	if dObj == nil {
 		return nil, fmt.Errorf("error -- dObj is nil")
 	}
+//	parent = dObj.eldiv
 
 	bodyElObj := new(dispObj)
 
 	if contEl.Paragraph != nil {
 		parEl := contEl.Paragraph
-		tObj, err := dObj.cvtParToDom(parEl, parent)
+		tObj, err := dObj.cvtParToDom(parEl)
 		if err != nil { bodyElObj.bodyHtml += fmt.Sprintf("<!-- %v -->\n", err) }
 		addDispObj(bodyElObj, &tObj)
 	}
@@ -3002,7 +3025,7 @@ func (dObj *GdocDomObj) cvtContentElDom(contEl *docs.StructuralElement, parent s
 	}
 	if contEl.Table != nil {
 		tableEl := contEl.Table
-		tObj, err := dObj.cvtTableDom(tableEl, parent)
+		tObj, err := dObj.cvtTableDom(tableEl)
 		if err != nil { bodyElObj.bodyHtml += fmt.Sprintf("<!-- %v -->\n", err) }
 		addDispObj(bodyElObj, &tObj)
 	}
@@ -3284,11 +3307,12 @@ func (dObj *GdocDomObj) cvtBodyDom() (bodyObj *dispObj, err error) {
 	divMain.cl1 =dObj.docName + "_main"
 	divMain.newEl = "divMain"
 	bodyObj.script = addElToDom(divMain)
+	dObj.elDiv = "divMain"
 
 	elNum := len(body.Content)
 	for el:=0; el< elNum; el++ {
 		bodyEl := body.Content[el]
-		tObj, err:=dObj.cvtContentElDom(bodyEl, "divMain")
+		tObj, err:=dObj.cvtContentElDom(bodyEl)
 		if err != nil {
 			fmt.Println("cvtContentEl: %v", err)
 		}
@@ -3333,7 +3357,7 @@ func (dObj *GdocDomObj) cvtBodySec(elSt, elEnd int) (bodyObj *dispObj, err error
 
 	for el:=elSt; el<= elEnd; el++ {
 		bodyEl := body.Content[el]
-		tObj, err:=dObj.cvtContentElDom(bodyEl, "divMain")
+		tObj, err:=dObj.cvtContentElDom(bodyEl)
 		if err != nil {
 			fmt.Println("cvtContentElDom: %v", err)
 		}
