@@ -1173,7 +1173,6 @@ func creDocDivScript(docName string)(jsStr string) {
 }
 
 func cvtText(inp string) (out string) {
-
 	ilen := len(inp)
 	if inp[ilen -1] == '\n' {
 		out = inp[:ilen-1]
@@ -1182,6 +1181,23 @@ func cvtText(inp string) (out string) {
 	}
 	return out
 }
+
+func cvtTextjs(inp string) (out string) {
+	ilen := len(inp)
+	j:=0
+	for i:=0; i<ilen; i++ {
+		if inp[i] == '\n' {
+			out[j] = '\'
+			j++
+			out[j] = 'r'
+		} else {
+			out[j] = inp[i]
+		}
+		j++
+	}
+	return out
+}
+
 
 func addParScript(docName string)(jsStr string) {
 
