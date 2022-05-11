@@ -278,18 +278,27 @@ func (dObj *gdocMdObj) InitGdocMd(folderPath string, options *util.OptObj) (err 
     }
 
 //    fPath, fexist, err := util.CreateFileFolder(folderPath, dObj.DocName)
-    fPath, _, err := util.CreateFileFolder(folderPath, dObj.DocName)
+    fPath, fexist, err := util.CreateFileFolder(folderPath, dObj.DocName)
     if err!= nil {
         return fmt.Errorf("error -- util.CreateFileFolder: %v", err)
     }
     dObj.folderPath = fPath
 
     // create output file path/outfilNam.txt
-    outfil, err := util.CreateOutFil(fPath, dObj.DocName,"txt")
+    outfil, err := util.CreateOutFil(fPath, dObj.DocName,"md")
     if err!= nil {
         return fmt.Errorf("error -- util.CreateOutFil: %v", err)
     }
     dObj.outfil = outfil
+
+    if dObj.Options.Verb {
+        fmt.Println("******************* Output File ************")
+        fmt.Printf("folder path: %s ", fPath)
+        fstr := "is new!"
+        if fexist { fstr = "exists!" }
+        fmt.Printf("%s\n", fstr)
+        fmt.Println("********************************************")
+    }
 
 
 	totObjNum := dObj.inImgCount + dObj.posImgCount
@@ -917,36 +926,10 @@ func CvtGdocToMd(folderPath string, doc *docs.Document, options *util.OptObj)(er
 
     docObj := new(gdocMdObj)
     docObj.doc = doc
-//	docObj.folder = outfil
 
     err = docObj.InitGdocMd(folderPath, options)
     if err != nil {
         return fmt.Errorf("error CvtGdocToMd: could not initialise! %v", err)
-    }
-
-    fPath, fexist, err := util.CreateFileFolder(folderPath, docObj.DocName)
-    if err!= nil {
-        return fmt.Errorf("util.CreateFileFolder %v", err)
-    }
-    docObj.folderPath = fPath
-
-    // create output file path/outfilNam.txt
-    outfilNam := docObj.DocName
-
-    outfil, err := util.CreateOutFil(fPath, outfilNam,"md")
-    if err!= nil {
-        return fmt.Errorf("util.CreateOutFil %v", err)
-    }
-    docObj.outfil = outfil
-
-    if docObj.Options.Verb {
-        fmt.Println("******************* Output File ************")
-        fmt.Printf("folder path: %s ", fPath)
-        fstr := "is new!"
-        if fexist { fstr = "exists!" }
-        fmt.Printf("%s\n", fstr)
-        fmt.Printf("file name:  %s\n", outfilNam)
-        fmt.Println("********************************************")
     }
 
 	outstr = "[//]: * (Document Title: " + doc.Title + ")\n"
@@ -954,13 +937,15 @@ func CvtGdocToMd(folderPath string, doc *docs.Document, options *util.OptObj)(er
 	outstr += fmt.Sprintf("[//]: * (Document Id: %s)\n", doc.DocumentId)
 //	outstr += fmt.Sprintf("Revision Id: %s \n", doc.RevisionId)
 
+	outfil := docObj.outfil
+
 	_, err = outfil.WriteString(outstr)
 	if err != nil {
 		return fmt.Errorf("error CvtGdocTpMd: cannot write to file! %v", err)
 	}
 
 	outstr = ""
-	if docObj.Options.Toc {
+	if (docObj.Options.Toc) && (len(docObj.headings) > 2){
 		tocstr = "<p style=\"font-size:20pt; text-align:center\">Table of Contents</p>\n"
 	}
 
