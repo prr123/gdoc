@@ -298,8 +298,10 @@ func fillTxtMap(txtMap *textMap, txtStyl *docs.TextStyle)(alter bool, err error)
 	}
 
 	if txtStyl.BaselineOffset != txtMap.baseOffset {
-		txtMap.baseOffset = txtStyl.BaselineOffset
-		alter = true
+        if len(txtStyl.BaselineOffset) > 0 {
+			txtMap.baseOffset = txtStyl.BaselineOffset
+			alter = true
+		}
 	}
 
 	if txtStyl.Bold != txtMap.bold {
