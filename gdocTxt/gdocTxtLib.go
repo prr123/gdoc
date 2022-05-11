@@ -591,27 +591,27 @@ func (dObj *gdocTxtObj) dispParEl(parDet *docs.ParagraphElement)(outstr string, 
 	} else { outstr +="\n" }
 
 	if parDet.ColumnBreak != nil {
-		outstr += "    *** Column Break ***\n"
+		outstr += "      *** Column Break ***\n"
 	} else {
-		outstr += "    *** no Column Break ***\n"
+		outstr += "      *** no Column Break ***\n"
 	}
 
 	if parDet.InlineObjectElement != nil {
-		outstr += fmt.Sprintf("    *** Inline Object with id: %s ***\n", parDet.InlineObjectElement.InlineObjectId)
+		outstr += fmt.Sprintf("      *** Inline Object with id: %s ***\n", parDet.InlineObjectElement.InlineObjectId)
 	} else {
-		outstr += "    *** no Inline Object ***\n"
+		outstr += "      *** no Inline Object ***\n"
 	}
 
 	if parDet.Person != nil {
-		outstr += fmt.Sprintf("    *** Has Person with id ***\n", parDet.Person.PersonId)
+		outstr += fmt.Sprintf("      *** Has Person with id ***\n", parDet.Person.PersonId)
 	} else {
-		outstr += "    *** no Person ***\n"
+		outstr += "      *** no Person ***\n"
 	}
 
 	if parDet.RichLink != nil {
-		outstr += fmt.Sprintf("    *** Has Rich Text ***\n")
+		outstr += fmt.Sprintf("      *** Has Rich Text ***\n")
 	} else {
-		outstr += "    *** no Rich Text ***\n"
+		outstr += "      *** no Rich Text ***\n"
 	}
 
 	if parDet.PageBreak != nil {
@@ -619,28 +619,28 @@ func (dObj *gdocTxtObj) dispParEl(parDet *docs.ParagraphElement)(outstr string, 
 		if (parDet.PageBreak.TextStyle != nil) {
 			insTxt = "with"
 		}
-		outstr += fmt.Sprintf("    *** Has Page Break %s txtstyle ***\n", insTxt)
+		outstr += fmt.Sprintf("      *** Has Page Break %s txtstyle ***\n", insTxt)
 		if (parDet.PageBreak.TextStyle != nil) {
-			tstr, err := dObj.dispTxtStyl(parDet.HorizontalRule.TextStyle, 6)
+			tstr, err := dObj.dispTxtStyl(parDet.HorizontalRule.TextStyle, 8)
 			if err != nil {
 				outstr += fmt.Sprintf("/* error disp Text Style: %v */\n", err)
 			}
 			outstr += tstr
 		}
 	} else {
-		outstr += "    *** no Page Break ***\n"
+		outstr += "      *** no Page Break ***\n"
 	}
 
 	if parDet.AutoText != nil {
-		outstr += fmt.Sprintf("    *** Has AutoText ***\n")
+		outstr += fmt.Sprintf("      *** Has AutoText ***\n")
 	} else {
-		outstr += "    *** no AutoText ***\n"
+		outstr += "      *** no AutoText ***\n"
 	}
 
 	if parDet.Equation != nil {
-		outstr += fmt.Sprintf("    *** Has Equation ***\n")
+		outstr += fmt.Sprintf("      *** Has Equation ***\n")
 	} else {
-		outstr += "    *** no Equation ***\n"
+		outstr += "      *** no Equation ***\n"
 	}
 
 	if parDet.HorizontalRule != nil {
@@ -648,27 +648,27 @@ func (dObj *gdocTxtObj) dispParEl(parDet *docs.ParagraphElement)(outstr string, 
 		if (parDet.HorizontalRule.TextStyle != nil) {
 			insTxt = "with"
 		}
-		outstr += fmt.Sprintf("    *** Has Horizontal Rule %s txtstyle ***\n", insTxt)
+		outstr += fmt.Sprintf("      *** Has Horizontal Rule %s txtstyle ***\n", insTxt)
 		if (parDet.HorizontalRule.TextStyle != nil) {
-			tstr, err := dObj.dispTxtStyl(parDet.HorizontalRule.TextStyle, 6)
+			tstr, err := dObj.dispTxtStyl(parDet.HorizontalRule.TextStyle, 8)
 			if err != nil {
 				outstr += fmt.Sprintf("/* error disp Text Style: %v */\n", err)
 			}
 			outstr += tstr
 		}
 	} else {
-		outstr += "    *** no Horizontal Rule ***\n"
+		outstr += "      *** no Horizontal Rule ***\n"
 	}
 
 	if parDet.FootnoteReference != nil {
 		ftref := parDet.FootnoteReference
-		outstr += fmt.Sprintf("    *** Has Footnote Reference ***\n")
-		outstr += fmt.Sprintf("       Id:     %s\n", ftref.FootnoteId)
-		outstr += fmt.Sprintf("       Number: %s\n", ftref.FootnoteNumber)
+		outstr += fmt.Sprintf("      *** Has Footnote Reference ***\n")
+		outstr += fmt.Sprintf("          Id:     %s\n", ftref.FootnoteId)
+		outstr += fmt.Sprintf("          Number: %s\n", ftref.FootnoteNumber)
 		tstr, err := dObj.dispTxtStyl(ftref.TextStyle, 8)
-		if err == nil {outstr += tstr} else { outstr += fmt.Sprintf("     *** error %v\n", err) }
+		if err == nil {outstr += tstr} else { outstr += fmt.Sprintf("       *** error %v\n", err) }
 	} else {
-			outstr += "    *** no Footnote Reference ***\n"
+			outstr += "      *** no Footnote Reference ***\n"
 	}
 
 	return outstr, nil
