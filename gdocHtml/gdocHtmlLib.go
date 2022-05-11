@@ -1515,19 +1515,32 @@ func (dObj *GdocHtmlObj) renderInlineImg(imgEl *docs.InlineObjectElement)(imgDis
 	return &imgDispObj, nil
 }
 
-func (dObj *GdocHtmlObj) cvtParElText(parElTxt *docs.TextRun)(htmlStr string, cssStr string, err error) {
-
-   if parElTxt == nil {
-        return "","", fmt.Errorf("cvtPelText -- parElTxt is nil!")
-    }
+func (dObj *GdocHtmlObj) cvtParElText(parElTxt *docs.TextRun, namedTyp string)(parTxt dispObj) {
+	var htmlStr, cssStr, spanCssStr string
 
 	// need to check whether <1
-	if len(parElTxt.Content) < 2 { return "","",nil}
+	if !(len(parElTxt.Content) >0) {
+		parTxt.bodyHtml = "<!-- parElTxt no Content -->"
+		return parTxt
+	}
 
-	// need to compare text style with the default style
-//todo
+   if !(len(namedTyp) >0) {
+        cssStr += "/*cvtPelText -- no Named Type!*/\n"
+        namedTyp = "NORMAL_TEXT"
+    }
 
-	spanCssStr := cvtTxtStylCss(parElTxt.TextStyle)
+	// comparing par text style with the named style
+    _, namedTxtStyl, err := dObj.getNamedStyl(namedTyp)
+    if err != nil {
+        parTxt.bodyHtml += fmt.Sprintf("<!-- cvtPelText -- invalid Named Type! %v -->", err)
+        return parTxt
+    }
+
+    txtMap := new(textMap)
+    _, err = fillTxtMap(txtMap, namedTxtStyl)
+    alter, err := fillTxtMap(txtMap, parElTxt.TextStyle)
+
+    if alter {spanCssStr = cvtTxtMapCss(txtMap)}
 	if err != nil {
 		spanCssStr = fmt.Sprintf("/*error parEl Css %v*/\n", err) + spanCssStr
 	}
@@ -1540,13 +1553,18 @@ func (dObj *GdocHtmlObj) cvtParElText(parElTxt *docs.TextRun)(htmlStr string, cs
 		}
 	}
 	if len(spanCssStr)>0 {
+		// the text has a different styling than the named style for this paragraph
 		dObj.spanCount++
 		cssStr = fmt.Sprintf("#%s_sp%d {\n", dObj.docName, dObj.spanCount) + spanCssStr + "}\n"
 		htmlStr = fmt.Sprintf("<span id=\"%s_sp%d\">",dObj.docName, dObj.spanCount) + linkPrefix + parElTxt.Content + linkSuffix + "</span>"
 	} else {
+		// no reason to include a span element in contrast to gdocDomLib
 		htmlStr = linkPrefix + parElTxt.Content + linkSuffix
 	}
-	return htmlStr, cssStr, nil
+
+	parTxt.bodyHtml += htmlStr
+	parTxt.bodyCss += cssStr
+	return parTxt
 }
 
 
@@ -1883,16 +1901,10 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 
 		imgDisp, err := dObj.renderPosImg(posObj, posId)
 		if err != nil {
-			parHtmlStr += fmt.Sprintf("<!-- error cvtPar:: render pos img %v -->\n", err) + imgDisp.bodyHtml
-			parCssStr += imgDisp.bodyCss
-		} else {
-			parHtmlStr += imgDisp.bodyHtml
-			parCssStr += imgDisp.bodyCss
+			parObj.bodyHtml += fmt.Sprintf("<!-- error cvtPar:: render pos img %v -->\n", err) + imgDisp.bodyHtml
 		}
+			addDispObj(&parObj, imgDisp)
 	}
-
-	parObj.bodyHtml += parHtmlStr
-	parObj.bodyCss += parCssStr
 
 	// need to reset
 	parHtmlStr = ""
@@ -1957,13 +1969,12 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 
 	// par elements: text and css for text
 	numParEl := len(par.Elements)
+
     for pEl:=0; pEl< numParEl; pEl++ {
         parEl := par.Elements[pEl]
-		elHtmlStr, elCssStr, err := dObj.cvtParEl(parEl)
-		if err != nil { parHtmlStr += fmt.Sprintf("<!-- error cvtParEl: %v -->\n",err)}
-      	parHtmlStr += elHtmlStr
-		parCssStr += elCssStr
-
+		elDisp, err := dObj.cvtParEl(parEl, namedTyp)
+		if err != nil { parObj.bodyHtml += fmt.Sprintf("<!-- error cvtParEl: %v -->\n",err)}
+		addDispObj(&parObj, &elDisp)
 	} // loop par el
 
 // lists
@@ -2078,29 +2089,25 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 	return parObj, nil
 }
 
-func (dObj *GdocHtmlObj) cvtParEl(parEl *docs.ParagraphElement)(htmlStr string, cssStr string, err error) {
+func (dObj *GdocHtmlObj) cvtParEl(parEl *docs.ParagraphElement, namedStyl string)(parElDisp dispObj, err error) {
 
 		if parEl.InlineObjectElement != nil {
         	imgDisp, err := dObj.renderInlineImg(parEl.InlineObjectElement)
         	if err != nil {
-            	htmlStr += fmt.Sprintf("<!-- error cvtPelToHtml: %v -->\n",err)
+            	imgDisp.bodyHtml += fmt.Sprintf("<!-- error cvtPelToHtml: %v -->\n",err)
         	}
-        	htmlStr += imgDisp.bodyHtml
-			cssStr += imgDisp.bodyCss
+			addDispObj(&parElDisp, imgDisp)
 		}
 
 		if parEl.TextRun != nil {
-        	txtHtmlStr, txtCssStr, err := dObj.cvtParElText(parEl.TextRun)
-        	if err != nil {
-            	htmlStr += fmt.Sprintf("<!-- error cvtPelToHtml: %v -->\n",err)
-        	}
-        	htmlStr += txtHtmlStr
-			cssStr += txtCssStr
+        	parElDisp := dObj.cvtParElText(parEl.TextRun, namedStyl)
+//        	if err != nil {parElDisp.bodyHtml += fmt.Sprintf("<!-- error cvtPelToHtml: %v -->\n",err)}
+			addDispObj(&parElDisp, &parElDisp)
 		}
 
 		if parEl.FootnoteReference != nil {
 			dObj.ftnoteCount++
-        	htmlStr += fmt.Sprintf("<span class=\"%s_ftnote\">[%d]</span>",dObj.docName, dObj.ftnoteCount)
+        	parElDisp.bodyHtml += fmt.Sprintf("<span class=\"%s_ftnote\">[%d]</span>",dObj.docName, dObj.ftnoteCount)
 		}
 
 		if parEl.PageBreak != nil {
@@ -2123,7 +2130,7 @@ func (dObj *GdocHtmlObj) cvtParEl(parEl *docs.ParagraphElement)(htmlStr string, 
 
         }
 
-	return htmlStr, cssStr, nil
+	return parElDisp, nil
 }
 
 
@@ -2696,38 +2703,24 @@ func (dObj *GdocHtmlObj) createFootnoteDiv () (ftnoteDiv *dispObj, err error) {
 		ftnDiv.bodyHtml += htmlStr
 		// presumably footnotes are paragraphs only
 		for el:=0; el<len(docFt.Content); el++ {
-			htmlStr = ""
-			cssStr = ""
 			elObj := docFt.Content[el]
 			if elObj.Paragraph == nil {continue}
 			par := elObj.Paragraph
 			pidStr := idStr[5:]
-			htmlStr += fmt.Sprintf("<p class=\"%s_p %s_pft\" id=\"%s\">\n", dObj.docName, dObj.docName, pidStr)
+			ftnDiv.bodyHtml += fmt.Sprintf("<p class=\"%s_p %s_pft\" id=\"%s\">\n", dObj.docName, dObj.docName, pidStr)
 
 			for parEl:=0; parEl< len(par.Elements); parEl++ {
 				parElObj := par.Elements[parEl]
-				thtml, tcss, err := dObj.cvtParEl(parElObj)
+				parElDisp, err := dObj.cvtParEl(parElObj, "NORMAL_TEXT")
 				if err != nil {
-					htmlStr += fmt.Sprintf("<!-- el: %d parel %d error %v -->\n", el, parEl, err)
+					parElDisp.bodyHtml += fmt.Sprintf("<!-- el: %d parel %d error %v -->\n", el, parEl, err)
 				}
-				htmlStr += thtml
-				cssStr +=tcss
+				addDispObj(&ftnDiv, &parElDisp)
 			}
-/*
-			tObj, err := dObj.cvtContentEl(elObj)
-			if err != nil {
-				ftnDiv.bodyHtml += fmt.Sprintf("<!-- error display el: %d -->\n", el)
-			}
-			addDispObj(&ftnDiv, tObj)
-*/
 
-			htmlStr += "</p>\n"
-			ftnDiv.bodyHtml += htmlStr
-			ftnDiv.bodyCss += cssStr
+			ftnDiv.bodyHtml += "</p>\n"
 		}
-		htmlStr = "</li>\n"
-		ftnDiv.bodyHtml += htmlStr
-//		ftnDiv.bodyCss += cssStr
+		ftnDiv.bodyHtml += "</li>\n"
 	}
 
 	ftnDiv.bodyHtml += "</ol>\n"
