@@ -42,6 +42,7 @@ type gdocTxtObj struct {
     headings []heading
     sections []sect
     docFtnotes []docFtnote
+	namStylMap map[string]bool
 	Options *util.OptObj
 }
 
@@ -118,6 +119,17 @@ func (dObj *gdocTxtObj) initGdocTxt(folderPath string, options *util.OptObj) (er
 		dObj.Options = options
 	}
 
+    dObj.namStylMap = make(map[string]bool, 8)
+
+    dObj.namStylMap["NORMAL_TEXT"] = true
+    dObj.namStylMap["TITLE"] = false
+    dObj.namStylMap["SUBTITLE"] = false
+    dObj.namStylMap["HEADING_1"] = false
+    dObj.namStylMap["HEADING_2"] = false
+    dObj.namStylMap["HEADING_3"] = false
+    dObj.namStylMap["HEADING_4"] = false
+    dObj.namStylMap["HEADING_5"] = false
+    dObj.namStylMap["HEADING_6"] = false
 
 	dObj.parCount = 0
 	dObj.posImgCount = 0
@@ -158,6 +170,14 @@ func (dObj *gdocTxtObj) initGdocTxt(folderPath string, options *util.OptObj) (er
 
             }
 
+           // named styles
+            namedStyl := elObj.Paragraph.ParagraphStyle.NamedStyleType
+            if len(namedStyl) > 0 {
+                if !dObj.namStylMap[namedStyl] {
+                    dObj.namStylMap[namedStyl] = true
+                }
+            }
+
             // headings
             text := ""
             if len(elObj.Paragraph.ParagraphStyle.HeadingId) > 0 {
@@ -171,12 +191,10 @@ func (dObj *gdocTxtObj) initGdocTxt(folderPath string, options *util.OptObj) (er
                 }
                 txtlen:= len(text)
                 if text[txtlen -1] == '\n' { text = text[:txtlen-1] }
-//  fmt.Printf(" text: %s %d\n", text, txtlen)
                 heading.text = text
 
                 dObj.headings = append(dObj.headings, heading)
                 hdlen := len(dObj.headings)
-//      fmt.Println("el: ", el, "hdlen: ", hdlen, "parHdEnd: ", parHdEnd)
                 if hdlen > 1 {
                     dObj.headings[hdlen-2].hdElEnd = parHdEnd
                 }
@@ -1093,6 +1111,19 @@ func CvtGdocToTxt(folderPath string, doc *docs.Document, options *util.OptObj)(e
 			if err == nil {outstr += tstr} else {outstr += fmt.Sprintf("error %v", err)}
 		}
 	}
+	outfil.WriteString(outstr)
+
+	// named styles
+	outstr = ""
+	namStylCount := 0
+	for  namStyl, val := range docObj.namStylMap {
+		if val {
+			namStylCount++
+			outstr += fmt.Sprintf("  %-20s\n", namStyl)
+		}
+	}
+	outstr = fmt.Sprintf("\n*** NamedStyles: %d ***\n", namStylCount) + outstr
+
 	outfil.WriteString(outstr)
 
 	// footnotes
