@@ -109,6 +109,16 @@ func (dObj *gdocTxtObj) initGdocTxt(folderPath string, options *util.OptObj) (er
     }
     dObj.DocName = string(x[:])
 
+	if options == nil {
+		defOpt := new(util.OptObj)
+		util.GetDefOption(defOpt)
+		if defOpt.Verb {util.PrintOptions(defOpt)}
+ 		dObj.Options = defOpt
+	} else {
+		dObj.Options = options
+	}
+
+
 	dObj.parCount = 0
 	dObj.posImgCount = 0
 	dObj.inImgCount = 0
@@ -240,6 +250,7 @@ func (dObj *gdocTxtObj) initGdocTxt(folderPath string, options *util.OptObj) (er
         fstr := "is new!"
         if fexist { fstr = "exists!" }
         fmt.Printf("%s\n", fstr)
+		fmt.Println("********************************************")
     }
 
     // create output file path/outfilNam.txt
