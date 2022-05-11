@@ -44,6 +44,7 @@ type gdocTxtObj struct {
     docFtnotes []docFtnote
 	namStylMap map[string]bool
 	Options *util.OptObj
+	txtfil *os.File
 }
 
 type docList struct {
@@ -272,11 +273,11 @@ func (dObj *gdocTxtObj) initGdocTxt(folderPath string, options *util.OptObj) (er
     }
 
     // create output file path/outfilNam.txt
-    outfil, err := util.CreateOutFil(fPath, dObj.DocName,"html")
+    outfil, err := util.CreateOutFil(fPath, dObj.DocName,"txt")
     if err != nil {
         return fmt.Errorf("error -- util.CreateOutFil: %v", err)
     }
-    dObj.outfil = outfil
+    dObj.txtfil = outfil
 
 	totObjNum := dObj.inImgCount + dObj.posImgCount
 
@@ -1024,34 +1025,7 @@ func CvtGdocToTxt(folderPath string, doc *docs.Document, options *util.OptObj)(e
         return fmt.Errorf("error Cvt Txt Init %v", err)
     }
 
-	outstr = fmt.Sprintf("*** Document Title: %s ***\n", doc.Title)
-
-    fPath, fexist, err := util.CreateFileFolder(folderPath, docObj.DocName)
-    if err!= nil {
-        return fmt.Errorf("util.CreateFileFolder %v", err)
-    }
-    docObj.folderPath = fPath
-
-	// create output file path/outfilNam.txt
-    outfilNam := docObj.DocName
-
-    outfil, err := util.CreateOutFil(fPath, outfilNam,"txt")
-    if err!= nil {
-        return fmt.Errorf("util.CreateOutFil %v", err)
-    }
-    docObj.outfil = outfil
-
-
-
-    if docObj.DocOpt {
-        fmt.Println("******************* Output File ************")
-        fmt.Printf("folder path: %s ", fPath)
-        fstr := "is new!"
-        if fexist { fstr = "exists!" }
-        fmt.Printf("%s\n", fstr)
-        fmt.Printf("file name:  %s\n", outfilNam)
-        fmt.Println("********************************************")
-    }
+	outfil := docObj.txtfil
 
 	outstr = fmt.Sprintf("Document Id: %s \n", doc.DocumentId)
 	outstr += fmt.Sprintf("Revision Id: %s \n", doc.RevisionId)
