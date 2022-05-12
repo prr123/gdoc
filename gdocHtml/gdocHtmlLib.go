@@ -1875,36 +1875,33 @@ fmt.Printf("table closing list!\n")
 	return tabObj, nil
 }
 
-func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) {
+func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parDisp dispObj, err error) {
 // paragraph element par
 // - Bullet
 // - Elements
 // - ParagraphStyle
 // - Positioned Objects
 //
-	var parHtmlStr, parCssStr string
 	var prefix, suffix string
 	var listPrefix, listHtml, listCss, listSuffix string
 	var newList cList
+	var parElDisp dispObj
 
 	if par == nil {
-        return parObj, fmt.Errorf("cvtPar -- parEl is nil!")
+        return parDisp, fmt.Errorf("cvtPar -- parEl is nil!")
     }
 
 	errStr := ""
 	dObj.parCount++
 
-	parHtmlStr = ""
-	parCssStr = ""
-
 	isList := false
 	if par.Bullet != nil {isList = true}
-//fmt.Printf("********** par %d list: %t ***********\n", dObj.parCount, isList)
+	//fmt.Printf("********** par %d list: %t ***********\n", dObj.parCount, isList)
 
 	if par.Bullet == nil {
 		// if there was an open list, close it
 		if dObj.listStack != nil {
-			parHtmlStr += dObj.closeList(-1)
+			parDisp.bodyHtml += dObj.closeList(-1)
 			//fmt.Printf("new par -> close list\n")
 		}
 	}
@@ -1913,26 +1910,23 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 	numPosObj := len(par.PositionedObjectIds)
 	for i:=0; i< numPosObj; i++ {
 		posId := par.PositionedObjectIds[i]
-		posObj, ok := dObj.doc.PositionedObjects[posId]
-		if !ok {return parObj, fmt.Errorf("cvtPar: could not find positioned Object with id: ", posId)}
+		posImg, ok := dObj.doc.PositionedObjects[posId]
+		if !ok {return parDisp, fmt.Errorf("cvtPar: could not find positioned Object with id: ", posId)}
 
-		imgDisp, err := dObj.renderPosImg(posObj, posId)
+		imgDisp, err := dObj.renderPosImg(posImg, posId)
 		if err != nil {
-			parObj.bodyHtml += fmt.Sprintf("<!-- error cvtPar:: render pos img %v -->\n", err) + imgDisp.bodyHtml
+			parDisp.bodyHtml += fmt.Sprintf("<!-- error cvtPar:: render pos img %v -->\n", err) + imgDisp.bodyHtml
 		}
-			addDispObj(&parObj, imgDisp)
+			addDispObj(&parDisp, imgDisp)
 	}
 
-	// need to reset
-	parHtmlStr = ""
-	parCssStr = ""
 
 	// check for new line paragraph
 	if len(par.Elements) == 1 {
 		if par.Elements[0].TextRun != nil {
 			if par.Elements[0].TextRun.Content == "\n" {
-				parObj.bodyHtml = "<br>\n"
-				return parObj, nil
+				parDisp.bodyHtml = "<br>\n"
+				return parDisp, nil
 			}
 		}
 	}
@@ -1941,7 +1935,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 	namedTyp := par.ParagraphStyle.NamedStyleType
 	namParStyl, _, err := dObj.getNamedStyl(namedTyp)
 	if err != nil {
-		return parObj, fmt.Errorf("cvtPar: %v", err)
+		return parDisp, fmt.Errorf("cvtPar: %v", err)
 	}
 
 	// default style for each named style used in the document
@@ -1961,7 +1955,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 */
 	if par.Bullet == nil {
 		// normal (no list) paragraph element
-		parHtmlStr += fmt.Sprintf("\n<!-- Paragraph %d %s -->\n", dObj.parCount, namedTyp)
+		parDisp.bodyHtml += fmt.Sprintf("\n<!-- Paragraph %d %s -->\n", dObj.parCount, namedTyp)
 	}
 
 	// get paragraph style
@@ -1971,7 +1965,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 		errStr = fmt.Sprintf("/* error cvtParStyl: %v */\n",err)
 	}
 //fmt.Printf("par %d:  %s %s %s\n", dObj.parCount, prefix, suffix, namedTyp)
-	parObj.bodyCss += errStr + parStylCss
+	parDisp.bodyCss += errStr + parStylCss
 
 	// Heading Id refers to a heading paragraph not just a normal paragraph
 	// headings are bookmarked for TOC
@@ -1979,7 +1973,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 	if len(par.ParagraphStyle.HeadingId) > 0 {
 		hdHtmlStr = fmt.Sprintf("<!-- Heading Id: %s -->", par.ParagraphStyle.HeadingId)
 	}
-	if len(hdHtmlStr) > 0 {parHtmlStr += hdHtmlStr + "\n"}
+	if len(hdHtmlStr) > 0 {parDisp.bodyHtml += hdHtmlStr + "\n"}
 
 
 	errStr = ""
@@ -1990,9 +1984,11 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
     for pEl:=0; pEl< numParEl; pEl++ {
         parEl := par.Elements[pEl]
 		elDisp, err := dObj.cvtParEl(parEl, namedTyp)
-		if err != nil { parObj.bodyHtml += fmt.Sprintf("<!-- error cvtParEl: %v -->\n",err)}
-		addDispObj(&parObj, &elDisp)
+		if err != nil { parElDisp.bodyHtml += fmt.Sprintf("<!-- error cvtParEl: %v -->\n",err)}
+		addDispObj(&parElDisp, &elDisp)
 	} // loop par el
+
+	addDispObj(&parDisp, &parElDisp)
 
 // lists
     if par.Bullet != nil {
@@ -2001,7 +1997,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 		txtmap := new(textMap)
 		if par.Bullet.TextStyle != nil {
 			_, err := fillTxtMap(txtmap,par.Bullet.TextStyle)
-			if err != nil { return parObj, fmt.Errorf("cvtPar List getting text style %v", err)}
+			if err != nil { return parDisp, fmt.Errorf("cvtPar List getting text style %v", err)}
 
 		}
 
@@ -2101,10 +2097,11 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parObj dispObj, err error) 
 
 	}
 
-	parObj.bodyCss += listCss + parCssStr
-	parObj.bodyHtml += listHtml + listPrefix + prefix + parHtmlStr + suffix + listSuffix + "\n"
-	return parObj, nil
+	parDisp.bodyCss += listCss + parDisp.bodyCss
+	parDisp.bodyHtml += listHtml + listPrefix + prefix + parDisp.bodyHtml + suffix + listSuffix + "\n"
+	return parDisp, nil
 }
+
 
 func (dObj *GdocHtmlObj) cvtParEl(parEl *docs.ParagraphElement, namedStyl string)(parElDisp dispObj, err error) {
 
