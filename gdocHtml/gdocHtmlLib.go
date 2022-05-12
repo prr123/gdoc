@@ -48,6 +48,7 @@ type GdocHtmlObj struct {
 	headCount int
 	secCount int
 	elCount int
+	hrCount int
 	spanCount int
 	ftnoteCount int
 	inImgCount int
@@ -1266,6 +1267,9 @@ func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *util.OptObj) (
 	// footnotes
 	dObj.ftnoteCount = 0
 
+	// horizonatal rules
+	dObj.hrCount = 0
+
 	// section breaks
 	parHdEnd := 0
 	// last element of section
@@ -1452,8 +1456,6 @@ func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *util.OptObj) (
         }
     }
 
-//    dObj.parCount = len(doc.Body.Content)
-
 	return nil
 }
 
@@ -1470,49 +1472,18 @@ var glyphTyp string
 	return cssStr
 }
 
-func (dObj *GdocHtmlObj) renderInlineImg(imgEl *docs.InlineObjectElement)(imgDisp *dispObj, err error) {
-	var imgDispObj dispObj
+func (dObj *GdocHtmlObj) cvtHrEl(hr *docs.HorizontalRule)(hrObj dispObj) {
+	var cssStr, htmlStr string
 
-	if imgEl == nil {
-		return nil, fmt.Errorf("cvtInlineImg:: imgEl is nil!")
-	}
-	doc := dObj.doc
+	cssStr = fmt.Sprintf("#%s_hr_%d {\n", dObj.docName, dObj.hrCount)
+	cssStr += cvtTxtStylCss(hr.TextStyle)
+	cssStr += "}\n"
 
-	imgElId := imgEl.InlineObjectId
-	if !(len(imgElId) > 0) {return nil, fmt.Errorf("cvtInlineImg:: no InlineObjectId found!")}
+	htmlStr = fmt.Sprintf("<hr id=\"%s_hr_%d\">\n", dObj.docName, dObj.hrCount)
 
-	// need to remove first part of the id
-	idx := 0
-	for i:=0; i< len(imgElId); i++ {
-		if imgElId[i] == '.' {
-			idx = i+1
-			break
-		}
-	}
-	imgId :=""
-	if (idx>0) && (idx<len(imgElId)-1) {
-		imgId = "img_" + imgElId[idx:]
-	}
-
-	//html
-	htmlStr := fmt.Sprintf("<!-- inline image %s -->\n", imgElId)
-	imgObj := doc.InlineObjects[imgElId].InlineObjectProperties.EmbeddedObject
-
-	if dObj.Options.ImgFold {
-    	imgSrc := dObj.imgFoldNam + "/" + imgId + ".jpeg"
-		htmlStr +=fmt.Sprintf("<img src=\"%s\" id=\"%s\" alt=\"%s\">\n", imgSrc, imgId, imgObj.Title)
-	} else {
-		htmlStr +=fmt.Sprintf("<img src=\"%s\" id=\"%s\" alt=\"%s\">\n", imgObj.ImageProperties.SourceUri, imgId, imgObj.Title)
-	}
-
-	//css
-	cssStr := fmt.Sprintf("#%s {\n",imgId)
-	cssStr += fmt.Sprintf(" width:%.1fpt; height:%.1fpt; \n}\n", imgObj.Size.Width.Magnitude, imgObj.Size.Height.Magnitude )
-	// todo add margin
-
-	imgDispObj.bodyHtml = htmlStr
-	imgDispObj.bodyCss = cssStr
-	return &imgDispObj, nil
+	hrObj.bodyHtml = htmlStr
+	hrObj.bodyCss = cssStr
+	return hrObj
 }
 
 func (dObj *GdocHtmlObj) cvtParElText(parElTxt *docs.TextRun, namedTyp string)(parTxt dispObj) {
@@ -1587,6 +1558,51 @@ func (dObj *GdocHtmlObj) closeList(nl int)(htmlStr string) {
 		dObj.listStack = nstack
 	}
 	return htmlStr
+}
+
+func (dObj *GdocHtmlObj) renderInlineImg(imgEl *docs.InlineObjectElement)(imgDisp *dispObj, err error) {
+	var imgDispObj dispObj
+
+	if imgEl == nil {
+		return nil, fmt.Errorf("cvtInlineImg:: imgEl is nil!")
+	}
+	doc := dObj.doc
+
+	imgElId := imgEl.InlineObjectId
+	if !(len(imgElId) > 0) {return nil, fmt.Errorf("cvtInlineImg:: no InlineObjectId found!")}
+
+	// need to remove first part of the id
+	idx := 0
+	for i:=0; i< len(imgElId); i++ {
+		if imgElId[i] == '.' {
+			idx = i+1
+			break
+		}
+	}
+	imgId :=""
+	if (idx>0) && (idx<len(imgElId)-1) {
+		imgId = "img_" + imgElId[idx:]
+	}
+
+	//html
+	htmlStr := fmt.Sprintf("<!-- inline image %s -->\n", imgElId)
+	imgObj := doc.InlineObjects[imgElId].InlineObjectProperties.EmbeddedObject
+
+	if dObj.Options.ImgFold {
+    	imgSrc := dObj.imgFoldNam + "/" + imgId + ".jpeg"
+		htmlStr +=fmt.Sprintf("<img src=\"%s\" id=\"%s\" alt=\"%s\">\n", imgSrc, imgId, imgObj.Title)
+	} else {
+		htmlStr +=fmt.Sprintf("<img src=\"%s\" id=\"%s\" alt=\"%s\">\n", imgObj.ImageProperties.SourceUri, imgId, imgObj.Title)
+	}
+
+	//css
+	cssStr := fmt.Sprintf("#%s {\n",imgId)
+	cssStr += fmt.Sprintf(" width:%.1fpt; height:%.1fpt; \n}\n", imgObj.Size.Width.Magnitude, imgObj.Size.Height.Magnitude )
+	// todo add margin
+
+	imgDispObj.bodyHtml = htmlStr
+	imgDispObj.bodyCss = cssStr
+	return &imgDispObj, nil
 }
 
 func (dObj *GdocHtmlObj) renderPosImg(posImg docs.PositionedObject, posId string)(imgDisp *dispObj, err error) {
@@ -2100,9 +2116,9 @@ func (dObj *GdocHtmlObj) cvtParEl(parEl *docs.ParagraphElement, namedStyl string
 		}
 
 		if parEl.TextRun != nil {
-        	parElDisp := dObj.cvtParElText(parEl.TextRun, namedStyl)
+        	parElTxt := dObj.cvtParElText(parEl.TextRun, namedStyl)
 //        	if err != nil {parElDisp.bodyHtml += fmt.Sprintf("<!-- error cvtPelToHtml: %v -->\n",err)}
-			addDispObj(&parElDisp, &parElDisp)
+			addDispObj(&parElDisp, &parElTxt)
 		}
 
 		if parEl.FootnoteReference != nil {
@@ -2115,7 +2131,12 @@ func (dObj *GdocHtmlObj) cvtParEl(parEl *docs.ParagraphElement, namedStyl string
 		}
 
         if parEl.HorizontalRule != nil {
-
+			if parEl.HorizontalRule.TextStyle != nil {
+				parHr := dObj.cvtHrEl(parEl.HorizontalRule)
+				addDispObj(&parElDisp, &parHr)
+			} else {
+				parElDisp.bodyHtml += "<hr>\n"
+			}
         }
 
         if parEl.ColumnBreak != nil {
@@ -3377,7 +3398,7 @@ func CreGdocHtmlAll(folderPath string, doc *docs.Document, options *util.OptObj)
 	tocDiv, err := dObj.createTocDiv()
 	if err != nil {
 		tocDiv.bodyHtml = fmt.Sprintf("<!--- error Toc Head: %v --->\n",err)
-	}
+ 	}
 
 	//get html file pointer
 	outfil := dObj.htmlFil
