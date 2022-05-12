@@ -851,9 +851,13 @@ func (dObj *gdocTxtObj) dispTxtStyl(txtStyl *docs.TextStyle, wsp int)(outstr str
 
 	if txtStyl.WeightedFontFamily != nil {
 		outstr += wspStr + fmt.Sprintf("    Font : %s %d\n", txtStyl.WeightedFontFamily.FontFamily, txtStyl.WeightedFontFamily.Weight)
+	} else {
+		outstr += wspStr + fmt.Sprintf("    Font is nil\n")
 	}
 	if txtStyl.FontSize != nil {
 		outstr += wspStr + fmt.Sprintf("    Font Size: %f %s\n", txtStyl.FontSize.Magnitude, txtStyl.FontSize.Unit)
+	} else {
+		outstr += wspStr + fmt.Sprintf("    Font Size is nil!\n")
 	}
 
     if txtStyl.ForegroundColor != nil {
@@ -872,6 +876,8 @@ func (dObj *gdocTxtObj) dispTxtStyl(txtStyl *docs.TextStyle, wsp int)(outstr str
     }
     if txtStyl.Link != nil {
 		outstr += wspStr + "     Link TBD\n"
+	} else {
+		outstr += wspStr + "     Link is nil!\n"
 	}
 	return outstr, nil
 }
