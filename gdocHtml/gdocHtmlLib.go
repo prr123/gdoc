@@ -2097,8 +2097,8 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parDisp dispObj, err error)
 
 	}
 
-	parDisp.bodyCss += listCss + parDisp.bodyCss
-	parDisp.bodyHtml += listHtml + listPrefix + prefix + parDisp.bodyHtml + suffix + listSuffix + "\n"
+	parDisp.bodyCss = listCss + parDisp.bodyCss
+	parDisp.bodyHtml = listHtml + listPrefix + prefix + parDisp.bodyHtml + suffix + listSuffix + "\n"
 	return parDisp, nil
 }
 
