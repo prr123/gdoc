@@ -850,14 +850,14 @@ func (dObj *gdocTxtObj) dispTxtStyl(txtStyl *docs.TextStyle, wsp int)(outstr str
 	outstr += wspStr + fmt.Sprintf("    small caps: %t\n", txtStyl.SmallCaps)
 
 	if txtStyl.WeightedFontFamily != nil {
-		outstr += wspStr + fmt.Sprintf("    Font : %s %d\n", txtStyl.WeightedFontFamily.FontFamily, txtStyl.WeightedFontFamily.Weight)
+		outstr += wspStr + fmt.Sprintf("    Weighted Font: %s %d\n", txtStyl.WeightedFontFamily.FontFamily, txtStyl.WeightedFontFamily.Weight)
 	} else {
-		outstr += wspStr + fmt.Sprintf("    Font is nil\n")
+		outstr += wspStr + fmt.Sprintf("    Weighted Font:  nil\n")
 	}
 	if txtStyl.FontSize != nil {
 		outstr += wspStr + fmt.Sprintf("    Font Size: %f %s\n", txtStyl.FontSize.Magnitude, txtStyl.FontSize.Unit)
 	} else {
-		outstr += wspStr + fmt.Sprintf("    Font Size is nil!\n")
+		outstr += wspStr + fmt.Sprintf("    Font Size: nil!\n")
 	}
 
     if txtStyl.ForegroundColor != nil {
