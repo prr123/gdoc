@@ -1023,6 +1023,7 @@ func cvtTxtStylCss(txtStyl *docs.TextStyle)(cssStr string) {
 }
 
 func addDispObj(src, add *dispObj) {
+	if add == nil {return}
 	src.bodyHtml += add.bodyHtml
 	src.bodyCss += add.bodyCss
 	return
