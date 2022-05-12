@@ -274,8 +274,9 @@ func printLiStackItem(listAtt cList, cNest int){
 }
 
 
-func printTxtMap(txtMap *textMap) {
+func printTxtMap(txtMap *textMap, txtStyl *docs.TextStyle) {
 
+if txtStyl == nil {
 	fmt.Println("********* text map ****************")
 	fmt.Printf("Base Offset: %s\n", txtMap.baseOffset)
 	fmt.Printf("Bold Text:   %t\n", txtMap.bold)
@@ -287,8 +288,44 @@ func printTxtMap(txtMap *textMap) {
 	fmt.Printf("Font Size:   %.1f\n", txtMap.fontSize)
 	fmt.Printf("Font Color:  %s\n", txtMap.txtColor)
 	fmt.Printf("Font BckCol: %s\n", txtMap.bckColor)
+	return
+}
+
+	fmt.Println("********* text map ****************")
+	fmt.Printf("Base Offset: %s %s\n", txtMap.baseOffset, txtStyl.BaselineOffset)
+	fmt.Printf("Bold Text:   %t %t\n", txtMap.bold, txtStyl.Bold)
+	fmt.Printf("Italic Text: %t %t\n", txtMap.italic, txtStyl.Italic)
+	fmt.Printf("Underline:   %t %t\n", txtMap.underline, txtStyl.Underline)
+	fmt.Printf("Text Strike: %t %t\n", txtMap.strike, txtStyl.Strikethrough)
+	if txtStyl.WeightedFontFamily != nil {
+		fmt.Printf("Font:        %s %s\n", txtMap.fontType, txtStyl.WeightedFontFamily.FontFamily)
+		fmt.Printf("Font Weight: %d %d\n", txtMap.fontWeight, txtStyl.WeightedFontFamily.Weight)
+	} else {
+		fmt.Printf("Font:        %s %s\n", txtMap.fontType, "na")
+		fmt.Printf("Font Weight: %d %s\n", txtMap.fontWeight, "na")
+	}
+	if txtStyl.FontSize != nil {
+		fmt.Printf("Font Size:   %.1f %.1f\n", txtMap.fontSize, txtStyl.FontSize.Magnitude)
+	} else {
+		fmt.Printf("Font Size:   %.1f %s\n", txtMap.fontSize, "na")
+	}
+	if txtStyl.ForegroundColor != nil {
+		if txtStyl.ForegroundColor.Color != nil {
+			fmt.Printf("Font Color:  %s %s\n", txtMap.txtColor, util.GetColor(txtStyl.ForegroundColor.Color))
+		}
+	} else {
+		fmt.Printf("Font Color: %s %s\n", txtMap.txtColor, "NA")
+	}
+	if txtStyl.BackgroundColor != nil {
+		if txtStyl.BackgroundColor != nil {
+			fmt.Printf("Font BckCol: %s %s\n", txtMap.bckColor, util.GetColor(txtStyl.BackgroundColor.Color))
+		}
+	} else {
+		fmt.Printf("Font BckCol: %s %s\n", txtMap.bckColor, "NA")
+	}
 
 	return
+
 }
 
 func fillTxtMap(txtMap *textMap, txtStyl *docs.TextStyle)(alter bool, err error) {
@@ -1510,9 +1547,16 @@ func (dObj *GdocHtmlObj) cvtParElText(parElTxt *docs.TextRun, namedTyp string)(p
 
     txtMap := new(textMap)
     _, err = fillTxtMap(txtMap, namedTxtStyl)
-    alter, err := fillTxtMap(txtMap, parElTxt.TextStyle)
+//
+	printTxtMap(txtMap, parElTxt.TextStyle)
 
-    if alter {spanCssStr = cvtTxtMapCss(txtMap)}
+    alter, err := fillTxtMap(txtMap, parElTxt.TextStyle)
+//
+	fmt.Println("*******************************\nalter: ", alter)
+    if alter {
+		spanCssStr = cvtTxtMapCss(txtMap)
+	}
+
 	if err != nil {
 		spanCssStr = fmt.Sprintf("/*error parEl Css %v*/\n", err) + spanCssStr
 	}
