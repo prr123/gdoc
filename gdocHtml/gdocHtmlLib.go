@@ -154,7 +154,7 @@ type parMap struct {
 	shading string
 	spaceTop float64
 	spaceBelow float64
-	spaceMode string
+	spaceMode bool
 	tabs []*tabStop
 	pad [4]float64
 	margin [4]float64
@@ -702,9 +702,19 @@ func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 	fmt.Printf("space below: %.1fpt\n", parmap.spaceBelow)
 
 	fmt.Printf("*** space mode ***\n")
-	if parStyl.SpacingMode != parmap.spaceMode {
-		fmt.Printf("spacing mode: %s %s \n", parmap.spaceMode, parStyl.SpacingMode)
-		parmap.spaceMode = parStyl.SpacingMode
+	spaceMode := true
+	switch parStyl.SpacingMode {
+	case "NEVER_COLLAPSE":
+		spaceMode = true
+	case "COLLAPSE_LISTS":
+		spaceMode = false
+	default:
+		spaceMode = true
+	}
+
+	if spaceMode != parmap.spaceMode {
+		fmt.Printf("spacing mode: %t %t \n", parmap.spaceMode, spaceMode)
+		parmap.spaceMode = spaceMode
 		alter = true
 	}
 	fmt.Printf("spacing mode: %s\n", parmap.spaceMode)
@@ -903,7 +913,294 @@ func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 
 
 func fillParMap(parStyl *docs.ParagraphStyle)(parMapRef *parMap) {
+// function that converts a parameter style object into a parMap Object
 	var parmap parMap
+
+	if parStyl == nil {	return nil}
+
+	parmap.halign = "START"
+	if len(parStyl.Alignment) > 0 {
+		parmap.halign = parStyl.Alignment
+	}
+
+	parmap.direct = true
+
+	parmap.indStart = 0
+	if (parStyl.IndentStart != nil) {
+		if parStyl.IndentStart.Magnitude != parmap.indStart {
+			parmap.indStart = parStyl.IndentStart.Magnitude
+		}
+	}
+
+	parmap.indEnd = -1
+	if (parStyl.IndentEnd != nil) {
+		if parStyl.IndentEnd.Magnitude != parmap.indEnd {
+			parmap.indEnd = parStyl.IndentEnd.Magnitude
+		}
+	}
+
+	parmap.indFlin = 0
+	if (parStyl.IndentFirstLine != nil) {
+		if parStyl.IndentFirstLine.Magnitude != parmap.indFlin {
+			parmap.indFlin = parStyl.IndentFirstLine.Magnitude
+		}
+	}
+
+	parmap.linSpac = 1.0
+	if parStyl.LineSpacing/100.0 != parmap.linSpac {
+		if parStyl.LineSpacing > 1.0 {
+			parmap.linSpac = parStyl.LineSpacing/100.0
+		}
+	}
+
+	// may have to introduce an exemption for title
+	parmap.keepLines = false
+	if parStyl.KeepLinesTogether != parmap.keepLines {
+		parmap.keepLines = parStyl.KeepLinesTogether
+	}
+
+	parmap.keepNext = false
+	if parStyl.KeepWithNext != parmap.keepNext {
+		parmap.keepNext = parStyl.KeepWithNext
+	}
+
+	parmap.spaceTop = 0
+	if (parStyl.SpaceAbove != nil) {
+		if parStyl.SpaceAbove.Magnitude != parmap.spaceTop {
+			parmap.spaceTop = parStyl.SpaceAbove.Magnitude
+		}
+	}
+
+	parmap.spaceBelow = 0
+	if (parStyl.SpaceBelow != nil) {
+		if parStyl.SpaceBelow.Magnitude != parmap.spaceBelow {
+			parmap.spaceBelow = parStyl.SpaceBelow.Magnitude
+		}
+	}
+
+
+	switch parStyl.SpacingMode {
+	case "NEVER_COLLAPSE":
+		parmap.spaceMode = true
+	case "COLLAPSE_LISTS":
+		parmap.spaceMode = false
+	default:
+		parmap.spaceMode = true
+	}
+
+	// check for zero width borders
+	bb := true
+	if (parStyl.BorderBetween != nil) {
+		if parStyl.BorderBetween.Width != nil {
+			if parStyl.BorderBetween.Width.Magnitude > 0.1 {
+				bb = false
+			}
+		}
+	}
+
+	if (parStyl.BorderTop != nil) {
+		if parStyl.BorderTop.Width != nil {
+			if parStyl.BorderTop.Width.Magnitude > 0.1 {
+				bb = false
+			}
+		}
+	}
+
+	if parStyl.BorderRight != nil {
+		if parStyl.BorderRight.Width != nil {
+			if parStyl.BorderRight.Width.Magnitude > 0.1 {
+				bb = false
+			}
+		}
+	}
+
+	if parStyl.BorderBottom != nil {
+		if parStyl.BorderBottom.Width != nil {
+			if parStyl.BorderBottom.Width.Magnitude > 0.1 {
+				bb = false
+			}
+		}
+	}
+
+
+	if parStyl.BorderLeft != nil {
+		if parStyl.BorderLeft.Width != nil {
+			if parStyl.BorderLeft.Width.Magnitude > 0.1 {
+				bb = false
+			}
+		}
+	}
+//fmt.Printf("no border return: %t\n", alter)
+//fmt.Printf("fillParMap 3: %t\n", alter)
+
+	parmap.hasBorders = true
+	if !bb {
+		parmap.hasBorders = false
+	}
+
+	if !parmap.hasBorders {
+		return &parmap
+	}
+
+//	bordDisp := false
+	parmap.bordBet.width = 0
+	if parStyl.BorderBetween != nil {
+		if parStyl.BorderBetween.Width != nil {
+			if parStyl.BorderBetween.Width.Magnitude > 0.0 {
+//				bordDisp = true
+				if parStyl.BorderBetween.Width.Magnitude != parmap.bordBet.width {
+					parmap.bordBet.width = parStyl.BorderBetween.Width.Magnitude
+				}
+			}
+		}
+		if parStyl.BorderBetween.Padding != nil {
+			if parStyl.BorderBetween.Padding.Magnitude != parmap.bordBet.pad {
+				parmap.bordBet.pad = parStyl.BorderBetween.Padding.Magnitude
+			}
+		}
+		if parStyl.BorderBetween.Color != nil {
+			if parStyl.BorderBetween.Color.Color != nil {
+				color := util.GetColor(parStyl.BorderBetween.Color.Color)
+				if color != parmap.bordBet.color {
+					parmap.bordBet.color = color
+				}
+			}
+		}
+		parmap.bordBet.dash = "SOLID"
+		if parStyl.BorderBetween.DashStyle != parmap.bordBet.dash {parmap.bordBet.dash = parStyl.BorderBetween.DashStyle;}
+	}
+
+
+//	bordDisp = false
+	parmap.bordTop.width = 0
+	if parStyl.BorderTop != nil {
+		if parStyl.BorderTop.Width != nil {
+			if parStyl.BorderTop.Width.Magnitude > 0.0 {
+//				bordDisp = true
+				if parStyl.BorderTop.Width.Magnitude != parmap.bordTop.width {
+					parmap.bordTop.width = parStyl.BorderTop.Width.Magnitude
+				}
+			}
+		}
+		if parStyl.BorderTop.Padding != nil {
+			if parStyl.BorderTop.Padding.Magnitude != parmap.bordTop.pad {
+				parmap.bordTop.pad = parStyl.BorderTop.Padding.Magnitude
+			}
+		}
+		if parStyl.BorderTop.Color != nil {
+			if parStyl.BorderTop.Color.Color != nil {
+				color := util.GetColor(parStyl.BorderTop.Color.Color)
+				if color != parmap.bordTop.color {
+					parmap.bordTop.color = color
+				}
+			}
+		}
+		parmap.bordTop.dash = "SOLID"
+		if parStyl.BorderTop.DashStyle != parmap.bordTop.dash {parmap.bordTop.dash = parStyl.BorderTop.DashStyle;}
+	}
+
+//	bordDisp = false
+	parmap.bordRight.width = 0
+	if parStyl.BorderRight != nil {
+		if parStyl.BorderRight.Width != nil {
+			if parStyl.BorderRight.Width.Magnitude > 0.0 {
+//				bordDisp = true
+				if parStyl.BorderRight.Width.Magnitude != parmap.bordRight.width {
+					parmap.bordRight.width = parStyl.BorderRight.Width.Magnitude
+				}
+			}
+		}
+		if parStyl.BorderRight.Padding != nil {
+			if parStyl.BorderRight.Padding.Magnitude != parmap.bordRight.pad {
+				parmap.bordRight.pad = parStyl.BorderRight.Padding.Magnitude
+			}
+		}
+		if parStyl.BorderRight.Color != nil {
+			if parStyl.BorderRight.Color.Color != nil {
+				color := util.GetColor(parStyl.BorderRight.Color.Color)
+				if color != parmap.bordRight.color {
+					parmap.bordRight.color = color
+				}
+			}
+		}
+		parmap.bordRight.dash = "SOLID"
+		if parStyl.BorderRight.DashStyle != parmap.bordRight.dash {
+			parmap.bordRight.dash = parStyl.BorderRight.DashStyle
+		}
+	}
+
+//	bordDisp = false
+	parmap.bordBot.width = 0
+	if parStyl.BorderBottom != nil {
+		if parStyl.BorderBottom.Width != nil {
+			if parStyl.BorderBottom.Width.Magnitude > 0.0 {
+//				bordDisp = true
+				if parStyl.BorderBottom.Width.Magnitude != parmap.bordBot.width {
+					parmap.bordBot.width = parStyl.BorderBottom.Width.Magnitude
+				}
+			}
+		}
+		if parStyl.BorderBottom.Padding != nil {
+			if parStyl.BorderBottom.Padding.Magnitude != parmap.bordBot.pad {
+				parmap.bordBot.pad = parStyl.BorderBottom.Padding.Magnitude
+			}
+		}
+		if parStyl.BorderBottom.Color != nil {
+			if parStyl.BorderBottom.Color.Color != nil {
+				color := util.GetColor(parStyl.BorderBottom.Color.Color)
+				if color != parmap.bordBot.color {
+					parmap.bordBot.color = color
+				}
+			}
+		}
+		parmap.bordBot.dash = "SOLID"
+		if parStyl.BorderBottom.DashStyle != parmap.bordBot.dash {parmap.bordBot.dash = parStyl.BorderBottom.DashStyle;}
+	}
+
+//	bordDisp = false
+	parmap.bordLeft.width = 0
+	if parStyl.BorderLeft != nil {
+		if parStyl.BorderLeft.Width != nil {
+			if parStyl.BorderLeft.Width.Magnitude > 0.0 {
+//				bordDisp = true
+				if parStyl.BorderLeft.Width.Magnitude != parmap.bordLeft.width {
+					parmap.bordLeft.width = parStyl.BorderLeft.Width.Magnitude
+				}
+			}
+		}
+		if parStyl.BorderLeft.Padding != nil {
+			if parStyl.BorderLeft.Padding.Magnitude != parmap.bordLeft.pad {
+				parmap.bordLeft.pad = parStyl.BorderLeft.Padding.Magnitude
+			}
+		}
+		if parStyl.BorderLeft.Color != nil {
+			if parStyl.BorderLeft.Color.Color != nil {
+				color := util.GetColor(parStyl.BorderLeft.Color.Color)
+				if color != parmap.bordLeft.color {
+					parmap.bordLeft.color = color
+				}
+			}
+		}
+		parmap.bordLeft.dash = "SOLID"
+		if parStyl.BorderLeft.DashStyle != parmap.bordLeft.dash {parmap.bordLeft.dash = parStyl.BorderLeft.DashStyle;}
+	}
+
+	bb2 := true
+	bb2 = bb2 && (parmap.bordBet.width < 0.01)
+	bb2 = bb2 && (parmap.bordTop.width < 0.01)
+	bb2 = bb2 && (parmap.bordRight.width < 0.01)
+	bb2 = bb2 && (parmap.bordBot.width < 0.01)
+	bb2 = bb2 && (parmap.bordLeft.width < 0.01)
+
+	if bb2 {parmap.hasBorders = false}
+
+	return &parmap
+}
+
+func fillParMapold(parStyl *docs.ParagraphStyle)(alter bool, err error) {
+	var parmap parMap
+
+	if parStyl == nil {	return false, fmt.Errorf("no parstyl!") }
 
 	if parStyl.Alignment != parmap.halign {
 //fmt.Printf("align: %s : %s \n", parmap.halign,parStyl.Alignment)
@@ -969,10 +1266,19 @@ func fillParMap(parStyl *docs.ParagraphStyle)(parMapRef *parMap) {
 		}
 	}
 
+	spaceMode := true
+	switch parStyl.SpacingMode {
+	case "NEVER_COLLAPSE":
+		spaceMode = true
+	case "COLLAPSE_LISTS":
+		spaceMode = false
+	default:
+		spaceMode = true
+	}
 
-	if parStyl.SpacingMode != parmap.spaceMode {
+	if spaceMode != parmap.spaceMode {
 		if (len(parStyl.SpacingMode) > 0) {
-			parmap.spaceMode = parStyl.SpacingMode
+			parmap.spaceMode = spaceMode
 			alter = true
 		}
 	}
@@ -1175,7 +1481,315 @@ func fillParMap(parStyl *docs.ParagraphStyle)(parMapRef *parMap) {
 	if bb2 {parmap.hasBorders = false}
 
 
-	return &parmap
+	return alter, nil
+}
+
+func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *util.OptObj)(cssStr string) {
+// function that creates the css attributes of a paragraph
+// the function compares the values of the parMap and parStyl
+	if parmap == nil {return "/* no parmap */"}
+	if parStyl == nil {	return "/* no parStyl */"}
+
+	cssStr =""
+
+	if (len(parStyl.Alignment) > 0) && 	(parmap.halign != parStyl.Alignment) {
+		parmap.halign = parStyl.Alignment
+		switch parmap.halign {
+			case "START":
+				cssStr += "  text-align: left;\n"
+			case "CENTER":
+				cssStr += "  text-align: center;\n"
+			case "END":
+				cssStr += "  text-align: right;\n"
+			case "JUSTIFIED":
+				cssStr += "  text-align: justify;\n"
+			default:
+				cssStr += fmt.Sprintf("/* unrecognized Alignment %s */\n", parmap.halign)
+		}
+
+	}
+
+	// test direction skip for now
+	parmap.direct = true
+
+	if (parStyl.IndentFirstLine != nil) {
+		if parStyl.IndentFirstLine.Magnitude != parmap.indFlin {
+			parmap.indFlin = parStyl.IndentFirstLine.Magnitude
+			cssStr += fmt.Sprintf("  text-indent: %.1fpt;\n", parmap.indFlin)
+		}
+	}
+
+	parmap.linSpac = 1.0
+	if parStyl.LineSpacing/100.0 != parmap.linSpac {
+		if parStyl.LineSpacing > 1.0 {
+			parmap.linSpac = parStyl.LineSpacing/100.0
+			if opt.DefLinSpacing > 0.0 {
+				cssStr += fmt.Sprintf("  line-height: %.2f;\n", opt.DefLinSpacing*parmap.linSpac)
+			} else {
+				cssStr += fmt.Sprintf("  line-height: %.2f;\n", parmap.linSpac)
+			}
+		}
+	}
+
+	margin := false
+	lmarg := 0.0
+	if (parStyl.IndentStart != nil) {
+		if parStyl.IndentStart.Magnitude != parmap.indStart {
+			parmap.indStart = parStyl.IndentStart.Magnitude
+			lmarg = parmap.indStart
+			margin = true
+		}
+	}
+
+	rmarg := 0.0
+	if (parStyl.IndentEnd != nil) {
+		if parStyl.IndentEnd.Magnitude != parmap.indEnd {
+			parmap.indEnd = parStyl.IndentEnd.Magnitude
+			rmarg = parmap.indEnd
+			margin = true
+		}
+	}
+
+	tmarg := 0.0
+	if (parStyl.SpaceAbove != nil) {
+		if parStyl.SpaceAbove.Magnitude != parmap.spaceTop {
+			parmap.spaceTop = parStyl.SpaceAbove.Magnitude
+			tmarg = parmap.spaceTop
+			margin = true
+		}
+	}
+
+	bmarg := 0.0
+	if (parStyl.SpaceBelow != nil) {
+		if parStyl.SpaceBelow.Magnitude != parmap.spaceBelow {
+			parmap.spaceBelow = parStyl.SpaceBelow.Magnitude
+			bmarg = parmap.spaceBelow
+			margin = true
+		}
+	}
+
+	if margin {cssStr += fmt.Sprintf("  margin: %.1f %.1f %.1f %.1f;\n", tmarg, rmarg, bmarg, lmarg)}
+
+	// may have to introduce an exemption for title
+	parmap.keepLines = false
+	if parStyl.KeepLinesTogether != parmap.keepLines {
+		parmap.keepLines = parStyl.KeepLinesTogether
+	}
+
+	parmap.keepNext = false
+	if parStyl.KeepWithNext != parmap.keepNext {
+		parmap.keepNext = parStyl.KeepWithNext
+	}
+
+	switch parStyl.SpacingMode {
+	case "NEVER_COLLAPSE":
+		parmap.spaceMode = true
+	case "COLLAPSE_LISTS":
+		parmap.spaceMode = false
+	default:
+		parmap.spaceMode = true
+	}
+
+	// check for zero width borders
+	bb := true
+	if (parStyl.BorderBetween != nil) {
+		if parStyl.BorderBetween.Width != nil {
+			if parStyl.BorderBetween.Width.Magnitude > 0.1 {
+				bb = false
+			}
+		}
+	}
+
+	if (parStyl.BorderTop != nil) {
+		if parStyl.BorderTop.Width != nil {
+			if parStyl.BorderTop.Width.Magnitude > 0.1 {
+				bb = false
+			}
+		}
+	}
+
+	if parStyl.BorderRight != nil {
+		if parStyl.BorderRight.Width != nil {
+			if parStyl.BorderRight.Width.Magnitude > 0.1 {
+				bb = false
+			}
+		}
+	}
+
+	if parStyl.BorderBottom != nil {
+		if parStyl.BorderBottom.Width != nil {
+			if parStyl.BorderBottom.Width.Magnitude > 0.1 {
+				bb = false
+			}
+		}
+	}
+
+
+	if parStyl.BorderLeft != nil {
+		if parStyl.BorderLeft.Width != nil {
+			if parStyl.BorderLeft.Width.Magnitude > 0.1 {
+				bb = false
+			}
+		}
+	}
+
+	parmap.hasBorders = true
+	if !bb {
+		parmap.hasBorders = false
+		return cssStr
+	}
+
+	bordDisp := false
+	parmap.bordBet.width = 0
+	if parStyl.BorderBetween != nil {
+		if parStyl.BorderBetween.Width != nil {
+			if parStyl.BorderBetween.Width.Magnitude > 0.0 {
+				bordDisp = true
+				if parStyl.BorderBetween.Width.Magnitude != parmap.bordBet.width {
+					parmap.bordBet.width = parStyl.BorderBetween.Width.Magnitude
+				}
+			}
+		}
+		if parStyl.BorderBetween.Padding != nil {
+			if parStyl.BorderBetween.Padding.Magnitude != parmap.bordBet.pad {
+				parmap.bordBet.pad = parStyl.BorderBetween.Padding.Magnitude
+			}
+		}
+		if parStyl.BorderBetween.Color != nil {
+			if parStyl.BorderBetween.Color.Color != nil {
+				color := util.GetColor(parStyl.BorderBetween.Color.Color)
+				if color != parmap.bordBet.color {
+					parmap.bordBet.color = color
+				}
+			}
+		}
+		parmap.bordBet.dash = "SOLID"
+		if parStyl.BorderBetween.DashStyle != parmap.bordBet.dash {parmap.bordBet.dash = parStyl.BorderBetween.DashStyle;}
+	}
+
+
+	parmap.bordTop.width = 0
+	if parStyl.BorderTop != nil {
+		if parStyl.BorderTop.Width != nil {
+			if parStyl.BorderTop.Width.Magnitude > 0.0 {
+				bordDisp = true
+				if parStyl.BorderTop.Width.Magnitude != parmap.bordTop.width {
+					parmap.bordTop.width = parStyl.BorderTop.Width.Magnitude
+				}
+			}
+		}
+		if parStyl.BorderTop.Padding != nil {
+			if parStyl.BorderTop.Padding.Magnitude != parmap.bordTop.pad {
+				parmap.bordTop.pad = parStyl.BorderTop.Padding.Magnitude
+			}
+		}
+		if parStyl.BorderTop.Color != nil {
+			if parStyl.BorderTop.Color.Color != nil {
+				color := util.GetColor(parStyl.BorderTop.Color.Color)
+				if color != parmap.bordTop.color {
+					parmap.bordTop.color = color
+				}
+			}
+		}
+		parmap.bordTop.dash = "SOLID"
+		if parStyl.BorderTop.DashStyle != parmap.bordTop.dash {parmap.bordTop.dash = parStyl.BorderTop.DashStyle;}
+	}
+
+	parmap.bordRight.width = 0
+	if parStyl.BorderRight != nil {
+		if parStyl.BorderRight.Width != nil {
+			if parStyl.BorderRight.Width.Magnitude > 0.0 {
+				bordDisp = true
+				if parStyl.BorderRight.Width.Magnitude != parmap.bordRight.width {
+					parmap.bordRight.width = parStyl.BorderRight.Width.Magnitude
+				}
+			}
+		}
+		if parStyl.BorderRight.Padding != nil {
+			if parStyl.BorderRight.Padding.Magnitude != parmap.bordRight.pad {
+				parmap.bordRight.pad = parStyl.BorderRight.Padding.Magnitude
+			}
+		}
+		if parStyl.BorderRight.Color != nil {
+			if parStyl.BorderRight.Color.Color != nil {
+				color := util.GetColor(parStyl.BorderRight.Color.Color)
+				if color != parmap.bordRight.color {
+					parmap.bordRight.color = color
+				}
+			}
+		}
+		parmap.bordRight.dash = "SOLID"
+		if parStyl.BorderRight.DashStyle != parmap.bordRight.dash {
+			parmap.bordRight.dash = parStyl.BorderRight.DashStyle
+		}
+	}
+
+	parmap.bordBot.width = 0
+	if parStyl.BorderBottom != nil {
+		if parStyl.BorderBottom.Width != nil {
+			if parStyl.BorderBottom.Width.Magnitude > 0.0 {
+				bordDisp = true
+				if parStyl.BorderBottom.Width.Magnitude != parmap.bordBot.width {
+					parmap.bordBot.width = parStyl.BorderBottom.Width.Magnitude
+				}
+			}
+		}
+		if parStyl.BorderBottom.Padding != nil {
+			if parStyl.BorderBottom.Padding.Magnitude != parmap.bordBot.pad {
+				parmap.bordBot.pad = parStyl.BorderBottom.Padding.Magnitude
+			}
+		}
+		if parStyl.BorderBottom.Color != nil {
+			if parStyl.BorderBottom.Color.Color != nil {
+				color := util.GetColor(parStyl.BorderBottom.Color.Color)
+				if color != parmap.bordBot.color {
+					parmap.bordBot.color = color
+				}
+			}
+		}
+		parmap.bordBot.dash = "SOLID"
+		if parStyl.BorderBottom.DashStyle != parmap.bordBot.dash {parmap.bordBot.dash = parStyl.BorderBottom.DashStyle;}
+	}
+
+	parmap.bordLeft.width = 0
+	if parStyl.BorderLeft != nil {
+		if parStyl.BorderLeft.Width != nil {
+			if parStyl.BorderLeft.Width.Magnitude > 0.0 {
+				bordDisp = true
+				if parStyl.BorderLeft.Width.Magnitude != parmap.bordLeft.width {
+					parmap.bordLeft.width = parStyl.BorderLeft.Width.Magnitude
+				}
+			}
+		}
+		if parStyl.BorderLeft.Padding != nil {
+			if parStyl.BorderLeft.Padding.Magnitude != parmap.bordLeft.pad {
+				parmap.bordLeft.pad = parStyl.BorderLeft.Padding.Magnitude
+			}
+		}
+		if parStyl.BorderLeft.Color != nil {
+			if parStyl.BorderLeft.Color.Color != nil {
+				color := util.GetColor(parStyl.BorderLeft.Color.Color)
+				if color != parmap.bordLeft.color {
+					parmap.bordLeft.color = color
+				}
+			}
+		}
+		parmap.bordLeft.dash = "SOLID"
+		if parStyl.BorderLeft.DashStyle != parmap.bordLeft.dash {parmap.bordLeft.dash = parStyl.BorderLeft.DashStyle;}
+	}
+
+	if !bordDisp {
+		parmap.hasBorders = false
+		return cssStr
+	}
+
+	cssStr += fmt.Sprintf("  padding: %.1fpt %.1fpt %.1fpt %.1fpt;\n", parmap.bordTop.pad, parmap.bordRight.pad, parmap.bordBot.pad, parmap.bordLeft.pad)
+	cssStr += fmt.Sprintf("  border-top: %.1fpt %s %s;\n", parmap.bordTop.width, util.GetDash(parmap.bordTop.dash), parmap.bordTop.color)
+	cssStr += fmt.Sprintf("  border-right: %.1fpt %s %s;\n", parmap.bordRight.width, util.GetDash(parmap.bordRight.dash), parmap.bordRight.color)
+	cssStr += fmt.Sprintf("  border-bottom: %.1fpt %s %s;\n", parmap.bordBot.width, util.GetDash(parmap.bordBot.dash), parmap.bordBot.color)
+	cssStr += fmt.Sprintf("  border-left: %.1fpt %s %s;\n", parmap.bordLeft.width, util.GetDash(parmap.bordLeft.dash), parmap.bordLeft.color)
+
+	return cssStr
 }
 
 func cvtParMapCss(pMap *parMap, opt *util.OptObj)(cssStr string) {
@@ -2310,15 +2924,15 @@ func (dObj *GdocHtmlObj) cvtParEl(parEl *docs.ParagraphElement, namedStyl string
 
 
 func (dObj *GdocHtmlObj) cvtDocNamedStyles()(cssStr string, err error) {
+// method that creates the css for the named Styles used in the document
 
-//	cssComment:=""
-	parmap := new(parMap)
-
-	_, normalTxtStyl, err := dObj.getNamedStyl("NORMAL_TEXT")
+	normalParStyl, normalTxtStyl, err := dObj.getNamedStyl("NORMAL_TEXT")
 	if err != nil {
 		cssStr += fmt.Sprintf("  /* cvtNamedStyle: no NORMAL_TEST Style */\n")
 	}
+
 	defTxtMap := fillTxtMap(normalTxtStyl)
+	defParMap := fillParMap(normalParStyl)
 
 	for namedTyp, res := range dObj.namStylMap {
 		if namedTyp == "NORMAL_TEXT" { continue}
@@ -2330,8 +2944,6 @@ func (dObj *GdocHtmlObj) cvtDocNamedStyles()(cssStr string, err error) {
 			continue
 		}
 
-		fillParMap(parmap, namParStyl)
-//		namTxtMap := fillTxtMap(namTxtStyl)
 
 		cssPrefix := ""
 		switch namedTyp {
@@ -2368,7 +2980,7 @@ func (dObj *GdocHtmlObj) cvtDocNamedStyles()(cssStr string, err error) {
 		}
 
 		if len(cssPrefix) > 0 {
-			parCss := cvtParMapCss(parmap, dObj.Options)
+			parCss := cvtParMapStylCss(defParMap, namParStyl, dObj.Options)
 			txtCss := cvtTxtMapStylCss(defTxtMap, namTxtStyl)
 			cssStr += cssPrefix + parCss + txtCss + "}\n"
 		}
@@ -2388,10 +3000,9 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 	cssComment = fmt.Sprintf("/* Paragraph Style: %s */\n", parStyl.NamedStyleType )
 
 	alter:= false
-	parmap := new(parMap)
 	cssParAtt := ""
 
-	_, err = fillParMap(parmap, namParStyl)
+	parmap := fillParMap(namParStyl)
 	if err != nil {
 		cssComment += "/* erro fill Parmap namparstyl */" + fmt.Sprintf("%v\n", err)
 	}
@@ -2401,11 +3012,7 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 	if parStyl == nil || isList {
 		cssParAtt = cvtParMapCss(parmap, dObj.Options)
 	} else {
-		alter, err = fillParMap(parmap, parStyl)
-		if err != nil {
-			cssComment += "/* erro fill Parmap parstyl */" + fmt.Sprintf("%v\n", err)
-		}
-		if alter {cssParAtt = cvtParMapCss(parmap, dObj.Options)}
+		cssParAtt = cvtParMapStylCss(parmap, parStyl, dObj.Options)
 	}
  //fmt.Printf("*** parstyle %s alter: %t\n", parStyl.NamedStyleType, alter)
 
@@ -2417,18 +3024,7 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 		printParMap(parmap2, parStyl)
 	}
 */
-	//css text style
-/*
-	namParStyl, namTxtStyl, err := dObj.getNamedStyl(parStyl.NamedStyleType)
 
-	defTxtMap := new(textMap)
-	_, err = fillTxtMap(defTxtMap, namTxtStyl)
-	if err != nil {
-		cssComment = fmt.Sprintf("//* Paragraph Style: no named Style * ")
-		cssComment, "", "", nil
-	}
-	cssDefTxt := cvtTxtMapCss(defTxtMap)
-*/
 	// NamedStyle Type
 	isListClass := ""
 	if isList {
@@ -2640,7 +3236,7 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 	if err != nil {
 		return headCss, fmt.Errorf("creHeadCss: %v", err)
 	}
-
+	defParMap := fillParMap(parStyl)
 	defTxtMap := fillTxtMap(txtStyl)
 	if err != nil {
 		return headCss, fmt.Errorf("creHeadCss: %v", err)
@@ -2661,30 +3257,9 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 	}
 	headCss += hdcss + errStr
 
-/*
-	cssStr = ""
-	for namedTyp, res := range dObj.namStylMap {
-		if namedTyp == "NORMAL_TEXT" { continue}
-		if res {
-			hdcss, err := dObj.cvtNamedStyl(namedTyp)
-			if err != nil {
-				errStr = fmt.Sprintf("%v", err)
-			}
-		cssStr += hdcss + errStr
-		}
-	}
-	headCss += cssStr
-*/
 	// paragraph default style
 	cssStr = fmt.Sprintf(".%s_p {\n", dObj.docName)
 	cssStr += "  display: block;\n"
-
-	defParMap := new(parMap)
-
-	_, err = fillParMap(defParMap, parStyl)
-	if err != nil {
-		return headCss, fmt.Errorf("creHeadCss: %v", err)
-	}
 
 	cssStr += cvtParMapCss(defParMap, dObj.Options)
 	cssStr += "}\n"
