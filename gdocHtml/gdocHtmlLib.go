@@ -1281,7 +1281,7 @@ func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *util.Op
 		}
 	}
 
-	if margin {cssStr += fmt.Sprintf("  margin: %.1f %.1f %.1f %.1f;\n", tmarg, rmarg, bmarg, lmarg)}
+	if margin {cssStr += fmt.Sprintf("  margin: %.0f %.0f %.0f %.0f;\n", tmarg, rmarg, bmarg, lmarg)}
 
 	// may have to introduce an exemption for title
 	parmap.keepLines = false
