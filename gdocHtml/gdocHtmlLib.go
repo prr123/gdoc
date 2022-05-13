@@ -902,12 +902,8 @@ func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 }
 
 
-func fillParMap(parmap *parMap, parStyl *docs.ParagraphStyle)(alter bool, err error) {
-
-	alter = false
-	if parStyl == nil {
-		return alter, fmt.Errorf("no parStyl!")
-	}
+func fillParMap(parStyl *docs.ParagraphStyle)(parMapRef *parMap) {
+	var parmap parMap
 
 	if parStyl.Alignment != parmap.halign {
 //fmt.Printf("align: %s : %s \n", parmap.halign,parStyl.Alignment)
@@ -1179,8 +1175,77 @@ func fillParMap(parmap *parMap, parStyl *docs.ParagraphStyle)(alter bool, err er
 	if bb2 {parmap.hasBorders = false}
 
 
-	return alter, nil
+	return &parmap
 }
+
+func cvtParMapCss(pMap *parMap, opt *util.OptObj)(cssStr string) {
+	cssStr =""
+
+	if len(pMap.halign) > 0 {
+		switch pMap.halign {
+			case "START":
+				cssStr += "  text-align: left;\n"
+			case "CENTER":
+				cssStr += "  text-align: center;\n"
+			case "END":
+				cssStr += "  text-align: right;\n"
+			case "JUSTIFIED":
+				cssStr += "  text-align: justify;\n"
+			default:
+				cssStr += fmt.Sprintf("/* unrecognized Alignment %s */\n", pMap.halign)
+		}
+
+	}
+
+	if pMap.linSpac > 0.0 {
+		if opt.DefLinSpacing > 0.0 {
+			cssStr += fmt.Sprintf("  line-height: %.2f;\n", opt.DefLinSpacing*pMap.linSpac)
+		} else {
+			cssStr += fmt.Sprintf("  line-height: %.2f;\n", pMap.linSpac)
+		}
+	}
+
+	if pMap.indFlin > 0.0 {
+		cssStr += fmt.Sprintf("  text-indent: %.1fpt;\n", pMap.indFlin)
+	}
+
+	mlCss :=""
+	if pMap.indStart > 0.0 {
+		mlCss = fmt.Sprintf("%.1fpt", pMap.indStart)
+	} else {
+		mlCss = fmt.Sprintf("0")
+	}
+	mrCss:=""
+	if pMap.indEnd > 0.0 {
+		mrCss = fmt.Sprintf("%.1fpt", pMap.indEnd)
+	} else {
+		mrCss = fmt.Sprintf("0")
+	}
+	mtCss := ""
+	if pMap.spaceTop > 0.0 {
+		mtCss = fmt.Sprintf("%.1fpt", pMap.spaceTop)
+	} else {
+		mtCss = fmt.Sprintf("0")
+	}
+	mbCss := ""
+	if pMap.spaceBelow > 0.0 {
+		mbCss = fmt.Sprintf("%.1fpt", pMap.spaceBelow)
+	} else {
+		mbCss = fmt.Sprintf("0")
+	}
+
+	cssStr += fmt.Sprintf("  margin: %s %s %s %s;\n", mtCss, mrCss, mbCss, mlCss)
+
+	if !pMap.hasBorders { return cssStr }
+	cssStr += fmt.Sprintf("  padding: %.1fpt %.1fpt %.1fpt %.1fpt;\n", pMap.bordTop.pad, pMap.bordRight.pad, pMap.bordBot.pad, pMap.bordLeft.pad)
+	cssStr += fmt.Sprintf("  border-top: %.1fpt %s %s;\n", pMap.bordTop.width, util.GetDash(pMap.bordTop.dash), pMap.bordTop.color)
+	cssStr += fmt.Sprintf("  border-right: %.1fpt %s %s;\n", pMap.bordRight.width, util.GetDash(pMap.bordRight.dash), pMap.bordRight.color)
+	cssStr += fmt.Sprintf("  border-bottom: %.1fpt %s %s;\n", pMap.bordBot.width, util.GetDash(pMap.bordBot.dash), pMap.bordBot.color)
+	cssStr += fmt.Sprintf("  border-left: %.1fpt %s %s;\n", pMap.bordLeft.width, util.GetDash(pMap.bordLeft.dash), pMap.bordLeft.color)
+
+	return cssStr
+}
+
 
 func addDispObj(src, add *dispObj) {
 	if add == nil {return}
@@ -1266,75 +1331,6 @@ func (dObj *GdocHtmlObj) printHeadings() {
 	}
 }
 
-
-func (dObj *GdocHtmlObj) cvtParMapCss(pMap *parMap)(cssStr string) {
-	cssStr =""
-
-	if len(pMap.halign) > 0 {
-		switch pMap.halign {
-			case "START":
-				cssStr += "  text-align: left;\n"
-			case "CENTER":
-				cssStr += "  text-align: center;\n"
-			case "END":
-				cssStr += "  text-align: right;\n"
-			case "JUSTIFIED":
-				cssStr += "  text-align: justify;\n"
-			default:
-				cssStr += fmt.Sprintf("/* unrecognized Alignment %s */\n", pMap.halign)
-		}
-
-	}
-
-	opt := dObj.Options
-	if pMap.linSpac > 0.0 {
-		if opt.DefLinSpacing > 0.0 {
-			cssStr += fmt.Sprintf("  line-height: %.2f;\n", opt.DefLinSpacing*pMap.linSpac)
-		} else {
-			cssStr += fmt.Sprintf("  line-height: %.2f;\n", pMap.linSpac)
-		}
-	}
-
-	if pMap.indFlin > 0.0 {
-		cssStr += fmt.Sprintf("  text-indent: %.1fpt;\n", pMap.indFlin)
-	}
-
-	mlCss :=""
-	if pMap.indStart > 0.0 {
-		mlCss = fmt.Sprintf("%.1fpt", pMap.indStart)
-	} else {
-		mlCss = fmt.Sprintf("0")
-	}
-	mrCss:=""
-	if pMap.indEnd > 0.0 {
-		mrCss = fmt.Sprintf("%.1fpt", pMap.indEnd)
-	} else {
-		mrCss = fmt.Sprintf("0")
-	}
-	mtCss := ""
-	if pMap.spaceTop > 0.0 {
-		mtCss = fmt.Sprintf("%.1fpt", pMap.spaceTop)
-	} else {
-		mtCss = fmt.Sprintf("0")
-	}
-	mbCss := ""
-	if pMap.spaceBelow > 0.0 {
-		mbCss = fmt.Sprintf("%.1fpt", pMap.spaceBelow)
-	} else {
-		mbCss = fmt.Sprintf("0")
-	}
-
-	cssStr += fmt.Sprintf("  margin: %s %s %s %s;\n", mtCss, mrCss, mbCss, mlCss)
-
-	if !pMap.hasBorders { return cssStr }
-	cssStr += fmt.Sprintf("  padding: %.1fpt %.1fpt %.1fpt %.1fpt;\n", pMap.bordTop.pad, pMap.bordRight.pad, pMap.bordBot.pad, pMap.bordLeft.pad)
-	cssStr += fmt.Sprintf("  border-top: %.1fpt %s %s;\n", pMap.bordTop.width, util.GetDash(pMap.bordTop.dash), pMap.bordTop.color)
-	cssStr += fmt.Sprintf("  border-right: %.1fpt %s %s;\n", pMap.bordRight.width, util.GetDash(pMap.bordRight.dash), pMap.bordRight.color)
-	cssStr += fmt.Sprintf("  border-bottom: %.1fpt %s %s;\n", pMap.bordBot.width, util.GetDash(pMap.bordBot.dash), pMap.bordBot.color)
-	cssStr += fmt.Sprintf("  border-left: %.1fpt %s %s;\n", pMap.bordLeft.width, util.GetDash(pMap.bordLeft.dash), pMap.bordLeft.color)
-
-	return cssStr
-}
 
 func (dObj *GdocHtmlObj) getNamedStyl(namedTyp string)(parStyl *docs.ParagraphStyle, txtStyl *docs.TextStyle, err error) {
 	var namStyl *docs.NamedStyle
@@ -2372,7 +2368,7 @@ func (dObj *GdocHtmlObj) cvtDocNamedStyles()(cssStr string, err error) {
 		}
 
 		if len(cssPrefix) > 0 {
-			parCss := dObj.cvtParMapCss(parmap)
+			parCss := cvtParMapCss(parmap, dObj.Options)
 			txtCss := cvtTxtMapStylCss(defTxtMap, namTxtStyl)
 			cssStr += cssPrefix + parCss + txtCss + "}\n"
 		}
@@ -2403,13 +2399,13 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 // fmt.Printf("begin fillparmap parstyl %s: %t\n", parStyl.NamedStyleType, alter)
 
 	if parStyl == nil || isList {
-		cssParAtt = dObj.cvtParMapCss(parmap)
+		cssParAtt = cvtParMapCss(parmap, dObj.Options)
 	} else {
 		alter, err = fillParMap(parmap, parStyl)
 		if err != nil {
 			cssComment += "/* erro fill Parmap parstyl */" + fmt.Sprintf("%v\n", err)
 		}
-		if alter {cssParAtt = dObj.cvtParMapCss(parmap)}
+		if alter {cssParAtt = cvtParMapCss(parmap, dObj.Options)}
 	}
  //fmt.Printf("*** parstyle %s alter: %t\n", parStyl.NamedStyleType, alter)
 
@@ -2690,7 +2686,7 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 		return headCss, fmt.Errorf("creHeadCss: %v", err)
 	}
 
-	cssStr += dObj.cvtParMapCss(defParMap)
+	cssStr += cvtParMapCss(defParMap, dObj.Options)
 	cssStr += "}\n"
 	headCss += cssStr
 
