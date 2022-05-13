@@ -59,6 +59,8 @@ type GdocHtmlObj struct {
 	folderPath string
     imgFoldNam string
     imgFoldPath string
+//	textmaps []*textMap
+//	defTxtmap textMap
 	Options *util.OptObj
 }
 
@@ -177,17 +179,17 @@ type tabStop struct {
 }
 
 type textMap struct {
-	bckColor string
-	baseOffset string
 	bold bool
 	italic bool
 	underline bool
 	strike bool
-	fontSize float64
-	txtColor string
 	link bool
-	fontType string
+	fontSize float64
 	fontWeight	int64
+	fontType string
+	baseOffset string
+	txtColor string
+	bckColor string
 }
 
 type linkMap struct {
@@ -328,54 +330,209 @@ if txtStyl == nil {
 
 }
 
-func fillTxtMap(txtMap *textMap, txtStyl *docs.TextStyle)(alter bool, err error) {
+func fillTxtMap (txtStyl *docs.TextStyle)(txtMapRef *textMap) {
+	var txtMap textMap
 
-	alter = false
-	if txtStyl == nil {
-		return alter, fmt.Errorf("decode txtstyle: -- no Style")
-	}
+	if txtStyl == nil {	return nil}
 
-	if txtStyl.BaselineOffset != txtMap.baseOffset {
-        if len(txtStyl.BaselineOffset) > 0 {
+	txtMap.baseOffset = "NONE"
+	if len(txtStyl.BaselineOffset) >0 {
+		if txtStyl.BaselineOffset != "BASELINE_OFFSET_UNSPECIFIED" {
 			txtMap.baseOffset = txtStyl.BaselineOffset
-			alter = true
 		}
 	}
 
-	if txtStyl.Bold != txtMap.bold {
-		txtMap.bold = txtStyl.Bold
-		alter = true
+	txtMap.fontWeight = 400
+	if txtStyl.Bold {
+		txtMap.fontWeight = 800
 	}
+
+	txtStyl.Italic = false
+	if txtStyl.Italic {
+		txtMap.italic = txtStyl.Italic
+	}
+
+	txtStyl.Underline = false
+	if txtStyl.Underline {
+ 		txtMap.underline = txtStyl.Underline
+	}
+
+	txtMap.strike = false
+	if txtStyl.Strikethrough {
+		txtMap.strike = txtStyl.Strikethrough
+	}
+
+	txtMap.fontType = "Calibri"
+	if txtStyl.WeightedFontFamily != nil {
+		if txtStyl.WeightedFontFamily.FontFamily != txtMap.fontType {
+			txtMap.fontType = txtStyl.WeightedFontFamily.FontFamily
+		}
+		if txtStyl.WeightedFontFamily.Weight > 0 {
+			if txtStyl.WeightedFontFamily.Weight != txtMap.fontWeight {
+				txtMap.fontWeight = txtStyl.WeightedFontFamily.Weight
+			}
+		}
+	}
+
+	txtMap.fontSize = 0.0
+	if txtStyl.FontSize != nil {
+		if txtStyl.FontSize.Magnitude >0 {
+			txtMap.fontSize = txtStyl.FontSize.Magnitude
+		}
+	}
+
+	txtMap.txtColor = "rgb(0,0,0)"
+	if txtStyl.ForegroundColor != nil {
+		if txtStyl.ForegroundColor.Color != nil {
+			color := util.GetColor(txtStyl.ForegroundColor.Color)
+			if color != txtMap.txtColor {
+				txtMap.txtColor = color
+			}
+		}
+	}
+
+	txtMap.bckColor = ""
+	if txtStyl.BackgroundColor != nil {
+		if txtStyl.BackgroundColor.Color != nil {
+			color := util.GetColor(txtStyl.BackgroundColor.Color)
+			if color != txtMap.bckColor {
+				txtMap.bckColor = color
+			}
+		}
+	}
+	return &txtMap
+}
+
+func cvtTxtMapCss(txtMap *textMap)(cssStr string) {
+
+    cssStr =""
+    if len(txtMap.baseOffset) > 0 {
+        switch txtMap.baseOffset {
+            case "SUPERSCRIPT":
+                cssStr += "  vertical-align: sub;\n"
+            case "SUBSCRIPT":
+                cssStr += " vertical-align: sup;\n"
+            case "NONE":
+                cssStr += " vertical-align: baseline;\n"
+            default:
+            //error
+                cssStr += fmt.Sprintf("/* Baseline Offset unknown: %s */\n", txtMap.baseOffset)
+        }
+    }
+
+    if txtMap.italic {
+		cssStr += "  font-style: italic;\n"
+	} else {
+		cssStr += "  font-style: normal;\n"
+	}
+
+	textprop := ""
+	switch {
+    case txtMap.underline && txtMap.strike:
+		textprop = "underline line-through"
+    case txtMap.underline && !txtMap.strike:
+		textprop = "underline"
+    case !txtMap.underline && txtMap.strike:
+		textprop = "line-through"
+    case !txtMap.underline && !txtMap.strike:
+		textprop = "none"
+	}
+    cssStr += fmt.Sprintf("  text-decoration: %s;\n", textprop)
+
+
+    if len(txtMap.fontType) >0 { cssStr += fmt.Sprintf("  font-family: %s;\n", txtMap.fontType)}
+	if txtMap.fontWeight > 0 {cssStr += fmt.Sprintf("  font-weight: %d;\n", txtMap.fontWeight)}
+    if txtMap.fontSize >0 {cssStr += fmt.Sprintf("  font-size: %.2fpt;\n", txtMap.fontSize)}
+    if len(txtMap.txtColor) >0 {cssStr += fmt.Sprintf("  color: %s;\n", txtMap.txtColor)}
+    if len(txtMap.bckColor) >0 {cssStr += fmt.Sprintf("  background-color: %s;\n", txtMap.bckColor)}
+
+    return cssStr
+}
+
+func cvtTxtMapStylCss (txtMap *textMap, txtStyl *docs.TextStyle)(cssStr string) {
+
+    if (len(txtStyl.BaselineOffset) > 0) && (txtStyl.BaselineOffset != "BASELINE_OFFSET_UNSPECIFIED") {
+		if txtStyl.BaselineOffset != txtMap.baseOffset {
+			txtMap.baseOffset = txtStyl.BaselineOffset
+			switch txtMap.baseOffset {
+			case "SUPERSCRIPT":
+				cssStr += "  vertical-align: sub;\n"
+			case "SUBSCRIPT":
+				cssStr += "	vertical-align: sup;\n"
+			case "NONE":
+				cssStr += "	vertical-align: baseline;\n"
+			default:
+			//error
+				cssStr += fmt.Sprintf("/* Baseline Offset unknown: %s */\n", txtMap.baseOffset)
+			}
+		}
+	}
+
+	switch {
+	case txtStyl.Bold && (txtMap.fontWeight < 700):
+		txtMap.fontWeight = 800
+		cssStr += fmt.Sprintf("  font-weight: %d;\n", txtMap.fontWeight)
+	case !txtStyl.Bold && (txtMap.fontWeight > 500):
+		txtMap.fontWeight = 400
+		cssStr += fmt.Sprintf("  font-weight: %d;\n", txtMap.fontWeight)
+	default:
+
+	}
+
 
 	if txtStyl.Italic != txtMap.italic {
 		txtMap.italic = txtStyl.Italic
-		alter = true
+		if txtMap.italic {
+			cssStr += "  font-style: italic;\n"
+		} else {
+			cssStr += "  font-style: normal;\n"
+		}
 	}
+
+	txtprop := ""
 
 	if txtStyl.Underline != txtMap.underline {
  		txtMap.underline = txtStyl.Underline
-		alter = true
+		if txtMap.underline {
+			txtprop = "underline"
+		} else {
+			txtprop = "none"
+		}
 	}
+//	if txtMap.underline { cssStr += "  text-decoration: underline;\n"}
 
 	if txtStyl.Strikethrough != txtMap.strike {
 		txtMap.strike = txtStyl.Strikethrough
-		alter = true
+		if txtMap.strike {
+			if txtprop == "none" {
+				txtprop = "line-through"
+			} else {
+				txtprop += " line-through"
+			}
+		}
 	}
+
+	if len(txtprop) > 0 {cssStr += fmt.Sprintf("  text-decoration: %s;\n", txtprop)}
+
 
 	if txtStyl.WeightedFontFamily != nil {
 		if txtStyl.WeightedFontFamily.FontFamily != txtMap.fontType {
 			txtMap.fontType = txtStyl.WeightedFontFamily.FontFamily
-			alter = true
+			cssStr += fmt.Sprintf("  font-family: %s;\n", txtMap.fontType)
 		}
+/*
 		if txtStyl.WeightedFontFamily.Weight != txtMap.fontWeight {
 			txtMap.fontWeight = txtStyl.WeightedFontFamily.Weight
 			alter = true
 		}
+*/
 	}
+
+
 	if txtStyl.FontSize != nil {
 		if txtStyl.FontSize.Magnitude != txtMap.fontSize {
 			txtMap.fontSize = txtStyl.FontSize.Magnitude
-			alter = true
+			cssStr += fmt.Sprintf("  font-size: %.2fpt;\n", txtMap.fontSize)
 		}
 	}
 
@@ -384,7 +541,7 @@ func fillTxtMap(txtMap *textMap, txtStyl *docs.TextStyle)(alter bool, err error)
 			color := util.GetColor(txtStyl.ForegroundColor.Color)
 			if color != txtMap.txtColor {
 				txtMap.txtColor = color
-				alter = true
+				cssStr += fmt.Sprintf("  color: %s;\n", txtMap.txtColor)
 			}
 		}
 	}
@@ -394,14 +551,72 @@ func fillTxtMap(txtMap *textMap, txtStyl *docs.TextStyle)(alter bool, err error)
 			color := util.GetColor(txtStyl.BackgroundColor.Color)
 			if color != txtMap.bckColor {
 				txtMap.bckColor = color
-				alter = true
+				cssStr += fmt.Sprintf("  background-color: %s;\n", txtMap.bckColor)
 			}
 		}
 	}
 
-
-	return alter, nil
+	return cssStr
 }
+
+func cvtTxtStylCss (txtStyl *docs.TextStyle)(cssStr string) {
+	var tcssStr string
+
+	if len(txtStyl.BaselineOffset) > 0 {
+        valStr := "vertical-align: "
+        switch txtStyl.BaselineOffset {
+            case "SUPERSCRIPT":
+                valStr += "sub"
+            case "SUBSCRIPT":
+                valStr += "sup"
+            case "NONE":
+                valStr += "baseline"
+            default:
+                valStr = fmt.Sprintf("/* Baseline Offset unknown: %s */\n", txtStyl.BaselineOffset)
+        }
+        tcssStr = valStr + ";\n"
+    }
+
+	if txtStyl.Bold {
+		tcssStr += "  font-weight: 800;\n"
+	} else {
+		tcssStr += "  font-weight: 400;\n"
+	}
+
+	if txtStyl.Italic { tcssStr += "  font-style: italic;\n"}
+	if txtStyl.Underline { tcssStr += "  text-decoration: underline;\n"}
+	if txtStyl.Strikethrough { tcssStr += "  text-decoration: line-through;\n"}
+
+	if txtStyl.WeightedFontFamily != nil {
+		font := txtStyl.WeightedFontFamily.FontFamily
+		tcssStr += fmt.Sprintf("  font-family: %s;\n", font)
+	}
+
+	if txtStyl.FontSize != nil {
+		mag := txtStyl.FontSize.Magnitude
+		tcssStr += fmt.Sprintf("  font-size: %.2fpt;\n", mag)
+	}
+
+	if txtStyl.ForegroundColor != nil {
+		if txtStyl.ForegroundColor.Color != nil {
+			//0 to 1
+            tcssStr += "  color: "
+            tcssStr += util.GetColor(txtStyl.ForegroundColor.Color)
+		}
+	}
+	if txtStyl.BackgroundColor != nil {
+		if txtStyl.BackgroundColor.Color != nil {
+            tcssStr += "  background-color: "
+            tcssStr += util.GetColor(txtStyl.BackgroundColor.Color)
+		}
+	}
+
+	if len(tcssStr) > 0 {
+		cssStr = tcssStr
+	}
+	return cssStr
+}
+
 
 func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 
@@ -967,98 +1182,6 @@ func fillParMap(parmap *parMap, parStyl *docs.ParagraphStyle)(alter bool, err er
 	return alter, nil
 }
 
-func cvtTxtMapCss(txtMap *textMap)(cssStr string) {
-
-	cssStr =""
-	if len(txtMap.baseOffset) > 0 {
-		switch txtMap.baseOffset {
-			case "SUPERSCRIPT":
-				cssStr += "  vertical-align: sub;\n"
-			case "SUBSCRIPT":
-				cssStr += "	vertical-align: sup;\n"
-			case "NONE":
-
-			default:
-			//error
-				cssStr += fmt.Sprintf("/* Baseline Offset unknown: %s */\n", txtMap.baseOffset)
-		}
-	}
-
-	if txtMap.italic { cssStr += "  font-style: italic;\n"}
-	if txtMap.underline { cssStr += "  text-decoration: underline;\n"}
-	if txtMap.strike { cssStr += "  text-decoration: line-through;\n"}
-
-	if len(txtMap.fontType) >0 { cssStr += fmt.Sprintf("  font-family: %s;\n", txtMap.fontType)}
-	if txtMap.bold {
-		cssStr += "  font-weight: 800;\n"
-	} else {
-		if txtMap.fontWeight > 0 {cssStr += fmt.Sprintf("  font-weight: %d;\n", txtMap.fontWeight)}
-	}
-	if txtMap.fontSize >0 {cssStr += fmt.Sprintf("  font-size: %.2fpt;\n", txtMap.fontSize)}
-	if len(txtMap.txtColor) >0 {cssStr += fmt.Sprintf("  color: %s;\n", txtMap.txtColor)}
-	if len(txtMap.bckColor) >0 {cssStr += fmt.Sprintf("  background-color: %s;\n", txtMap.bckColor)}
-
-	return cssStr
-}
-
-func cvtTxtStylCss(txtStyl *docs.TextStyle)(cssStr string) {
-	var tcssStr string
-
-	if len(txtStyl.BaselineOffset) > 0 {
-        valStr := "vertical-align: "
-        switch txtStyl.BaselineOffset {
-            case "SUPERSCRIPT":
-                valStr += "sub"
-            case "SUBSCRIPT":
-                valStr += "sup"
-            case "NONE":
-                valStr += "baseline"
-            default:
-                valStr = fmt.Sprintf("/* Baseline Offset unknown: %s */\n", txtStyl.BaselineOffset)
-        }
-        tcssStr = valStr + ";\n"
-    }
-
-	if txtStyl.Bold {
-		tcssStr += "  font-weight: 800;\n"
-	} else {
-		tcssStr += "  font-weight: 400;\n"
-	}
-
-	if txtStyl.Italic { tcssStr += "  font-style: italic;\n"}
-	if txtStyl.Underline { tcssStr += "  text-decoration: underline;\n"}
-	if txtStyl.Strikethrough { tcssStr += "  text-decoration: line-through;\n"}
-
-	if txtStyl.WeightedFontFamily != nil {
-		font := txtStyl.WeightedFontFamily.FontFamily
-		tcssStr += fmt.Sprintf("  font-family: %s;\n", font)
-	}
-
-	if txtStyl.FontSize != nil {
-		mag := txtStyl.FontSize.Magnitude
-		tcssStr += fmt.Sprintf("  font-size: %.2fpt;\n", mag)
-	}
-
-	if txtStyl.ForegroundColor != nil {
-		if txtStyl.ForegroundColor.Color != nil {
-			//0 to 1
-            tcssStr += "  color: "
-            tcssStr += util.GetColor(txtStyl.ForegroundColor.Color)
-		}
-	}
-	if txtStyl.BackgroundColor != nil {
-		if txtStyl.BackgroundColor.Color != nil {
-            tcssStr += "  background-color: "
-            tcssStr += util.GetColor(txtStyl.BackgroundColor.Color)
-		}
-	}
-
-	if len(tcssStr) > 0 {
-		cssStr = tcssStr
-	}
-	return cssStr
-}
-
 func addDispObj(src, add *dispObj) {
 	if add == nil {return}
 	src.bodyHtml += add.bodyHtml
@@ -1545,21 +1668,19 @@ func (dObj *GdocHtmlObj) cvtParElText(parElTxt *docs.TextRun, namedTyp string)(p
         return parTxt
     }
 
-    txtMap := new(textMap)
-    _, err = fillTxtMap(txtMap, namedTxtStyl)
+    txtMap := fillTxtMap(namedTxtStyl)
 //
 	printTxtMap(txtMap, parElTxt.TextStyle)
 
-    alter, err := fillTxtMap(txtMap, parElTxt.TextStyle)
+ //   alter, err := fillTxtMap(txtMap, parElTxt.TextStyle)
 //
-	fmt.Println("*******************************\nalter: ", alter)
-    if alter {
-		spanCssStr = cvtTxtMapCss(txtMap)
-	}
+	fmt.Println("*******************************\n ")
+	printTxtMap(txtMap, nil)
+	fmt.Println("*******************************\n")
 
-	if err != nil {
-		spanCssStr = fmt.Sprintf("/*error parEl Css %v*/\n", err) + spanCssStr
-	}
+	spanCssStr = cvtTxtMapStylCss(txtMap, parElTxt.TextStyle)
+
+
 	linkPrefix := ""
 	linkSuffix := ""
 	if parElTxt.TextStyle.Link != nil {
@@ -2036,13 +2157,10 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parDisp dispObj, err error)
 
 // lists
     if par.Bullet != nil {
-
+//		var bulletTxtMap *textMap
 		// there is paragraph style for each ul and a text style for each list element
-		txtmap := new(textMap)
 		if par.Bullet.TextStyle != nil {
-			_, err := fillTxtMap(txtmap,par.Bullet.TextStyle)
-			if err != nil { return parDisp, fmt.Errorf("cvtPar List getting text style %v", err)}
-
+//			bulletTxtMap = fillTxtMap(par.Bullet.TextStyle)
 		}
 
 		if dObj.Options.Verb {listHtml += fmt.Sprintf("<!-- List Element %d -->\n", dObj.parCount)}
@@ -2202,7 +2320,7 @@ func (dObj *GdocHtmlObj) cvtDocNamedStyles()(cssStr string, err error) {
 
 //	cssComment:=""
 	parmap := new(parMap)
-	txtmap := new(textMap)
+
 	for namedTyp, res := range dObj.namStylMap {
 		if namedTyp == "NORMAL_TEXT" { continue}
 		if !res {continue}
@@ -2214,7 +2332,7 @@ func (dObj *GdocHtmlObj) cvtDocNamedStyles()(cssStr string, err error) {
 		}
 
 		fillParMap(parmap, namParStyl)
-		fillTxtMap(txtmap, namTxtStyl)
+		namTxtMap := fillTxtMap(namTxtStyl)
 
 		cssPrefix := ""
 		switch namedTyp {
@@ -2252,7 +2370,7 @@ func (dObj *GdocHtmlObj) cvtDocNamedStyles()(cssStr string, err error) {
 
 		if len(cssPrefix) > 0 {
 			parCss := dObj.cvtParMapCss(parmap)
-			txtCss := cvtTxtMapCss(txtmap)
+			txtCss := cvtTxtMapCss(namTxtMap)
 			cssStr += cssPrefix + parCss + txtCss + "}\n"
 		}
 	}
@@ -2519,13 +2637,12 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 
 	//css default text style
 	cssStr = fmt.Sprintf(".%s_div {\n", dObj.docName)
-	defTxtMap := new(textMap)
 	parStyl, txtStyl, err := dObj.getNamedStyl("NORMAL_TEXT")
 	if err != nil {
 		return headCss, fmt.Errorf("creHeadCss: %v", err)
 	}
 
-	_, err = fillTxtMap(defTxtMap, txtStyl)
+	defTxtMap := fillTxtMap(txtStyl)
 	if err != nil {
 		return headCss, fmt.Errorf("creHeadCss: %v", err)
 	}
@@ -2602,9 +2719,7 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 		cssStr += fmt.Sprintf("}\n")
 
 		nestLev0 := listProp.NestingLevels[0]
-		defGlyphTxtMap := new(textMap)
-		_, err = fillTxtMap(defGlyphTxtMap, nestLev0.TextStyle)
-		if err != nil { cssStr += "/* error def Glyph Text Style */\n" }
+		defGlyphTxtMap := fillTxtMap(nestLev0.TextStyle)
 
 		cumIndent := 0.0
 
@@ -2612,8 +2727,7 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 			nestLev := listProp.NestingLevels[nl]
 			glyphTxtMap := defGlyphTxtMap
 			if nl > 0 {
-				_, err := fillTxtMap(glyphTxtMap, nestLev.TextStyle)
-				if err != nil { cssStr += "/* error def Glyph Text Style */\n" }
+				cvtTxtMapStylCss(glyphTxtMap, nestLev.TextStyle)
 			}
 			glyphStr := util.GetGlyphStr(nestLev)
 			switch dObj.docLists[i].ord {
