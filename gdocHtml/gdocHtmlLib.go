@@ -411,9 +411,9 @@ func cvtTxtMapCss(txtMap *textMap)(cssStr string) {
             case "SUPERSCRIPT":
                 cssStr += "  vertical-align: sub;\n"
             case "SUBSCRIPT":
-                cssStr += " vertical-align: sup;\n"
+                cssStr += "  vertical-align: sup;\n"
             case "NONE":
-                cssStr += " vertical-align: baseline;\n"
+                cssStr += "  vertical-align: baseline;\n"
             default:
             //error
                 cssStr += fmt.Sprintf("/* Baseline Offset unknown: %s */\n", txtMap.baseOffset)
@@ -1670,16 +1670,13 @@ func (dObj *GdocHtmlObj) cvtParElText(parElTxt *docs.TextRun, namedTyp string)(p
 
     txtMap := fillTxtMap(namedTxtStyl)
 //
-	printTxtMap(txtMap, parElTxt.TextStyle)
-
- //   alter, err := fillTxtMap(txtMap, parElTxt.TextStyle)
-//
+// test
+/*	printTxtMap(txtMap, parElTxt.TextStyle)
 	fmt.Println("*******************************\n ")
 	printTxtMap(txtMap, nil)
 	fmt.Println("*******************************\n")
-
+*/
 	spanCssStr = cvtTxtMapStylCss(txtMap, parElTxt.TextStyle)
-
 
 	linkPrefix := ""
 	linkSuffix := ""
@@ -2321,6 +2318,12 @@ func (dObj *GdocHtmlObj) cvtDocNamedStyles()(cssStr string, err error) {
 //	cssComment:=""
 	parmap := new(parMap)
 
+	_, normalTxtStyl, err := dObj.getNamedStyl("NORMAL_TEXT")
+	if err != nil {
+		cssStr += fmt.Sprintf("  /* cvtNamedStyle: no NORMAL_TEST Style */\n")
+	}
+	defTxtMap := fillTxtMap(normalTxtStyl)
+
 	for namedTyp, res := range dObj.namStylMap {
 		if namedTyp == "NORMAL_TEXT" { continue}
 		if !res {continue}
@@ -2332,7 +2335,7 @@ func (dObj *GdocHtmlObj) cvtDocNamedStyles()(cssStr string, err error) {
 		}
 
 		fillParMap(parmap, namParStyl)
-		namTxtMap := fillTxtMap(namTxtStyl)
+//		namTxtMap := fillTxtMap(namTxtStyl)
 
 		cssPrefix := ""
 		switch namedTyp {
@@ -2370,7 +2373,7 @@ func (dObj *GdocHtmlObj) cvtDocNamedStyles()(cssStr string, err error) {
 
 		if len(cssPrefix) > 0 {
 			parCss := dObj.cvtParMapCss(parmap)
-			txtCss := cvtTxtMapCss(namTxtMap)
+			txtCss := cvtTxtMapStylCss(defTxtMap, namTxtStyl)
 			cssStr += cssPrefix + parCss + txtCss + "}\n"
 		}
 	}
