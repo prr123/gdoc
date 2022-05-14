@@ -154,7 +154,7 @@ type parMap struct {
 	shading string
 	spaceTop float64
 	spaceBelow float64
-	spaceMode string
+	spaceMode bool
 	tabs []*tabStop
 	pad [4]float64
 	margin [4]float64
@@ -305,83 +305,289 @@ func printTxtMap(txtMap *textMap) {
 	return
 }
 
-func fillTxtMap(txtMap *textMap, txtStyl *docs.TextStyle)(alter bool, err error) {
-//fmt.Println("alter pos1: ", alter)
-//fmt.Printf("txtmap: %s\n txtStyl: %s\n",txtMap.baseOffset, txtStyl.BaselineOffset)
-// fmt.Println("alter pos2: ", alter)
+func fillTxtMap (txtStyl *docs.TextStyle)(txtMapRef *textMap) {
+    var txtMap textMap
 
-	alter = false
-	if txtStyl == nil {
-		return alter, fmt.Errorf("decode txtstyle: -- no Style")
-	}
+    if txtStyl == nil { return nil}
 
-	if txtStyl.BaselineOffset != txtMap.baseOffset {
-		if len(txtStyl.BaselineOffset) > 0 {
-			txtMap.baseOffset = txtStyl.BaselineOffset
-			alter = true
-		}
-	}
+    txtMap.baseOffset = "NONE"
+    if len(txtStyl.BaselineOffset) >0 {
+        if txtStyl.BaselineOffset != "BASELINE_OFFSET_UNSPECIFIED" {
+            txtMap.baseOffset = txtStyl.BaselineOffset
+        }
+    }
 
-	if txtStyl.Bold != txtMap.bold {
-		txtMap.bold = txtStyl.Bold
-		alter = true
-	}
+    txtMap.fontWeight = 400
+    if txtStyl.Bold {
+        txtMap.fontWeight = 800
+    }
 
-	if txtStyl.Italic != txtMap.italic {
-		txtMap.italic = txtStyl.Italic
-		alter = true
-	}
+    txtStyl.Italic = false
+    if txtStyl.Italic {
+        txtMap.italic = txtStyl.Italic
+    }
 
-	if txtStyl.Underline != txtMap.underline {
- 		txtMap.underline = txtStyl.Underline
-		alter = true
-	}
+    txtStyl.Underline = false
+    if txtStyl.Underline {
+        txtMap.underline = txtStyl.Underline
+    }
 
-	if txtStyl.Strikethrough != txtMap.strike {
-		txtMap.strike = txtStyl.Strikethrough
-		alter = true
-	}
+    txtMap.strike = false
+    if txtStyl.Strikethrough {
+        txtMap.strike = txtStyl.Strikethrough
+    }
 
-	if txtStyl.WeightedFontFamily != nil {
-		if txtStyl.WeightedFontFamily.FontFamily != txtMap.fontType {
-			txtMap.fontType = txtStyl.WeightedFontFamily.FontFamily
-			alter = true
-		}
-		if txtStyl.WeightedFontFamily.Weight != txtMap.fontWeight {
-			txtMap.fontWeight = txtStyl.WeightedFontFamily.Weight
-			alter = true
-		}
-	}
+    txtMap.fontType = "Calibri"
+    if txtStyl.WeightedFontFamily != nil {
+        if txtStyl.WeightedFontFamily.FontFamily != txtMap.fontType {
+            txtMap.fontType = txtStyl.WeightedFontFamily.FontFamily
+        }
+        if txtStyl.WeightedFontFamily.Weight > 0 {
+            if txtStyl.WeightedFontFamily.Weight != txtMap.fontWeight {
+                txtMap.fontWeight = txtStyl.WeightedFontFamily.Weight
+            }
+        }
+    }
 
-	if txtStyl.FontSize != nil {
-		if txtStyl.FontSize.Magnitude != txtMap.fontSize {
-			txtMap.fontSize = txtStyl.FontSize.Magnitude
-			alter = true
-		}
-	}
+    txtMap.fontSize = 0.0
+    if txtStyl.FontSize != nil {
+        if txtStyl.FontSize.Magnitude >0 {
+            txtMap.fontSize = txtStyl.FontSize.Magnitude
+        }
+    }
 
-	if txtStyl.ForegroundColor != nil {
-		if txtStyl.ForegroundColor.Color != nil {
-			color := util.GetColor(txtStyl.ForegroundColor.Color)
-			if color != txtMap.txtColor {
-				txtMap.txtColor = color
-				alter = true
-			}
-		}
-	}
+    txtMap.txtColor = "rgb(0,0,0)"
+    if txtStyl.ForegroundColor != nil {
+        if txtStyl.ForegroundColor.Color != nil {
+            color := util.GetColor(txtStyl.ForegroundColor.Color)
+            if color != txtMap.txtColor {
+                txtMap.txtColor = color
+            }
+        }
+    }
 
-	if txtStyl.BackgroundColor != nil {
-		if txtStyl.BackgroundColor.Color != nil {
-			color := util.GetColor(txtStyl.BackgroundColor.Color)
-			if color != txtMap.bckColor {
-				txtMap.bckColor = color
-				alter = true
-			}
-		}
-	}
+    txtMap.bckColor = ""
+    if txtStyl.BackgroundColor != nil {
+        if txtStyl.BackgroundColor.Color != nil {
+            color := util.GetColor(txtStyl.BackgroundColor.Color)
+            if color != txtMap.bckColor {
+                txtMap.bckColor = color
+            }
+        }
+    }
+    return &txtMap
+}
 
 
-	return alter, nil
+func cvtTxtMapCss(txtMap *textMap)(cssStr string) {
+
+    cssStr =""
+    if len(txtMap.baseOffset) > 0 {
+        switch txtMap.baseOffset {
+            case "SUPERSCRIPT":
+                cssStr += "  vertical-align: sub;\n"
+            case "SUBSCRIPT":
+                cssStr += "  vertical-align: sup;\n"
+            case "NONE":
+                cssStr += "  vertical-align: baseline;\n"
+            default:
+            //error
+                cssStr += fmt.Sprintf("/* Baseline Offset unknown: %s */\n", txtMap.baseOffset)
+        }
+    }
+
+    if txtMap.italic {
+        cssStr += "  font-style: italic;\n"
+    } else {
+        cssStr += "  font-style: normal;\n"
+    }
+
+    textprop := ""
+    switch {
+    case txtMap.underline && txtMap.strike:
+        textprop = "underline line-through"
+    case txtMap.underline && !txtMap.strike:
+        textprop = "underline"
+    case !txtMap.underline && txtMap.strike:
+        textprop = "line-through"
+    case !txtMap.underline && !txtMap.strike:
+        textprop = "none"
+    }
+    cssStr += fmt.Sprintf("  text-decoration: %s;\n", textprop)
+
+    if len(txtMap.fontType) >0 { cssStr += fmt.Sprintf("  font-family: %s;\n", txtMap.fontType)}
+    if txtMap.fontWeight > 0 {cssStr += fmt.Sprintf("  font-weight: %d;\n", txtMap.fontWeight)}
+    if txtMap.fontSize >0 {cssStr += fmt.Sprintf("  font-size: %.2fpt;\n", txtMap.fontSize)}
+    if len(txtMap.txtColor) >0 {cssStr += fmt.Sprintf("  color: %s;\n", txtMap.txtColor)}
+    if len(txtMap.bckColor) >0 {cssStr += fmt.Sprintf("  background-color: %s;\n", txtMap.bckColor)}
+
+    return cssStr
+}
+
+func cvtTxtMapStylCss (txtMap *textMap, txtStyl *docs.TextStyle)(cssStr string) {
+
+    if (len(txtStyl.BaselineOffset) > 0) && (txtStyl.BaselineOffset != "BASELINE_OFFSET_UNSPECIFIED") {
+        if txtStyl.BaselineOffset != txtMap.baseOffset {
+            txtMap.baseOffset = txtStyl.BaselineOffset
+            switch txtMap.baseOffset {
+            case "SUPERSCRIPT":
+                cssStr += "  vertical-align: sub;\n"
+            case "SUBSCRIPT":
+                cssStr += " vertical-align: sup;\n"
+            case "NONE":
+                cssStr += " vertical-align: baseline;\n"
+            default:
+            //error
+                cssStr += fmt.Sprintf("/* Baseline Offset unknown: %s */\n", txtMap.baseOffset)
+            }
+        }
+    }
+
+    switch {
+    case txtStyl.Bold && (txtMap.fontWeight < 700):
+        txtMap.fontWeight = 800
+        cssStr += fmt.Sprintf("  font-weight: %d;\n", txtMap.fontWeight)
+    case !txtStyl.Bold && (txtMap.fontWeight > 500):
+        txtMap.fontWeight = 400
+        cssStr += fmt.Sprintf("  font-weight: %d;\n", txtMap.fontWeight)
+    default:
+
+    }
+
+    if txtStyl.Italic != txtMap.italic {
+        txtMap.italic = txtStyl.Italic
+        if txtMap.italic {
+            cssStr += "  font-style: italic;\n"
+        } else {
+            cssStr += "  font-style: normal;\n"
+        }
+    }
+
+    txtprop := ""
+
+    if txtStyl.Underline != txtMap.underline {
+        txtMap.underline = txtStyl.Underline
+        if txtMap.underline {
+            txtprop = "underline"
+        } else {
+            txtprop = "none"
+        }
+    }
+//  if txtMap.underline { cssStr += "  text-decoration: underline;\n"}
+
+    if txtStyl.Strikethrough != txtMap.strike {
+        txtMap.strike = txtStyl.Strikethrough
+        if txtMap.strike {
+            if txtprop == "none" {
+                txtprop = "line-through"
+            } else {
+                txtprop += " line-through"
+            }
+        }
+    }
+
+    if len(txtprop) > 0 {cssStr += fmt.Sprintf("  text-decoration: %s;\n", txtprop)}
+
+    if txtStyl.WeightedFontFamily != nil {
+        if txtStyl.WeightedFontFamily.FontFamily != txtMap.fontType {
+            txtMap.fontType = txtStyl.WeightedFontFamily.FontFamily
+            cssStr += fmt.Sprintf("  font-family: %s;\n", txtMap.fontType)
+        }
+/*
+        if txtStyl.WeightedFontFamily.Weight != txtMap.fontWeight {
+            txtMap.fontWeight = txtStyl.WeightedFontFamily.Weight
+            alter = true
+        }
+*/
+    }
+
+
+    if txtStyl.FontSize != nil {
+        if txtStyl.FontSize.Magnitude != txtMap.fontSize {
+            txtMap.fontSize = txtStyl.FontSize.Magnitude
+            cssStr += fmt.Sprintf("  font-size: %.2fpt;\n", txtMap.fontSize)
+        }
+    }
+
+    if txtStyl.ForegroundColor != nil {
+        if txtStyl.ForegroundColor.Color != nil {
+            color := util.GetColor(txtStyl.ForegroundColor.Color)
+            if color != txtMap.txtColor {
+                txtMap.txtColor = color
+                cssStr += fmt.Sprintf("  color: %s;\n", txtMap.txtColor)
+            }
+        }
+    }
+
+    if txtStyl.BackgroundColor != nil {
+        if txtStyl.BackgroundColor.Color != nil {
+            color := util.GetColor(txtStyl.BackgroundColor.Color)
+            if color != txtMap.bckColor {
+                txtMap.bckColor = color
+                cssStr += fmt.Sprintf("  background-color: %s;\n", txtMap.bckColor)
+            }
+        }
+    }
+
+    return cssStr
+}
+
+func cvtTxtStylCss (txtStyl *docs.TextStyle)(cssStr string) {
+    var tcssStr string
+
+    if len(txtStyl.BaselineOffset) > 0 {
+        valStr := "vertical-align: "
+        switch txtStyl.BaselineOffset {
+            case "SUPERSCRIPT":
+                valStr += "sub"
+            case "SUBSCRIPT":
+                valStr += "sup"
+            case "NONE":
+                valStr += "baseline"
+            default:
+                valStr = fmt.Sprintf("/* Baseline Offset unknown: %s */\n", txtStyl.BaselineOffset)
+        }
+        tcssStr = valStr + ";\n"
+    }
+
+    if txtStyl.Bold {
+        tcssStr += "  font-weight: 800;\n"
+    } else {
+        tcssStr += "  font-weight: 400;\n"
+    }
+
+    if txtStyl.Italic { tcssStr += "  font-style: italic;\n"}
+    if txtStyl.Underline { tcssStr += "  text-decoration: underline;\n"}
+    if txtStyl.Strikethrough { tcssStr += "  text-decoration: line-through;\n"}
+
+    if txtStyl.WeightedFontFamily != nil {
+        font := txtStyl.WeightedFontFamily.FontFamily
+        tcssStr += fmt.Sprintf("  font-family: %s;\n", font)
+    }
+
+    if txtStyl.FontSize != nil {
+        mag := txtStyl.FontSize.Magnitude
+        tcssStr += fmt.Sprintf("  font-size: %.2fpt;\n", mag)
+    }
+
+    if txtStyl.ForegroundColor != nil {
+        if txtStyl.ForegroundColor.Color != nil {
+            //0 to 1
+            tcssStr += "  color: "
+            tcssStr += util.GetColor(txtStyl.ForegroundColor.Color)
+        }
+    }
+    if txtStyl.BackgroundColor != nil {
+        if txtStyl.BackgroundColor.Color != nil {
+            tcssStr += "  background-color: "
+            tcssStr += util.GetColor(txtStyl.BackgroundColor.Color)
+        }
+    }
+
+    if len(tcssStr) > 0 {
+        cssStr = tcssStr
+    }
+    return cssStr
 }
 
 func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
@@ -468,10 +674,20 @@ func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 	fmt.Printf("space below: %.1fpt\n", parmap.spaceBelow)
 
 	fmt.Printf("*** space mode ***\n")
-	if parStyl.SpacingMode != parmap.spaceMode {
-		fmt.Printf("spacing mode: %s %s \n", parmap.spaceMode, parStyl.SpacingMode)
-		parmap.spaceMode = parStyl.SpacingMode
-		alter = true
+
+    spaceMode := true
+    switch parStyl.SpacingMode {
+    case "NEVER_COLLAPSE":
+        spaceMode = true
+    case "COLLAPSE_LISTS":
+        spaceMode = false
+    default:
+        spaceMode = true
+    }
+
+    if spaceMode != parmap.spaceMode {
+       fmt.Printf("spacing mode: %t %t \n", parmap.spaceMode, spaceMode)
+        parmap.spaceMode = spaceMode
 	}
 	fmt.Printf("spacing mode: %s\n", parmap.spaceMode)
 
@@ -667,376 +883,669 @@ func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 	return
 }
 
+func fillParMap(parStyl *docs.ParagraphStyle)(parMapRef *parMap) {
+// function that converts a parameter style object into a parMap Object
+    var parmap parMap
 
-func fillParMap(parmap *parMap, parStyl *docs.ParagraphStyle)(alter bool, err error) {
+    if parStyl == nil { return nil}
 
-	alter = false
-	if parStyl == nil {
-		return alter, fmt.Errorf("no parStyl!")
-	}
+    parmap.halign = "START"
+    if len(parStyl.Alignment) > 0 {
+        parmap.halign = parStyl.Alignment
+    }
 
-	if parStyl.Alignment != parmap.halign {
-//fmt.Printf("align: %s : %s \n", parmap.halign,parStyl.Alignment)
-		if len(parStyl.Alignment) > 0 {
-			if !(len(parmap.halign)>0) {alter =true}
-			parmap.halign = parStyl.Alignment
-		}
-	}
-	parmap.direct = true
-
-	if (parStyl.IndentStart != nil) {
-		if parStyl.IndentStart.Magnitude != parmap.indStart {
-			parmap.indStart = parStyl.IndentStart.Magnitude
-			alter = true
-		}
-	}
-	if (parStyl.IndentEnd != nil) {
-		if parStyl.IndentEnd.Magnitude != parmap.indEnd {
-			parmap.indEnd = parStyl.IndentEnd.Magnitude
-			alter = true
-		}
-	}
-	if (parStyl.IndentFirstLine != nil) {
-		if parStyl.IndentFirstLine.Magnitude != parmap.indFlin {
-			parmap.indFlin = parStyl.IndentFirstLine.Magnitude
-			alter = true
-		}
-	}
-
-	if parStyl.LineSpacing/100.0 != parmap.linSpac {
-// fmt.Printf("line spacing: %.2f %.2f\n", parmap.linSpac, parStyl.LineSpacing/100.0)
-		if parStyl.LineSpacing > 1.0 {
-			parmap.linSpac = parStyl.LineSpacing/100.0
-			alter = true
-		}
-	}
-
-	// may have to introduce an exemption for title
-	if !parmap.keepLines {
-		if parStyl.KeepLinesTogether != parmap.keepLines {
-			parmap.keepLines = parStyl.KeepLinesTogether
-			alter = true
-		}
-	}
-
-	if !parmap.keepNext {
-		if parStyl.KeepWithNext != parmap.keepNext {
-			parmap.keepNext = parStyl.KeepWithNext
-			alter =true
-		}
-	}
-
-	if (parStyl.SpaceAbove != nil) {
-		if parStyl.SpaceAbove.Magnitude != parmap.spaceTop {
-			parmap.spaceTop = parStyl.SpaceAbove.Magnitude
-			alter = true
-		}
-	}
-	if (parStyl.SpaceBelow != nil) {
-		if parStyl.SpaceBelow.Magnitude != parmap.spaceBelow {
-			parmap.spaceBelow = parStyl.SpaceBelow.Magnitude
-			alter = true
-		}
-	}
+    parmap.direct = true
 
 
-	if parStyl.SpacingMode != parmap.spaceMode {
-		if (len(parStyl.SpacingMode) > 0) {
-			parmap.spaceMode = parStyl.SpacingMode
-			alter = true
-		}
-	}
+    parmap.indStart = 0
+    if (parStyl.IndentStart != nil) {
+        if parStyl.IndentStart.Magnitude != parmap.indStart {
+            parmap.indStart = parStyl.IndentStart.Magnitude
+        }
+    }
 
-//fmt.Printf("fillParMap 1: %t\n", alter)
-//fmt.Printf("fillParMap 2: %t\n", alter)
+    parmap.indEnd = -1
+    if (parStyl.IndentEnd != nil) {
+        if parStyl.IndentEnd.Magnitude != parmap.indEnd {
+            parmap.indEnd = parStyl.IndentEnd.Magnitude
+        }
+    }
 
-	//tabs to do
-//	parmap.hasBorders = true
+    parmap.indFlin = 0
+    if (parStyl.IndentFirstLine != nil) {
+        if parStyl.IndentFirstLine.Magnitude != parmap.indFlin {
+            parmap.indFlin = parStyl.IndentFirstLine.Magnitude
+        }
+    }
 
-	// check for zero width borders
-	bb := true
-	if (parStyl.BorderBetween != nil) {
-		if parStyl.BorderBetween.Width != nil {
-			if parStyl.BorderBetween.Width.Magnitude > 0.1 {
-				bb = false
-			}
-		}
-	}
+    parmap.linSpac = 1.0
+    if parStyl.LineSpacing/100.0 != parmap.linSpac {
+        if parStyl.LineSpacing > 1.0 {
+            parmap.linSpac = parStyl.LineSpacing/100.0
+        }
+    }
 
-	if (parStyl.BorderTop != nil) {
-		if parStyl.BorderTop.Width != nil {
-			if parStyl.BorderTop.Width.Magnitude > 0.1 {
-				bb = false
-			}
-		}
-	}
+    // may have to introduce an exemption for title
+    parmap.keepLines = false
+    if parStyl.KeepLinesTogether != parmap.keepLines {
+        parmap.keepLines = parStyl.KeepLinesTogether
+    }
 
-	if parStyl.BorderRight != nil {
-		if parStyl.BorderRight.Width != nil {
-			if parStyl.BorderRight.Width.Magnitude > 0.1 {
-				bb = false
-			}
-		}
-	}
+    parmap.keepNext = false
+    if parStyl.KeepWithNext != parmap.keepNext {
+        parmap.keepNext = parStyl.KeepWithNext
+    }
 
-	if parStyl.BorderBottom != nil {
-		if parStyl.BorderBottom.Width != nil {
-			if parStyl.BorderBottom.Width.Magnitude > 0.1 {
-				bb = false
-			}
-		}
-	}
+    parmap.spaceTop = 0
+    if (parStyl.SpaceAbove != nil) {
+        if parStyl.SpaceAbove.Magnitude != parmap.spaceTop {
+            parmap.spaceTop = parStyl.SpaceAbove.Magnitude
+        }
+    }
 
-
-	if parStyl.BorderLeft != nil {
-		if parStyl.BorderLeft.Width != nil {
-			if parStyl.BorderLeft.Width.Magnitude > 0.1 {
-				bb = false
-			}
-		}
-	}
-//fmt.Printf("no border return: %t\n", alter)
-//fmt.Printf("fillParMap 3: %t\n", alter)
-
-	parmap.hasBorders = true
-	if !bb {
-		parmap.hasBorders = false
-	}
-
-	if !parmap.hasBorders {
-		return alter, nil
-	}
-
-	if parStyl.BorderBetween != nil {
-		if parStyl.BorderBetween.Width != nil {
-			if parStyl.BorderBetween.Width.Magnitude != parmap.bordBet.width {
-				parmap.bordBet.width = parStyl.BorderBetween.Width.Magnitude
-				alter = true
-			}
-		}
-		if parStyl.BorderBetween.Padding != nil {
-			if parStyl.BorderBetween.Padding.Magnitude != parmap.bordBet.pad {
-				parmap.bordBet.pad = parStyl.BorderBetween.Padding.Magnitude
-				alter = true
-			}
-		}
-		if parStyl.BorderBetween.Color != nil {
-			if parStyl.BorderBetween.Color.Color != nil {
-				color := util.GetColor(parStyl.BorderBetween.Color.Color)
-				if color != parmap.bordBet.color {
-					parmap.bordBet.color = color
-					alter = true
-				}
-			}
-		}
-		if parStyl.BorderBetween.DashStyle != parmap.bordBet.dash {parmap.bordBet.dash = parStyl.BorderBetween.DashStyle; alter = true;}
-	}
-
-	if parStyl.BorderTop != nil {
-		if parStyl.BorderTop.Width != nil {
-			if parStyl.BorderTop.Width.Magnitude != parmap.bordTop.width {
-				parmap.bordTop.width = parStyl.BorderTop.Width.Magnitude
-				alter = true
-			}
-		}
-		if parStyl.BorderTop.Padding != nil {
-			if parStyl.BorderTop.Padding.Magnitude != parmap.bordTop.pad {
-				parmap.bordTop.pad = parStyl.BorderTop.Padding.Magnitude
-				alter = true
-			}
-		}
-		if parStyl.BorderTop.Color != nil {
-			if parStyl.BorderTop.Color.Color != nil {
-				color := util.GetColor(parStyl.BorderTop.Color.Color)
-				if color != parmap.bordTop.color {
-					parmap.bordTop.color = color
-					alter = true
-				}
-			}
-		}
-		if parStyl.BorderTop.DashStyle != parmap.bordTop.dash {parmap.bordTop.dash = parStyl.BorderTop.DashStyle; alter = true;}
-	}
-
-	if parStyl.BorderRight != nil {
-		if parStyl.BorderRight.Width != nil {
-			if parStyl.BorderRight.Width.Magnitude != parmap.bordRight.width {
-				parmap.bordRight.width = parStyl.BorderRight.Width.Magnitude
-				alter = true
-			}
-		}
-		if parStyl.BorderRight.Padding != nil {
-			if parStyl.BorderRight.Padding.Magnitude != parmap.bordRight.pad {
-				parmap.bordRight.pad = parStyl.BorderRight.Padding.Magnitude
-				alter = true
-			}
-		}
-		if parStyl.BorderRight.Color != nil {
-			if parStyl.BorderRight.Color.Color != nil {
-				color := util.GetColor(parStyl.BorderRight.Color.Color)
-				if color != parmap.bordRight.color {
-					parmap.bordRight.color = color
-					alter = true
-				}
-			}
-		}
-		if parStyl.BorderRight.DashStyle != parmap.bordRight.dash {
-			parmap.bordRight.dash = parStyl.BorderRight.DashStyle
-			alter = true
-		}
-	}
-
-	if parStyl.BorderBottom != nil {
-		if parStyl.BorderBottom.Width != nil {
-			if parStyl.BorderBottom.Width.Magnitude != parmap.bordBot.width {
-				parmap.bordBot.width = parStyl.BorderBottom.Width.Magnitude
-				alter = true
-			}
-		}
-		if parStyl.BorderBottom.Padding != nil {
-			if parStyl.BorderBottom.Padding.Magnitude != parmap.bordBot.pad {
-				parmap.bordBot.pad = parStyl.BorderBottom.Padding.Magnitude
-				alter = true
-			}
-		}
-		if parStyl.BorderBottom.Color != nil {
-			if parStyl.BorderBottom.Color.Color != nil {
-				color := util.GetColor(parStyl.BorderBottom.Color.Color)
-				if color != parmap.bordBot.color {
-					parmap.bordBot.color = color
-					alter = true
-				}
-			}
-		}
-		if parStyl.BorderBottom.DashStyle != parmap.bordBot.dash {parmap.bordBot.dash = parStyl.BorderBottom.DashStyle; alter = true;}
-	}
-
-	if parStyl.BorderLeft != nil {
-		if parStyl.BorderLeft.Width != nil {
-			if parStyl.BorderLeft.Width.Magnitude != parmap.bordLeft.width {
-				parmap.bordLeft.width = parStyl.BorderLeft.Width.Magnitude
-				alter = true
-			}
-		}
-		if parStyl.BorderLeft.Padding != nil {
-			if parStyl.BorderLeft.Padding.Magnitude != parmap.bordLeft.pad {
-				parmap.bordLeft.pad = parStyl.BorderLeft.Padding.Magnitude
-				alter = true
-			}
-		}
-		if parStyl.BorderLeft.Color != nil {
-			if parStyl.BorderLeft.Color.Color != nil {
-				color := util.GetColor(parStyl.BorderLeft.Color.Color)
-				if color != parmap.bordLeft.color {
-					parmap.bordLeft.color = color
-					alter = true
-				}
-			}
-		}
-		if parStyl.BorderLeft.DashStyle != parmap.bordLeft.dash {parmap.bordLeft.dash = parStyl.BorderLeft.DashStyle; alter = true;}
-	}
-
-	bb2 := true
-	bb2 = bb2 && (parmap.bordBet.width == 0.0)
-	bb2 = bb2 && (parmap.bordTop.width == 0.0)
-	bb2 = bb2 && (parmap.bordRight.width == 0.0)
-	bb2 = bb2 && (parmap.bordBot.width == 0.0)
-	bb2 = bb2 && (parmap.bordLeft.width == 0.0)
-
-	if bb2 {parmap.hasBorders = false}
+    parmap.spaceBelow = 0
+    if (parStyl.SpaceBelow != nil) {
+        if parStyl.SpaceBelow.Magnitude != parmap.spaceBelow {
+            parmap.spaceBelow = parStyl.SpaceBelow.Magnitude
+        }
+    }
 
 
-	return alter, nil
+    switch parStyl.SpacingMode {
+    case "NEVER_COLLAPSE":
+        parmap.spaceMode = true
+    case "COLLAPSE_LISTS":
+        parmap.spaceMode = false
+    default:
+        parmap.spaceMode = true
+    }
+
+
+   // check for zero width borders
+    bb := true
+    if (parStyl.BorderBetween != nil) {
+        if parStyl.BorderBetween.Width != nil {
+            if parStyl.BorderBetween.Width.Magnitude > 0.1 {
+                bb = false
+            }
+        }
+    }
+
+    if (parStyl.BorderTop != nil) {
+        if parStyl.BorderTop.Width != nil {
+            if parStyl.BorderTop.Width.Magnitude > 0.1 {
+                bb = false
+            }
+        }
+    }
+
+    if parStyl.BorderRight != nil {
+        if parStyl.BorderRight.Width != nil {
+            if parStyl.BorderRight.Width.Magnitude > 0.1 {
+                bb = false
+            }
+        }
+    }
+
+    if parStyl.BorderBottom != nil {
+        if parStyl.BorderBottom.Width != nil {
+            if parStyl.BorderBottom.Width.Magnitude > 0.1 {
+                bb = false
+            }
+        }
+    }
+
+
+    if parStyl.BorderLeft != nil {
+        if parStyl.BorderLeft.Width != nil {
+            if parStyl.BorderLeft.Width.Magnitude > 0.1 {
+                bb = false
+            }
+        }
+    }
+
+    parmap.hasBorders = true
+    if !bb {
+        parmap.hasBorders = false
+    }
+
+    if !parmap.hasBorders {
+        return &parmap
+    }
+
+//  bordDisp := false
+    parmap.bordBet.width = 0
+    if parStyl.BorderBetween != nil {
+        if parStyl.BorderBetween.Width != nil {
+            if parStyl.BorderBetween.Width.Magnitude > 0.0 {
+//              bordDisp = true
+                if parStyl.BorderBetween.Width.Magnitude != parmap.bordBet.width {
+                    parmap.bordBet.width = parStyl.BorderBetween.Width.Magnitude
+                }
+            }
+        }
+        if parStyl.BorderBetween.Padding != nil {
+            if parStyl.BorderBetween.Padding.Magnitude != parmap.bordBet.pad {
+                parmap.bordBet.pad = parStyl.BorderBetween.Padding.Magnitude
+            }
+        }
+        if parStyl.BorderBetween.Color != nil {
+            if parStyl.BorderBetween.Color.Color != nil {
+                color := util.GetColor(parStyl.BorderBetween.Color.Color)
+                if color != parmap.bordBet.color {
+                    parmap.bordBet.color = color
+                }
+            }
+        }
+        parmap.bordBet.dash = "SOLID"
+        if parStyl.BorderBetween.DashStyle != parmap.bordBet.dash {parmap.bordBet.dash = parStyl.BorderBetween.DashStyle;}
+    }
+
+//  bordDisp = false
+    parmap.bordTop.width = 0
+    if parStyl.BorderTop != nil {
+        if parStyl.BorderTop.Width != nil {
+            if parStyl.BorderTop.Width.Magnitude > 0.0 {
+//              bordDisp = true
+                if parStyl.BorderTop.Width.Magnitude != parmap.bordTop.width {
+                    parmap.bordTop.width = parStyl.BorderTop.Width.Magnitude
+                }
+            }
+        }
+        if parStyl.BorderTop.Padding != nil {
+            if parStyl.BorderTop.Padding.Magnitude != parmap.bordTop.pad {
+                parmap.bordTop.pad = parStyl.BorderTop.Padding.Magnitude
+            }
+        }
+        if parStyl.BorderTop.Color != nil {
+            if parStyl.BorderTop.Color.Color != nil {
+                color := util.GetColor(parStyl.BorderTop.Color.Color)
+                if color != parmap.bordTop.color {
+                    parmap.bordTop.color = color
+                }
+            }
+        }
+        parmap.bordTop.dash = "SOLID"
+        if parStyl.BorderTop.DashStyle != parmap.bordTop.dash {parmap.bordTop.dash = parStyl.BorderTop.DashStyle;}
+    }
+
+//  bordDisp = false
+    parmap.bordRight.width = 0
+    if parStyl.BorderRight != nil {
+        if parStyl.BorderRight.Width != nil {
+            if parStyl.BorderRight.Width.Magnitude > 0.0 {
+//              bordDisp = true
+                if parStyl.BorderRight.Width.Magnitude != parmap.bordRight.width {
+                    parmap.bordRight.width = parStyl.BorderRight.Width.Magnitude
+                }
+            }
+        }
+        if parStyl.BorderRight.Padding != nil {
+            if parStyl.BorderRight.Padding.Magnitude != parmap.bordRight.pad {
+                parmap.bordRight.pad = parStyl.BorderRight.Padding.Magnitude
+            }
+        }
+        if parStyl.BorderRight.Color != nil {
+            if parStyl.BorderRight.Color.Color != nil {
+                color := util.GetColor(parStyl.BorderRight.Color.Color)
+                if color != parmap.bordRight.color {
+                    parmap.bordRight.color = color
+                }
+            }
+        }
+        parmap.bordRight.dash = "SOLID"
+        if parStyl.BorderRight.DashStyle != parmap.bordRight.dash {
+            parmap.bordRight.dash = parStyl.BorderRight.DashStyle
+        }
+    }
+
+//  bordDisp = false
+    parmap.bordBot.width = 0
+    if parStyl.BorderBottom != nil {
+        if parStyl.BorderBottom.Width != nil {
+            if parStyl.BorderBottom.Width.Magnitude > 0.0 {
+//              bordDisp = true
+                if parStyl.BorderBottom.Width.Magnitude != parmap.bordBot.width {
+                    parmap.bordBot.width = parStyl.BorderBottom.Width.Magnitude
+                }
+            }
+        }
+        if parStyl.BorderBottom.Padding != nil {
+            if parStyl.BorderBottom.Padding.Magnitude != parmap.bordBot.pad {
+                parmap.bordBot.pad = parStyl.BorderBottom.Padding.Magnitude
+            }
+        }
+        if parStyl.BorderBottom.Color != nil {
+            if parStyl.BorderBottom.Color.Color != nil {
+                color := util.GetColor(parStyl.BorderBottom.Color.Color)
+                if color != parmap.bordBot.color {
+                    parmap.bordBot.color = color
+                }
+            }
+        }
+        parmap.bordBot.dash = "SOLID"
+        if parStyl.BorderBottom.DashStyle != parmap.bordBot.dash {parmap.bordBot.dash = parStyl.BorderBottom.DashStyle;}
+    }
+
+//  bordDisp = false
+    parmap.bordLeft.width = 0
+    if parStyl.BorderLeft != nil {
+        if parStyl.BorderLeft.Width != nil {
+            if parStyl.BorderLeft.Width.Magnitude > 0.0 {
+//              bordDisp = true
+                if parStyl.BorderLeft.Width.Magnitude != parmap.bordLeft.width {
+                    parmap.bordLeft.width = parStyl.BorderLeft.Width.Magnitude
+                }
+            }
+        }
+        if parStyl.BorderLeft.Padding != nil {
+            if parStyl.BorderLeft.Padding.Magnitude != parmap.bordLeft.pad {
+                parmap.bordLeft.pad = parStyl.BorderLeft.Padding.Magnitude
+            }
+        }
+        if parStyl.BorderLeft.Color != nil {
+            if parStyl.BorderLeft.Color.Color != nil {
+                color := util.GetColor(parStyl.BorderLeft.Color.Color)
+                if color != parmap.bordLeft.color {
+                    parmap.bordLeft.color = color
+                }
+            }
+        }
+        parmap.bordLeft.dash = "SOLID"
+        if parStyl.BorderLeft.DashStyle != parmap.bordLeft.dash {parmap.bordLeft.dash = parStyl.BorderLeft.DashStyle;}
+    }
+
+    bb2 := true
+    bb2 = bb2 && (parmap.bordBet.width < 0.01)
+    bb2 = bb2 && (parmap.bordTop.width < 0.01)
+    bb2 = bb2 && (parmap.bordRight.width < 0.01)
+    bb2 = bb2 && (parmap.bordBot.width < 0.01)
+    bb2 = bb2 && (parmap.bordLeft.width < 0.01)
+
+    if bb2 {parmap.hasBorders = false}
+
+    return &parmap
 }
 
-func cvtTxtMapCss(txtMap *textMap)(cssStr string) {
+func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *util.OptObj)(cssStr string) {
+// function that creates the css attributes of a paragraph
+// the function compares the values of the parMap and parStyl
+    if parmap == nil {return "/* no parmap */"}
+    if parStyl == nil { return "/* no parStyl */"}
 
-	cssStr =""
-	if len(txtMap.baseOffset) > 0 {
-		switch txtMap.baseOffset {
-			case "SUPERSCRIPT":
-				cssStr += "  vertical-align: sub;\n"
-			case "SUBSCRIPT":
-				cssStr += "	vertical-align: sup;\n"
-			case "NONE":
+    cssStr =""
 
-			default:
-			//error
-				cssStr += fmt.Sprintf("/* Baseline Offset unknown: %s */\n", txtMap.baseOffset)
-		}
-	}
+    if (len(parStyl.Alignment) > 0) &&  (parmap.halign != parStyl.Alignment) {
+        parmap.halign = parStyl.Alignment
+        switch parmap.halign {
+            case "START":
+                cssStr += "  text-align: left;\n"
+            case "CENTER":
+                cssStr += "  text-align: center;\n"
+            case "END":
+                cssStr += "  text-align: right;\n"
+            case "JUSTIFIED":
+                cssStr += "  text-align: justify;\n"
+            default:
+                cssStr += fmt.Sprintf("/* unrecognized Alignment %s */\n", parmap.halign)
+        }
 
-	if txtMap.italic { cssStr += "  font-style: italic;\n"}
-	if txtMap.underline { cssStr += "  text-decoration: underline;\n"}
-	if txtMap.strike { cssStr += "  text-decoration: line-through;\n"}
+    }
 
-	if len(txtMap.fontType) >0 { cssStr += fmt.Sprintf("  font-family: %s;\n", txtMap.fontType)}
-	if txtMap.bold {
-		cssStr += "  font-weight: 800;\n"
-	} else {
-		if txtMap.fontWeight > 0 {cssStr += fmt.Sprintf("  font-weight: %d;\n", txtMap.fontWeight)}
-	}
-	if txtMap.fontSize >0 {cssStr += fmt.Sprintf("  font-size: %.2fpt;\n", txtMap.fontSize)}
-	if len(txtMap.txtColor) >0 {cssStr += fmt.Sprintf("  color: %s;\n", txtMap.txtColor)}
-	if len(txtMap.bckColor) >0 {cssStr += fmt.Sprintf("  background-color: %s;\n", txtMap.bckColor)}
+    // test direction skip for now
+    parmap.direct = true
 
-	return cssStr
+    if (parStyl.IndentFirstLine != nil) {
+        if parStyl.IndentFirstLine.Magnitude != parmap.indFlin {
+            parmap.indFlin = parStyl.IndentFirstLine.Magnitude
+            cssStr += fmt.Sprintf("  text-indent: %.1fpt;\n", parmap.indFlin)
+        }
+    }
+
+    parmap.linSpac = 1.0
+    if parStyl.LineSpacing/100.0 != parmap.linSpac {
+        if parStyl.LineSpacing > 1.0 {
+            parmap.linSpac = parStyl.LineSpacing/100.0
+            if opt.DefLinSpacing > 0.0 {
+                cssStr += fmt.Sprintf("  line-height: %.2f;\n", opt.DefLinSpacing*parmap.linSpac)
+            } else {
+                cssStr += fmt.Sprintf("  line-height: %.2f;\n", parmap.linSpac)
+            }
+        }
+    }
+
+    margin := false
+    lmarg := 0.0
+    if (parStyl.IndentStart != nil) {
+        if parStyl.IndentStart.Magnitude != parmap.indStart {
+            parmap.indStart = parStyl.IndentStart.Magnitude
+            lmarg = parmap.indStart
+            margin = true
+        }
+    }
+
+    rmarg := 0.0
+    if (parStyl.IndentEnd != nil) {
+        if parStyl.IndentEnd.Magnitude != parmap.indEnd {
+            parmap.indEnd = parStyl.IndentEnd.Magnitude
+            rmarg = parmap.indEnd
+            margin = true
+        }
+    }
+
+    tmarg := 0.0
+    if (parStyl.SpaceAbove != nil) {
+        if parStyl.SpaceAbove.Magnitude != parmap.spaceTop {
+            parmap.spaceTop = parStyl.SpaceAbove.Magnitude
+            tmarg = parmap.spaceTop
+            margin = true
+        }
+    }
+
+    bmarg := 0.0
+    if (parStyl.SpaceBelow != nil) {
+        if parStyl.SpaceBelow.Magnitude != parmap.spaceBelow {
+            parmap.spaceBelow = parStyl.SpaceBelow.Magnitude
+            bmarg = parmap.spaceBelow
+            margin = true
+        }
+    }
+
+    if margin {cssStr += fmt.Sprintf("  margin: %.0f %.0f %.0f %.0f;\n", tmarg, rmarg, bmarg, lmarg)}
+
+    // may have to introduce an exemption for title
+    parmap.keepLines = false
+    if parStyl.KeepLinesTogether != parmap.keepLines {
+        parmap.keepLines = parStyl.KeepLinesTogether
+    }
+
+    parmap.keepNext = false
+    if parStyl.KeepWithNext != parmap.keepNext {
+        parmap.keepNext = parStyl.KeepWithNext
+    }
+
+    switch parStyl.SpacingMode {
+    case "NEVER_COLLAPSE":
+        parmap.spaceMode = true
+    case "COLLAPSE_LISTS":
+        parmap.spaceMode = false
+    default:
+        parmap.spaceMode = true
+    }
+
+    // check for zero width borders
+    bb := true
+    if (parStyl.BorderBetween != nil) {
+        if parStyl.BorderBetween.Width != nil {
+            if parStyl.BorderBetween.Width.Magnitude > 0.1 {
+                bb = false
+            }
+        }
+    }
+
+    if (parStyl.BorderTop != nil) {
+        if parStyl.BorderTop.Width != nil {
+            if parStyl.BorderTop.Width.Magnitude > 0.1 {
+                bb = false
+            }
+        }
+    }
+
+    if parStyl.BorderRight != nil {
+        if parStyl.BorderRight.Width != nil {
+            if parStyl.BorderRight.Width.Magnitude > 0.1 {
+                bb = false
+            }
+        }
+    }
+
+    if parStyl.BorderBottom != nil {
+        if parStyl.BorderBottom.Width != nil {
+            if parStyl.BorderBottom.Width.Magnitude > 0.1 {
+                bb = false
+            }
+        }
+    }
+
+
+    if parStyl.BorderLeft != nil {
+        if parStyl.BorderLeft.Width != nil {
+            if parStyl.BorderLeft.Width.Magnitude > 0.1 {
+                bb = false
+            }
+        }
+    }
+
+    parmap.hasBorders = true
+    if !bb {
+        parmap.hasBorders = false
+        return cssStr
+    }
+
+	// border between paragraphs
+    bordDisp := false
+    parmap.bordBet.width = 0
+    if parStyl.BorderBetween != nil {
+        if parStyl.BorderBetween.Width != nil {
+            if parStyl.BorderBetween.Width.Magnitude > 0.0 {
+                bordDisp = true
+                if parStyl.BorderBetween.Width.Magnitude != parmap.bordBet.width {
+                    parmap.bordBet.width = parStyl.BorderBetween.Width.Magnitude
+                }
+            }
+        }
+        if parStyl.BorderBetween.Padding != nil {
+            if parStyl.BorderBetween.Padding.Magnitude != parmap.bordBet.pad {
+                parmap.bordBet.pad = parStyl.BorderBetween.Padding.Magnitude
+            }
+        }
+        if parStyl.BorderBetween.Color != nil {
+            if parStyl.BorderBetween.Color.Color != nil {
+                color := util.GetColor(parStyl.BorderBetween.Color.Color)
+                if color != parmap.bordBet.color {
+                    parmap.bordBet.color = color
+                }
+            }
+        }
+        parmap.bordBet.dash = "SOLID"
+        if parStyl.BorderBetween.DashStyle != parmap.bordBet.dash {parmap.bordBet.dash = parStyl.BorderBetween.DashStyle;}
+    }
+
+	// top border
+    parmap.bordTop.width = 0
+    if parStyl.BorderTop != nil {
+        if parStyl.BorderTop.Width != nil {
+            if parStyl.BorderTop.Width.Magnitude > 0.0 {
+                bordDisp = true
+                if parStyl.BorderTop.Width.Magnitude != parmap.bordTop.width {
+                    parmap.bordTop.width = parStyl.BorderTop.Width.Magnitude
+                }
+            }
+        }
+        if parStyl.BorderTop.Padding != nil {
+            if parStyl.BorderTop.Padding.Magnitude != parmap.bordTop.pad {
+                parmap.bordTop.pad = parStyl.BorderTop.Padding.Magnitude
+            }
+        }
+        if parStyl.BorderTop.Color != nil {
+            if parStyl.BorderTop.Color.Color != nil {
+                color := util.GetColor(parStyl.BorderTop.Color.Color)
+                if color != parmap.bordTop.color {
+                    parmap.bordTop.color = color
+                }
+            }
+        }
+        parmap.bordTop.dash = "SOLID"
+        if parStyl.BorderTop.DashStyle != parmap.bordTop.dash {parmap.bordTop.dash = parStyl.BorderTop.DashStyle;}
+    }
+
+	// right border
+    parmap.bordRight.width = 0
+    if parStyl.BorderRight != nil {
+        if parStyl.BorderRight.Width != nil {
+            if parStyl.BorderRight.Width.Magnitude > 0.0 {
+                bordDisp = true
+                if parStyl.BorderRight.Width.Magnitude != parmap.bordRight.width {
+                    parmap.bordRight.width = parStyl.BorderRight.Width.Magnitude
+                }
+            }
+        }
+        if parStyl.BorderRight.Padding != nil {
+            if parStyl.BorderRight.Padding.Magnitude != parmap.bordRight.pad {
+                parmap.bordRight.pad = parStyl.BorderRight.Padding.Magnitude
+            }
+        }
+        if parStyl.BorderRight.Color != nil {
+            if parStyl.BorderRight.Color.Color != nil {
+                color := util.GetColor(parStyl.BorderRight.Color.Color)
+                if color != parmap.bordRight.color {
+                    parmap.bordRight.color = color
+                }
+            }
+        }
+        parmap.bordRight.dash = "SOLID"
+        if parStyl.BorderRight.DashStyle != parmap.bordRight.dash {
+            parmap.bordRight.dash = parStyl.BorderRight.DashStyle
+        }
+    }
+
+    // bottom border
+    parmap.bordBot.width = 0
+    if parStyl.BorderBottom != nil {
+        if parStyl.BorderBottom.Width != nil {
+            if parStyl.BorderBottom.Width.Magnitude > 0.0 {
+                bordDisp = true
+                if parStyl.BorderBottom.Width.Magnitude != parmap.bordBot.width {
+                    parmap.bordBot.width = parStyl.BorderBottom.Width.Magnitude
+                }
+            }
+        }
+        if parStyl.BorderBottom.Padding != nil {
+            if parStyl.BorderBottom.Padding.Magnitude != parmap.bordBot.pad {
+                parmap.bordBot.pad = parStyl.BorderBottom.Padding.Magnitude
+            }
+        }
+        if parStyl.BorderBottom.Color != nil {
+            if parStyl.BorderBottom.Color.Color != nil {
+                color := util.GetColor(parStyl.BorderBottom.Color.Color)
+                if color != parmap.bordBot.color {
+                    parmap.bordBot.color = color
+                }
+            }
+        }
+        parmap.bordBot.dash = "SOLID"
+        if parStyl.BorderBottom.DashStyle != parmap.bordBot.dash {parmap.bordBot.dash = parStyl.BorderBottom.DashStyle;}
+    }
+
+    // left border
+    parmap.bordLeft.width = 0
+    if parStyl.BorderLeft != nil {
+        if parStyl.BorderLeft.Width != nil {
+            if parStyl.BorderLeft.Width.Magnitude > 0.0 {
+                bordDisp = true
+                if parStyl.BorderLeft.Width.Magnitude != parmap.bordLeft.width {
+                    parmap.bordLeft.width = parStyl.BorderLeft.Width.Magnitude
+                }
+            }
+        }
+        if parStyl.BorderLeft.Padding != nil {
+            if parStyl.BorderLeft.Padding.Magnitude != parmap.bordLeft.pad {
+                parmap.bordLeft.pad = parStyl.BorderLeft.Padding.Magnitude
+            }
+        }
+        if parStyl.BorderLeft.Color != nil {
+            if parStyl.BorderLeft.Color.Color != nil {
+                color := util.GetColor(parStyl.BorderLeft.Color.Color)
+                if color != parmap.bordLeft.color {
+                    parmap.bordLeft.color = color
+                }
+            }
+        }
+        parmap.bordLeft.dash = "SOLID"
+        if parStyl.BorderLeft.DashStyle != parmap.bordLeft.dash {parmap.bordLeft.dash = parStyl.BorderLeft.DashStyle;}
+    }
+
+    if !bordDisp {
+        parmap.hasBorders = false
+        return cssStr
+    }
+
+    cssStr += fmt.Sprintf("  padding: %.1fpt %.1fpt %.1fpt %.1fpt;\n", parmap.bordTop.pad, parmap.bordRight.pad, parmap.bordBot.pad, parmap.bordLeft.pad)
+    cssStr += fmt.Sprintf("  border-top: %.1fpt %s %s;\n", parmap.bordTop.width, util.GetDash(parmap.bordTop.dash), parmap.bordTop.color)
+    cssStr += fmt.Sprintf("  border-right: %.1fpt %s %s;\n", parmap.bordRight.width, util.GetDash(parmap.bordRight.dash), parmap.bordRight.color)
+    cssStr += fmt.Sprintf("  border-bottom: %.1fpt %s %s;\n", parmap.bordBot.width, util.GetDash(parmap.bordBot.dash), parmap.bordBot.color)
+    cssStr += fmt.Sprintf("  border-left: %.1fpt %s %s;\n", parmap.bordLeft.width, util.GetDash(parmap.bordLeft.dash), parmap.bordLeft.color)
+
+    return cssStr
 }
 
-func cvtTxtStylCss(txtStyl *docs.TextStyle)(cssStr string) {
-	var tcssStr string
+func cvtParMapCss(pMap *parMap, opt *util.OptObj)(cssStr string) {
+    cssStr =""
 
-	if len(txtStyl.BaselineOffset) > 0 {
-		valStr := "vertical-align: "
-		switch txtStyl.BaselineOffset {
-			case "SUPERSCRIPT":
-				valStr += "sub"
-			case "SUBSCRIPT":
-				valStr += "sup"
-			case "NONE":
-				valStr += "baseline"
-			default:
-				valStr = fmt.Sprintf("/* Baseline Offset unknown: %s */\n", txtStyl.BaselineOffset)
-		}
-		tcssStr = valStr + ";\n"
-	}
+    if len(pMap.halign) > 0 {
+        switch pMap.halign {
+            case "START":
+                cssStr += "  text-align: left;\n"
+            case "CENTER":
+                cssStr += "  text-align: center;\n"
+            case "END":
+                cssStr += "  text-align: right;\n"
+            case "JUSTIFIED":
+                cssStr += "  text-align: justify;\n"
+            default:
+                cssStr += fmt.Sprintf("/* unrecognized Alignment %s */\n", pMap.halign)
+        }
 
-	if txtStyl.Bold {
-		tcssStr += "  font-weight: 800;\n"
-	} else {
-		tcssStr += "  font-weight: 400;\n"
-	}
-	if txtStyl.Italic { tcssStr += "  font-style: italic;\n"}
-	if txtStyl.Underline { tcssStr += "  text-decoration: underline;\n"}
-	if txtStyl.Strikethrough { tcssStr += "  text-decoration: line-through;\n"}
+    }
 
-	if txtStyl.WeightedFontFamily != nil {
-		font := txtStyl.WeightedFontFamily.FontFamily
-		tcssStr += fmt.Sprintf("  font-family: %s;\n", font)
-	}
-	if txtStyl.FontSize != nil {
-		mag := txtStyl.FontSize.Magnitude
-		tcssStr += fmt.Sprintf("  font-size: %.2fpt;\n", mag)
-	}
-	if txtStyl.ForegroundColor != nil {
-		if txtStyl.ForegroundColor.Color != nil {
-			//0 to 1
-            tcssStr += "  color: "
-            tcssStr += util.GetColor(txtStyl.ForegroundColor.Color)
-		}
-	}
-	if txtStyl.BackgroundColor != nil {
-		if txtStyl.BackgroundColor.Color != nil {
-            tcssStr += "  background-color: "
-            tcssStr += util.GetColor(txtStyl.BackgroundColor.Color)
-		}
-	}
+    if pMap.linSpac > 0.0 {
+        if opt.DefLinSpacing > 0.0 {
+            cssStr += fmt.Sprintf("  line-height: %.2f;\n", opt.DefLinSpacing*pMap.linSpac)
+        } else {
+            cssStr += fmt.Sprintf("  line-height: %.2f;\n", pMap.linSpac)
+        }
+    }
 
-	if len(tcssStr) > 0 {
-		cssStr = tcssStr
-	}
-	return cssStr
+    if pMap.indFlin > 0.0 {
+        cssStr += fmt.Sprintf("  text-indent: %.1fpt;\n", pMap.indFlin)
+    }
+
+    margin := false
+    lmarg := 0.0
+    if pMap.indStart > 0.0 {
+		lmarg = pMap.indStart
+		margin = true
+    }
+
+    rmarg := 0.0
+    if pMap.indEnd > 0.0 {
+		rmarg = pMap.indEnd
+		margin = true
+    }
+
+    tmarg := 0.0
+    if pMap.spaceTop > 0.0 {
+		tmarg = pMap.spaceTop
+		margin = true
+    }
+
+    bmarg := 0.0
+    if pMap.spaceBelow > 0.0 {
+		bmarg = pMap.spaceBelow
+		margin = true
+    }
+
+    if margin {cssStr += fmt.Sprintf("  margin: %.0f %.0f %.0f %.0f;\n", tmarg, rmarg, bmarg, lmarg)}
+
+    if !pMap.hasBorders { return cssStr }
+    cssStr += fmt.Sprintf("  padding: %.1fpt %.1fpt %.1fpt %.1fpt;\n", pMap.bordTop.pad, pMap.bordRight.pad, pMap.bordBot.pad, pMap.bordLeft.pad)
+    cssStr += fmt.Sprintf("  border-top: %.1fpt %s %s;\n", pMap.bordTop.width, util.GetDash(pMap.bordTop.dash), pMap.bordTop.color)
+    cssStr += fmt.Sprintf("  border-right: %.1fpt %s %s;\n", pMap.bordRight.width, util.GetDash(pMap.bordRight.dash), pMap.bordRight.color)
+    cssStr += fmt.Sprintf("  border-bottom: %.1fpt %s %s;\n", pMap.bordBot.width, util.GetDash(pMap.bordBot.dash), pMap.bordBot.color)
+    cssStr += fmt.Sprintf("  border-left: %.1fpt %s %s;\n", pMap.bordLeft.width, util.GetDash(pMap.bordLeft.dash), pMap.bordLeft.color)
+
+    return cssStr
 }
-
 
 
 
@@ -1744,13 +2253,9 @@ func (dObj *GdocDomObj) cvtParDomElText(parElTxt *docs.TextRun, namedTyp string)
 		return parTxt
 	}
 
-//cccc
-	txtMap := new(textMap)
-	_, err = fillTxtMap(txtMap, namedTxtStyl)
-	alter, err := fillTxtMap(txtMap, parElTxt.TextStyle)
+	txtMap := fillTxtMap(namedTxtStyl)
 
-//	spanCssStr := cvtTxtStylCss(parElTxt.TextStyle)
-	if alter {spanCssStr = cvtTxtMapCss(txtMap)}
+	spanCssStr = cvtTxtMapStylCss(txtMap, parElTxt.TextStyle)
 
 	if len(spanCssStr) > 0 {
 	// create span element
@@ -2333,28 +2838,6 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 		addDispObj(&parObj, imgDisp)
 	}
 
-
-/*
-	// check for new line paragraph
-	if len(par.Elements) == 1 {
-		if par.Elements[0].TextRun != nil {
-			if par.Elements[0].TextRun.Content == "\n" {
-				elObj.typ = "br"
-				elObj.parent = "divMain"
-				script := addElToDom(elObj)
-				parObj.script = script
-//				parObj.bodyHtml = "<br>\n"
-				return parObj, nil
-			}
-		}
-	}
-*/
-
-//	if par.Bullet == nil {
-		// normal (no list) paragraph element
-//		parHtmlStr += fmt.Sprintf("\n<!-- Paragraph %d %s -->\n", dObj.parCount, namedTyp)
-//	}
-
 	// get paragraph style
 	if par.ParagraphStyle != nil {
 		parStyl, err := dObj.cvtParStylDom(par.ParagraphStyle, isList)
@@ -2372,40 +2855,16 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 	parElSumDisp, err := dObj.cvtParElDom(par)
 	if err != nil {parElSumDisp.script += fmt.Sprintf("// error cvtParElDom: %v\n",err)}
 	addDispObj(&parObj, &parElSumDisp)
-/*
-	if numParEl == 1 {
-		parEl := par.Elements[0]
-		if parEl.TextRun != nil {
-			elObj.txt = cvtText(parEl.TextRun.Content)
-		}
-		if par.Bullet == nil {
-			elObj.parent = "divMain"
-			elObj.newEl = "parel"
-			parObj.script = addElToDom(elObj)
-			return parObj, nil
-		}
-	}
-
-
-	if numParEl > 1 {
-    	for pEl:=0; pEl< numParEl; pEl++ {
-        	parEl := par.Elements[pEl]
-			parElDisp, err := dObj.cvtParElDom(parEl)
-			if err != nil { parHtmlStr += fmt.Sprintf("<!-- error cvtParEl: %v -->\n",err)}
-			addDispObj(&parElSumDisp, &parElDisp)
-		} // loop par el
-	}
-*/
 
 // lists
     if par.Bullet != nil {
-
 		// there is paragraph style for each ul and a text style for each list element
-		txtmap := new(textMap)
-		if par.Bullet.TextStyle != nil {
-			_, err := fillTxtMap(txtmap,par.Bullet.TextStyle)
-			if err != nil { return parObj, fmt.Errorf("cvtPar List getting text style %v", err)}
 
+// still todo
+// need to apply bulletTxtMap to marker
+//      var bulletTxtMap *textMap
+		if par.Bullet.TextStyle != nil {
+//          bulletTxtMap = fillTxtMap(par.Bullet.TextStyle)
 		}
 
 		if dObj.Options.Verb {listHtml += fmt.Sprintf("<!-- List Element %d -->\n", dObj.parCount)}
@@ -2569,10 +3028,20 @@ func (dObj *GdocDomObj) cvtParElDom(par *docs.Paragraph)(parDisp dispObj, err er
 
 
 func (dObj *GdocDomObj) cvtDocNamedStyles()(cssStr string, err error) {
+// method that creates the css for the named Styles used in the document
 
-//	cssComment:=""
-	parmap := new(parMap)
-	txtmap := new(textMap)
+	// the normal_text style are already defined in div_main
+	// so the css attributes for other named styles only need to show the difference 
+	// to the normal style
+    normalParStyl, normalTxtStyl, err := dObj.getNamedStyl("NORMAL_TEXT")
+    if err != nil {
+        cssStr += fmt.Sprintf("  /* cvtNamedStyle: no NORMAL_TEST Style */\n")
+    }
+
+	defTxtMap := fillTxtMap(normalTxtStyl)
+    defParMap := fillParMap(normalParStyl)
+
+
 	for namedTyp, res := range dObj.namStylMap {
 		if namedTyp == "NORMAL_TEXT" { continue}
 		if !res {continue}
@@ -2582,9 +3051,6 @@ func (dObj *GdocDomObj) cvtDocNamedStyles()(cssStr string, err error) {
 			cssStr += fmt.Sprintf("  /* cvtNamedStyle: named Style not recognized */\n")
 			continue
 		}
-
-		fillParMap(parmap, namParStyl)
-		fillTxtMap(txtmap, namTxtStyl)
 
 		cssPrefix := ""
 		switch namedTyp {
@@ -2621,8 +3087,8 @@ func (dObj *GdocDomObj) cvtDocNamedStyles()(cssStr string, err error) {
 		}
 
 		if len(cssPrefix) > 0 {
-			parCss := dObj.cvtParMapCss(parmap)
-			txtCss := cvtTxtMapCss(txtmap)
+			parCss := cvtParMapStylCss(defParMap, namParStyl, dObj.Options)
+			txtCss := cvtTxtMapStylCss(defTxtMap, namTxtStyl)
 			cssStr += cssPrefix + parCss + txtCss + "}\n"
 		}
 	}
@@ -2905,16 +3371,14 @@ func (dObj *GdocDomObj) creCssDocHead() (headCss string, err error) {
 
 	//css default text style
 	cssStr = fmt.Sprintf(".%s_main {\n", dObj.docName)
-	defTxtMap := new(textMap)
 	parStyl, txtStyl, err := dObj.getNamedStyl("NORMAL_TEXT")
 	if err != nil {
 		return headCss, fmt.Errorf("creHeadCss: %v", err)
 	}
 
-	_, err = fillTxtMap(defTxtMap, txtStyl)
-	if err != nil {
-		return headCss, fmt.Errorf("creHeadCss: %v", err)
-	}
+	defParMap := fillParMap(parStyl)
+	defTxtMap := fillTxtMap(txtStyl)
+
 	cssStr += "  display:block;\n"
 	cssStr += "  margin: 0 0 0 0;\n"
 	if dObj.Options.DivBorders {
@@ -2931,33 +3395,13 @@ func (dObj *GdocDomObj) creCssDocHead() (headCss string, err error) {
 	}
 	headCss += hdcss + errStr
 
-/*
-	cssStr = ""
-	for namedTyp, res := range dObj.namStylMap {
-		if namedTyp == "NORMAL_TEXT" { continue}
-		if res {
-			hdcss, err := dObj.cvtNamedStyl(namedTyp)
-			if err != nil {
-				errStr = fmt.Sprintf("%v", err)
-			}
-		cssStr += hdcss + errStr
-		}
-	}
-	headCss += cssStr
-*/
 	// paragraph default style
-	cssStr = fmt.Sprintf(".%s_p {\n", dObj.docName)
-	cssStr += "  display: block;\n"
-
-	defParMap := new(parMap)
-
-	_, err = fillParMap(defParMap, parStyl)
-	if err != nil {
-		return headCss, fmt.Errorf("creHeadCss: %v", err)
+    pCssStr := cvtParMapCss(defParMap, dObj.Options)
+	cssStr =""
+	if len(pCssStr) > 0 {
+		cssStr += fmt.Sprintf(".%s_p {\n", dObj.docName)
+		cssStr += pCssStr + "}\n"
 	}
-
-	cssStr += dObj.cvtParMapCss(defParMap)
-	cssStr += "}\n"
 	headCss += cssStr
 
 	// list css strings
@@ -2988,9 +3432,7 @@ func (dObj *GdocDomObj) creCssDocHead() (headCss string, err error) {
 		cssStr += fmt.Sprintf("}\n")
 
 		nestLev0 := listProp.NestingLevels[0]
-		defGlyphTxtMap := new(textMap)
-		_, err = fillTxtMap(defGlyphTxtMap, nestLev0.TextStyle)
-		if err != nil { cssStr += "/* error def Glyph Text Style */\n" }
+		defGlyphTxtMap := fillTxtMap(nestLev0.TextStyle)
 
 		cumIndent := 0.0
 
@@ -2998,8 +3440,8 @@ func (dObj *GdocDomObj) creCssDocHead() (headCss string, err error) {
 			nestLev := listProp.NestingLevels[nl]
 			glyphTxtMap := defGlyphTxtMap
 			if nl > 0 {
-				_, err := fillTxtMap(glyphTxtMap, nestLev.TextStyle)
-				if err != nil { cssStr += "/* error def Glyph Text Style */\n" }
+//lll
+               cvtTxtMapStylCss(glyphTxtMap, nestLev.TextStyle)
 			}
 			glyphStr := util.GetGlyphStr(nestLev)
 			switch dObj.docLists[i].ord {
@@ -3016,7 +3458,7 @@ func (dObj *GdocDomObj) creCssDocHead() (headCss string, err error) {
 			cssStr += fmt.Sprintf("}\n")
 
 			cumIndent += idSt
-//lll
+
 			// Css <li nest level>
 			cssStr += fmt.Sprintf(".%s_li.nL_%d {\n", listClass, nl)
 			switch dObj.docLists[i].ord {
