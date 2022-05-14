@@ -714,7 +714,6 @@ func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 	if spaceMode != parmap.spaceMode {
 		fmt.Printf("spacing mode: %t %t \n", parmap.spaceMode, spaceMode)
 		parmap.spaceMode = spaceMode
-		alter = true
 	}
 	fmt.Printf("spacing mode: %s\n", parmap.spaceMode)
 
@@ -1029,8 +1028,6 @@ func fillParMap(parStyl *docs.ParagraphStyle)(parMapRef *parMap) {
 			}
 		}
 	}
-//fmt.Printf("no border return: %t\n", alter)
-//fmt.Printf("fillParMap 3: %t\n", alter)
 
 	parmap.hasBorders = true
 	if !bb {
@@ -1351,6 +1348,7 @@ func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *util.Op
 		return cssStr
 	}
 
+	// border between paragraphs
 	bordDisp := false
 	parmap.bordBet.width = 0
 	if parStyl.BorderBetween != nil {
@@ -1379,7 +1377,7 @@ func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *util.Op
 		if parStyl.BorderBetween.DashStyle != parmap.bordBet.dash {parmap.bordBet.dash = parStyl.BorderBetween.DashStyle;}
 	}
 
-
+	// top border
 	parmap.bordTop.width = 0
 	if parStyl.BorderTop != nil {
 		if parStyl.BorderTop.Width != nil {
@@ -1407,6 +1405,7 @@ func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *util.Op
 		if parStyl.BorderTop.DashStyle != parmap.bordTop.dash {parmap.bordTop.dash = parStyl.BorderTop.DashStyle;}
 	}
 
+	// right border
 	parmap.bordRight.width = 0
 	if parStyl.BorderRight != nil {
 		if parStyl.BorderRight.Width != nil {
@@ -1436,6 +1435,7 @@ func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *util.Op
 		}
 	}
 
+	// bottom border
 	parmap.bordBot.width = 0
 	if parStyl.BorderBottom != nil {
 		if parStyl.BorderBottom.Width != nil {
@@ -1463,6 +1463,7 @@ func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *util.Op
 		if parStyl.BorderBottom.DashStyle != parmap.bordBot.dash {parmap.bordBot.dash = parStyl.BorderBottom.DashStyle;}
 	}
 
+	// left border
 	parmap.bordLeft.width = 0
 	if parStyl.BorderLeft != nil {
 		if parStyl.BorderLeft.Width != nil {
@@ -1535,32 +1536,32 @@ func cvtParMapCss(pMap *parMap, opt *util.OptObj)(cssStr string) {
 		cssStr += fmt.Sprintf("  text-indent: %.1fpt;\n", pMap.indFlin)
 	}
 
-	mlCss :=""
-	if pMap.indStart > 0.0 {
-		mlCss = fmt.Sprintf("%.1fpt", pMap.indStart)
-	} else {
-		mlCss = fmt.Sprintf("0")
-	}
-	mrCss:=""
-	if pMap.indEnd > 0.0 {
-		mrCss = fmt.Sprintf("%.1fpt", pMap.indEnd)
-	} else {
-		mrCss = fmt.Sprintf("0")
-	}
-	mtCss := ""
-	if pMap.spaceTop > 0.0 {
-		mtCss = fmt.Sprintf("%.1fpt", pMap.spaceTop)
-	} else {
-		mtCss = fmt.Sprintf("0")
-	}
-	mbCss := ""
-	if pMap.spaceBelow > 0.0 {
-		mbCss = fmt.Sprintf("%.1fpt", pMap.spaceBelow)
-	} else {
-		mbCss = fmt.Sprintf("0")
-	}
+    margin := false
+    lmarg := 0.0
+    if pMap.indStart > 0.0 {
+        lmarg = pMap.indStart
+        margin = true
+    }
 
-	cssStr += fmt.Sprintf("  margin: %s %s %s %s;\n", mtCss, mrCss, mbCss, mlCss)
+    rmarg := 0.0
+    if pMap.indEnd > 0.0 {
+        rmarg = pMap.indEnd
+        margin = true
+    }
+
+    tmarg := 0.0
+    if pMap.spaceTop > 0.0 {
+        tmarg = pMap.spaceTop
+        margin = true
+    }
+
+    bmarg := 0.0
+    if pMap.spaceBelow > 0.0 {
+        bmarg = pMap.spaceBelow
+        margin = true
+    }
+
+    if margin {cssStr += fmt.Sprintf("  margin: %.0f %.0f %.0f %.0f;\n", tmarg, rmarg, bmarg, lmarg)}
 
 	if !pMap.hasBorders { return cssStr }
 	cssStr += fmt.Sprintf("  padding: %.1fpt %.1fpt %.1fpt %.1fpt;\n", pMap.bordTop.pad, pMap.bordRight.pad, pMap.bordBot.pad, pMap.bordLeft.pad)
@@ -3004,6 +3005,7 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 			nestLev := listProp.NestingLevels[nl]
 			glyphTxtMap := defGlyphTxtMap
 			if nl > 0 {
+//lll
 				cvtTxtMapStylCss(glyphTxtMap, nestLev.TextStyle)
 			}
 			glyphStr := util.GetGlyphStr(nestLev)
@@ -3021,7 +3023,7 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 			cssStr += fmt.Sprintf("}\n")
 
 			cumIndent += idSt
-//lll
+
 			// Css <li nest level>
 			cssStr += fmt.Sprintf(".%s_li.nL_%d {\n", listClass, nl)
 			switch dObj.docLists[i].ord {
