@@ -1583,7 +1583,7 @@ func addDispObj(src, add *dispObj) {
 
 func creTocSecCss(docName string)(cssStr string) {
 
-	cssStr = fmt.Sprintf(".%s_div.top {\n", docName)
+	cssStr = fmt.Sprintf(".%s_main.top {\n", docName)
 	cssStr += "  padding: 10px 0 10px 0;\n"
 	cssStr += "}\n"
 
@@ -1605,7 +1605,7 @@ func creTocSecCss(docName string)(cssStr string) {
 }
 
 func creTocCss(docName string)(cssStr string) {
-	cssStr = fmt.Sprintf(".%_div.toc {\n", docName)
+	cssStr = fmt.Sprintf(".%_main.toc {\n", docName)
 
 	cssStr += "}\n"
 	return cssStr
@@ -1613,7 +1613,7 @@ func creTocCss(docName string)(cssStr string) {
 
 func creSecCss(docName string)(cssStr string){
 
-	cssStr = fmt.Sprintf(".%s_div.sec {\n", docName)
+	cssStr = fmt.Sprintf(".%s_main.sec {\n", docName)
 	cssStr += "}\n"
 
 	cssStr += fmt.Sprintf(".%s_page {\n", docName)
@@ -2704,13 +2704,9 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 
 	cssComment = fmt.Sprintf("/* Paragraph Style: %s */\n", parStyl.NamedStyleType )
 
-	alter:= false
 	cssParAtt := ""
 
 	parmap := fillParMap(namParStyl)
-	if err != nil {
-		cssComment += "/* erro fill Parmap namparstyl */" + fmt.Sprintf("%v\n", err)
-	}
 
 // fmt.Printf("begin fillparmap parstyl %s: %t\n", parStyl.NamedStyleType, alter)
 
@@ -2731,11 +2727,6 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 */
 
 	// NamedStyle Type
-	isListClass := ""
-	if isList {
-		isListClass = " list"
-	}
-
 	prefix = ""
 	suffix = ""
 	cssPrefix := ""
@@ -2862,13 +2853,13 @@ func (dObj *GdocHtmlObj) createDivHead(divName, idStr string) (divObj dispObj, e
 	//gdoc division css
 
 	if len(divName) == 0 { return divObj, fmt.Errorf("createDivHead: no divNam!") }
-	cssStr = fmt.Sprintf(".%s_div.%s {\n", dObj.docName, divName)
+	cssStr = fmt.Sprintf(".%s_main.%s {\n", dObj.docName, divName)
 
 	// html
 	if len(divName) == 0 {
-		htmlStr = fmt.Sprintf("<div class=\"%s_div\"", dObj.docName)
+		htmlStr = fmt.Sprintf("<div class=\"%s_main\"", dObj.docName)
 	} else {
-		htmlStr = fmt.Sprintf("<div class=\"%s_div %s\"", dObj.docName, divName)
+		htmlStr = fmt.Sprintf("<div class=\"%s_main %s\"", dObj.docName, divName)
 	}
 
 	if len(idStr) > 0 {
@@ -2890,7 +2881,7 @@ func (dObj *GdocHtmlObj) createSectionDiv() (secHd *dispObj) {
 
 	if len(dObj.sections) < 2 {return nil}
 
-	htmlStr := fmt.Sprintf("<div class=\"%s_div top\" id=\"%s_sectoc\">\n", dObj.docName, dObj.docName)
+	htmlStr := fmt.Sprintf("<div class=\"%s_main top\" id=\"%s_sectoc\">\n", dObj.docName, dObj.docName)
 	htmlStr += fmt.Sprintf("<p class=\"%s_title %s_leftTitle_UL\">Sections</p>\n",dObj.docName, dObj.docName)
 	for i:=0; i< len(dObj.sections); i++ {
 		htmlStr += fmt.Sprintf("  <p class=\"%s_p\"><a href=\"#%s_sec_%d\">Page: %3d</a></p>\n", dObj.docName, dObj.docName, i, i)
@@ -2903,10 +2894,10 @@ func (dObj *GdocHtmlObj) createSectionDiv() (secHd *dispObj) {
 func (dObj *GdocHtmlObj) createSectionHeading(ipage int) (secObj dispObj) {
 // method that creates a distinct html dvision per section with a page heading
 
-	secObj.bodyCss = fmt.Sprintf(".%s_div.sec_%d {\n", dObj.docName, ipage)
+	secObj.bodyCss = fmt.Sprintf(".%s_main.sec_%d {\n", dObj.docName, ipage)
 
 	// html
-	secObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div sec_%d\" id=\"%s_sec_%d\">\n", dObj.docName, ipage, dObj.docName, ipage)
+	secObj.bodyHtml = fmt.Sprintf("<div class=\"%s_main sec_%d\" id=\"%s_sec_%d\">\n", dObj.docName, ipage, dObj.docName, ipage)
 	secObj.bodyHtml += fmt.Sprintf("<p class=\"%s_page\"><a href=\"#%s_sectoc\">Page %d</a></p>\n", dObj.docName, dObj.docName, ipage)
 
 	return secObj
@@ -2936,7 +2927,7 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 	headCss += cssStr
 
 	//css default text style
-	cssStr = fmt.Sprintf(".%s_div {\n", dObj.docName)
+	cssStr = fmt.Sprintf(".%s_main {\n", dObj.docName)
 	parStyl, txtStyl, err := dObj.getNamedStyl("NORMAL_TEXT")
 	if err != nil {
 		return headCss, fmt.Errorf("creHeadCss: %v", err)
@@ -3100,10 +3091,10 @@ func (dObj *GdocHtmlObj) createFootnoteDiv () (ftnoteDiv *dispObj, err error) {
 
 	//html div footnote
 	htmlStr = fmt.Sprintf("<!-- Footnotes: %d -->\n", len(dObj.docFtnotes))
-	htmlStr += fmt.Sprintf("<div class=\"%s_div %s_ftndiv\">\n", dObj.docName, dObj.docName)
+	htmlStr += fmt.Sprintf("<div class=\"%s_main %s_ftndiv\">\n", dObj.docName, dObj.docName)
 
 	//css div footnote
-	cssStr = fmt.Sprintf(".%s_div.%s_ftndiv  {\n", dObj.docName, dObj.docName)
+	cssStr = fmt.Sprintf(".%s_main.%s_ftndiv  {\n", dObj.docName, dObj.docName)
 
 	if dObj.Options.DivBorders {
 		cssStr += "  border: solid green;\n"
@@ -3114,11 +3105,11 @@ func (dObj *GdocHtmlObj) createFootnoteDiv () (ftnoteDiv *dispObj, err error) {
 	cssStr += "}\n"
 
 	//html footnote title
-	htmlStr += fmt.Sprintf("<p class=\"%s_div %s_title %s_ftTit\">Footnotes</p>\n", dObj.docName, dObj.docName, dObj.docName)
+	htmlStr += fmt.Sprintf("<p class=\"%s_main %s_title %s_ftTit\">Footnotes</p>\n", dObj.docName, dObj.docName, dObj.docName)
 //	ftnDiv.bodyHtml = htmlStr
 
 	//css footnote title
-	cssStr += fmt.Sprintf(".%s_div.%s_title.%s_ftTit {\n", dObj.docName, dObj.docName, dObj.docName)
+	cssStr += fmt.Sprintf(".%s_main.%s_title.%s_ftTit {\n", dObj.docName, dObj.docName, dObj.docName)
 	cssStr += "  color: purple;\n"
 	cssStr += "}\n"
 
@@ -3250,7 +3241,7 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 	tocDiv.bodyCss = cssStr
 
 	//html
-	htmlStr = fmt.Sprintf("<div class=\"%s_div top\">\n", dObj.docName)
+	htmlStr = fmt.Sprintf("<div class=\"%s_main top\">\n", dObj.docName)
 	htmlStr += fmt.Sprintf("<p class=\"%s_title %s_leftTitle\">Table of Contents</p>\n", dObj.docName, dObj.docName)
 	tocDiv.bodyHtml = htmlStr
 
@@ -3334,7 +3325,7 @@ func (dObj *GdocHtmlObj) cvtBody() (bodyObj *dispObj, err error) {
 
 	bodyObj = new(dispObj)
 
-	bodyObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div\">\n", dObj.docName)
+	bodyObj.bodyHtml = fmt.Sprintf("<div class=\"%s_main\">\n", dObj.docName)
 
 	elNum := len(body.Content)
 	for el:=0; el< elNum; el++ {
@@ -3378,7 +3369,7 @@ func (dObj *GdocHtmlObj) cvtBodySec(elSt, elEnd int) (bodyObj *dispObj, err erro
 	bodyObj = new(dispObj)
 
 	// need to move
-//	bodyObj.bodyHtml = fmt.Sprintf("<div class=\"%s_div\">\n", dObj.docName)
+//	bodyObj.bodyHtml = fmt.Sprintf("<div class=\"%s_main\">\n", dObj.docName)
 	bodyObj.bodyHtml = ""
 
 	for el:=elSt; el<= elEnd; el++ {
