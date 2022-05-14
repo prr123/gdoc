@@ -3110,7 +3110,6 @@ func (dObj *GdocDomObj) cvtParStylDom(parStyl *docs.ParagraphStyle, isList bool)
 	// normal_text is already defined as the default in the css for the <div>
 	// *** important *** cvtNamedStyl needs to be run before CvtParStyle
 
-//	var prefix, suffix string
 	cssComment:=""
 	if namParStyl == nil {
 		// def error the default is that the normal_text paragraph style is passed
@@ -3122,34 +3121,19 @@ func (dObj *GdocDomObj) cvtParStylDom(parStyl *docs.ParagraphStyle, isList bool)
 	cssComment = fmt.Sprintf("/* Paragraph Style: %s */\n", parStyl.NamedStyleType )
 
 	alter:= false
-	parmap := new(parMap)
 	cssParAtt := ""
 
-	_, err = fillParMap(parmap, namParStyl)
-	if err != nil {
-		cssComment += "/* erro fill Parmap namparstyl */" + fmt.Sprintf("%v\n", err)
-	}
+	parmap := fillParMap(namParStyl)
 
 
 	if parStyl == nil || isList {
 		// use named style that has been published
-		cssParAtt = dObj.cvtParMapCss(parmap)
+		cssParAtt = cvtParMapCss(parmap, dObj.Options)
 	} else {
-		// use par style
-		alter, err = fillParMap(parmap, parStyl)
-		if err != nil {
-			cssComment += "/* erro fill Parmap parstyl */" + fmt.Sprintf("%v\n", err)
-		}
-		// what if there is no alter?
-		if alter {cssParAtt = dObj.cvtParMapCss(parmap)}
+		cssParAtt = cvtParMapStylCss(parmap, parStyl, dObj.Options)
 	}
 
-	// NamedStyle Type
-//	isListClass := ""
-//	if isList {
-//		isListClass = " list"
-//	}
-
+    // NamedStyle Type
 	cssPrefix := ""
 	headingId := parStyl.HeadingId
 
