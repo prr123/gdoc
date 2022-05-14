@@ -2710,10 +2710,12 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 
 // fmt.Printf("begin fillparmap parstyl %s: %t\n", parStyl.NamedStyleType, alter)
 
+	alter := false
 	if parStyl == nil || isList {
 		cssParAtt = cvtParMapCss(parmap, dObj.Options)
 	} else {
 		cssParAtt = cvtParMapStylCss(parmap, parStyl, dObj.Options)
+		if len(cssParAtt) > 0 {alter = true}
 	}
  //fmt.Printf("*** parstyle %s alter: %t\n", parStyl.NamedStyleType, alter)
 
@@ -2727,6 +2729,7 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 */
 
 	// NamedStyle Type
+
 	prefix = ""
 	suffix = ""
 	cssPrefix := ""
@@ -2735,7 +2738,7 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 	switch parStyl.NamedStyleType {
 		case "TITLE":
 			if dObj.namStylMap["TITLE"] && !alter {
-				prefix = fmt.Sprintf("<p class=\"%s_title%s\"", dObj.docName, isListClass)
+				prefix = fmt.Sprintf("<p class=\"%s_title%s\"", dObj.docName)
 			}
 			if alter {
 				cssPrefix = fmt.Sprintf(".%s_title.%s_title_%d {\n", dObj.docName, dObj.docName, dObj.title.count)
