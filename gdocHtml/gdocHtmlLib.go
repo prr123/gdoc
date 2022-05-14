@@ -439,7 +439,6 @@ func cvtTxtMapCss(txtMap *textMap)(cssStr string) {
 	}
     cssStr += fmt.Sprintf("  text-decoration: %s;\n", textprop)
 
-
     if len(txtMap.fontType) >0 { cssStr += fmt.Sprintf("  font-family: %s;\n", txtMap.fontType)}
 	if txtMap.fontWeight > 0 {cssStr += fmt.Sprintf("  font-weight: %d;\n", txtMap.fontWeight)}
     if txtMap.fontSize >0 {cssStr += fmt.Sprintf("  font-size: %.2fpt;\n", txtMap.fontSize)}
@@ -2429,15 +2428,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parDisp dispObj, err error)
 	// *** important *** cvtNamedStyl needs to be run before CvtParStyle
 
 	// add css for named style  found in doc
-/*
-	if namedTyp != "NORMAL_TEXT" {
-		hdcss, err := dObj.cvtNamedStyl(namedTyp)
-		if err != nil {
-			errStr = fmt.Sprintf("%v", err)
-		}
-		parObj.headCss += hdcss + errStr
-	}
-*/
+
 	if par.Bullet == nil {
 		// normal (no list) paragraph element
 		parDisp.bodyHtml += fmt.Sprintf("\n<!-- Paragraph %d %s -->\n", dObj.parCount, namedTyp)
@@ -2951,9 +2942,7 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 	}
 	defParMap := fillParMap(parStyl)
 	defTxtMap := fillTxtMap(txtStyl)
-	if err != nil {
-		return headCss, fmt.Errorf("creHeadCss: %v", err)
-	}
+
 	cssStr += "  display:block;\n"
 	cssStr += "  margin: 0 0 0 0;\n"
 	if dObj.Options.DivBorders {
@@ -2971,12 +2960,13 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 	headCss += hdcss + errStr
 
 	// paragraph default style
-	cssStr = fmt.Sprintf(".%s_p {\n", dObj.docName)
-	cssStr += "  display: block;\n"
-
-	cssStr += cvtParMapCss(defParMap, dObj.Options)
-	cssStr += "}\n"
-	headCss += cssStr
+    pCssStr := cvtParMapCss(defParMap, dObj.Options)
+    cssStr =""
+    if len(pCssStr) > 0 {
+        cssStr += fmt.Sprintf(".%s_p {\n", dObj.docName)
+        cssStr += pCssStr + "}\n"
+    }
+    headCss += cssStr
 
 	// list css strings
 	cssStr = ""
