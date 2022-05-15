@@ -54,6 +54,7 @@ type GdocDomObj struct {
 	ftnoteCount int
 	inImgCount int
 	posImgCount int
+	hrCount int
 	htmlFil *os.File
 	cssFil *os.File
 	jsFil *os.File
@@ -1947,6 +1948,12 @@ func (dObj *GdocDomObj) initGdocDom(folderPath string, options *util.OptObj) (er
 	// footnotes
 	dObj.ftnoteCount = 0
 
+	// span
+	dObj.spanCount = 0
+
+	//horizntal rule
+	dObj.hrCount = 0
+
 	// section breaks
 	parHdEnd := 0
 	// last element of section
@@ -2691,19 +2698,19 @@ func (dObj *GdocDomObj) cvtTableDom(tbl *docs.Table)(tabObj dispObj, err error) 
 	// if there is an open list, close it
 	if len(*dObj.listStack) >= 0 {
 		htmlStr += dObj.closeList(len(*dObj.listStack))
-fmt.Printf("table closing list!\n")
+//fmt.Printf("table closing list!\n")
 	}
 
 	htmlStr += fmt.Sprintf("<table class=\"%s\">\n", tblClass)
 
-  // table styling
+  	// table styling
   	cssStr = fmt.Sprintf(".%s {\n",tblClass)
  	cssStr += fmt.Sprintf("  border: 1px solid black;\n  border-collapse: collapse;\n")
  	cssStr += fmt.Sprintf("  width: %.1fpt;\n", tabWidth)
 	cssStr += "   margin:auto;\n"
 	cssStr += "}\n"
 
-// table columns
+	// table columns
 	tabWtyp :=tbl.TableStyle.TableColumnProperties[0].WidthType
 //fmt.Printf("table width type: %s\n", tabWtyp)
 	if tabWtyp == "FIXED_WIDTH" {
@@ -2717,7 +2724,7 @@ fmt.Printf("table closing list!\n")
 	}
 
 
-	cssStr += fmt.Sprintf(".%s {\n",tblCellClass)
+	cssStr += fmt.Sprintf(".%s {\n", tblCellClass)
  	cssStr += fmt.Sprintf("  border: %.1fpt %s %s;\n", defcel.bwidth, defcel.bdash, defcel.bcolor)
 	cssStr += fmt.Sprintf("  vertical-align: %s;\n", defcel.vert_align )
 	cssStr += fmt.Sprintf("  padding: %.1fpt %.1fpt %.1fpt %.1fpt;\n", defcel.pad[0], defcel.pad[1], defcel.pad[2], defcel.pad[3])
@@ -2796,10 +2803,10 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 // - ParagraphStyle
 // - Positioned Objects
 //
-	var parHtmlStr, parCssStr string
-	var prefix, suffix string
-	var listPrefix, listHtml, listCss, listSuffix string
+	var listHtml, listCss string
 	var newList cList
+	var	listEl elScriptObj
+//	var orList, unList elScriptObj
 
 	if par == nil {
         return parObj, fmt.Errorf("cvtPar -- parEl is nil!")
@@ -2809,17 +2816,16 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 
 	dObj.parCount++
 
-	parHtmlStr = ""
-	parCssStr = ""
 
 	isList := false
 	if par.Bullet != nil {isList = true}
 //fmt.Printf("********** par %d list: %t ***********\n", dObj.parCount, isList)
 
 	if par.Bullet == nil {
-		// if there was an open list, close it
+		// if we have a non-list paragraph. we assume any open lists need to be closed
+		// in a Dom we wander back to div_main
 		if dObj.listStack != nil {
-			parHtmlStr += dObj.closeList(-1)
+			parObj.bodyHtml += dObj.closeList(-1)
 			//fmt.Printf("new par -> close list\n")
 		}
 	}
@@ -2956,15 +2962,23 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 		}
 
 		// html <li>
-		listPrefix = fmt.Sprintf("<li class=\"%s_li nL_%d\">", listid[4:], nestIdx)
-		listSuffix = "</li>"
+		// need to fix
+		listEl.parent = fmt.Sprintf("list_%d", nestIdx)
+		listEl.cl1 = listid[4:] + "_li"
+		listEl.cl2 = fmt.Sprintf("nL_%d", nestIdx)
+		listEl.typ = "li"
+//		listEl.newEl = fmt.Sprintf("lsIt_%d", listItem)
+		parObj.script += addElToDom(listEl)
+
+// html
+//		listPrefix = fmt.Sprintf("<li class=\"%s_li nL_%d\">", listid[4:], nestIdx)
+//		listSuffix = "</li>"
 
 		// mark is css only handled by cvtPar
 
 	}
 
-	parObj.bodyCss += listCss + parCssStr
-	parObj.bodyHtml += listHtml + listPrefix + prefix + parHtmlStr + suffix + listSuffix + "\n"
+	parObj.bodyCss += listCss
 	return parObj, nil
 }
 
@@ -3983,7 +3997,7 @@ func CreGdocHtmlMain(folderPath string, doc *docs.Document, options *util.OptObj
 	// further initialization
 	err = dObj.initGdocDom(folderPath, options)
 	if err != nil {
-		return fmt.Errorf("initGdocHtml %v", err)
+		return fmt.Errorf("initGdocDom %v", err)
 	}
 
 // footnotes
@@ -4108,7 +4122,7 @@ func CreGdocHtmlSection(heading, folderPath string, doc *docs.Document, options 
 	// further initialization
 	err = dObj.initGdocDom(folderPath, options)
 	if err != nil {
-		return fmt.Errorf("initGdocHtml %v", err)
+		return fmt.Errorf("initGdocDom %v", err)
 	}
 
 // footnotes
@@ -4233,7 +4247,7 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *util.OptObj)(
 	// further initialization
 	err = dObj.initGdocDom(folderPath, options)
 	if err != nil {
-		return fmt.Errorf("initGdocHtml %v", err)
+		return fmt.Errorf("initGdocDom %v", err)
 	}
 
 // footnotes
