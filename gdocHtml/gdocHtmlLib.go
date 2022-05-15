@@ -1959,11 +1959,13 @@ var glyphTyp string
 func (dObj *GdocHtmlObj) cvtHrEl(hr *docs.HorizontalRule)(hrObj dispObj) {
 	var cssStr, htmlStr string
 
-	cssStr = fmt.Sprintf("#%s_hr_%d {\n", dObj.docName, dObj.hrCount)
-	cssStr += cvtTxtStylCss(hr.TextStyle)
-	cssStr += "}\n"
-
-	htmlStr = fmt.Sprintf("<hr id=\"%s_hr_%d\">\n", dObj.docName, dObj.hrCount)
+	htmlStr = "<hr>\n"
+	if hr.TextStyle != nil {
+		cssStr = fmt.Sprintf(".%s_hr_%d {\n", dObj.docName, dObj.hrCount)
+		cssStr += cvtTxtStylCss(hr.TextStyle)
+		cssStr += "}\n"
+		htmlStr = fmt.Sprintf("<hr class=\"%s_hr_%d\">\n", dObj.docName, dObj.hrCount)
+	}
 
 	hrObj.bodyHtml = htmlStr
 	hrObj.bodyCss = cssStr
@@ -2603,12 +2605,8 @@ func (dObj *GdocHtmlObj) cvtParEl(parEl *docs.ParagraphElement, namedStyl string
 		}
 
         if parEl.HorizontalRule != nil {
-			if parEl.HorizontalRule.TextStyle != nil {
-				parHr := dObj.cvtHrEl(parEl.HorizontalRule)
-				addDispObj(&parElDisp, &parHr)
-			} else {
-				parElDisp.bodyHtml += "<hr>\n"
-			}
+			parHr := dObj.cvtHrEl(parEl.HorizontalRule)
+			addDispObj(&parElDisp, &parHr)
         }
 
         if parEl.ColumnBreak != nil {
