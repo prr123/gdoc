@@ -2146,7 +2146,6 @@ func (dObj *GdocDomObj) initGdocDom(folderPath string, options *util.OptObj) (er
 	return nil
 }
 
-
 func (dObj *GdocDomObj) cvtGlyph(nLev *docs.NestingLevel)(cssStr string) {
 var glyphTyp string
 
@@ -2157,6 +2156,25 @@ var glyphTyp string
 		cssStr = "  list-style-type: " + glyphTyp +";\n"
 	}
 	return cssStr
+}
+
+func (dObj *GdocDomObj) cvtHrElToDom(hr *docs.HorizontalRule)(hrObj dispObj) {
+    var cssStr string
+	var hrEl elScriptObj
+
+	if hr.TextStyle != nil {
+    	cssStr = fmt.Sprintf(".%s_hr_%d {\n", dObj.docName, dObj.hrCount)
+    	cssStr += cvtTxtStylCss(hr.TextStyle)
+    	cssStr += "}\n"
+		hrEl.cl1 = fmt.Sprintf("\"%s_hr_%d\"", dObj.docName, dObj.hrCount)
+	}
+
+//    htmlStr = fmt.Sprintf("<hr id=\"%s_hr_%d\">\n", dObj.docName, dObj.hrCount)
+	hrEl.parent = "hdel"
+	hrEl.typ = "hr"
+    hrObj.script = addElToDom(hrEl)
+    hrObj.bodyCss = cssStr
+    return hrObj
 }
 
 func (dObj *GdocDomObj) renderInlineImg(imgEl *docs.InlineObjectElement)(imgDisp *dispObj, err error) {
@@ -3019,7 +3037,8 @@ func (dObj *GdocDomObj) cvtParElDom(par *docs.Paragraph)(parDisp dispObj, err er
 		}
 
 		if parEl.HorizontalRule != nil {
-
+			horDisp := dObj.cvtHrElToDom(parEl.HorizontalRule)
+			addDispObj(&parDisp, &horDisp)
 		}
 
 		if parEl.ColumnBreak != nil {
