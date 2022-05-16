@@ -2736,7 +2736,7 @@ func (dObj *GdocHtmlObj) cvtParStyl(parStyl, namParStyl *docs.ParagraphStyle, is
 	switch parStyl.NamedStyleType {
 		case "TITLE":
 			if dObj.namStylMap["TITLE"] && !alter {
-				prefix = fmt.Sprintf("<p class=\"%s_title%s\"", dObj.docName)
+				prefix = fmt.Sprintf("<p class=\"%s_title\"", dObj.docName)
 			}
 			if alter {
 				cssPrefix = fmt.Sprintf(".%s_title.%s_title_%d {\n", dObj.docName, dObj.docName, dObj.title.count)
@@ -2937,7 +2937,7 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 	defTxtMap := fillTxtMap(txtStyl)
 
 	cssStr += "  display:block;\n"
-	cssStr += "  margin: 0 0 0 0;\n"
+	cssStr += "  margin: 0;\n"
 	if dObj.Options.DivBorders {
 		cssStr += "  border: solid green;\n"
 		cssStr += "  border-width: 1px;\n"
@@ -2957,6 +2957,7 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
     cssStr =""
     if len(pCssStr) > 0 {
         cssStr += fmt.Sprintf(".%s_p {\n", dObj.docName)
+		cssStr += "  margin: 0;\n"
         cssStr += pCssStr + "}\n"
     }
     headCss += cssStr
