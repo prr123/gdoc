@@ -1168,15 +1168,16 @@ func fillParMap(parStyl *docs.ParagraphStyle)(parMapRef *parMap) {
     return &parmap
 }
 
-func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *util.OptObj)(cssStr string) {
+func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *util.OptObj)(cssStr string, alter bool) {
 // function that creates the css attributes of a paragraph
 // the function compares the values of the parMap and parStyl
-    if parmap == nil {return "/* no parmap */"}
-    if parStyl == nil { return "/* no parStyl */"}
+    if parmap == nil {return "/* no parmap */", false}
+    if parStyl == nil { return "/* no parStyl */", false}
 
     cssStr =""
 
     if (len(parStyl.Alignment) > 0) &&  (parmap.halign != parStyl.Alignment) {
+		alter = true
         parmap.halign = parStyl.Alignment
         switch parmap.halign {
             case "START":
@@ -1200,12 +1201,14 @@ func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *util.Op
         if parStyl.IndentFirstLine.Magnitude != parmap.indFlin {
             parmap.indFlin = parStyl.IndentFirstLine.Magnitude
             cssStr += fmt.Sprintf("  text-indent: %.1fpt;\n", parmap.indFlin)
+			alter = true
         }
     }
 
     parmap.linSpac = 1.0
     if parStyl.LineSpacing/100.0 != parmap.linSpac {
         if parStyl.LineSpacing > 1.0 {
+			alter = true
             parmap.linSpac = parStyl.LineSpacing/100.0
             if opt.DefLinSpacing > 0.0 {
                 cssStr += fmt.Sprintf("  line-height: %.2f;\n", opt.DefLinSpacing*parmap.linSpac)
@@ -1237,7 +1240,7 @@ func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *util.Op
     tmarg := 0.0
     if (parStyl.SpaceAbove != nil) {
         if parStyl.SpaceAbove.Magnitude != parmap.spaceTop {
-            parmap.spaceTop = parStyl.SpaceAbove.Magnitude
+	        parmap.spaceTop = parStyl.SpaceAbove.Magnitude
             tmarg = parmap.spaceTop
             margin = true
         }
@@ -1252,7 +1255,10 @@ func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *util.Op
         }
     }
 
-    if margin {cssStr += fmt.Sprintf("  margin: %.0f %.0f %.0f %.0f;\n", tmarg, rmarg, bmarg, lmarg)}
+    if margin {
+		cssStr += fmt.Sprintf("  margin: %.0f %.0f %.0f %.0f;\n", tmarg, rmarg, bmarg, lmarg)
+		alter = true
+	}
 
     // may have to introduce an exemption for title
     parmap.keepLines = false
@@ -1320,7 +1326,7 @@ func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *util.Op
     parmap.hasBorders = true
     if !bb {
         parmap.hasBorders = false
-        return cssStr
+        return cssStr, alter
     }
 
 	// border between paragraphs
@@ -1468,7 +1474,7 @@ func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *util.Op
 
     if !bordDisp {
         parmap.hasBorders = false
-        return cssStr
+        return cssStr, alter
     }
 
     cssStr += fmt.Sprintf("  padding: %.1fpt %.1fpt %.1fpt %.1fpt;\n", parmap.bordTop.pad, parmap.bordRight.pad, parmap.bordBot.pad, parmap.bordLeft.pad)
@@ -1477,7 +1483,7 @@ func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *util.Op
     cssStr += fmt.Sprintf("  border-bottom: %.1fpt %s %s;\n", parmap.bordBot.width, util.GetDash(parmap.bordBot.dash), parmap.bordBot.color)
     cssStr += fmt.Sprintf("  border-left: %.1fpt %s %s;\n", parmap.bordLeft.width, util.GetDash(parmap.bordLeft.dash), parmap.bordLeft.color)
 
-    return cssStr
+    return cssStr, alter
 }
 
 func cvtParMapCss(pMap *parMap, opt *util.OptObj)(cssStr string) {
@@ -2864,7 +2870,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 
 	// get paragraph style
 	if par.ParagraphStyle != nil {
-		parStyl, err := dObj.cvtParStylDom(par.ParagraphStyle, isList)
+		parStyl, _, err := dObj.cvtParStylDom(par.ParagraphStyle, isList)
 		if err != nil {
 			parStyl.bodyCss += fmt.Sprintf("/* error cvtParStyl: %v */\n", err)
 		}
@@ -2876,7 +2882,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 
 	// par elements: text and css for text
 
-	parElSumDisp, err := dObj.cvtParElDom(par)
+	parElSumDisp, err := dObj.cvtParElToDom(par)
 	if err != nil {parElSumDisp.script += fmt.Sprintf("// error cvtParElDom: %v\n",err)}
 	addDispObj(&parObj, &parElSumDisp)
 
@@ -3000,7 +3006,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 	return parObj, nil
 }
 
-func (dObj *GdocDomObj) cvtParElDom(par *docs.Paragraph)(parDisp dispObj, err error) {
+func (dObj *GdocDomObj) cvtParElToDom(par *docs.Paragraph)(parDisp dispObj, err error) {
 
 //	hasList := false
 //	if par.Bullet != nil {hasList = true}
@@ -3120,7 +3126,7 @@ func (dObj *GdocDomObj) cvtDocNamedStyles()(cssStr string, err error) {
 		}
 
 		if len(cssPrefix) > 0 {
-			parCss := cvtParMapStylCss(defParMap, namParStyl, dObj.Options)
+			parCss, _ := cvtParMapStylCss(defParMap, namParStyl, dObj.Options)
 			txtCss := cvtTxtMapStylCss(defTxtMap, namTxtStyl)
 			cssStr += cssPrefix + parCss + txtCss + "}\n"
 		}
@@ -3128,14 +3134,14 @@ func (dObj *GdocDomObj) cvtDocNamedStyles()(cssStr string, err error) {
 	return cssStr, nil
 }
 
-func (dObj *GdocDomObj) cvtParStylDom(parStyl *docs.ParagraphStyle, isList bool)(parStylObj dispObj, err error) {
+func (dObj *GdocDomObj) cvtParStylDom(parStyl *docs.ParagraphStyle, isList bool)(parStylObj dispObj, alter bool, err error) {
 	var elObj elScriptObj
 	var cssStr string
 
 	namedTyp := parStyl.NamedStyleType
 	namParStyl, _, err := dObj.getNamedStyl(namedTyp)
 	if err != nil {
-		return parStylObj, fmt.Errorf("getNamedStyl: %v", err)
+		return parStylObj, false, fmt.Errorf("getNamedStyl: %v", err)
 	}
 
 	// default style for each named style used in the document
@@ -3148,22 +3154,21 @@ func (dObj *GdocDomObj) cvtParStylDom(parStyl *docs.ParagraphStyle, isList bool)
 		// def error the default is that the normal_text paragraph style is passed
 		cssComment = fmt.Sprintf("/* Paragraph Style: no named Style */\n")
 		parStylObj.bodyCss = cssComment
-		return parStylObj, nil
+		return parStylObj, false, nil
 	}
 
 	cssComment = fmt.Sprintf("/* Paragraph Style: %s */\n", parStyl.NamedStyleType )
 
-	alter:= false
+	alter = false
 	cssParAtt := ""
 
 	parmap := fillParMap(namParStyl)
-
 
 	if parStyl == nil || isList {
 		// use named style that has been published
 		cssParAtt = cvtParMapCss(parmap, dObj.Options)
 	} else {
-		cssParAtt = cvtParMapStylCss(parmap, parStyl, dObj.Options)
+		cssParAtt, alter = cvtParMapStylCss(parmap, parStyl, dObj.Options)
 	}
 
     // NamedStyle Type
@@ -3174,93 +3179,116 @@ func (dObj *GdocDomObj) cvtParStylDom(parStyl *docs.ParagraphStyle, isList bool)
 		case "TITLE":
 			elObj.typ = "p"
 			if dObj.namStylMap["TITLE"] && !alter {
-//				prefix = fmt.Sprintf("<p class=\"%s_title%s\"", dObj.docName, isListClass)
+				//html prefix = fmt.Sprintf("<p class=\"%s_title%s\"", dObj.docName, isListClass)
 				elObj.cl1 = fmt.Sprintf("%s_title", dObj.docName)
 			}
 			if alter {
 				cssPrefix = fmt.Sprintf(".%s_title.%s_title_%d {\n", dObj.docName, dObj.docName, dObj.title.count)
-//				prefix = fmt.Sprintf("<p class=\"%s_title %s_title_%d\"", dObj.docName, dObj.docName, dObj.title.count)
+				//html prefix = fmt.Sprintf("<p class=\"%s_title %s_title_%d\"", dObj.docName, dObj.docName, dObj.title.count)
 				elObj.cl1 = fmt.Sprintf("%s_title", dObj.docName)
 				elObj.cl2 = fmt.Sprintf("%s_title_%d", dObj.docName, dObj.title.count)
 				dObj.title.count++
 			}
-//			suffix = "</p>"
+			//html suffix = "</p>"
 
 		case "SUBTITLE":
 			if dObj.namStylMap["SUBTITLE"] && !alter {
-//				prefix = fmt.Sprintf("<p class=\"%s_subtitle\"", dObj.docName)
+				//html prefix = fmt.Sprintf("<p class=\"%s_subtitle\"", dObj.docName)
+				elObj.cl1 = fmt.Sprintf("%s_subtitle", dObj.docName)
 			}
 			if alter {
 				cssPrefix = fmt.Sprintf(".s_subtitle.s_subtitle_%d {\n", dObj.docName, dObj.docName, dObj.subtitle.count)
-//				prefix = fmt.Sprintf("<p class=\"%s_subtitle %s_subtitle_%d\"", dObj.docName, dObj.docName, dObj.subtitle.count)
+				//html prefix = fmt.Sprintf("<p class=\"%s_subtitle %s_subtitle_%d\"", dObj.docName, dObj.docName, dObj.subtitle.count)
+				elObj.cl1 = fmt.Sprintf("%s_subtitle", dObj.docName)
+				elObj.cl2 = fmt.Sprintf("%s_subtitle_%d", dObj.docName, dObj.subtitle.count)
 				dObj.subtitle.count++
 			}
-//			suffix = "</p>"
 
 		case "HEADING_1":
 			elObj.typ = "h1"
 			if dObj.namStylMap["HEADING_1"] && !alter {
-//				prefix = fmt.Sprintf("<h1 class=\"%s_h1\"", dObj.docName)
+				//html prefix = fmt.Sprintf("<h1 class=\"%s_h1\"", dObj.docName)
 				elObj.cl1 = fmt.Sprintf("%s_h1", dObj.docName)
 			}
 			if alter {
 				cssPrefix = fmt.Sprintf(".%s_h1.%s_h1_%d {\n",dObj.docName, dObj.docName, dObj.h1.count)
-//				prefix = fmt.Sprintf("<h1 class=\"%s_h1 %s_h1_%d\"", dObj.docName, dObj.docName, dObj.h1.count)
+				//html prefix = fmt.Sprintf("<h1 class=\"%s_h1 %s_h1_%d\"", dObj.docName, dObj.docName, dObj.h1.count)
 				elObj.cl1 = fmt.Sprintf("%s_h1", dObj.docName)
-				elObj.cl2 = fmt.Sprintf("%s_h1_%d", dObj.docName, dObj.title.count)
+				elObj.cl2 = fmt.Sprintf("%s_h1_%d", dObj.docName, dObj.h1.count)
 				dObj.h1.count++
 			}
-//			suffix = "</h1>"
+
 		case "HEADING_2":
+			elObj.typ = "h2"
 			if dObj.namStylMap["HEADING_2"] && !alter {
-//				prefix = fmt.Sprintf("<h2 class=\"%s_h2\"", dObj.docName)
+				//html prefix = fmt.Sprintf("<h2 class=\"%s_h2\"", dObj.docName)
+				elObj.cl1 = fmt.Sprintf("%s_h2", dObj.docName)
 			}
 			if alter {
 				cssPrefix = fmt.Sprintf(".%s_h2.%s_h2_%d {\n",dObj.docName, dObj.docName, dObj.h2.count)
-//				prefix = fmt.Sprintf("<h2 class=\"%s_h2 %s_h2_%d\"", dObj.docName, dObj.docName, dObj.h2.count)
+				//html prefix = fmt.Sprintf("<h2 class=\"%s_h2 %s_h2_%d\"", dObj.docName, dObj.docName, dObj.h2.count)
+				elObj.cl1 = fmt.Sprintf("%s_h2", dObj.docName)
+				elObj.cl2 = fmt.Sprintf("%s_h2_%d", dObj.docName, dObj.h2.count)
 				dObj.h2.count++
 			}
-//			suffix = "</h2>"
+			//html suffix = "</h2>"
+
 		case "HEADING_3":
+			elObj.typ = "h3"
 			if dObj.namStylMap["HEADING_3"] && !alter {
-//				prefix = fmt.Sprintf("<h3 class=\"%s_h3\"", dObj.docName)
+				//html prefix = fmt.Sprintf("<h3 class=\"%s_h3\"", dObj.docName)
+				elObj.cl1 = fmt.Sprintf("%s_h3", dObj.docName)
 			}
 			if alter {
 				cssPrefix = fmt.Sprintf(".%s_h3.%s_h3_%d {\n",dObj.docName, dObj.docName, dObj.h3.count)
-//				prefix = fmt.Sprintf("<h3 class=\"%s_h3 %s_h3_%d\"", dObj.docName, dObj.docName, dObj.h3.count)
+				//html prefix = fmt.Sprintf("<h3 class=\"%s_h3 %s_h3_%d\"", dObj.docName, dObj.docName, dObj.h3.count)
+				elObj.cl1 = fmt.Sprintf("%s_h3", dObj.docName)
+				elObj.cl2 = fmt.Sprintf("%s_h3_%d", dObj.docName, dObj.h3.count)
 				dObj.h3.count++
 			}
-//			suffix = "</h3>"
+
 		case "HEADING_4":
+			elObj.typ = "h4"
 			if dObj.namStylMap["HEADING_4"] && !alter {
-//				prefix = fmt.Sprintf("<h4 class=\"%s_h4\"", dObj.docName)
+				//html prefix = fmt.Sprintf("<h4 class=\"%s_h4\"", dObj.docName)
+				elObj.cl1 = fmt.Sprintf("%s_h4", dObj.docName)
 			}
 			if alter {
 				cssPrefix = fmt.Sprintf(".%s_h4.%s_h4_%d {\n",dObj.docName, dObj.docName, dObj.h4.count)
-//				prefix = fmt.Sprintf("<h4 class=\"%s_h4 %s_h4_%d\"", dObj.docName, dObj.docName, dObj.h4.count)
+				//html prefix = fmt.Sprintf("<h4 class=\"%s_h4 %s_h4_%d\"", dObj.docName, dObj.docName, dObj.h4.count)
+				elObj.cl1 = fmt.Sprintf("%s_h4", dObj.docName)
+				elObj.cl2 = fmt.Sprintf("%s_h4_%d", dObj.docName, dObj.h4.count)
 				dObj.h4.count++
 			}
-//			suffix = "</h4>"
+
 		case "HEADING_5":
+			elObj.typ = "h5"
 			if dObj.namStylMap["HEADING_5"] && !alter {
-//				prefix = fmt.Sprintf("<h5 class=\"%s_h5\"", dObj.docName)
+				//html prefix = fmt.Sprintf("<h5 class=\"%s_h5\"", dObj.docName)
+				elObj.cl1 = fmt.Sprintf("%s_h5", dObj.docName)
 			}
 			if alter {
 				cssPrefix = fmt.Sprintf(".%s_h5.%s_h5_%d {\n",dObj.docName, dObj.docName, dObj.h5.count)
-//				prefix = fmt.Sprintf("<h5 class=\"%s_h5 %s_h5_%d\"", dObj.docName, dObj.docName, dObj.h5.count)
+				//html prefix = fmt.Sprintf("<h5 class=\"%s_h5 %s_h5_%d\"", dObj.docName, dObj.docName, dObj.h5.count)
+				elObj.cl1 = fmt.Sprintf("%s_h5", dObj.docName)
+				elObj.cl2 = fmt.Sprintf("%s_h5_%d", dObj.docName, dObj.h5.count)
 				dObj.h5.count++
 			}
-//			suffix = "</h5>"
+
 		case "HEADING_6":
+			elObj.typ = "h6"
 			if dObj.namStylMap["HEADING_6"] && !alter {
-//				prefix = fmt.Sprintf("<h6 class=\"%s_h6\"", dObj.docName)
+				//html prefix = fmt.Sprintf("<h6 class=\"%s_h6\"", dObj.docName)
+				elObj.cl1 = fmt.Sprintf("%s_h6", dObj.docName)
 			}
 			if alter {
 				cssPrefix = fmt.Sprintf("%s_h6.%s_h6_%d {\n",dObj.docName, dObj.docName, dObj.h6.count)
-//				prefix = fmt.Sprintf("<h6 class=\"%s_h6 %s_h6_%d\"", dObj.docName, dObj.docName, dObj.h6.count)
+				//html prefix = fmt.Sprintf("<h6 class=\"%s_h6 %s_h6_%d\"", dObj.docName, dObj.docName, dObj.h6.count)
+				elObj.cl1 = fmt.Sprintf("%s_h6", dObj.docName)
+				elObj.cl2 = fmt.Sprintf("%s_h6_%d", dObj.docName, dObj.h6.count)
 				dObj.h6.count++
 			}
-//			suffix = "</h6>"
+
 		case "NORMAL_TEXT":
 			switch {
 				case isList:
@@ -3268,13 +3296,15 @@ func (dObj *GdocDomObj) cvtParStylDom(parStyl *docs.ParagraphStyle, isList bool)
 //					suffix = "</span>"
 				case alter:
 					cssPrefix = fmt.Sprintf(".%s_p.%s_p_%d {\n",dObj.docName, dObj.docName, dObj.parCount)
-//					prefix = fmt.Sprintf("<p class=\"%s_p %s_p_%d\"",dObj.docName, dObj.docName, dObj.parCount)
-//					suffix = "</p>"
+					//html prefix = fmt.Sprintf("<p class=\"%s_p %s_p_%d\"",dObj.docName, dObj.docName, dObj.parCount)
+					elObj.typ = "p"
+					elObj.cl1 = fmt.Sprintf("%s_p", dObj.docName)
+					elObj.cl2 = fmt.Sprintf("%s_p_%d", dObj.docName, dObj.parCount)
+
 				default:
-//					prefix = fmt.Sprintf("<p class=\"%s_p\"", dObj.docName)
-//					suffix = "</p>"
-				elObj.typ = "p"
-				elObj.cl1 = fmt.Sprintf("%s_p", dObj.docName)
+				//html prefix = fmt.Sprintf("<p class=\"%s_p\"", dObj.docName)
+					elObj.typ = "p"
+					elObj.cl1 = fmt.Sprintf("%s_p", dObj.docName)
 			}
 		case "NAMED_STYLE_TYPE_UNSPECIFIED":
 //			namTypValid = false
@@ -3298,7 +3328,7 @@ func (dObj *GdocDomObj) cvtParStylDom(parStyl *docs.ParagraphStyle, isList bool)
 	elObj.newEl = "hdel"
 	parStylObj.script = addElToDom(elObj)
 	parStylObj.bodyCss = cssStr
-	return parStylObj, nil
+	return parStylObj, alter, nil
 }
 
 
@@ -3623,7 +3653,7 @@ func (dObj *GdocDomObj) createFootnoteDiv () (ftnoteDiv *dispObj, err error) {
 // need to change
 //			for parEl:=0; parEl< len(par.Elements); parEl++ {
 //				parElObj := par.Elements[parEl]
-				tDisp, err := dObj.cvtParElDom(par)
+				tDisp, err := dObj.cvtParElToDom(par)
 				if err != nil {
 					htmlStr += fmt.Sprintf("<!-- cvtPar error %v -->\n", err)
 				}
