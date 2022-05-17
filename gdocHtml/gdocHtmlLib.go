@@ -2033,9 +2033,9 @@ func (dObj *GdocHtmlObj) closeList(nl int)(htmlStr string) {
 	if (dObj.listStack == nil) {return ""}
 
 	stack := dObj.listStack
-	n := len(*stack) -1
+	n := len(*stack)
 
-	for i := n; i > nl; i-- {
+	for i := n -1 ; i >= nl; i-- {
 		ord := (*stack)[i].cOrd
 		if ord {
 			htmlStr += "</ol>\n"
@@ -2388,7 +2388,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parDisp dispObj, err error)
 	if par.Bullet == nil {
 		// if there was an open list, close it
 		if dObj.listStack != nil {
-			parDisp.bodyHtml += dObj.closeList(-1)
+			parDisp.bodyHtml += dObj.closeList(0)
 			//fmt.Printf("new par -> close list\n")
 		}
 	}
@@ -2989,18 +2989,15 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 		cssStr += fmt.Sprintf("  padding-left: 6pt;\n")
 		cssStr += fmt.Sprintf("}\n")
 
-		nestLev0 := listProp.NestingLevels[0]
-		defGlyphTxtMap := fillTxtMap(nestLev0.TextStyle)
+//		nestLev0 := listProp.NestingLevels[0]
+//		defGlyphTxtMap := fillTxtMap(nestLev0.TextStyle)
 
 		cumIndent := 0.0
 
 		for nl:=0; nl <= int(dObj.docLists[i].maxNestLev); nl++ {
 			nestLev := listProp.NestingLevels[nl]
-			glyphTxtMap := defGlyphTxtMap
-			if nl > 0 {
-//lll
-				cvtTxtMapStylCss(glyphTxtMap, nestLev.TextStyle)
-			}
+//			glyphTxtMap := defGlyphTxtMap
+//			if nl > 0 {cvtTxtMapStylCss(glyphTxtMap, nestLev.TextStyle)}
 			glyphStr := util.GetGlyphStr(nestLev)
 			switch dObj.docLists[i].ord {
 				case true:
@@ -3037,14 +3034,11 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 				case false:
 
 			}
-			cssStr +=  cvtTxtMapCss(glyphTxtMap)
+			cssStr += cvtTxtMapStylCss(defTxtMap,nestLev.TextStyle)
 			cssStr += fmt.Sprintf("}\n")
 		}
 	}
 	headCss += cssStr
-
-	//gdoc division html
-//	headObj.bodyHtml = fmt.Sprintf("<div class=\"%s_doc\">\n", dObj.docName)
 
 	return headCss, nil
 }
@@ -3339,8 +3333,9 @@ func (dObj *GdocHtmlObj) cvtBody() (bodyObj *dispObj, err error) {
 		addDispObj(bodyObj, tObj)
 	} // for el loop end
 	if dObj.listStack != nil {
-		bodyObj.bodyHtml += dObj.closeList(len(*dObj.listStack))
-//fmt.Printf("end of doc closing list!")
+		//fmt.Printf("*** Body End *** stack: %d\n",len(*dObj.listStack))
+		bodyObj.bodyHtml += dObj.closeList(0)
+		//fmt.Printf("end of doc closing list!")
 	}
 
 	bodyObj.bodyHtml += "</div>\n"
