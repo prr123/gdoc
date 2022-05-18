@@ -2827,10 +2827,10 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 // - ParagraphStyle
 // - Positioned Objects
 //
-	var listHtml, listCss string
+	var listCss, scriptStr string
 	var newList cList
 	var	listEl elScriptObj
-//	var orList, unList elScriptObj
+	var orList, unList elScriptObj
 
 	if par == nil {
         return parObj, fmt.Errorf("cvtPar -- parEl is nil!")
@@ -2885,36 +2885,37 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 
 
 	// get paragraph style
-	if par.ParagraphStyle != nil {
-		parStyl, _, err := dObj.cvtParStylDom(par.ParagraphStyle, isList)
+// need to fix we know there is no list
+	if (par.ParagraphStyle != nil) && (par.Bullet == nil) {
+		parStyl, _, err := dObj.cvtParStylToDom(par.ParagraphStyle, "divMain", isList)
 		if err != nil {
 			parStyl.bodyCss += fmt.Sprintf("/* error cvtParStyl: %v */\n", err)
 		}
 		addDispObj(&parObj,&parStyl)
-	}
 
 	// Heading Id refers to a heading paragraph not just a normal paragraph
 	// headings are bookmarked for TOC
 
 	// par elements: text and css for text
 
-	parElSumDisp, err := dObj.cvtParElToDom(par)
-	if err != nil {parElSumDisp.script += fmt.Sprintf("// error cvtParElDom: %v\n",err)}
-	addDispObj(&parObj, &parElSumDisp)
+		parElSumDisp, err := dObj.cvtParElToDom(par)
+		if err != nil {parElSumDisp.script += fmt.Sprintf("// error cvtParElDom: %v\n",err)}
+		addDispObj(&parObj, &parElSumDisp)
+		return parObj, nil
+	}
 
 // lists
     if par.Bullet != nil {
 		// there is paragraph style for each ul and a text style for each list element
-
 // still todo
 // need to apply bulletTxtMap to marker
 
-		if par.Bullet.TextStyle != nil {
-//          bulletTxtMap = fillTxtMap(par.Bullet.TextStyle)
+
+		if dObj.Options.Verb {
+			// htnm listHtml += fmt.Sprintf("<!-- List Element %d -->\n", dObj.parCount)
+			// script
+			scriptStr += fmt.Sprintf("// List El %d\n", dObj.parCount)
 		}
-
-		if dObj.Options.Verb {listHtml += fmt.Sprintf("<!-- List Element %d -->\n", dObj.parCount)}
-
 		// find list id of paragraph
 		listid := par.Bullet.ListId
 		nestIdx := int(par.Bullet.NestingLevel)
@@ -2924,9 +2925,6 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 		listOrd := util.GetGlyphOrd(nestL)
 
 		// A. check whether need new <ul> or <ol>
-		// listHtml contains the <ul> <ol> element
-		listHtml = ""
-
 		// conditions for new <ul><ol>
 		// 1. beginning of a list
 		// 2. increase in nesting level
@@ -2941,6 +2939,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 
 		listAtt, cNest := getLiStack(dObj.listStack)
 //		printLiStackItem(listAtt, cNest)
+		scriptStr := ""
 		switch listid == listAtt.cListId {
 			case true:
 				switch {
@@ -2952,69 +2951,135 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 							dObj.listStack = newStack
 
 							if listOrd {
-								// html
-								listHtml = fmt.Sprintf("<ol class=\"%s_ol nL_%d\">\n", listid[4:], nl)
+								// html listHtml = fmt.Sprintf("<ol class=\"%s_ol nL_%d\">\n", listid[4:], nl)
+								// script
+								orList.parent = fmt.Sprintf("ol_%d", nl - 1)
+								orList.newEl = fmt.Sprintf("ol_%d", nl)
+								orList.typ = "ol"
+								orList.cl1 = listid[4:] + "_ol"
+								orList.cl2 = fmt.Sprintf("nL_%d", nl)
+								scriptStr = addElToDom(orList)
 								// css
 								listCss = fmt.Sprintf(".%s_ol.nL_%d {\n", listid[4:], nl)
 								listCss += fmt.Sprintf("  counter-reset: %s_nL_%d\n",listid[4:], nl)
 								listCss += "}\n"
 							} else {
-								// html
-								listHtml = fmt.Sprintf("<ul class=\"%s_ul nL_%d\">\n", listid[4:], nl)
-								// css
+								// html listHtml = fmt.Sprintf("<ul class=\"%s_ul nL_%d\">\n", listid[4:], nl)
+								// script
+								unList.parent = fmt.Sprintf("ul_%d", nl - 1)
+								unList.newEl = fmt.Sprintf("ul_%d", nl)
+								unList.typ = "ul"
+								unList.cl1 = listid[4:] + "_ul"
+								unList.cl2 = fmt.Sprintf("nL_%d", nl)
+								scriptStr += addElToDom(orList)
+								// css none
 							}
 						}
-						listHtml += fmt.Sprintf("<!-- same list increase %s new NL %d  old Nl %d -->\n", listid, nestIdx, cNest)
-//				fmt.Printf("<!-- same list increase %s new NL %d  old Nl %d -->\n", listid, nestIdx, cNest)
-//	printLiStack(dObj.listStack)
+						// html	listHtml += fmt.Sprintf("<!-- same list increase %s new NL %d  old Nl %d -->\n", listid, nestIdx, cNest)
+						//html fmt.Printf("<!-- same list increase %s new NL %d  old Nl %d -->\n", listid, nestIdx, cNest)
 
 					case nestIdx < cNest:
 						// html
-						listHtml = dObj.closeList(nestIdx)
-						listHtml += fmt.Sprintf("<!-- same list reduce %s new NL %d  old Nl %d -->\n", listid, nestIdx, cNest)
-//				fmt.Printf("<!-- same list reduce %s new NL %d  old Nl %d -->\n", listid, nestIdx, cNest)
+						// listHtml = dObj.closeList(nestIdx)
+						// listHtml += fmt.Sprintf("<!-- same list reduce %s new NL %d  old Nl %d -->\n", listid, nestIdx, cNest)
+//						scriptStr += fmt.Sprintf("// list id %s new NL: %d old NL: %d\n", list id, nestIdx, cNest)
+						//html diag	fmt.Printf("<!-- same list reduce %s new NL %d  old Nl %d -->\n", listid, nestIdx, cNest)
 
 					case nestIdx == cNest:
-						listHtml =""
+//						listHtml =""
 				}
 
 			case false:
 				// new list
 				// close list first
-				listHtml = dObj.closeList(-1)
-				listHtml += fmt.Sprintf("<!-- new list %s %s -->\n", listid, listAtt.cListId)
-//			fmt.Printf("<!-- new list %s %s -->\n", listid, listAtt.cListId)
+				// html listHtml = dObj.closeList(-1)
+				// html listHtml += fmt.Sprintf("<!-- new list %s %s -->\n", listid, listAtt.cListId)
+//fmt.Printf("<!-- new list %s %s -->\n", listid, listAtt.cListId)
+
 				// start a new list
 				newList.cListId = listid
 				newList.cOrd = listOrd
 				newStack := pushLiStack(dObj.listStack, newList)
 				dObj.listStack = newStack
+				nl := nestIdx
+				parent := ""
+				if nl == 0 {
+					parent = "divMain"
+				}
 				if listOrd {
-					// html
-					listHtml += fmt.Sprintf("<ol class=\"%s_ol nL_%d\">\n", listid[4:], nestIdx)
+					// html listHtml += fmt.Sprintf("<ol class=\"%s_ol nL_%d\">\n", listid[4:], nestIdx)
+					// script
+					if len(parent) == 0 {
+						parent = fmt.Sprintf("ol_%d", nl - 1)
+					}
+					orList.parent = parent
+					orList.newEl = fmt.Sprintf("ol_%d", nl)
+					orList.typ = "ol"
+					orList.cl1 = listid[4:] + "_ol"
+					orList.cl2 = fmt.Sprintf("nL_%d", nl)
+					scriptStr = addElToDom(orList)
 					// css
 					listCss = fmt.Sprintf(".%s_ol.nL_%d {\n", listid[4:], nestIdx)
 					listCss += fmt.Sprintf("  counter-reset: %s_nL_%d\n",listid[4:], nestIdx)
 					listCss += "}\n"
 				} else {
-					listHtml += fmt.Sprintf("<ul class=\"%s_ul nL_%d\">\n", listid[4:], nestIdx)
+					// html listHtml += fmt.Sprintf("<ul class=\"%s_ul nL_%d\">\n", listid[4:], nestIdx)
+					if len(parent) == 0 {
+						parent = fmt.Sprintf("ul_%d", nl - 1)
+					unList.parent = parent
+					unList.newEl = fmt.Sprintf("ul_%d", nl)
+					unList.typ = "ul"
+					unList.cl1 = listid[4:] + "_ul"
+					unList.cl2 = fmt.Sprintf("nL_%d", nl)
+					scriptStr += addElToDom(unList)
 				}
+			}
 		}
 
 		// html <li>
-		// need to fix
-		listEl.parent = fmt.Sprintf("list_%d", nestIdx)
+		// html listPrefix = fmt.Sprintf("<li class=\"%s_li nL_%d\">", listid[4:], nestIdx)
+		// script
+		parent := ""
+		nl := nestIdx
+		if nestIdx == 0 {
+			parent = "divMain"
+		} else {
+			if listOrd {
+				parent = fmt.Sprintf("ol_%d", nl)
+			} else {
+				parent = fmt.Sprintf("ul_%d", nl)
+			}
+		}
+
+		listEl.parent = parent
 		listEl.cl1 = listid[4:] + "_li"
 		listEl.cl2 = fmt.Sprintf("nL_%d", nestIdx)
 		listEl.typ = "li"
-//		listEl.newEl = fmt.Sprintf("lsIt_%d", listItem)
+		listEl.newEl = "lsIt"
 		parObj.script += addElToDom(listEl)
 
-// html
-//		listPrefix = fmt.Sprintf("<li class=\"%s_li nL_%d\">", listid[4:], nestIdx)
-//		listSuffix = "</li>"
 
-		// mark is css only handled by cvtPar
+		// mark
+		if par.Bullet.TextStyle != nil {
+//          bulletTxtMap = fillTxtMap(par.Bullet.TextStyle)
+		}
+
+
+		// get paragraph style
+		parStyl, _, err := dObj.cvtParStylToDom(par.ParagraphStyle, parent, isList)
+		if err != nil {
+			parStyl.bodyCss += fmt.Sprintf("/* error cvtParStyl: %v */\n", err)
+		}
+		addDispObj(&parObj,&parStyl)
+
+	// Heading Id refers to a heading paragraph not just a normal paragraph
+	// headings are bookmarked for TOC
+
+	// par elements: text and css for text
+
+		parElSumDisp, err := dObj.cvtParElToDom(par)
+		if err != nil {parElSumDisp.script += fmt.Sprintf("// error cvtParElDom: %v\n",err)}
+		addDispObj(&parObj, &parElSumDisp)
 
 	}
 
@@ -3150,22 +3215,30 @@ func (dObj *GdocDomObj) cvtDocNamedStyles()(cssStr string, err error) {
 	return cssStr, nil
 }
 
-func (dObj *GdocDomObj) cvtParStylDom(parStyl *docs.ParagraphStyle, isList bool)(parStylObj dispObj, alter bool, err error) {
+func (dObj *GdocDomObj) cvtParStylToDom(parStyl *docs.ParagraphStyle, parent string, isList bool)(parStylObj dispObj, alter bool, err error) {
 	var elObj elScriptObj
 	var cssStr string
+	var namParStyl *docs.ParagraphStyle
+	// changed from Html need to handle case if parStyl == nil
+	// q: is there a case where parstyl == nil
+	// if parstyl == nil lets assume normal_text
 
-	namedTyp := parStyl.NamedStyleType
-	namParStyl, _, err := dObj.getNamedStyl(namedTyp)
-	if err != nil {
-		return parStylObj, false, fmt.Errorf("getNamedStyl: %v", err)
+	if parStyl == nil {
+		parStyl,_,_ = dObj.getNamedStyl("NORMAL_TEXT")
+		namParStyl = parStyl
+	} else {
+		namedTyp := parStyl.NamedStyleType
+		namParStyl, _, err = dObj.getNamedStyl(namedTyp)
+		if err != nil {
+			return parStylObj, false, fmt.Errorf("getNamedStyl: %v", err)
+		}
 	}
-
 	// default style for each named style used in the document
 	// add css for named style at the begining of the style sheet
 	// normal_text is already defined as the default in the css for the <div>
 	// *** important *** cvtNamedStyl needs to be run before CvtParStyle
 
-	cssComment:=""
+	cssComment := ""
 	if namParStyl == nil {
 		// def error the default is that the normal_text paragraph style is passed
 		cssComment = fmt.Sprintf("/* Paragraph Style: no named Style */\n")
@@ -3340,7 +3413,7 @@ func (dObj *GdocDomObj) cvtParStylDom(parStyl *docs.ParagraphStyle, isList bool)
 	//fmt.Printf("parstyl: %s %s %s\n", parStyl.NamedStyleType, prefix, suffix)
 	if (len(cssPrefix) > 0) {cssStr = cssComment + cssPrefix + cssParAtt + "}\n"}
 	elObj.comment ="cvtParStyl"
-	elObj.parent = dObj.elDiv
+	elObj.parent = parent
 	elObj.newEl = "hdel"
 	parStylObj.script = addElToDom(elObj)
 	parStylObj.bodyCss = cssStr
