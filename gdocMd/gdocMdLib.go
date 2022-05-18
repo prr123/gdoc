@@ -472,93 +472,57 @@ func (dObj *gdocMdObj) cvtPelTxt(parEl *docs.ParagraphElement)(outstr string, er
     return outstr, nil
 }
 
-func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr string, err error) {
+func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr string) {
 	var prefix, suffix, tocPrefix, tocSuffix string
-	var parStr, liststr string
+	var parStr, listStr, hdStr string
 	var NamedTxtStyl *docs.TextStyle
-	var ListProp *docs.NestingLevel
 	var doc *docs.Document
 
 	doc = dObj.doc
 
-    if par == nil {
-        return "","", fmt.Errorf("error dispParStyl: no par pt")
-    }
+	numParEl := len(par.Elements)
+	if (numParEl == 1) && (!(len(par.Elements[0].TextRun.Content) >0)) {
+		// html		return "<br>\n","", nil
+		return "\n",""
+	}
+
 
 //	fmt.Printf("  Paragraph with %d Par-Elements\n", len(par.Elements))
 	outstr = ""
 	if par.Bullet != nil {
-		liststr = ""
-		ListId := par.Bullet.ListId
-		NestLev:= par.Bullet.NestingLevel
-//		outstr += fmt.Sprintf("[//]: * (List: %s Nest: %d )\n", ListId, NestLev)
-		// need to determine whether ordered or unordered
-		ListProp = nil
-		for key, list := range doc.Lists {
-			if key == ListId {
-				ListProp = list.ListProperties.NestingLevels[NestLev]
-				break
-			}
-		}
-		if ListProp == nil {
-			outstr += "[//]: * (Error List " + ListId + " cannot find listid )\n"
-		} else {
-			liststr = ""
-			if dObj.listid != ListId {
-				// new list
-				dObj.listmap[ListId] = make([]int,5)
-				dObj.listmap[ListId][NestLev] = 1
-				dObj.listid = ListId
-				dObj.nestlev = int(NestLev)
-			} else {
-				// same list
-				if dObj.nestlev == int(NestLev) {
-					dObj.listmap[ListId][NestLev]++
-				} else {
-//	fmt.Printf("ListId: %s Nest: %d prev nest: %d val: %d\n", ListId, NestLev, dObj.nestlev, dObj.listmap[ListId][NestLev])
-					if dObj.nestlev < int(NestLev) {
-					// new sublist
-						dObj.listmap[ListId][NestLev] = 1
-						dObj.nestlev = int(NestLev)
-					} else {
-						dObj.nestlev = int(NestLev)
-						dObj.listmap[ListId][NestLev]++
-					}
-				}
-			}
+		listStr = ""
+		listid := par.Bullet.ListId
+		nestIdx:= int(par.Bullet.NestingLevel)
 
-			var i int64
-			for i=0; i<NestLev+1; i++ {
-				liststr += "   "
-			}
-			if len(ListProp.GlyphSymbol)>0 {
-				liststr += "* "
-			} else {
-				switch ListProp.GlyphType {
-					case "DECIMAL":
-						liststr += fmt.Sprintf("%d. ",dObj.listmap[ListId][NestLev])
-					default:
-						liststr += fmt.Sprintf("%d. ",dObj.listmap[ListId][NestLev])
-				}
-			}
+//        if dObj.Options.Verb {hdStr = fmt.Sprintf("<!--- List Element %d --->", dObj.parCount)}
+
+        // retrieve the list properties from the doc.Lists map
+        nestL := dObj.doc.Lists[listid].ListProperties.NestingLevels[nestIdx]
+        listOrd := util.GetGlyphOrd(nestL)
+
+        // html <li>
+		listPrefix := ""
+		for nl:=0; nl < nestIdx; nl++ {
+			listPrefix += "  "
 		}
-	}
+		if listOrd {
+	        listStr = listPrefix + "1. "
+		} else {
+			listStr = listPrefix + "* "
+		}
+    }
+
 
 	parStylTyp := par.ParagraphStyle.NamedStyleType
 	// doc styles
-	NamedStylIdx := -1
 	for i:=0; i < len(doc.NamedStyles.Styles); i++ {
 		nstyl := doc.NamedStyles.Styles[i].NamedStyleType;
 		if nstyl  == parStylTyp {
-			NamedStylIdx = i
 //			NamedParStyl = doc.NamedStyles.Styles[i].ParagraphStyle
 			NamedTxtStyl = doc.NamedStyles.Styles[i].TextStyle
 		}
 	}
 
-	if NamedStylIdx == -1 {
-		return "","",fmt.Errorf("error cvtParToMd: par style not a named style!")
-	}
 //
 //	fmt.Println("par style type: ", parStylTyp, " index: ", NamedStylIdx);
 
@@ -583,12 +547,13 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 		case "TITLE":
 			prefix ="<p style=\"font-size:20pt; text-align:center;"
 			suffix = "</p>\n\n"
-			if boldStyl {prefix += " font-weight:bold;"}
+			if boldStyl {prefix += " font-weight: 800;"}
 			if italicStyl {prefix += " font-style:italic;"}
 			titlestyl = true
 			prefix += "\">"
 			tocPrefix = prefix
 			tocSuffix = suffix
+
       	case "SUBTITLE":
 			prefix ="<p style=\"font-size:16pt;text-align:center;"
 			suffix = "</p>\n\n"
@@ -603,48 +568,49 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 			tocPrefix = "\n# ["
 			tocSuffix = fmt.Sprintf("](#")
 			decode = true
+
 		case "HEADING_2":
             prefix = "## "
 			suffix = fmt.Sprintf("    \n")
 			tocPrefix = "\n## ["
 			tocSuffix = fmt.Sprintf("](#")
 			decode = true
+
         case "HEADING_3":
 			prefix = "### "
 			suffix = fmt.Sprintf("     \n")
 			tocPrefix = "\n### ["
 			tocSuffix = fmt.Sprintf("](#")
 			decode = true
+
         case "HEADING_4":
             prefix = "#### "
 			suffix = fmt.Sprintf("     \n")
 			tocPrefix = "\n#### ["
 			tocSuffix = fmt.Sprintf("](#")
 			decode = true
+
         case "HEADING_5":
             prefix = "##### "
 			suffix = fmt.Sprintf("    \n")
 			tocPrefix = "\n##### ["
 			tocSuffix = fmt.Sprintf("](#")
 			decode = true
+
         case "HEADING_6":
             prefix = "###### "
 			suffix = fmt.Sprintf("    \n")
 			tocPrefix = "\n###### ["
 			tocSuffix = fmt.Sprintf("](#")
 			decode = true
+
         case "NORMAL_TEXT":
             prefix = ""
 			suffix = "\n\n"
+			if par.Bullet != nil {suffix = "\n"}
         default:
             prefix = fmt.Sprintf("[//]: * (Name Style: %s unknown)\n", par.ParagraphStyle.NamedStyleType)
     }
-
-	numParEl := len(par.Elements)
-	if (numParEl == 1) && (!(len(par.Elements[0].TextRun.Content) >0)) {
-//		return "<br>\n","", nil
-		return "\n","", nil
-	}
 
 	parStr = ""
 	for p:=0; p< numParEl; p++ {
@@ -689,7 +655,6 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 	} // loop parEl
 
 	nparStr := parStr
-//fmt.Println("parstr: ",parStr," : ",len(parStr))
 
 // case of string terminated by new line
 /*
@@ -699,10 +664,10 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 */
 //fmt.Println("nparstr: ",nparStr," : ",len(nparStr))
 
-	if !(len(nparStr) > 0) {
+	if !(len(nparStr) > 0) && (par.Bullet == nil) {
 		outstr ="\n"
 		tocstr = "\n"
-		return outstr, tocstr,nil
+		return outstr, tocstr
 	}
 
 // check of new line in the middle of the string
@@ -726,23 +691,23 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 		itPrefix := "";
 		if titlestyl {
 			tocstr+= tocPrefix + n2parStr + tocSuffix + "\n"
-	    	outstr += prefix + n2parStr + suffix
+	    	outstr = prefix + n2parStr + suffix
 		} else {
 //			if subtitlestyl {
 //	    		outstr += prefix + n2parStr + suffix
 //			} else {
 				if italicStyl {itPrefix = "_"}
 				if boldStyl {boldPrefix = "**"}
-	    		outstr += "\n" + liststr + prefix + boldPrefix + itPrefix + n2parStr + itPrefix + boldPrefix + suffix
+//	    		outstr = "\n" + listStr + prefix + boldPrefix + itPrefix + n2parStr + itPrefix + boldPrefix + suffix
+	    		outstr = listStr + prefix + boldPrefix + itPrefix + n2parStr + itPrefix + boldPrefix + suffix
 //			}
 		}
 
 	if par.PositionedObjectIds != nil {
 
-
 	}
 
-	return outstr, tocstr,nil
+	return hdStr + outstr, tocstr
 }
 
 
@@ -769,8 +734,7 @@ func CvtGdocToMd(folderPath string, doc *docs.Document, options *util.OptObj)(er
 		return fmt.Errorf("error CvtGdocTpMd: cannot write to file! %v", err)
 	}
 
-	outstr = ""
-	if (docObj.Options.Toc) && (len(docObj.headings) > 2){
+	if (docObj.Options.Toc) && (len(docObj.headings)>2) {
 		tocstr = "<p style=\"font-size:20pt; text-align:center\">Table of Contents</p>\n"
 	}
 
@@ -778,24 +742,17 @@ func CvtGdocToMd(folderPath string, doc *docs.Document, options *util.OptObj)(er
 	elNum := len(body.Content)
 //	outstr = "\n******************** Body *********************************\n"
 
+	docObj.parCount = 0;
+	bodyStr :=""
 	for el:=0; el< elNum; el++ {
 		bodyEl := body.Content[el]
 //		outstr += fmt.Sprintf("\nelement: %d StartIndex: %d EndIndex: %d\n", el, bodyEl.StartIndex, bodyEl.EndIndex)
 		if bodyEl.Paragraph != nil {
 			par := bodyEl.Paragraph
-//			outstr += fmt.Sprintf("  Paragraph with %d Par-Elements\n", len(par.Elements))
-
-			tstr, toctstr, err :=docObj.cvtParToMd(par)
-			if err != nil {
-				outstr += fmt.Sprintf("error cvtPar: %v\n",err)
-			} else {
-				outstr += tstr
-				tocstr += toctstr
-			}
-
-			if par.ParagraphStyle != nil {
-//				outstr += "  Has Style Structure\n"
-			}
+			tstr, toctstr := docObj.cvtParToMd(par)
+			docObj.parCount++
+			bodyStr += tstr
+			tocstr += toctstr
 
 			if par.PositionedObjectIds != nil {
 				fmt.Printf("  Has Positioned Objects: %d\n", len(par.PositionedObjectIds))
@@ -804,11 +761,10 @@ func CvtGdocToMd(folderPath string, doc *docs.Document, options *util.OptObj)(er
 					errstr := fmt.Sprintf("\n[//]: # (error cvtParPosImg: %v)\n",err)
 					imgstr = errstr + imgstr
         	    }
-				outstr += imgstr
-
+				bodyStr += imgstr
 			}
+		} // end par
 
-		}
 		if bodyEl.SectionBreak != nil {
 //			outstr += fmt.Sprintf("Section Break\n")
 		}
@@ -821,14 +777,14 @@ func CvtGdocToMd(folderPath string, doc *docs.Document, options *util.OptObj)(er
 
 	}
 
-	if docObj.Options.Toc {
+	if (docObj.Options.Toc) && (len(docObj.headings)>2) {
+//	if len(tocstr) > 0  {
 		tocstr += "\n\n"
 		outfil.WriteString(tocstr)
 	}
 
-	outfil.WriteString(outstr)
+	outfil.WriteString(bodyStr)
 
 	outfil.Close()
 	return nil
 }
-
