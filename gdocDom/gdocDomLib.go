@@ -3233,10 +3233,10 @@ func (dObj *GdocDomObj) cvtParStylToDom(parStyl *docs.ParagraphStyle, parent str
 			return parStylObj, false, fmt.Errorf("getNamedStyl: %v", err)
 		}
 	}
+
 	// default style for each named style used in the document
 	// add css for named style at the begining of the style sheet
 	// normal_text is already defined as the default in the css for the <div>
-	// *** important *** cvtNamedStyl needs to be run before CvtParStyle
 
 	cssComment := ""
 	if namParStyl == nil {
