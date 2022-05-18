@@ -2340,9 +2340,9 @@ func (dObj *GdocDomObj) closeList(nl int)(htmlStr string) {
 	if (dObj.listStack == nil) {return ""}
 
 	stack := dObj.listStack
-	n := len(*stack) -1
+	n := len(*stack)
 
-	for i := n; i > nl; i-- {
+	for i := n -1; i >= nl; i-- {
 		ord := (*stack)[i].cOrd
 		if ord {
 			htmlStr += "</ol>\n"
@@ -2840,6 +2840,17 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 
 	dObj.parCount++
 
+	// first we need to check whether this is a cr-only paragraph
+	if len(par.Elements) == 1 {
+       if par.Elements[0].TextRun != nil {
+            if par.Elements[0].TextRun.Content == "\n" {
+				brEl := elScriptObj{typ: "br", parent: "divMain", newEl: "noel",}
+                parObj.script = addElToDom(brEl)
+                return parObj, nil
+            }
+        }
+
+	}
 
 	isList := false
 	if par.Bullet != nil {isList = true}
@@ -2854,6 +2865,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 		}
 	}
 
+
 	// Positioned Objects
 	numPosObj := len(par.PositionedObjectIds)
 	for i:=0; i< numPosObj; i++ {
@@ -2866,7 +2878,11 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 			imgDisp.bodyHtml = fmt.Sprintf("<!-- error cvtPar:: render pos img %v -->\n", err) + imgDisp.bodyHtml
 		}
 		addDispObj(&parObj, imgDisp)
+//		return parObj, nil
 	}
+
+	// par elements includes text
+
 
 	// get paragraph style
 	if par.ParagraphStyle != nil {
@@ -2892,7 +2908,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 
 // still todo
 // need to apply bulletTxtMap to marker
-//      var bulletTxtMap *textMap
+
 		if par.Bullet.TextStyle != nil {
 //          bulletTxtMap = fillTxtMap(par.Bullet.TextStyle)
 		}
@@ -3427,7 +3443,7 @@ func (dObj *GdocDomObj) creCssDocHead() (headCss string, err error) {
 	defTxtMap := fillTxtMap(txtStyl)
 
 	cssStr += "  display:block;\n"
-	cssStr += "  margin: 0 0 0 0;\n"
+	cssStr += "  margin: 0;\n"
 	if dObj.Options.DivBorders {
 		cssStr += "  border: solid green;\n"
 		cssStr += "  border-width: 1px;\n"
@@ -3447,6 +3463,7 @@ func (dObj *GdocDomObj) creCssDocHead() (headCss string, err error) {
 	cssStr =""
 	if len(pCssStr) > 0 {
 		cssStr += fmt.Sprintf(".%s_p {\n", dObj.docName)
+		cssStr += "  margin: 0;\n"
 		cssStr += pCssStr + "}\n"
 	}
 	headCss += cssStr
@@ -3478,18 +3495,14 @@ func (dObj *GdocDomObj) creCssDocHead() (headCss string, err error) {
 		cssStr += fmt.Sprintf("  padding-left: 6pt;\n")
 		cssStr += fmt.Sprintf("}\n")
 
-		nestLev0 := listProp.NestingLevels[0]
-		defGlyphTxtMap := fillTxtMap(nestLev0.TextStyle)
+//		nestLev0 := listProp.NestingLevels[0]
+//		defGlyphTxtMap := fillTxtMap(nestLev0.TextStyle)
 
 		cumIndent := 0.0
 
 		for nl:=0; nl <= int(dObj.docLists[i].maxNestLev); nl++ {
 			nestLev := listProp.NestingLevels[nl]
-			glyphTxtMap := defGlyphTxtMap
-			if nl > 0 {
-//lll
-               cvtTxtMapStylCss(glyphTxtMap, nestLev.TextStyle)
-			}
+
 			glyphStr := util.GetGlyphStr(nestLev)
 			switch dObj.docLists[i].ord {
 				case true:
@@ -3526,7 +3539,8 @@ func (dObj *GdocDomObj) creCssDocHead() (headCss string, err error) {
 				case false:
 
 			}
-			cssStr +=  cvtTxtMapCss(glyphTxtMap)
+
+            cssStr += cvtTxtMapStylCss(defTxtMap,nestLev.TextStyle)
 			cssStr += fmt.Sprintf("}\n")
 		}
 	}
@@ -3853,11 +3867,9 @@ func (dObj *GdocDomObj) cvtBodyDom() (bodyObj *dispObj, err error) {
 	} // for el loop end
 
 	if dObj.listStack != nil {
-		bodyObj.bodyHtml += dObj.closeList(len(*dObj.listStack))
-//fmt.Printf("end of doc closing list!")
+		bodyObj.bodyHtml += dObj.closeList(0)
+	//fmt.Printf("end of doc closing list!")
 	}
-
-//	bodyObj.bodyHtml += "</div>\n"
 
 	return bodyObj, nil
 }
@@ -3898,7 +3910,7 @@ func (dObj *GdocDomObj) cvtBodySec(elSt, elEnd int) (bodyObj *dispObj, err error
 	} // for el loop end
 
 	if dObj.listStack != nil {
-		bodyObj.bodyHtml += dObj.closeList(len(*dObj.listStack))
+		bodyObj.bodyHtml += dObj.closeList(0)
 //fmt.Printf("end of doc closing list!")
 	}
 
