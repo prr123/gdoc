@@ -13,8 +13,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-//	"net/http"
-//	"io"
 	"google.golang.org/api/docs/v1"
     util "google/gdoc/gdocUtil"
 )
@@ -86,163 +84,6 @@ func findDocList(list []docList, listid string) (res int) {
     }
     return res
 }
-
-/*
-func (dObj *gdocMdObj) downloadImg()(err error) {
-
-	doc := dObj.doc
-	if !(len(dObj.imgFoldNam) >0) {
-		return fmt.Errorf("error downloadImg:: no imgfolder found!")
-	}
-	imgFoldPath := dObj.imgFoldPath + "/"
-	fmt.Println("image dir: ", imgFoldPath)
-
-	fmt.Printf("*** Inline Imgs: %d ***\n", len(doc.InlineObjects))
-	for k, inlObj := range doc.InlineObjects {
-		imgProp := inlObj.InlineObjectProperties.EmbeddedObject.ImageProperties
-		if dObj.Options.Verb {
-			fmt.Printf("Source: %s Obj %s\n", k, imgProp.SourceUri)
-			fmt.Printf("Content: %s Obj %s\n", k, imgProp.ContentUri)
-		}
-		if !(len(imgProp.SourceUri) > 0) {
-			return fmt.Errorf("error downloadImg:: image %s has no URI\n", k)
-		}
-		imgNam := imgFoldPath + k[4:] + ".jpeg"
-		if dObj.Options.Verb {fmt.Printf("image path: %s\n", imgNam)}
-		URL := imgProp.ContentUri
-		httpResp, err := http.Get(URL)
-    	if err != nil {
-        	return fmt.Errorf("error downloadImg:: could not fetch %s! %v", URL, err)
-    	}
-    	defer httpResp.Body.Close()
-//	fmt.Printf("http got %s!\n", URL)
-    	if httpResp.StatusCode != 200 {
-        	return fmt.Errorf("error downloadImg:: Received non 200 response code %d!", httpResp.StatusCode)
-    	}
-//	fmt.Printf("http status: %d\n ", httpResp.StatusCode)
-    //Create a empty file
-    	outfil, err := os.Create(imgNam)
-    	if err != nil {
-        	return fmt.Errorf("error downloadImg:: cannot create img file! %v", err)
-    	}
-    	defer outfil.Close()
-//	fmt.Println("created dir")
-    	//Write the bytes to the fiel
-    	_, err = io.Copy(outfil, httpResp.Body)
-    	if err != nil {
-        	return fmt.Errorf("error downloadImg:: cannot copy img file content! %v", err)
-    	}
-	}
-
-	fmt.Printf("*** Positioned Imgs: %d ***\n", len(doc.PositionedObjects))
-	for k, posObj := range doc.PositionedObjects {
-		imgProp := posObj.PositionedObjectProperties.EmbeddedObject.ImageProperties
-		if dObj.Options.Verb {
-			fmt.Printf("Source: %s Obj %s\n", k, imgProp.SourceUri)
-			fmt.Printf("Content: %s Obj %s\n", k, imgProp.ContentUri)
-		}
-		if !(len(imgProp.SourceUri) > 0) {
-			return fmt.Errorf("error downloadImg:: image %s has no URI\n", k)
-		}
-		imgNam := imgFoldPath + k[4:] + ".jpeg"
-		if dObj.Options.Verb {fmt.Printf("image path: %s\n", imgNam)}
-		URL := imgProp.ContentUri
-		httpResp, err := http.Get(URL)
-    	if err != nil {
-        	return fmt.Errorf("error downloadImg:: could not fetch %s! %v", URL, err)
-    	}
-    	defer httpResp.Body.Close()
-//	fmt.Printf("http got %s!\n", URL)
-    	if httpResp.StatusCode != 200 {
-        	return fmt.Errorf("error downloadImg:: Received non 200 response code %d!", httpResp.StatusCode)
-    	}
-//	fmt.Printf("http status: %d\n ", httpResp.StatusCode)
-    //Create a empty file
-    	outfil, err := os.Create(imgNam)
-    	if err != nil {
-        	return fmt.Errorf("error downloadImg:: cannot create img file! %v", err)
-    	}
-    	defer outfil.Close()
-//	fmt.Println("created dir")
-    	//Write the bytes to the fiel
-    	_, err = io.Copy(outfil, httpResp.Body)
-    	if err != nil {
-        	return fmt.Errorf("error downloadImg:: cannot copy img file content! %v", err)
-    	}
-	}
-
-    return nil
-}
-
-
-func (dObj *gdocMdObj) createImgFolder()(err error) {
-
-	filnam :=dObj.DocName
-    if !(len(filnam) >0) {
-        return fmt.Errorf("error filename %s is empty!", filnam)
-    }
-
-	// this check should be moved to docname creation
-    bf := []byte(filnam)
-    // replace empty space with underscore
-    for i:= 0; i< len(filnam); i++ {
-        if bf[i] == ' ' {bf[i]='_'}
-        if bf[i] == '.' {
-            return fmt.Errorf("error filnam has period!")
-        }
-    }
-
-    imgFoldNam := "imgs_" + string(bf)
-
-	fmt.Println("output file name: ", dObj.outfil.Name())
-	foldNamb := []byte(dObj.outfil.Name())
-	idx := 0
-	for i:=len(foldNamb)-1; i> 0; i-- {
-		if foldNamb[i] == '/' {
-			idx = i
-			break
-		}
-	}
-
-	imgFoldPath := imgFoldNam
-	if idx > 0 {
-		imgFoldPath = string(foldNamb[:idx]) + "/" + imgFoldNam
-	}
-
-//	fmt.Println("img folder path: ", imgFoldPath)
-
-	// check whether dir folder exists, if not create one
-    newDir := false
-    _, err = os.Stat(imgFoldPath)
-	if os.IsNotExist(err) {
-        err1 := os.Mkdir(imgFoldPath, os.ModePerm)
-        if err1 != nil {
-            return fmt.Errorf("error createImgFolder:: could not create img folder! %v", err1)
-        }
-        newDir = true
-    } else {
-		if err != nil {
-            return fmt.Errorf("error createImgFolder:: could not find img folder! %v", err)
-		}
-	}
-
-    // open directory
-    if !newDir {
-        err = os.RemoveAll(imgFoldPath)
-        if err != nil {
-            return fmt.Errorf("error createImgFolder:: could not delete files in image folder! %v", err)
-        }
-        err = os.Mkdir(imgFoldPath, os.ModePerm)
-        if err != nil {
-            return fmt.Errorf("error createImgFolder:: could not create img folder! %v", err)
-        }
-    }
-	dObj.imgFoldNam = imgFoldNam
-	dObj.imgFoldPath = imgFoldPath
-
-    return nil
-}
-*/
 
 func (dObj *gdocMdObj) InitGdocMd(folderPath string, options *util.OptObj) (err error) {
     var listItem docList
@@ -448,19 +289,6 @@ func (dObj *gdocMdObj) InitGdocMd(folderPath string, options *util.OptObj) (err 
 }
 
 
-func (dObj *gdocMdObj) getColor(color  *docs.Color)(outstr string) {
-    outstr = ""
-        if color != nil {
-            blue := int(color.RgbColor.Blue*255.0)
-            red := int(color.RgbColor.Red*255.0)
-            green := int(color.RgbColor.Green*255)
-            outstr += fmt.Sprintf("rgb(%d, %d, %d);\n", red, green, blue)
-            return outstr
-        }
-    outstr = "no color\n"
-    return outstr
-}
-
 func (dObj *gdocMdObj) cvtTocName(parstr string)(tocstr string) {
 	var yLen int
 	var y [100]byte
@@ -570,7 +398,7 @@ func (dObj *gdocMdObj) renderPosImg(par *docs.Paragraph)(outstr string, err erro
 }
 
 
-func (dObj *gdocMdObj) cvtPelInlineImg(imgEl *docs.InlineObjectElement)(outstr string, err error) {
+func (dObj *gdocMdObj) renderInlineImg(imgEl *docs.InlineObjectElement)(outstr string, err error) {
 
    	if imgEl == nil {
         return "", fmt.Errorf("error convertPelInlineImg:: imgEl is nil!")
@@ -847,9 +675,9 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 
 		// inline image
 		if parEl.InlineObjectElement != nil {
-            tstr, err := dObj.cvtPelInlineImg(parEl.InlineObjectElement)
+            tstr, err := dObj.renderInlineImg(parEl.InlineObjectElement)
             if err != nil {
-				outstr = fmt.Sprintf("\n[//]: # (error cvtPelInlineImg: %v)\n",err)
+				outstr = fmt.Sprintf("\n[//]: # (error renderInlineImg: %v)\n",err)
             }
 			parStr += tstr + outstr
 		}
@@ -860,9 +688,6 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 		}
 	} // loop parEl
 
-
-//	parLen := len(parStr)
-//	xb := []byte(parStr)
 	nparStr := parStr
 //fmt.Println("parstr: ",parStr," : ",len(parStr))
 
