@@ -568,6 +568,13 @@ func (dObj *gdocTxtObj) dispParEl(parDet *docs.ParagraphElement)(outstr string, 
 	if parDet.TextRun != nil {
 		cLen := len(parDet.TextRun.Content)
 		outstr += fmt.Sprintf("cl: %d", cLen)
+		tCount:=1
+		for i:=0; i< cLen; i++ {
+			if parDet.TextRun.Content[i] == '\t' {
+				outstr += fmt.Sprintf(" tab %d: %d ", tCount, i)
+				tCount++
+			}
+		}
 		if cLen > 0 {
 			if cLen > 21 {
 				outstr += fmt.Sprintf("    \"%s ...\"",parDet.TextRun.Content[0:20])
@@ -798,6 +805,16 @@ func (dObj *gdocTxtObj) dispParStyl(parStyl *docs.ParagraphStyle, wsp int)(outst
 			}
 		}
 	}
+
+	outstr += wspStr + fmt.Sprintf("  Tabs: %d\n",  len(parStyl.TabStops))
+
+	for i:=0; i< len(parStyl.TabStops); i++ {
+		tab := parStyl.TabStops[i]
+		outstr += wspStr + fmt.Sprintf("  Tab: %2d ", i)
+		outstr += fmt.Sprintf("align: %-10s Offset: %.0f\n", tab.Alignment, tab.Offset.Magnitude)
+	}
+
+
 	if parStyl.BorderBetween != nil {
 		outstr += wspStr + "  *** Border Between ***\n"
 		outstr += dObj.dispBorder(parStyl.BorderBetween, 4)
