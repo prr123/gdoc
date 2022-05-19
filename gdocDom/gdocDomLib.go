@@ -1689,14 +1689,14 @@ func addTxtElToDom(elObj elScriptObj)(script string) {
 
 func addElToDom(elObj elScriptObj)(script string) {
 
-	script = "//addEl \n"
-	script += "//" + elObj.comment + "\n"
+	script = "// addEl \n"
+	script += "// " + elObj.comment + "\n"
 	if !(len(elObj.parent) > 0) {
-		script += "// no el parent provided!\n"
+		script += "// error - no el parent provided!\n"
 		return script
 	}
 	if !(len(elObj.typ) > 0) {
-		script += "// no text provided!\n"
+		script += "// error - no el type provided!\n"
 		return script
 	}
 	script = "  for (key in elObj) {elObj[key] = null;}\n"
@@ -2831,6 +2831,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 	var newList cList
 	var	listEl elScriptObj
 	var orList, unList elScriptObj
+	var parent string
 
 	if par == nil {
         return parObj, fmt.Errorf("cvtPar -- parEl is nil!")
@@ -2860,7 +2861,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 		// if we have a non-list paragraph. we assume any open lists need to be closed
 		// in a Dom we wander back to div_main
 		if dObj.listStack != nil {
-			parObj.bodyHtml += dObj.closeList(-1)
+			parObj.bodyHtml += dObj.closeList(0)
 			//fmt.Printf("new par -> close list\n")
 		}
 	}
@@ -2938,8 +2939,9 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 //		printLiStack(dObj.listStack)
 
 		listAtt, cNest := getLiStack(dObj.listStack)
-//		printLiStackItem(listAtt, cNest)
-		scriptStr := ""
+		//printLiStackItem(listAtt, cNest)
+		scriptStr += fmt.Sprintf("// " + "listid: %s listAtt: %s\n", listid, listAtt.cListId)
+
 		switch listid == listAtt.cListId {
 			case true:
 				switch {
@@ -2958,7 +2960,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 								orList.typ = "ol"
 								orList.cl1 = listid[4:] + "_ol"
 								orList.cl2 = fmt.Sprintf("nL_%d", nl)
-								scriptStr = addElToDom(orList)
+								scriptStr += addElToDom(orList)
 								// css
 								listCss = fmt.Sprintf(".%s_ol.nL_%d {\n", listid[4:], nl)
 								listCss += fmt.Sprintf("  counter-reset: %s_nL_%d\n",listid[4:], nl)
@@ -2997,12 +2999,13 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 //fmt.Printf("<!-- new list %s %s -->\n", listid, listAtt.cListId)
 
 				// start a new list
+				scriptStr += "// " + "new list\n"
 				newList.cListId = listid
 				newList.cOrd = listOrd
 				newStack := pushLiStack(dObj.listStack, newList)
 				dObj.listStack = newStack
 				nl := nestIdx
-				parent := ""
+				parent = ""
 				if nl == 0 {
 					parent = "divMain"
 				}
@@ -3017,7 +3020,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 					orList.typ = "ol"
 					orList.cl1 = listid[4:] + "_ol"
 					orList.cl2 = fmt.Sprintf("nL_%d", nl)
-					scriptStr = addElToDom(orList)
+					scriptStr += addElToDom(orList)
 					// css
 					listCss = fmt.Sprintf(".%s_ol.nL_%d {\n", listid[4:], nestIdx)
 					listCss += fmt.Sprintf("  counter-reset: %s_nL_%d\n",listid[4:], nestIdx)
@@ -3035,20 +3038,17 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 				}
 			}
 		}
+		parObj.script += scriptStr
 
 		// html <li>
 		// html listPrefix = fmt.Sprintf("<li class=\"%s_li nL_%d\">", listid[4:], nestIdx)
 		// script
 		parent := ""
 		nl := nestIdx
-		if nestIdx == 0 {
-			parent = "divMain"
+		if listOrd {
+			parent = fmt.Sprintf("ol_%d", nl)
 		} else {
-			if listOrd {
-				parent = fmt.Sprintf("ol_%d", nl)
-			} else {
-				parent = fmt.Sprintf("ul_%d", nl)
-			}
+			parent = fmt.Sprintf("ul_%d", nl)
 		}
 
 		listEl.parent = parent
@@ -3066,6 +3066,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 
 
 		// get paragraph style
+		parent = "lsIt"
 		parStyl, _, err := dObj.cvtParStylToDom(par.ParagraphStyle, parent, isList)
 		if err != nil {
 			parStyl.bodyCss += fmt.Sprintf("/* error cvtParStyl: %v */\n", err)
@@ -3381,8 +3382,9 @@ func (dObj *GdocDomObj) cvtParStylToDom(parStyl *docs.ParagraphStyle, parent str
 		case "NORMAL_TEXT":
 			switch {
 				case isList:
-//					prefix = "<span"
-//					suffix = "</span>"
+					// html prefix = "<span>"
+					elObj.typ = "p"
+//					elObj.parent = Sprintf("li_%d",nestIdx)
 				case alter:
 					cssPrefix = fmt.Sprintf(".%s_p.%s_p_%d {\n",dObj.docName, dObj.docName, dObj.parCount)
 					//html prefix = fmt.Sprintf("<p class=\"%s_p %s_p_%d\"",dObj.docName, dObj.docName, dObj.parCount)
