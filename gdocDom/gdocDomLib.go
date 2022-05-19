@@ -3381,10 +3381,9 @@ func (dObj *GdocDomObj) cvtParStylToDom(parStyl *docs.ParagraphStyle, parent str
 
 		case "NORMAL_TEXT":
 			switch {
-				case isList:
+//				case isList:
 					// html prefix = "<span>"
-					elObj.typ = "p"
-//					elObj.parent = Sprintf("li_%d",nestIdx)
+//					elObj.typ = "p"
 				case alter:
 					cssPrefix = fmt.Sprintf(".%s_p.%s_p_%d {\n",dObj.docName, dObj.docName, dObj.parCount)
 					//html prefix = fmt.Sprintf("<p class=\"%s_p %s_p_%d\"",dObj.docName, dObj.docName, dObj.parCount)
