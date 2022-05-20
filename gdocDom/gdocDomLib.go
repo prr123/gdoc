@@ -2334,25 +2334,25 @@ func (dObj *GdocDomObj) cvtParDomElText(parElTxt *docs.TextRun, namedTyp string)
 }
 
 
-func (dObj *GdocDomObj) closeList(nl int)(htmlStr string) {
+func (dObj *GdocDomObj) closeList(nl int) {
 	// ends a list
 
-	if (dObj.listStack == nil) {return ""}
+	if (dObj.listStack == nil) {return}
 
 	stack := dObj.listStack
 	n := len(*stack)
 
 	for i := n -1; i >= nl; i-- {
-		ord := (*stack)[i].cOrd
-		if ord {
-			htmlStr += "</ol>\n"
-		} else {
-			htmlStr +="</ul>\n"
-		}
+//		ord := (*stack)[i].cOrd
+//		if ord {
+//			htmlStr += "</ol>\n"
+//		} else {
+//			htmlStr +="</ul>\n"
+//		}
 		nstack := popLiStack(stack)
 		dObj.listStack = nstack
 	}
-	return htmlStr
+	return
 }
 
 func (dObj *GdocDomObj) renderPosImg(posImg docs.PositionedObject, posId string)(imgDisp *dispObj, err error) {
@@ -2526,8 +2526,8 @@ func (dObj *GdocDomObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 
 	// if there is an open list, close it
 	if len(*dObj.listStack) >= 0 {
-		htmlStr += dObj.closeList(len(*dObj.listStack))
-fmt.Printf("table closing list!\n")
+		dObj.closeList(0)
+//fmt.Printf("table closing list!\n")
 	}
 
 	htmlStr += fmt.Sprintf("<table class=\"%s\">\n", tblClass)
@@ -2721,7 +2721,7 @@ func (dObj *GdocDomObj) cvtTableDom(tbl *docs.Table)(tabObj dispObj, err error) 
 
 	// if there is an open list, close it
 	if len(*dObj.listStack) >= 0 {
-		htmlStr += dObj.closeList(len(*dObj.listStack))
+		dObj.closeList(0)
 //fmt.Printf("table closing list!\n")
 	}
 
@@ -2860,10 +2860,8 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 	if par.Bullet == nil {
 		// if we have a non-list paragraph. we assume any open lists need to be closed
 		// in a Dom we wander back to div_main
-		if dObj.listStack != nil {
-			parObj.bodyHtml += dObj.closeList(0)
+		if dObj.listStack != nil {dObj.closeList(0)}
 			//fmt.Printf("new par -> close list\n")
-		}
 	}
 
 
@@ -2905,7 +2903,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 		return parObj, nil
 	}
 
-// lists
+	// lists
     if par.Bullet != nil {
 		// there is paragraph style for each ul and a text style for each list element
 // still todo
@@ -2987,6 +2985,10 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 //						scriptStr += fmt.Sprintf("// list id %s new NL: %d old NL: %d\n", list id, nestIdx, cNest)
 						//html diag	fmt.Printf("<!-- same list reduce %s new NL %d  old Nl %d -->\n", listid, nestIdx, cNest)
 
+						// script
+						dObj.closeList(nestIdx)
+
+
 					case nestIdx == cNest:
 //						listHtml =""
 				}
@@ -3009,12 +3011,12 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 				if nl == 0 {
 					parent = "divMain"
 				}
+		fmt.Printf("parent: %s nl: %d \n", parent, nl)
 				if listOrd {
 					// html listHtml += fmt.Sprintf("<ol class=\"%s_ol nL_%d\">\n", listid[4:], nestIdx)
 					// script
-					if len(parent) == 0 {
-						parent = fmt.Sprintf("ol_%d", nl - 1)
-					}
+					if len(parent) == 0 {parent = fmt.Sprintf("ol_%d", nl - 1)}
+
 					orList.parent = parent
 					orList.newEl = fmt.Sprintf("ol_%d", nl)
 					orList.typ = "ol"
@@ -3027,31 +3029,33 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 					listCss += "}\n"
 				} else {
 					// html listHtml += fmt.Sprintf("<ul class=\"%s_ul nL_%d\">\n", listid[4:], nestIdx)
-					if len(parent) == 0 {
-						parent = fmt.Sprintf("ul_%d", nl - 1)
+					if len(parent) == 0 {parent = fmt.Sprintf("ul_%d", nl - 1)}
+
+		fmt.Printf("ul parent: %s nl: %d \n", parent, nl)
 					unList.parent = parent
 					unList.newEl = fmt.Sprintf("ul_%d", nl)
 					unList.typ = "ul"
 					unList.cl1 = listid[4:] + "_ul"
 					unList.cl2 = fmt.Sprintf("nL_%d", nl)
 					scriptStr += addElToDom(unList)
+					//css
 				}
-			}
-		}
+		} // switch
+
 		parObj.script += scriptStr
 
 		// html <li>
 		// html listPrefix = fmt.Sprintf("<li class=\"%s_li nL_%d\">", listid[4:], nestIdx)
 		// script
-		parent := ""
+		listParent := ""
 		nl := nestIdx
 		if listOrd {
-			parent = fmt.Sprintf("ol_%d", nl)
+			listParent = fmt.Sprintf("ol_%d", nl)
 		} else {
-			parent = fmt.Sprintf("ul_%d", nl)
+			listParent = fmt.Sprintf("ul_%d", nl)
 		}
 
-		listEl.parent = parent
+		listEl.parent = listParent
 		listEl.cl1 = listid[4:] + "_li"
 		listEl.cl2 = fmt.Sprintf("nL_%d", nestIdx)
 		listEl.typ = "li"
@@ -3061,9 +3065,8 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 
 		// mark
 		if par.Bullet.TextStyle != nil {
-//          bulletTxtMap = fillTxtMap(par.Bullet.TextStyle)
+//      	    bulletTxtMap = fillTxtMap(par.Bullet.TextStyle)
 		}
-
 
 		// get paragraph style
 		parent = "lsIt"
@@ -3073,10 +3076,10 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 		}
 		addDispObj(&parObj,&parStyl)
 
-	// Heading Id refers to a heading paragraph not just a normal paragraph
-	// headings are bookmarked for TOC
+		// Heading Id refers to a heading paragraph not just a normal paragraph
+		// headings are bookmarked for TOC
 
-	// par elements: text and css for text
+		// par elements: text and css for text
 
 		parElSumDisp, err := dObj.cvtParElToDom(par)
 		if err != nil {parElSumDisp.script += fmt.Sprintf("// error cvtParElDom: %v\n",err)}
@@ -3941,7 +3944,7 @@ func (dObj *GdocDomObj) cvtBodyDom() (bodyObj *dispObj, err error) {
 	} // for el loop end
 
 	if dObj.listStack != nil {
-		bodyObj.bodyHtml += dObj.closeList(0)
+		dObj.closeList(0)
 	//fmt.Printf("end of doc closing list!")
 	}
 
@@ -3984,7 +3987,7 @@ func (dObj *GdocDomObj) cvtBodySec(elSt, elEnd int) (bodyObj *dispObj, err error
 	} // for el loop end
 
 	if dObj.listStack != nil {
-		bodyObj.bodyHtml += dObj.closeList(0)
+		dObj.closeList(0)
 //fmt.Printf("end of doc closing list!")
 	}
 
