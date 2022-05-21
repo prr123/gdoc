@@ -1698,11 +1698,26 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
 		jsStr += "  return\n}\n"
 	}
 	if tableFun {
-		jsStr += "function addTabEl(tabObj) {\n"
-		jsStr += "  let tab = document.createElement('tab');\n"
+		jsStr += "function addTabEl(tblObj) {\n"
+		jsStr += "  var tbl = document.createElement('table');\n"
+		jsStr += "  var tblBody = document.createElement('tbody');\n"
+		jsStr += "  for (var ir = 0; i < tblObj.rows; i++) {\n"
+		jsStr += "    var tblRow = document.createElement('tr');\n"
+		jsStr += "    var row = tObj.row[ir];\n"
+		jsStr += "    if (row.idStr != null) {tblRow.setAttribute(\"id\", row.idStr);}\n"
+		jsStr += "    if (row.cl1 != null) {tblRow.classList.add(row.cl1);}\n"
+		jsStr += "    if (row.cl2 != null) {tblRow.classList.add(row.cl2);}\n"
+		jsStr += "    for (var ic = 0; i < tblObj.cols; i++) {\n"
+		jsStr += "      var tblCell = document.createElement('td');\n"
+// add text
 
-		jsStr += "  tabp = tabObj.parent;\n"
-		jsStr += "  tabp.appendChild(tab);\n"
+		jsStr += "      tblRow.appendChild(tblCell);\n"
+		jsStr += "	  }/n"
+		jsStr += "	  tblBody.appendChild(tblRow);\n"
+		jsStr += "	}/n"
+
+		jsStr += "  tblp = tblObj.parent;\n"
+		jsStr += "  tblp.appendChild(tab);\n"
 		jsStr += "  return\n}\n"
 	}
 	jsStr += "function addBodyElScript(divDoc) {\n"
