@@ -39,8 +39,8 @@ type GdocDomObj struct {
 	h4 namStyl
 	h5 namStyl
 	h6 namStyl
-	elDiv string
-	elNam string
+	parent string
+//	elNam string
 	listStack *[]cList
 	docLists []docList
 	headings []heading
@@ -205,6 +205,18 @@ type elScriptObj struct {
 	cl2 string
 	idStr string
 	href string
+	parent string
+	newEl string
+	comment string
+}
+
+type imgScriptObj struct {
+	typ string
+	txt string
+	cl1 string
+	cl2 string
+	idStr string
+	src string
 	parent string
 	newEl string
 	comment string
@@ -1639,7 +1651,7 @@ func creHtmlDocDiv(docName string)(htmlStr string) {
 	htmlStr = fmt.Sprintf("<div class=\"%s_doc\">\n", docName)
 	return htmlStr
 }
-//sss
+
 func creElFuncScript() (jsStr string) {
 	jsStr = "function addEl(elObj) {\n"
 	jsStr += "  let el = document.createElement(elObj.typ);\n"
@@ -1663,6 +1675,18 @@ func creElFuncScript() (jsStr string) {
 	jsStr += "    var text =  document.createTextNode(elObj.txt);\n"
 	jsStr += "    el.appendChild(text);\n"
 	jsStr += "  }\n}\n"
+	jsStr += "function addImg(imgObj) {\n"
+	jsStr += "  if (imgObj.src == null) {return\n}\n"
+	jsStr += "  let img = document.createElement('img');\n"
+	jsStr += "  if (imgObj.idStr != null) {img.setAttribute(\"id\", imgObj.idStr);}\n"
+	jsStr += "  if (imgObj.cl1 != null) {img.classList.add(imgObj.cl1);}\n"
+	jsStr += "  if (imgObj.cl2 != null) {img.classList.add(imgObj.cl2);}\n"
+	jsStr += "  img.src = imgObj.src\n"
+	// title, alter, height, width
+	jsStr += ""
+	jsStr += "  imgp = imgObj.parent;\n"
+	jsStr += "  imgp.appendChild(img);\n"
+	jsStr += "  return\n}\n"
 	jsStr += "function addBodyElScript(divDoc) {\n"
 	jsStr += "  const elObj = {};\n"
 	return jsStr
@@ -1710,6 +1734,28 @@ func addElToDom(elObj elScriptObj)(script string) {
 	return script
 }
 
+func addImgElToDom(imgObj imgScriptObj)(script string) {
+
+	script = "// addEl \n"
+	script += "// " + imgObj.comment + "\n"
+	if !(len(imgObj.parent) > 0) {
+		script += "// error - no el parent provided!\n"
+		return script
+	}
+	if !(len(imgObj.typ) > 0) {
+		script += "// error - no el type provided!\n"
+		return script
+	}
+	script = "  for (key in imgObj) {imgObj[key] = null;}\n"
+	if len(imgObj.cl1) > 0 {script += fmt.Sprintf("  imgObj.cl1 = '%s';\n", imgObj.cl1)}
+	if len(imgObj.cl2) > 0 {script += fmt.Sprintf("  imgObj.cl2 = '%s';\n", imgObj.cl2)}
+	if len(imgObj.idStr) > 0 {script += fmt.Sprintf("  imgObj.idStr = '%s';\n", imgObj.idStr)}
+	script += fmt.Sprintf("  imgObj.parent = %s;\n", imgObj.parent)
+	script += fmt.Sprintf("  imgObj.typ = 'img';\n")
+	script += fmt.Sprintf("  addImg(imgObj);\n")
+	return script
+}
+
 func addDivMainScript(docName string) (jsStr string) {
     jsStr += "  let divMain = document.createElement('div');\n"
     jsStr += fmt.Sprintf("  divMain.classList.add('%s_main');\n", docName)
@@ -1724,7 +1770,6 @@ func creDocDivScript(docName string)(jsStr string) {
     jsStr += "  let divDoc = document.createElement('div');\n"
     jsStr += fmt.Sprintf("  divDoc.classList.add('%s_doc');\n", docName)
     jsStr += "  document.body.appendChild(divDoc);\n"
-//	jsStr += addDivMainScript(docName)
 	jsStr += "  addBodyElScript(divDoc);\n"
 	jsStr += "}\n"
     jsStr += "document.addEventListener(\"DOMContentLoaded\", dispDoc);\n"
@@ -1774,8 +1819,6 @@ func addParScript(docName string)(jsStr string) {
 	jsStr += "}\n"
     return jsStr
 }
-
-
 
 func (dObj *GdocDomObj) printHeadings() {
 
@@ -2164,27 +2207,9 @@ var glyphTyp string
 	return cssStr
 }
 
-func (dObj *GdocDomObj) cvtHrElToDom(hr *docs.HorizontalRule)(hrObj dispObj) {
-    var cssStr string
-	var hrEl elScriptObj
-
-	if hr.TextStyle != nil {
-    	cssStr = fmt.Sprintf(".%s_hr_%d {\n", dObj.docName, dObj.hrCount)
-    	cssStr += cvtTxtStylCss(hr.TextStyle)
-    	cssStr += "}\n"
-		hrEl.cl1 = fmt.Sprintf("\"%s_hr_%d\"", dObj.docName, dObj.hrCount)
-	}
-
-//    htmlStr = fmt.Sprintf("<hr id=\"%s_hr_%d\">\n", dObj.docName, dObj.hrCount)
-	hrEl.parent = "hdel"
-	hrEl.typ = "hr"
-    hrObj.script = addElToDom(hrEl)
-    hrObj.bodyCss = cssStr
-    return hrObj
-}
-
 func (dObj *GdocDomObj) renderInlineImg(imgEl *docs.InlineObjectElement)(imgDisp *dispObj, err error) {
 	var imgDispObj dispObj
+	var imgDomEl imgScriptObj
 
 	if imgEl == nil {
 		return nil, fmt.Errorf("imgEl is nil!")
@@ -2208,20 +2233,25 @@ func (dObj *GdocDomObj) renderInlineImg(imgEl *docs.InlineObjectElement)(imgDisp
 	}
 
 	// need to change for imagefolder
-	htmlStr := fmt.Sprintf("<!-- inline image %s -->\n", imgElId)
+//	htmlStr := fmt.Sprintf("<!-- inline image %s -->\n", imgElId)
+	
 	imgObj := doc.InlineObjects[imgElId].InlineObjectProperties.EmbeddedObject
 
 	if dObj.Options.ImgFold {
     	imgSrc := dObj.imgFoldNam + "/" + imgId + ".jpeg"
-		htmlStr +=fmt.Sprintf("<img src=\"%s\" id=\"%s\" alt=\"%s\">\n", imgSrc, imgId, imgObj.Title)
+		// html htmlStr +=fmt.Sprintf("<img src=\"%s\" id=\"%s\" alt=\"%s\">\n", imgSrc, imgId, imgObj.Title)
+		imgDomEl.src = imgSrc
 	} else {
-		htmlStr +=fmt.Sprintf("<img src=\"%s\" id=\"%s\" alt=\"%s\">\n", imgObj.ImageProperties.SourceUri, imgId, imgObj.Title)
+		// html htmlStr +=fmt.Sprintf("<img src=\"%s\" id=\"%s\" alt=\"%s\">\n", imgObj.ImageProperties.SourceUri, imgId, imgObj.Title)
 	}
 	cssStr := fmt.Sprintf("#%s {\n",imgId)
-	cssStr += fmt.Sprintf(" width:%.1fpt; height:%.1fpt; \n}\n", imgObj.Size.Width.Magnitude, imgObj.Size.Height.Magnitude )
+	cssStr += fmt.Sprintf(" width:%.0fpt; height:%.0fpt; \n}\n", imgObj.Size.Width.Magnitude, imgObj.Size.Height.Magnitude )
 	// todo add margin
+	imgDomEl.parent = dObj.parent
+	imgDomEl.typ = "img"
+	imgDomEl.idStr = imgId
 
-	imgDispObj.bodyHtml = htmlStr
+	imgDispObj.script = addImgElToDom(imgDomEl)
 	imgDispObj.bodyCss = cssStr
 
 	return &imgDispObj, nil
@@ -2353,6 +2383,27 @@ func (dObj *GdocDomObj) closeList(nl int) {
 		dObj.listStack = nstack
 	}
 	return
+}
+
+func (dObj *GdocDomObj) cvtHrElToDom (hr *docs.HorizontalRule)(hrObj dispObj) {
+    var cssStr string
+	var hrEl elScriptObj
+    //html htmlStr = "<hr>\n"
+	// script
+	hrEl.parent = dObj.parent
+	hrEl.typ = "hr"
+	hrEl.newEl = "hrEl"
+    if hr.TextStyle != nil {
+        cssStr = fmt.Sprintf(".%s_hr_%d {\n", dObj.docName, dObj.hrCount)
+        cssStr += cvtTxtStylCss(hr.TextStyle)
+        cssStr += "}\n"
+		// html  fmt.Sprintf("<hr class=\"%s_hr_%d\">\n", dObj.docName, dObj.hrCount)
+		hrEl.cl1 = fmt.Sprintf("%s_hr_%d", dObj.docName, dObj.hrCount)
+    }
+
+    hrObj.script = addElToDom(hrEl)
+    hrObj.bodyCss = cssStr
+    return hrObj
 }
 
 func (dObj *GdocDomObj) renderPosImg(posImg docs.PositionedObject, posId string)(imgDisp *dispObj, err error) {
@@ -2845,7 +2896,8 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 	if len(par.Elements) == 1 {
        if par.Elements[0].TextRun != nil {
             if par.Elements[0].TextRun.Content == "\n" {
-				brEl := elScriptObj{typ: "br", parent: "divMain", newEl: "noel",}
+				brEl := elScriptObj{typ: "br", newEl: "noel",}
+				brEl.parent = dObj.parent
                 parObj.script = addElToDom(brEl)
                 return parObj, nil
             }
@@ -2886,7 +2938,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 	// get paragraph style
 // need to fix we know there is no list
 	if (par.ParagraphStyle != nil) && (par.Bullet == nil) {
-		parStyl, _, err := dObj.cvtParStylToDom(par.ParagraphStyle, "divMain", isList)
+		parStyl, _, err := dObj.cvtParStylToDom(par.ParagraphStyle, dObj.parent, isList)
 		if err != nil {
 			parStyl.bodyCss += fmt.Sprintf("/* error cvtParStyl: %v */\n", err)
 		}
@@ -3009,7 +3061,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 				nl := nestIdx
 				parent = ""
 				if nl == 0 {
-					parent = "divMain"
+					parent = dObj.parent
 				}
 		fmt.Printf("parent: %s nl: %d \n", parent, nl)
 				if listOrd {
@@ -3929,9 +3981,9 @@ func (dObj *GdocDomObj) cvtBodyDom() (bodyObj *dispObj, err error) {
 	divMain.typ = "div"
 	divMain.parent = "divDoc"
 	divMain.cl1 = dObj.docName + "_main"
-	divMain.newEl = "divMain"
+	dObj.parent = "divMain"
+	divMain.newEl = dObj.parent
 	bodyObj.script = addElToDom(divMain)
-	dObj.elDiv = "divMain"
 
 	elNum := len(body.Content)
 	for el:=0; el< elNum; el++ {
