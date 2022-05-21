@@ -211,8 +211,16 @@ type elScriptObj struct {
 }
 
 type imgScriptObj struct {
-	typ string
-	txt string
+	cl1 string
+	cl2 string
+	idStr string
+	src string
+	parent string
+	title string
+	comment string
+}
+
+type tableScriptObj struct {
 	cl1 string
 	cl2 string
 	idStr string
@@ -1689,7 +1697,7 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
 		jsStr += "  imgp.appendChild(img);\n"
 		jsStr += "  return\n}\n"
 	}
-	if tebleFun {
+	if tableFun {
 		jsStr += "function addTabEl(tabObj) {\n"
 		jsStr += "  let tab = document.createElement('tab');\n"
 
@@ -1752,17 +1760,29 @@ func addImgElToDom(imgObj imgScriptObj)(script string) {
 		script += "// error - no el parent provided!\n"
 		return script
 	}
-	if !(len(imgObj.typ) > 0) {
-		script += "// error - no el type provided!\n"
-		return script
-	}
 	script = "  for (key in imgObj) {imgObj[key] = null;}\n"
 	if len(imgObj.cl1) > 0 {script += fmt.Sprintf("  imgObj.cl1 = '%s';\n", imgObj.cl1)}
 	if len(imgObj.cl2) > 0 {script += fmt.Sprintf("  imgObj.cl2 = '%s';\n", imgObj.cl2)}
 	if len(imgObj.idStr) > 0 {script += fmt.Sprintf("  imgObj.idStr = '%s';\n", imgObj.idStr)}
 	script += fmt.Sprintf("  imgObj.parent = %s;\n", imgObj.parent)
-	script += fmt.Sprintf("  imgObj.typ = 'img';\n")
-	script += fmt.Sprintf("  addImg(imgObj);\n")
+	script += fmt.Sprintf("  addImgEl(imgObj);\n")
+	return script
+}
+
+func addTableElToDom(tableObj tableScriptObj)(script string) {
+
+	script = "// addEl \n"
+	script += "// " + tableObj.comment + "\n"
+	if !(len(tableObj.parent) > 0) {
+		script += "// error - no el parent provided!\n"
+		return script
+	}
+	script = "  for (key in tableObj) {tableObj[key] = null;}\n"
+	if len(tableObj.cl1) > 0 {script += fmt.Sprintf("  tableObj.cl1 = '%s';\n", tableObj.cl1)}
+	if len(tableObj.cl2) > 0 {script += fmt.Sprintf("  tableObj.cl2 = '%s';\n", tableObj.cl2)}
+	if len(tableObj.idStr) > 0 {script += fmt.Sprintf("  tableObj.idStr = '%s';\n", tableObj.idStr)}
+	script += fmt.Sprintf("  tableObj.parent = %s;\n", tableObj.parent)
+	script += fmt.Sprintf("  addTableEl(tableObj);\n")
 	return script
 }
 
@@ -2258,7 +2278,6 @@ func (dObj *GdocDomObj) renderInlineImg(imgEl *docs.InlineObjectElement)(imgDisp
 	cssStr += fmt.Sprintf(" width:%.0fpt; height:%.0fpt; \n}\n", imgObj.Size.Width.Magnitude, imgObj.Size.Height.Magnitude )
 	// todo add margin
 	imgDomEl.parent = dObj.parent
-	imgDomEl.typ = "img"
 	imgDomEl.idStr = imgId
 
 	imgDispObj.script = addImgElToDom(imgDomEl)
@@ -2493,9 +2512,10 @@ func (dObj *GdocDomObj) renderPosImg(posImg docs.PositionedObject, posId string)
 }
 
 
-func (dObj *GdocDomObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
-// table element
-	var htmlStr, cssStr string
+func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error) {
+	// https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model/Traversing_an_HTML_table_with_JavaScript_and_DOM_Interfaces
+	// table element
+	var htmlStr, cssStr, scriptStr string
 	var tabWidth float64
 	var icol, trow int64
 	var defcel tabCell
@@ -2588,26 +2608,25 @@ func (dObj *GdocDomObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 	// if there is an open list, close it
 	if len(*dObj.listStack) >= 0 {
 		dObj.closeList(0)
-//fmt.Printf("table closing list!\n")
 	}
 
-	htmlStr += fmt.Sprintf("<table class=\"%s\">\n", tblClass)
+	// html fmt.Sprintf("<table class=\"%s\">\n", tblClass)
 
-  // table styling
+  	// table styling
   	cssStr = fmt.Sprintf(".%s {\n",tblClass)
  	cssStr += fmt.Sprintf("  border: 1px solid black;\n  border-collapse: collapse;\n")
  	cssStr += fmt.Sprintf("  width: %.1fpt;\n", tabWidth)
 	cssStr += "   margin:auto;\n"
 	cssStr += "}\n"
 
-// table columns
+	// table columns
 	tabWtyp :=tbl.TableStyle.TableColumnProperties[0].WidthType
 //fmt.Printf("table width type: %s\n", tabWtyp)
 	if tabWtyp == "FIXED_WIDTH" {
 		htmlStr +="<colgroup>\n"
 		for icol = 0; icol < tbl.Columns; icol++ {
 			colId := fmt.Sprintf("tab%d_col%d", dObj.tableCount, icol)
-			cssStr += fmt.Sprintf("#%s {width: %.1fpt;}\n", colId, tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude)
+			cssStr += fmt.Sprintf("#%s {width: %.0fpt;}\n", colId, tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude)
 			htmlStr += fmt.Sprintf("<col span=\"1\" id=\"%s\">\n", colId)
 		}
 		htmlStr +="</colgroup>\n"
@@ -2664,17 +2683,15 @@ func (dObj *GdocDomObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 			}
 			elNum := len(tcell.Content)
 			for el:=0; el< elNum; el++ {
-//				elObj := tcell.Content[el]
-//				tObj, err:=dObj.cvtContentEl(elObj)
-/*
+				elObj := tcell.Content[el]
+				tObj, err:=dObj.cvtContentElToDom(elObj)
 				if err != nil {
-					tabObj.bodyHtml = htmlStr
+					tabObj.script = scriptStr + fmt.Sprintf("\n// error cnvtContentEl: %v\n", err)
 					tabObj.bodyCss = cssStr
-					return tabObj, fmt.Errorf("ConvertTable: %v", err)
+					return tabObj, fmt.Errorf("cvtContentElToDom - ConvertTable: %v", err)
 				}
 				cssStr += tObj.bodyCss
 				htmlStr += "    " + tObj.bodyHtml
-*/
 			}
 			htmlStr += "  </td>\n"
 
@@ -2848,7 +2865,6 @@ func (dObj *GdocDomObj) cvtTableDom(tbl *docs.Table)(tabObj dispObj, err error) 
 					if tstyl.BorderTop.Width != nil {cellStr += fmt.Sprintf(" border-top-width: %5.1fpt;", tstyl.BorderTop.Width.Magnitude)}
 				}
 			}
-// xxxx
 			if len(cellStr) >0 {
 				cssStr += fmt.Sprintf("#%s {",celId)
 				cssStr += fmt.Sprintf("%s }\n", cellStr)
@@ -2860,8 +2876,9 @@ func (dObj *GdocDomObj) cvtTableDom(tbl *docs.Table)(tabObj dispObj, err error) 
 			elNum := len(tcell.Content)
 			for el:=0; el< elNum; el++ {
 				elObj := tcell.Content[el]
-				tObj, err:=dObj.cvtContentElDom(elObj)
+				tObj, err:=dObj.cvtContentElToDom(elObj)
 				if err != nil {
+// xxxx
 					tabObj.bodyHtml = htmlStr
 					tabObj.bodyCss = cssStr
 					return tabObj, fmt.Errorf("ConvertTable: %v", err)
@@ -3690,7 +3707,7 @@ func (dObj *GdocDomObj) creCssDocHead() (headCss string, err error) {
 	return headCss, nil
 }
 
-func (dObj *GdocDomObj) cvtContentElDom(contEl *docs.StructuralElement) (GdocDomObj *dispObj, err error) {
+func (dObj *GdocDomObj) cvtContentElToDom(contEl *docs.StructuralElement) (GdocDomObj *dispObj, err error) {
 	if dObj == nil {
 		return nil, fmt.Errorf("error -- dObj is nil")
 	}
@@ -3804,32 +3821,36 @@ func (dObj *GdocDomObj) createFootnoteDiv () (ftnoteDiv *dispObj, err error) {
 
 			var parElSumDisp *dispObj
 // need to change
-//			for parEl:=0; parEl< len(par.Elements); parEl++ {
+			for parEl:=0; parEl< len(par.Elements); parEl++ {
 //				parElObj := par.Elements[parEl]
 				tDisp, err := dObj.cvtParElToDom(par)
 				if err != nil {
+// xxxx
 					htmlStr += fmt.Sprintf("<!-- cvtPar error %v -->\n", err)
 				}
 				addDispObj(parElSumDisp, &tDisp)
-//			}
-/*
-			tObj, err := dObj.cvtContentEl(elObj)
+			}
+
+			tObj, err := dObj.cvtContentElToDom(elObj)
 			if err != nil {
+// xxxx
 				ftnDiv.bodyHtml += fmt.Sprintf("<!-- error display el: %d -->\n", el)
 			}
 			addDispObj(&ftnDiv, tObj)
-*/
 
+// xxxx
 //			htmlStr += "</p>\n"
 			ftnDiv.bodyHtml += htmlStr
 			ftnDiv.bodyCss += cssStr
 			ftnDiv.script += scriptStr
 		}
+// xxxx
 		htmlStr = "</li>\n"
 		ftnDiv.bodyHtml += htmlStr
 //		ftnDiv.bodyCss += cssStr
 	}
 
+// xxxx
 	ftnDiv.bodyHtml += "</ol>\n"
 	ftnDiv.bodyHtml += "</div>\n"
 
@@ -3998,8 +4019,9 @@ func (dObj *GdocDomObj) cvtBodyDom() (bodyObj *dispObj, err error) {
 	elNum := len(body.Content)
 	for el:=0; el< elNum; el++ {
 		bodyEl := body.Content[el]
-		tObj, err:=dObj.cvtContentElDom(bodyEl)
+		tObj, err:=dObj.cvtContentElToDom(bodyEl)
 		if err != nil {
+// xxxx
 			fmt.Println("cvtContentEl: %v", err)
 		}
 		addDispObj(bodyObj, tObj)
@@ -4041,8 +4063,9 @@ func (dObj *GdocDomObj) cvtBodySec(elSt, elEnd int) (bodyObj *dispObj, err error
 
 	for el:=elSt; el<= elEnd; el++ {
 		bodyEl := body.Content[el]
-		tObj, err:=dObj.cvtContentElDom(bodyEl)
+		tObj, err:=dObj.cvtContentElToDom(bodyEl)
 		if err != nil {
+// xxxx
 			fmt.Println("cvtContentElDom: %v", err)
 		}
 		addDispObj(bodyObj, tObj)
