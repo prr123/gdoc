@@ -1686,13 +1686,13 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
 	if imgFun {
 		jsStr += "function addImgEl(imgObj) {\n"
 		jsStr += "  if (imgObj.src == null) {return\n}\n"
-		jsStr += "  let img = document.createElement('img');\n"
+		jsStr += "  var img = new Image(imgObj.width, imgObj.height);\n"
 		jsStr += "  if (imgObj.idStr != null) {img.setAttribute(\"id\", imgObj.idStr);}\n"
 		jsStr += "  if (imgObj.cl1 != null) {img.classList.add(imgObj.cl1);}\n"
 		jsStr += "  if (imgObj.cl2 != null) {img.classList.add(imgObj.cl2);}\n"
-		jsStr += "  img.src = imgObj.src\n"
-	// title, alter, height, width
-		jsStr += ""
+		jsStr += "  img.src = imgObj.src;\n"
+		jsStr += "  img.alt = imgObj.alt;\n"
+//		jsStr += ""
 		jsStr += "  imgp = imgObj.parent;\n"
 		jsStr += "  imgp.appendChild(img);\n"
 		jsStr += "  return\n}\n"
@@ -1703,14 +1703,17 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
 		jsStr += "  var tblBody = document.createElement('tbody');\n"
 		jsStr += "  for (var ir = 0; i < tblObj.rows; i++) {\n"
 		jsStr += "    var tblRow = document.createElement('tr');\n"
-		jsStr += "    var row = tObj.row[ir];\n"
+		jsStr += "    var row = tblObj.row[ir];\n"
 		jsStr += "    if (row.idStr != null) {tblRow.setAttribute(\"id\", row.idStr);}\n"
 		jsStr += "    if (row.cl1 != null) {tblRow.classList.add(row.cl1);}\n"
 		jsStr += "    if (row.cl2 != null) {tblRow.classList.add(row.cl2);}\n"
 		jsStr += "    for (var ic = 0; i < tblObj.cols; i++) {\n"
 		jsStr += "      var tblCell = document.createElement('td');\n"
-// add text
-
+		jsStr += "      var col = tblObj.row[ir].col[ic];\n"
+		jsStr += "      if (col.idStr != null) {tblCell.setAttribute(\"id\", col.idStr);}\n"
+		jsStr += "      if (col.cl1 != null) {tblCell.classList.add(col.cl1);}\n"
+		jsStr += "      if (col.cl2 != null) {tblCell.classList.add(col.cl2);}\n"
+						//tblCell add text
 		jsStr += "      tblRow.appendChild(tblCell);\n"
 		jsStr += "	  }/n"
 		jsStr += "	  tblBody.appendChild(tblRow);\n"
@@ -1718,8 +1721,9 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
 
 		jsStr += "  tblp = tblObj.parent;\n"
 		jsStr += "  tblp.appendChild(tab);\n"
-		jsStr += "  return\n}\n"
+		jsStr += "  return tbl\n}\n"
 	}
+
 	jsStr += "function addBodyElScript(divDoc) {\n"
 	jsStr += "  const elObj = {};\n"
 	return jsStr
