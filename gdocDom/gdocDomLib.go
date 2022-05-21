@@ -1652,7 +1652,7 @@ func creHtmlDocDiv(docName string)(htmlStr string) {
 	return htmlStr
 }
 
-func creElFuncScript() (jsStr string) {
+func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
 	jsStr = "function addEl(elObj) {\n"
 	jsStr += "  let el = document.createElement(elObj.typ);\n"
 	jsStr += "  if (elObj.cl1 != null) {el.classList.add(elObj.cl1);}\n"
@@ -1675,18 +1675,28 @@ func creElFuncScript() (jsStr string) {
 	jsStr += "    var text =  document.createTextNode(elObj.txt);\n"
 	jsStr += "    el.appendChild(text);\n"
 	jsStr += "  }\n}\n"
-	jsStr += "function addImg(imgObj) {\n"
-	jsStr += "  if (imgObj.src == null) {return\n}\n"
-	jsStr += "  let img = document.createElement('img');\n"
-	jsStr += "  if (imgObj.idStr != null) {img.setAttribute(\"id\", imgObj.idStr);}\n"
-	jsStr += "  if (imgObj.cl1 != null) {img.classList.add(imgObj.cl1);}\n"
-	jsStr += "  if (imgObj.cl2 != null) {img.classList.add(imgObj.cl2);}\n"
-	jsStr += "  img.src = imgObj.src\n"
+	if imgFun {
+		jsStr += "function addImgEl(imgObj) {\n"
+		jsStr += "  if (imgObj.src == null) {return\n}\n"
+		jsStr += "  let img = document.createElement('img');\n"
+		jsStr += "  if (imgObj.idStr != null) {img.setAttribute(\"id\", imgObj.idStr);}\n"
+		jsStr += "  if (imgObj.cl1 != null) {img.classList.add(imgObj.cl1);}\n"
+		jsStr += "  if (imgObj.cl2 != null) {img.classList.add(imgObj.cl2);}\n"
+		jsStr += "  img.src = imgObj.src\n"
 	// title, alter, height, width
-	jsStr += ""
-	jsStr += "  imgp = imgObj.parent;\n"
-	jsStr += "  imgp.appendChild(img);\n"
-	jsStr += "  return\n}\n"
+		jsStr += ""
+		jsStr += "  imgp = imgObj.parent;\n"
+		jsStr += "  imgp.appendChild(img);\n"
+		jsStr += "  return\n}\n"
+	}
+	if tebleFun {
+		jsStr += "function addTabEl(tabObj) {\n"
+		jsStr += "  let tab = document.createElement('tab');\n"
+
+		jsStr += "  tabp = tabObj.parent;\n"
+		jsStr += "  tabp.appendChild(tab);\n"
+		jsStr += "  return\n}\n"
+	}
 	jsStr += "function addBodyElScript(divDoc) {\n"
 	jsStr += "  const elObj = {};\n"
 	return jsStr
@@ -4530,7 +4540,11 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *util.OptObj)(
 	outfil.WriteString(jsStr)
 
 	//js create doc div
-	jsStr = creElFuncScript()
+	imgfun := false
+	if (dObj.inImgCount + dObj.posImgCount) > 0 {imgfun = true}
+	tablefun := false
+	if dObj.tableCount > 0 {tablefun = true}
+	jsStr = creElFuncScript(imgfun, tablefun)
 	outfil.WriteString(jsStr)
 
 	jsStr = mainDiv.script
