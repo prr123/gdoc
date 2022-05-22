@@ -2900,6 +2900,7 @@ func (dObj *GdocHtmlObj) createSectionHeading(ipage int) (secObj dispObj) {
 
 	secObj.bodyCss = fmt.Sprintf(".%s_main.sec_%d {\n", dObj.docName, ipage)
 
+)
 	// html
 	secObj.bodyHtml = fmt.Sprintf("<div class=\"%s_main sec_%d\" id=\"%s_sec_%d\">\n", dObj.docName, ipage, dObj.docName, ipage)
 	secObj.bodyHtml += fmt.Sprintf("<p class=\"%s_page\"><a href=\"#%s_sectoc\">Page %d</a></p>\n", dObj.docName, dObj.docName, ipage)
@@ -2910,24 +2911,24 @@ func (dObj *GdocHtmlObj) createSectionHeading(ipage int) (secObj dispObj) {
 func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 
 	var cssStr, errStr string
-	//gdoc division css
 
     docStyl := dObj.doc.DocumentStyle
 	dObj.docWidth = (docStyl.PageSize.Width.Magnitude - docStyl.MarginRight.Magnitude - docStyl.MarginLeft.Magnitude)
 
+ 	//gdoc default el css and doc css
 	cssStr = fmt.Sprintf(".%s_doc {\n", dObj.docName)
 	cssStr += fmt.Sprintf("  margin-top: %.1fmm; \n",docStyl.MarginTop.Magnitude*PtTomm)
 	cssStr += fmt.Sprintf("  margin-bottom: %.1fmm; \n",docStyl.MarginBottom.Magnitude*PtTomm)
     cssStr += fmt.Sprintf("  margin-right: %.2fmm; \n",docStyl.MarginRight.Magnitude*PtTomm)
     cssStr += fmt.Sprintf("  margin-left: %.2fmm; \n",docStyl.MarginLeft.Magnitude*PtTomm)
-	cssStr += fmt.Sprintf("  width: %.1fmm;\n", dObj.docWidth*PtTomm)
+    if dObj.docWidth > 0 {cssStr += fmt.Sprintf("  width: %.1fmm;\n", dObj.docWidth*PtTomm)}
 
 	if dObj.Options.DivBorders {
 		cssStr += "  border: solid red;\n"
 		cssStr += "  border-width: 1px;\n"
 	}
 	cssStr += "}\n"
-	headCss += cssStr
+	headCss = cssStr
 
 	//css default text style
 	cssStr = fmt.Sprintf(".%s_main {\n", dObj.docName)
@@ -3054,7 +3055,6 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 	}
 
 	headCss += cssStr
-
 
 	return headCss, nil
 }
