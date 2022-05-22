@@ -2183,9 +2183,9 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 
     docPg := doc.DocumentStyle
     PgWidth := docPg.PageSize.Width.Magnitude
-    NetPgWidth := PgWidth - (docPg.MarginLeft.Magnitude + docPg.MarginRight.Magnitude)
+    netPgWidth := PgWidth - (docPg.MarginLeft.Magnitude + docPg.MarginRight.Magnitude)
 //   fmt.Printf("Default Table Width: %.1f", NetPgWidth)
-    tabWidth = NetPgWidth
+    tabWidth = netPgWidth
 	tabw := 0.0
     for icol=0; icol < tbl.Columns; icol++ {
         tcolObj :=tbl.TableStyle.TableColumnProperties[icol]
@@ -2193,7 +2193,11 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
             tabw += tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude
         }
     }
-	if tabw > 0.0 {tabWidth = tabw}
+	tblWidthIsPage := true
+	if (netPgWidth - tabw) < 1.0 {
+		tabWidth = tabw
+		tblWidthIsPage = false
+	}
 
 // table cell default values
 // define default cell classs
@@ -2263,32 +2267,39 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 
 	// if there is an open list, close it
 	if len(*dObj.listStack) >= 0 {
-		htmlStr += dObj.closeList(len(*dObj.listStack))
-fmt.Printf("table closing list!\n")
+		htmlStr += dObj.closeList(0)
+		//fmt.Printf("table closing list!\n")
 	}
 
 	htmlStr += fmt.Sprintf("<table class=\"%s\">\n", tblClass)
 
-  // table styling
-  	cssStr = fmt.Sprintf(".%s {\n",tblClass)
+	// table styling
+  	cssStr = fmt.Sprintf(".%s_tbl {\n", dObj.docName)
+	//def cell
  	cssStr += fmt.Sprintf("  border: 1px solid black;\n  border-collapse: collapse;\n")
- 	cssStr += fmt.Sprintf("  width: %.1fpt;\n", tabWidth)
+ 	cssStr += fmt.Sprintf("  width: %.1fpt;\n", netPgWidth)
 	cssStr += "   margin:auto;\n"
 	cssStr += "}\n"
 
-// table columns
-	tabWtyp :=tbl.TableStyle.TableColumnProperties[0].WidthType
-//fmt.Printf("table width type: %s\n", tabWtyp)
-	if tabWtyp == "FIXED_WIDTH" {
-		htmlStr +="<colgroup>\n"
-		for icol = 0; icol < tbl.Columns; icol++ {
-			colId := fmt.Sprintf("tab%d_col%d", dObj.tableCount, icol)
+	if !tblWidthIsPage {
+  		cssStr = fmt.Sprintf(".%s_tbl.%s_tbl%d {\n", dObj.docName, dObj.docName, dObj.tableCount)
+ 		cssStr += fmt.Sprintf("  width: %.1fpt;\n", tabWidth)
+		cssStr += "}\n"
+	}
+
+	// table columns
+
+	// future enhancement not fixed width columns
+	htmlStr +=fmt.Sprintf("<colgroup class=\"%s_colgrp%d\">\n", dObj.docName, dObj.tableCount)
+	for icol = 0; icol < tbl.Columns; icol++ {
+		tabWtyp :=tbl.TableStyle.TableColumnProperties[icol].WidthType
+		colId := fmt.Sprintf("%s_tab%d_col%d", dObj.docName, dObj.tableCount, icol)
+		if tabWtyp == "FIXED_WIDTH" {
 			cssStr += fmt.Sprintf("#%s {width: %.1fpt;}\n", colId, tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude)
 			htmlStr += fmt.Sprintf("<col span=\"1\" id=\"%s\">\n", colId)
 		}
-		htmlStr +="</colgroup>\n"
 	}
-
+	htmlStr +="</colgroup>\n"
 
 	cssStr += fmt.Sprintf(".%s {\n",tblCellClass)
  	cssStr += fmt.Sprintf("  border: %.1fpt %s %s;\n", defcel.bwidth, defcel.bdash, defcel.bcolor)
