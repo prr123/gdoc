@@ -2273,14 +2273,6 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 
 	htmlStr += fmt.Sprintf("<table class=\"%s\">\n", tblClass)
 
-	// table styling
-  	cssStr = fmt.Sprintf(".%s_tbl {\n", dObj.docName)
-	//def cell
- 	cssStr += fmt.Sprintf("  border: 1px solid black;\n  border-collapse: collapse;\n")
- 	cssStr += fmt.Sprintf("  width: %.1fpt;\n", netPgWidth)
-	cssStr += "   margin:auto;\n"
-	cssStr += "}\n"
-
 	if !tblWidthIsPage {
   		cssStr = fmt.Sprintf(".%s_tbl.%s_tbl%d {\n", dObj.docName, dObj.docName, dObj.tableCount)
  		cssStr += fmt.Sprintf("  width: %.1fpt;\n", tabWidth)
@@ -2919,17 +2911,16 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 
 	var cssStr, errStr string
 	//gdoc division css
+
+    docStyl := dObj.doc.DocumentStyle
+	dObj.docWidth = (docStyl.PageSize.Width.Magnitude - docStyl.MarginRight.Magnitude - docStyl.MarginLeft.Magnitude)
+
 	cssStr = fmt.Sprintf(".%s_doc {\n", dObj.docName)
-
-    docstyl := dObj.doc.DocumentStyle
-	cssStr += fmt.Sprintf("  margin-top: %.1fmm; \n",docstyl.MarginTop.Magnitude*PtTomm)
-	cssStr += fmt.Sprintf("  margin-bottom: %.1fmm; \n",docstyl.MarginBottom.Magnitude*PtTomm)
-    cssStr += fmt.Sprintf("  margin-right: %.2fmm; \n",docstyl.MarginRight.Magnitude*PtTomm)
-    cssStr += fmt.Sprintf("  margin-left: %.2fmm; \n",docstyl.MarginLeft.Magnitude*PtTomm)
-
-	dObj.docWidth = (docstyl.PageSize.Width.Magnitude - docstyl.MarginRight.Magnitude - docstyl.MarginLeft.Magnitude)*PtTomm
-
-	cssStr += fmt.Sprintf("  width: %.1fmm;\n", dObj.docWidth)
+	cssStr += fmt.Sprintf("  margin-top: %.1fmm; \n",docStyl.MarginTop.Magnitude*PtTomm)
+	cssStr += fmt.Sprintf("  margin-bottom: %.1fmm; \n",docStyl.MarginBottom.Magnitude*PtTomm)
+    cssStr += fmt.Sprintf("  margin-right: %.2fmm; \n",docStyl.MarginRight.Magnitude*PtTomm)
+    cssStr += fmt.Sprintf("  margin-left: %.2fmm; \n",docStyl.MarginLeft.Magnitude*PtTomm)
+	cssStr += fmt.Sprintf("  width: %.1fmm;\n", dObj.docWidth*PtTomm)
 
 	if dObj.Options.DivBorders {
 		cssStr += "  border: solid red;\n"
@@ -3050,6 +3041,20 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 		}
 	}
 	headCss += cssStr
+
+	// css default table
+	if dObj.tableCount > 0 {
+		//css default table styling
+  		cssStr = fmt.Sprintf(".%s_tbl {\n", dObj.docName)
+		//def cell
+ 		cssStr += fmt.Sprintf("  border: 1px solid black;\n  border-collapse: collapse;\n")
+ 		cssStr += fmt.Sprintf("  width: %.1fpt;\n", dObj.docWidth)
+		cssStr += "   margin:auto;\n"
+		cssStr += "}\n"
+	}
+
+	headCss += cssStr
+
 
 	return headCss, nil
 }
