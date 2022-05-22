@@ -1715,7 +1715,7 @@ func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *util.OptObj) (
 	var heading headingTyp
 	var sec secTyp
 	var ftnote docFtnoteTyp
-	var pb pbTyp
+	var docPb pbTyp
 
 	doc := dObj.doc
 	if doc == nil {return fmt.Errorf("doc is nil in GdocHtmlObj!")}
@@ -1856,9 +1856,9 @@ func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *util.OptObj) (
 				}
 				// page break
 				if parElObj.PageBreak != nil {
-					pb.el = el
-					pb.parel = parEl
-					dObj.docPb = append(dObj.docPb, pb)
+					docPb.el = el
+					docPb.parel = parEl
+					dObj.docPb = append(dObj.docPb, docPb)
 					dObj.pbCount++
 				}
 			}
