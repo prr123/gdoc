@@ -31,24 +31,25 @@ type GdocDomObj struct {
     ImgCount int
     tableCount int
     parCount int
-	title namStyl
-	subtitle namStyl
-	h1 namStyl
-	h2 namStyl
-	h3 namStyl
-	h4 namStyl
-	h5 namStyl
-	h6 namStyl
+	title namStylTyp
+	subtitle namStylTyp
+	h1 namStylTyp
+	h2 namStylTyp
+	h3 namStylTyp
+	h4 namStylTyp
+	h5 namStylTyp
+	h6 namStylTyp
 	parent string
-//	elNam string
 	listStack *[]cList
 	docLists []docList
-	headings []heading
-	sections []sect
-	docFtnotes []docFtnote
+	headings []headingTyp
+	sections []secTyp
+	docPb []pbTyp
+	docFtnotes []docFtnoteTyp
 	namStylMap map[string]bool
 	headCount int
 	secCount int
+	pbCount int
 	elCount int
 	spanCount int
 	ftnoteCount int
@@ -65,10 +66,8 @@ type GdocDomObj struct {
 	Options *util.OptObj
 }
 
-type namStyl struct {
+type namStylTyp struct {
 	count int
-//	exist bool
-//	tocExist bool
 }
 
 type dispObj struct {
@@ -77,13 +76,18 @@ type dispObj struct {
 	script string
 }
 
-type sect struct {
+type secTyp struct {
 	sNum int
 	secElStart int
 	secElEnd int
 }
 
-type heading struct {
+type pbTyp struct {
+    el int
+    parel int
+}
+
+type headingTyp struct {
 	hdElEnd int
 	hdElStart int
 	namedStyl string
@@ -91,7 +95,7 @@ type heading struct {
 	text string
 }
 
-type docFtnote struct {
+type docFtnoteTyp struct {
 	el int
 	parel int
 	id string
@@ -224,7 +228,8 @@ type tableScriptObj struct {
 	cl1 string
 	cl2 string
 	idStr string
-	src string
+	rowCount int
+	colCount int
 	parent string
 	newEl string
 	comment string
@@ -1806,8 +1811,8 @@ func addTblElToDom(tableObj tableScriptObj)(script string) {
 	script += fmt.Sprintf("  tableObj.parent = %s;\n", tableObj.parent)
 	script += fmt.Sprintf("  tbl = addTblEl(tableObj);\n")
 	for irow:=0; irow < tableObj.rowCount; irow++ {
-		for icol:=0; icol < tableObj.colCount; icol++
-			
+		for icol:=0; icol < tableObj.colCount; icol++ {
+
 		}
 	}
 	script += fmt.Sprintf("  fillTblEl(tableObj);\n")
@@ -2009,9 +2014,10 @@ func (dObj *GdocDomObj) findListProp (listId string) (listProp *docs.ListPropert
 
 func (dObj *GdocDomObj) initGdocDom(folderPath string, options *util.OptObj) (err error) {
 	var listItem docList
-	var heading heading
-	var sec sect
-	var ftnote docFtnote
+	var heading headingTyp
+	var sec secTyp
+	var ftnote docFtnoteTyp
+	var docPb pbTyp
 
 	doc := dObj.doc
 	if doc == nil {return fmt.Errorf("doc is nil in GdocDomObj!")}
@@ -2139,18 +2145,24 @@ func (dObj *GdocDomObj) initGdocDom(folderPath string, options *util.OptObj) (er
 //				}
 			} // end headings
 
-			// footnotes
-			if len(doc.Footnotes)> 0 {
-				for parEl:=0; parEl<len(elObj.Paragraph.Elements); parEl++ {
-					parElObj := elObj.Paragraph.Elements[parEl]
-					if parElObj.FootnoteReference != nil {
-						ftnote.el = el
-						ftnote.parel = parEl
-						ftnote.id = parElObj.FootnoteReference.FootnoteId
-						ftnote.numStr = parElObj.FootnoteReference.FootnoteNumber
-						dObj.docFtnotes = append(dObj.docFtnotes, ftnote)
-					}
+           // paragraph elements
+			for parEl:=0; parEl<len(elObj.Paragraph.Elements); parEl++ {
+				parElObj := elObj.Paragraph.Elements[parEl]
+				// footnotes
+				if parElObj.FootnoteReference != nil {
+					ftnote.el = el
+					ftnote.parel = parEl
+					ftnote.id = parElObj.FootnoteReference.FootnoteId
+					ftnote.numStr = parElObj.FootnoteReference.FootnoteNumber
+					dObj.docFtnotes = append(dObj.docFtnotes, ftnote)
 				}
+               // page break
+                if parElObj.PageBreak != nil {
+                    docPb.el = el
+                    docPb.parel = parEl
+                    dObj.docPb = append(dObj.docPb, docPb)
+                    dObj.pbCount++
+                }
 			}
 
 			parHdEnd = el
@@ -3763,7 +3775,7 @@ func (dObj *GdocDomObj) cvtContentElToDom(contEl *docs.StructuralElement) (GdocD
 	}
 	if contEl.Table != nil {
 		tableEl := contEl.Table
-		tObj, err := dObj.cvtTableDom(tableEl)
+		tObj, err := dObj.cvtTableToDom(tableEl)
 		if err != nil { bodyElObj.bodyHtml += fmt.Sprintf("<!-- %v -->\n", err) }
 		addDispObj(bodyElObj, &tObj)
 	}
@@ -4117,7 +4129,7 @@ func (dObj *GdocDomObj) cvtBodySec(elSt, elEnd int) (bodyObj *dispObj, err error
 	return bodyObj, nil
 }
 
-func CreGdocHtmlDoc(folderPath string, doc *docs.Document, options *util.OptObj)(err error) {
+func CreGdocDomDoc(folderPath string, doc *docs.Document, options *util.OptObj)(err error) {
 	// function which converts the entire document into an hmlt file
 
     if doc == nil { return fmt.Errorf("error -- doc is nil!\n")}
@@ -4242,7 +4254,7 @@ func CreGdocHtmlDoc(folderPath string, doc *docs.Document, options *util.OptObj)
 	return nil
 }
 
-func CreGdocHtmlMain(folderPath string, doc *docs.Document, options *util.OptObj)(err error) {
+func CreGdocDomMain(folderPath string, doc *docs.Document, options *util.OptObj)(err error) {
 // function that converts the main part of a gdoc document into an html file
 // excludes everything before the "main" heading or
 // excludes sections titled "summary" and "keywords"
@@ -4369,7 +4381,7 @@ func CreGdocHtmlMain(folderPath string, doc *docs.Document, options *util.OptObj
 }
 
 
-func CreGdocHtmlSection(heading, folderPath string, doc *docs.Document, options *util.OptObj)(err error) {
+func CreGdocDomSection(heading, folderPath string, doc *docs.Document, options *util.OptObj)(err error) {
 // function that creates an html fil from the named section
 
 	var mainDiv dispObj
