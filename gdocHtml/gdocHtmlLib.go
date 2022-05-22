@@ -41,7 +41,7 @@ type GdocHtmlObj struct {
 	h6 namStyl
 	listStack *[]cList
 	docLists []docList
-	headings []heading
+	headings []headingTyp
 	sections []secTyp
 	docFtnotes []docFtnoteTyp
 	docPb []pbTyp
@@ -89,7 +89,7 @@ type pbTyp struct {
 	parel int
 }
 
-type heading struct {
+type headingTyp struct {
 	hdElEnd int
 	hdElStart int
 	namedStyl string
@@ -1712,7 +1712,7 @@ func (dObj *GdocHtmlObj) findListProp (listId string) (listProp *docs.ListProper
 
 func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *util.OptObj) (err error) {
 	var listItem docList
-	var heading heading
+	var heading headingTyp
 	var sec secTyp
 	var ftnote docFtnoteTyp
 	var pb pbTyp
