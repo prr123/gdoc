@@ -1698,7 +1698,7 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
 		jsStr += "  return\n}\n"
 	}
 	if tableFun {
-		jsStr += "function addTabEl(tblObj) {\n"
+		jsStr += "function addTblEl(tblObj) {\n"
 		jsStr += "  var tbl = document.createElement('table');\n"
 		jsStr += "  var tblBody = document.createElement('tbody');\n"
 		jsStr += "  for (var ir = 0; i < tblObj.rows; i++) {\n"
@@ -1726,6 +1726,9 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
 
 	jsStr += "function addBodyElScript(divDoc) {\n"
 	jsStr += "  const elObj = {};\n"
+	jsStr += "  const imgObj = {};\n"
+	jsStr += "  const tblObj = {};\n"
+
 	return jsStr
 }
 
@@ -1788,7 +1791,7 @@ func addImgElToDom(imgObj imgScriptObj)(script string) {
 	return script
 }
 
-func addTableElToDom(tableObj tableScriptObj)(script string) {
+func addTblElToDom(tableObj tableScriptObj)(script string) {
 
 	script = "// addEl \n"
 	script += "// " + tableObj.comment + "\n"
@@ -1801,7 +1804,14 @@ func addTableElToDom(tableObj tableScriptObj)(script string) {
 	if len(tableObj.cl2) > 0 {script += fmt.Sprintf("  tableObj.cl2 = '%s';\n", tableObj.cl2)}
 	if len(tableObj.idStr) > 0 {script += fmt.Sprintf("  tableObj.idStr = '%s';\n", tableObj.idStr)}
 	script += fmt.Sprintf("  tableObj.parent = %s;\n", tableObj.parent)
-	script += fmt.Sprintf("  addTableEl(tableObj);\n")
+	script += fmt.Sprintf("  tbl = addTblEl(tableObj);\n")
+	for irow:=0; irow < tableObj.rowCount; irow++ {
+		for icol:=0; icol < tableObj.colCount; icol++
+			
+		}
+	}
+	script += fmt.Sprintf("  fillTblEl(tableObj);\n")
+
 	return script
 }
 
@@ -2622,7 +2632,7 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 	//set up table
 	tblClass := fmt.Sprintf("%s_tbl", dObj.docName)
 	tblCellClass := fmt.Sprintf("%s_tcel", dObj.docName)
-	htmlStr = ""
+	//htmlStr = ""
 
 	// if there is an open list, close it
 	if len(*dObj.listStack) >= 0 {
@@ -2639,18 +2649,17 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 	cssStr += "}\n"
 
 	// table columns
-	tabWtyp :=tbl.TableStyle.TableColumnProperties[0].WidthType
-//fmt.Printf("table width type: %s\n", tabWtyp)
-	if tabWtyp == "FIXED_WIDTH" {
-		htmlStr +="<colgroup>\n"
-		for icol = 0; icol < tbl.Columns; icol++ {
-			colId := fmt.Sprintf("tab%d_col%d", dObj.tableCount, icol)
-			cssStr += fmt.Sprintf("#%s {width: %.0fpt;}\n", colId, tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude)
-			htmlStr += fmt.Sprintf("<col span=\"1\" id=\"%s\">\n", colId)
-		}
-		htmlStr +="</colgroup>\n"
-	}
+		// html htmlStr +="<colgroup>\n"
 
+	for icol = 0; icol < tbl.Columns; icol++ {
+		colId := fmt.Sprintf("tab%d_col%d", dObj.tableCount, icol)
+		tabWtyp :=tbl.TableStyle.TableColumnProperties[icol].WidthType
+		if tabWtyp == "FIXED_WIDTH" {
+			cssStr += fmt.Sprintf("#%s {width: %.0fpt;}\n", colId, tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude)
+			//html	htmlStr += fmt.Sprintf("<col span=\"1\" id=\"%s\">\n", colId)
+		}
+	}
+	// html htmlStr +="</colgroup>\n"
 
 	cssStr += fmt.Sprintf(".%s {\n",tblCellClass)
  	cssStr += fmt.Sprintf("  border: %.1fpt %s %s;\n", defcel.bwidth, defcel.bdash, defcel.bcolor)
@@ -2724,7 +2733,7 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 	return tabObj, nil
 }
 
-func (dObj *GdocDomObj) cvtTableDom(tbl *docs.Table)(tabObj dispObj, err error) {
+func (dObj *GdocDomObj) cvtTableHtml(tbl *docs.Table)(tabObj dispObj, err error) {
 	var htmlStr, cssStr string
 	var tabWidth float64
 	var icol, trow int64
@@ -3587,25 +3596,23 @@ func (dObj *GdocDomObj) createSectionHeading(ipage int) (secObj dispObj) {
 func (dObj *GdocDomObj) creCssDocHead() (headCss string, err error) {
 
 	var cssStr, errStr string
-	//gdoc division css
-	cssStr = fmt.Sprintf(".%s_doc {\n", dObj.docName)
 
-    docstyl := dObj.doc.DocumentStyle
-	cssStr += fmt.Sprintf("  margin-top: %.1fmm; \n",docstyl.MarginTop.Magnitude*PtTomm)
-	cssStr += fmt.Sprintf("  margin-bottom: %.1fmm; \n",docstyl.MarginBottom.Magnitude*PtTomm)
-    cssStr += fmt.Sprintf("  margin-right: %.2fmm; \n",docstyl.MarginRight.Magnitude*PtTomm)
-    cssStr += fmt.Sprintf("  margin-left: %.2fmm; \n",docstyl.MarginLeft.Magnitude*PtTomm)
+    docStyl := dObj.doc.DocumentStyle
+    dObj.docWidth = (docStyl.PageSize.Width.Magnitude - docStyl.MarginRight.Magnitude - docStyl.MarginLeft.Magnitude)
 
-	dObj.docWidth = (docstyl.PageSize.Width.Magnitude - docstyl.MarginRight.Magnitude - docstyl.MarginLeft.Magnitude)*PtTomm
-
-	cssStr += fmt.Sprintf("  width: %.1fmm;\n", dObj.docWidth)
-
+    //gdoc default el css and doc css
+    cssStr = fmt.Sprintf(".%s_doc {\n", dObj.docName)
+    cssStr += fmt.Sprintf("  margin-top: %.1fmm; \n",docStyl.MarginTop.Magnitude*PtTomm)
+    cssStr += fmt.Sprintf("  margin-bottom: %.1fmm; \n",docStyl.MarginBottom.Magnitude*PtTomm)
+    cssStr += fmt.Sprintf("  margin-right: %.2fmm; \n",docStyl.MarginRight.Magnitude*PtTomm)
+    cssStr += fmt.Sprintf("  margin-left: %.2fmm; \n",docStyl.MarginLeft.Magnitude*PtTomm)
+    if dObj.docWidth > 0 {cssStr += fmt.Sprintf("  width: %.1fmm;\n", dObj.docWidth*PtTomm)}
 	if dObj.Options.DivBorders {
 		cssStr += "  border: solid red;\n"
 		cssStr += "  border-width: 1px;\n"
 	}
 	cssStr += "}\n"
-	headCss += cssStr
+	headCss = cssStr
 
 	//css default text style
 	cssStr = fmt.Sprintf(".%s_main {\n", dObj.docName)
@@ -3629,7 +3636,7 @@ func (dObj *GdocDomObj) creCssDocHead() (headCss string, err error) {
 
 	hdcss, err := dObj.cvtDocNamedStyles()
 	if err != nil {
-		errStr = fmt.Sprintf("%v", err)
+		errStr = fmt.Sprintf("cvtDocNamedStyles %v", err)
 	}
 	headCss += hdcss + errStr
 
@@ -3721,8 +3728,18 @@ func (dObj *GdocDomObj) creCssDocHead() (headCss string, err error) {
 	}
 	headCss += cssStr
 
-	//gdoc division html
+   // css default table
+    if dObj.tableCount > 0 {
+        //css default table styling
+        cssStr = fmt.Sprintf(".%s_tbl {\n", dObj.docName)
+        //def cell
+        cssStr += fmt.Sprintf("  border: 1px solid black;\n  border-collapse: collapse;\n")
+        cssStr += fmt.Sprintf("  width: %.1fpt;\n", dObj.docWidth)
+        cssStr += "   margin:auto;\n"
+        cssStr += "}\n"
+    }
 
+    headCss += cssStr
 	return headCss, nil
 }
 
