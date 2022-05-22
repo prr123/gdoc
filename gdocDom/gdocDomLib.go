@@ -127,18 +127,6 @@ type nestLevel struct {
 }
 
 
-type tabCell struct {
-	pad [4] float64
-	spad float64
-	vert_align string
-	bckcolor string
-	border [4] tblBorder
-	bwidth float64
-	bdash string
-	bcolor string
-	cspan int
-	rspan int
-}
 
 type tblBorder struct {
 	color string
@@ -218,9 +206,12 @@ type imgScriptObj struct {
 	cl1 string
 	cl2 string
 	idStr string
+	height int
+	width int
 	src string
 	parent string
 	title string
+	desc string
 	comment string
 }
 
@@ -233,7 +224,39 @@ type tableScriptObj struct {
 	parent string
 	newEl string
 	comment string
+	tblRows []tblRowScriptObj
 }
+
+type tblRowScriptObj struct {
+	cl1 string
+	cl2 string
+	idStr string
+	parent string
+	newEl string
+	tblCells []tblCellScriptObj
+}
+
+type tblCellScriptObj struct {
+	cl1 string
+	cl2 string
+	idStr string
+	parent string
+	newEl string
+}
+
+type tblCell struct {
+	pad [4] float64
+	spad float64
+	vert_align string
+	bckcolor string
+	border [4] tblBorder
+	bwidth float64
+	bdash string
+	bcolor string
+	cspan int
+	rspan int
+}
+
 
 func findDocList(list []docList, listid string) (res int) {
 
@@ -2278,54 +2301,6 @@ var glyphTyp string
 	return cssStr
 }
 
-func (dObj *GdocDomObj) renderInlineImg(imgEl *docs.InlineObjectElement)(imgDisp *dispObj, err error) {
-	var imgDispObj dispObj
-	var imgDomEl imgScriptObj
-
-	if imgEl == nil {
-		return nil, fmt.Errorf("imgEl is nil!")
-	}
-	doc := dObj.doc
-
-	imgElId := imgEl.InlineObjectId
-	if !(len(imgElId) > 0) {return nil, fmt.Errorf("no InlineObjectId found!")}
-
-	// need to remove first part of the id
-	idx := 0
-	for i:=0; i< len(imgElId); i++ {
-		if imgElId[i] == '.' {
-			idx = i+1
-			break
-		}
-	}
-	imgId :=""
-	if (idx>0) && (idx<len(imgElId)-1) {
-		imgId = "img_" + imgElId[idx:]
-	}
-
-	// need to change for imagefolder
-//	htmlStr := fmt.Sprintf("<!-- inline image %s -->\n", imgElId)
-	
-	imgObj := doc.InlineObjects[imgElId].InlineObjectProperties.EmbeddedObject
-
-	if dObj.Options.ImgFold {
-    	imgSrc := dObj.imgFoldNam + "/" + imgId + ".jpeg"
-		// html htmlStr +=fmt.Sprintf("<img src=\"%s\" id=\"%s\" alt=\"%s\">\n", imgSrc, imgId, imgObj.Title)
-		imgDomEl.src = imgSrc
-	} else {
-		// html htmlStr +=fmt.Sprintf("<img src=\"%s\" id=\"%s\" alt=\"%s\">\n", imgObj.ImageProperties.SourceUri, imgId, imgObj.Title)
-	}
-	cssStr := fmt.Sprintf("#%s {\n",imgId)
-	cssStr += fmt.Sprintf(" width:%.0fpt; height:%.0fpt; \n}\n", imgObj.Size.Width.Magnitude, imgObj.Size.Height.Magnitude )
-	// todo add margin
-	imgDomEl.parent = dObj.parent
-	imgDomEl.idStr = imgId
-
-	imgDispObj.script = addImgElToDom(imgDomEl)
-	imgDispObj.bodyCss = cssStr
-
-	return &imgDispObj, nil
-}
 
 func (dObj *GdocDomObj) cvtParElTextold(parElTxt *docs.TextRun)(htmlStr string, cssStr string, err error) {
 
@@ -2476,7 +2451,61 @@ func (dObj *GdocDomObj) cvtHrElToDom (hr *docs.HorizontalRule)(hrObj dispObj) {
     return hrObj
 }
 
-func (dObj *GdocDomObj) renderPosImg(posImg docs.PositionedObject, posId string)(imgDisp *dispObj, err error) {
+func (dObj *GdocDomObj) renderInlineImg(imgEl *docs.InlineObjectElement)(imgDisp *dispObj, err error) {
+	var imgDispObj dispObj
+	var imgDomEl imgScriptObj
+
+	if imgEl == nil {
+		return nil, fmt.Errorf("imgEl is nil!")
+	}
+	doc := dObj.doc
+
+	imgElId := imgEl.InlineObjectId
+	if !(len(imgElId) > 0) {return nil, fmt.Errorf("no InlineObjectId found!")}
+
+	// need to remove first part of the id
+	idx := 0
+	for i:=0; i< len(imgElId); i++ {
+		if imgElId[i] == '.' {
+			idx = i+1
+			break
+		}
+	}
+	imgId :=""
+	if (idx>0) && (idx<len(imgElId)-1) {
+		imgId = "img_" + imgElId[idx:]
+	}
+
+	// need to change for imagefolder
+//	htmlStr := fmt.Sprintf("<!-- inline image %s -->\n", imgElId)
+
+	imgObj := doc.InlineObjects[imgElId].InlineObjectProperties.EmbeddedObject
+
+	if dObj.Options.ImgFold {
+    	imgSrc := dObj.imgFoldNam + "/" + imgId + ".jpeg"
+		// html htmlStr +=fmt.Sprintf("<img src=\"%s\" id=\"%s\" alt=\"%s\">\n", imgSrc, imgId, imgObj.Title)
+		imgDomEl.src = imgSrc
+	} else {
+		// html htmlStr +=fmt.Sprintf("<img src=\"%s\" id=\"%s\" alt=\"%s\">\n", imgObj.ImageProperties.SourceUri, imgId, imgObj.Title)
+		imgDomEl.src = imgObj.ImageProperties.SourceUri
+	}
+	cssStr := fmt.Sprintf("#%s {\n",imgId)
+	cssStr += fmt.Sprintf(" width:%.0fpt; height:%.0fpt; \n}\n", imgObj.Size.Width.Magnitude, imgObj.Size.Height.Magnitude )
+	// todo add margin
+	imgDomEl.parent = dObj.parent
+	imgDomEl.idStr = imgId
+	imgDomEl.width = int(imgObj.Size.Width.Magnitude)
+	imgDomEl.height = int(imgObj.Size.Height.Magnitude)
+	if len(imgObj.Title) > 0 {imgDomEl.title = imgObj.Title}
+	if len(imgObj.Description) > 0 {imgDomEl.desc = imgObj.Description}
+
+	imgDispObj.script = addImgElToDom(imgDomEl)
+	imgDispObj.bodyCss = cssStr
+	return &imgDispObj, nil
+}
+
+
+func (dObj *GdocDomObj) renderPosImg(posImg *docs.PositionedObject, posId string)(imgDisp *dispObj, err error) {
 	var imgDispObj dispObj
 
 	// html
@@ -2559,7 +2588,7 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 	var htmlStr, cssStr, scriptStr string
 	var tabWidth float64
 	var icol, trow int64
-	var defcel tabCell
+	var defcel tblCell
 
 
 	doc := dObj.doc
@@ -2749,7 +2778,7 @@ func (dObj *GdocDomObj) cvtTableHtml(tbl *docs.Table)(tabObj dispObj, err error)
 	var htmlStr, cssStr string
 	var tabWidth float64
 	var icol, trow int64
-	var defcel tabCell
+	var defcel tblCell
 
 
 	doc := dObj.doc
@@ -2991,7 +3020,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 		posObj, ok := dObj.doc.PositionedObjects[posId]
 		if !ok {return parObj, fmt.Errorf("cvtPar: could not find positioned Object with id: ", posId)}
 
-		imgDisp, err := dObj.renderPosImg(posObj, posId)
+		imgDisp, err := dObj.renderPosImg(&posObj, posId)
 		if err != nil {
 			imgDisp.bodyHtml = fmt.Sprintf("<!-- error cvtPar:: render pos img %v -->\n", err) + imgDisp.bodyHtml
 		}
@@ -3864,20 +3893,13 @@ func (dObj *GdocDomObj) createFootnoteDiv () (ftnoteDiv *dispObj, err error) {
 			elObj := docFt.Content[el]
 			if elObj.Paragraph == nil {continue}
 			par := elObj.Paragraph
-			pidStr := idStr[5:]
-			htmlStr += fmt.Sprintf("<p class=\"%s_p %s_pft\" id=\"%s\">\n", dObj.docName, dObj.docName, pidStr)
+//			pidStr := idStr[5:]
+			//html htmlStr += fmt.Sprintf("<p class=\"%s_p %s_pft\" id=\"%s\">\n", dObj.docName, dObj.docName, pidStr)
 
 			var parElSumDisp *dispObj
 // need to change
-			for parEl:=0; parEl< len(par.Elements); parEl++ {
-//				parElObj := par.Elements[parEl]
-				tDisp, err := dObj.cvtParElToDom(par)
-				if err != nil {
-// xxxx
-					htmlStr += fmt.Sprintf("<!-- cvtPar error %v -->\n", err)
-				}
-				addDispObj(parElSumDisp, &tDisp)
-			}
+			tDisp, err := dObj.cvtParElToDom(par)
+			addDispObj(parElSumDisp, &tDisp)
 
 			tObj, err := dObj.cvtContentElToDom(elObj)
 			if err != nil {
@@ -3886,21 +3908,12 @@ func (dObj *GdocDomObj) createFootnoteDiv () (ftnoteDiv *dispObj, err error) {
 			}
 			addDispObj(&ftnDiv, tObj)
 
-// xxxx
-//			htmlStr += "</p>\n"
-			ftnDiv.bodyHtml += htmlStr
+//			ftnDiv.bodyHtml += htmlStr
 			ftnDiv.bodyCss += cssStr
 			ftnDiv.script += scriptStr
 		}
-// xxxx
-		htmlStr = "</li>\n"
-		ftnDiv.bodyHtml += htmlStr
-//		ftnDiv.bodyCss += cssStr
-	}
 
-// xxxx
-	ftnDiv.bodyHtml += "</ol>\n"
-	ftnDiv.bodyHtml += "</div>\n"
+	}
 
 	return &ftnDiv, nil
 }
@@ -4040,7 +4053,7 @@ func (dObj *GdocDomObj) createTocDiv () (tocObj *dispObj, err error) {
 	return &tocDiv, nil
 }
 
-func (dObj *GdocDomObj) cvtBodyDom() (bodyObj *dispObj, err error) {
+func (dObj *GdocDomObj) cvtBodyToDom() (bodyObj *dispObj, err error) {
 
 	if dObj == nil {
 		return nil, fmt.Errorf("-- no GdocObj!")
@@ -4051,6 +4064,8 @@ func (dObj *GdocDomObj) cvtBodyDom() (bodyObj *dispObj, err error) {
 	if body == nil {
 		return nil, fmt.Errorf("-- no doc.body!")
 	}
+
+	err = nil
 
 	bodyObj = new(dispObj)
 
@@ -4067,10 +4082,10 @@ func (dObj *GdocDomObj) cvtBodyDom() (bodyObj *dispObj, err error) {
 	elNum := len(body.Content)
 	for el:=0; el< elNum; el++ {
 		bodyEl := body.Content[el]
-		tObj, err:=dObj.cvtContentElToDom(bodyEl)
-		if err != nil {
-// xxxx
-			fmt.Println("cvtContentEl: %v", err)
+		tObj, err1 := dObj.cvtContentElToDom(bodyEl)
+		if err1 != nil {
+			tObj.script = fmt.Sprintf("//el %d cvtContentEl: %v\n", el, err) + tObj.script
+			err = fmt.Errorf("cvtContentEl: El %d %v\n", el, err)
 		}
 		addDispObj(bodyObj, tObj)
 	} // for el loop end
@@ -4080,10 +4095,10 @@ func (dObj *GdocDomObj) cvtBodyDom() (bodyObj *dispObj, err error) {
 	//fmt.Printf("end of doc closing list!")
 	}
 
-	return bodyObj, nil
+	return bodyObj, err
 }
 
-func (dObj *GdocDomObj) cvtBodySec(elSt, elEnd int) (bodyObj *dispObj, err error) {
+func (dObj *GdocDomObj) cvtBodySecToDom(elSt, elEnd int) (bodyObj *dispObj, err error) {
 
 	if dObj == nil {
 		return nil, fmt.Errorf("cvtBody -- no GdocObj!")
@@ -4105,26 +4120,20 @@ func (dObj *GdocDomObj) cvtBodySec(elSt, elEnd int) (bodyObj *dispObj, err error
 //	toc := dObj.Options.Toc
 	bodyObj = new(dispObj)
 
-	// need to move
-//	bodyObj.bodyHtml = fmt.Sprintf("<div class=\"%s_main\">\n", dObj.docName)
-	bodyObj.bodyHtml = ""
+	bodyObj.script = ""
 
 	for el:=elSt; el<= elEnd; el++ {
 		bodyEl := body.Content[el]
 		tObj, err:=dObj.cvtContentElToDom(bodyEl)
 		if err != nil {
-// xxxx
-			fmt.Println("cvtContentElDom: %v", err)
+			tObj.script += fmt.Sprintf("// error el %d cvtContentElToDom: %v\n", el, err)
 		}
 		addDispObj(bodyObj, tObj)
 	} // for el loop end
 
 	if dObj.listStack != nil {
 		dObj.closeList(0)
-//fmt.Printf("end of doc closing list!")
 	}
-
-	bodyObj.bodyHtml += "</div>\n"
 
 	return bodyObj, nil
 }
@@ -4158,16 +4167,16 @@ func CreGdocDomDoc(folderPath string, doc *docs.Document, options *util.OptObj)(
 			pgHd := dObj.createSectionHeading(ipage)
 			elStart := dObj.sections[ipage].secElStart
 			elEnd := dObj.sections[ipage].secElEnd
-			pgBody, err := dObj.cvtBodySec(elStart, elEnd)
+			pgBody, err := dObj.cvtBodySecToDom(elStart, elEnd)
 			if err != nil {
-				return fmt.Errorf("cvtBodySec %d %v", ipage, err)
+				return fmt.Errorf("cvtBodySecToDom %d %v", ipage, err)
 			}
 //			mainDiv.headCss += pgBody.headCss
 			mainDiv.bodyCss += pgBody.bodyCss
 			mainDiv.bodyHtml += pgHd.bodyHtml + pgBody.bodyHtml
 		}
 	} else {
-		mBody, err := dObj.cvtBodyDom()
+		mBody, err := dObj.cvtBodyToDom()
 		if err != nil {
 			return fmt.Errorf("cvtBody: %v", err)
 		}
@@ -4284,16 +4293,16 @@ func CreGdocDomMain(folderPath string, doc *docs.Document, options *util.OptObj)
 			pgHd := dObj.createSectionHeading(ipage)
 			elStart := dObj.sections[ipage].secElStart
 			elEnd := dObj.sections[ipage].secElEnd
-			pgBody, err := dObj.cvtBodySec(elStart, elEnd)
+			pgBody, err := dObj.cvtBodySecToDom(elStart, elEnd)
 			if err != nil {
-				return fmt.Errorf("cvtBodySec %d %v", ipage, err)
+				return fmt.Errorf("cvtBodySecToDom %d %v", ipage, err)
 			}
 //			mainDiv.headCss += pgBody.headCss
 			mainDiv.bodyCss += pgBody.bodyCss
 			mainDiv.bodyHtml += pgHd.bodyHtml + pgBody.bodyHtml
 		}
 	} else {
-		mBody, err := dObj.cvtBodyDom()
+		mBody, err := dObj.cvtBodyToDom()
 		if err != nil {
 			return fmt.Errorf("cvtBody: %v", err)
 		}
@@ -4409,16 +4418,16 @@ func CreGdocDomSection(heading, folderPath string, doc *docs.Document, options *
 			pgHd := dObj.createSectionHeading(ipage)
 			elStart := dObj.sections[ipage].secElStart
 			elEnd := dObj.sections[ipage].secElEnd
-			pgBody, err := dObj.cvtBodySec(elStart, elEnd)
+			pgBody, err := dObj.cvtBodySecToDom(elStart, elEnd)
 			if err != nil {
-				return fmt.Errorf("cvtBodySec %d %v", ipage, err)
+				return fmt.Errorf("cvtBodySecToDom %d %v", ipage, err)
 			}
 //			mainDiv.headCss += pgBody.headCss
 			mainDiv.bodyCss += pgBody.bodyCss
 			mainDiv.bodyHtml += pgHd.bodyHtml + pgBody.bodyHtml
 		}
 	} else {
-		mBody, err := dObj.cvtBodyDom()
+		mBody, err := dObj.cvtBodyToDom()
 		if err != nil {
 			return fmt.Errorf("cvtBody: %v", err)
 		}
@@ -4534,15 +4543,15 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *util.OptObj)(
 			pgHd := dObj.createSectionHeading(ipage)
 			elStart := dObj.sections[ipage].secElStart
 			elEnd := dObj.sections[ipage].secElEnd
-			pgBody, err := dObj.cvtBodySec(elStart, elEnd)
+			pgBody, err := dObj.cvtBodySecToDom(elStart, elEnd)
 			if err != nil {
-				return fmt.Errorf("cvtBodySec %d %v", ipage, err)
+				return fmt.Errorf("cvtBodySecToDom %d %v", ipage, err)
 			}
 			mainDiv.bodyCss += pgBody.bodyCss
 			mainDiv.bodyHtml += pgHd.bodyHtml + pgBody.bodyHtml
 		}
 	} else {
-		mBody, err := dObj.cvtBodyDom()
+		mBody, err := dObj.cvtBodyToDom()
 		if err != nil {
 			return fmt.Errorf("cvtBody: %v", err)
 		}
