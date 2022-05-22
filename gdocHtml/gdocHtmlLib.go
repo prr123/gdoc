@@ -42,11 +42,13 @@ type GdocHtmlObj struct {
 	listStack *[]cList
 	docLists []docList
 	headings []heading
-	sections []sect
-	docFtnotes []docFtnote
+	sections []secTyp
+	docFtnotes []docFtnoteTyp
+	docPb []pbTyp
 	namStylMap map[string]bool
 	headCount int
 	secCount int
+	pbCount int
 	elCount int
 	hrCount int
 	spanCount int
@@ -76,10 +78,15 @@ type dispObj struct {
 	bodyCss string
 }
 
-type sect struct {
+type secTyp struct {
 	sNum int
 	secElStart int
 	secElEnd int
+}
+
+type pbTyp struct {
+	el int
+	parel int
 }
 
 type heading struct {
@@ -90,7 +97,7 @@ type heading struct {
 	text string
 }
 
-type docFtnote struct {
+type docFtnoteTyp struct {
 	el int
 	parel int
 	id string
@@ -1706,8 +1713,9 @@ func (dObj *GdocHtmlObj) findListProp (listId string) (listProp *docs.ListProper
 func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *util.OptObj) (err error) {
 	var listItem docList
 	var heading heading
-	var sec sect
-	var ftnote docFtnote
+	var sec secTyp
+	var ftnote docFtnoteTyp
+	var pb pbTyp
 
 	doc := dObj.doc
 	if doc == nil {return fmt.Errorf("doc is nil in GdocHtmlObj!")}
@@ -1751,6 +1759,9 @@ func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *util.OptObj) (
 	// footnotes
 	dObj.ftnoteCount = 0
 
+	// page breaks
+	dObj.pbCount = 0
+
 	// horizonatal rules
 	dObj.hrCount = 0
 
@@ -1767,6 +1778,7 @@ func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *util.OptObj) (
 
 	for el:=0; el<dObj.elCount; el++ {
 		elObj:= doc.Body.Content[el]
+		// section breaks
 		if elObj.SectionBreak != nil {
 			if elObj.SectionBreak.SectionStyle.SectionType == "NEXT_PAGE" {
 				sec.secElStart = el
@@ -1831,23 +1843,30 @@ func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *util.OptObj) (
 //				}
 			} // end headings
 
-			// footnotes
-			if len(doc.Footnotes)> 0 {
-				for parEl:=0; parEl<len(elObj.Paragraph.Elements); parEl++ {
-					parElObj := elObj.Paragraph.Elements[parEl]
-					if parElObj.FootnoteReference != nil {
-						ftnote.el = el
-						ftnote.parel = parEl
-						ftnote.id = parElObj.FootnoteReference.FootnoteId
-						ftnote.numStr = parElObj.FootnoteReference.FootnoteNumber
-						dObj.docFtnotes = append(dObj.docFtnotes, ftnote)
-					}
+			// paragraph elements
+			for parEl:=0; parEl<len(elObj.Paragraph.Elements); parEl++ {
+				parElObj := elObj.Paragraph.Elements[parEl]
+				// footnote
+				if parElObj.FootnoteReference != nil {
+					ftnote.el = el
+					ftnote.parel = parEl
+					ftnote.id = parElObj.FootnoteReference.FootnoteId
+					ftnote.numStr = parElObj.FootnoteReference.FootnoteNumber
+					dObj.docFtnotes = append(dObj.docFtnotes, ftnote)
+				}
+				// page break
+				if parElObj.PageBreak != nil {
+					pb.el = el
+					pb.parel = parEl
+					dObj.docPb = append(dObj.docPb, pb)
+					dObj.pbCount++
 				}
 			}
 
 			parHdEnd = el
 			secPtEnd = el
 		} // end paragraph
+
 	} // end el loop
 
 	hdlen := len(dObj.headings)
@@ -2900,7 +2919,6 @@ func (dObj *GdocHtmlObj) createSectionHeading(ipage int) (secObj dispObj) {
 
 	secObj.bodyCss = fmt.Sprintf(".%s_main.sec_%d {\n", dObj.docName, ipage)
 
-)
 	// html
 	secObj.bodyHtml = fmt.Sprintf("<div class=\"%s_main sec_%d\" id=\"%s_sec_%d\">\n", dObj.docName, ipage, dObj.docName, ipage)
 	secObj.bodyHtml += fmt.Sprintf("<p class=\"%s_page\"><a href=\"#%s_sectoc\">Page %d</a></p>\n", dObj.docName, dObj.docName, ipage)
