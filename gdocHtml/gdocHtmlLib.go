@@ -2053,8 +2053,8 @@ func (dObj *GdocHtmlObj) closeList(nl int)(htmlStr string) {
 
 	stack := dObj.listStack
 	n := len(*stack)
-
-	for i := n -1 ; i >= nl; i-- {
+	if nl< 0 {nl = -1}
+	for i := n -1 ; i > nl; i-- {
 		ord := (*stack)[i].cOrd
 		if ord {
 			htmlStr += "</ol>\n"
@@ -2286,7 +2286,7 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 
 	// if there is an open list, close it
 	if len(*dObj.listStack) >= 0 {
-		htmlStr += dObj.closeList(0)
+		htmlStr += dObj.closeList(-1)
 		//fmt.Printf("table closing list!\n")
 	}
 
@@ -2410,7 +2410,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parDisp dispObj, err error)
 	if par.Bullet == nil {
 		// if there was an open list, close it
 		if dObj.listStack != nil {
-			parDisp.bodyHtml += dObj.closeList(0)
+			parDisp.bodyHtml += dObj.closeList(-1)
 			//fmt.Printf("new par -> close list\n")
 		}
 	}
@@ -3051,7 +3051,11 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 			cssStr += fmt.Sprintf(".%s_li.nL_%d::marker {\n", listClass, nl)
 			switch dObj.docLists[i].ord {
 				case true:
-					cssStr += fmt.Sprintf(" content: counter(%s_li_nL_%d, %s) \".\";", listClass, nl, glyphStr)
+//					glyphformat
+//					markprefix, marksuffix := parseGlyphFormat(glyphFormat)
+					markprefix := ""
+					marksuffix := ""
+					cssStr += fmt.Sprintf(" content: \"%s\" counter(%s_li_nL_%d, %s) \"%s\";", markprefix, listClass, nl, glyphStr, marksuffix)
 				case false:
 
 			}
@@ -3368,7 +3372,7 @@ func (dObj *GdocHtmlObj) cvtBody() (bodyObj *dispObj, err error) {
 	} // for el loop end
 	if dObj.listStack != nil {
 		//fmt.Printf("*** Body End *** stack: %d\n",len(*dObj.listStack))
-		bodyObj.bodyHtml += dObj.closeList(0)
+		bodyObj.bodyHtml += dObj.closeList(-1)
 		//fmt.Printf("end of doc closing list!")
 	}
 
@@ -3413,7 +3417,7 @@ func (dObj *GdocHtmlObj) cvtBodySec(elSt, elEnd int) (bodyObj *dispObj, err erro
 	} // for el loop end
 
 	if dObj.listStack != nil {
-		bodyObj.bodyHtml += dObj.closeList(len(*dObj.listStack))
+		bodyObj.bodyHtml += dObj.closeList(-1)
 //fmt.Printf("end of doc closing list!")
 	}
 
