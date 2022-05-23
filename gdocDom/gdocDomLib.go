@@ -2417,13 +2417,7 @@ func (dObj *GdocDomObj) closeList(nl int) {
 	stack := dObj.listStack
 	n := len(*stack)
 
-	for i := n -1; i >= nl; i-- {
-//		ord := (*stack)[i].cOrd
-//		if ord {
-//			htmlStr += "</ol>\n"
-//		} else {
-//			htmlStr +="</ul>\n"
-//		}
+	for i := n -1; i > nl; i-- {
 		nstack := popLiStack(stack)
 		dObj.listStack = nstack
 	}
@@ -2677,7 +2671,7 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 
 	// if there is an open list, close it
 	if len(*dObj.listStack) >= 0 {
-		dObj.closeList(0)
+		dObj.closeList(-1)
 	}
 
 	// html fmt.Sprintf("<table class=\"%s\">\n", tblClass)
@@ -2868,7 +2862,7 @@ func (dObj *GdocDomObj) cvtTableHtml(tbl *docs.Table)(tabObj dispObj, err error)
 
 	// if there is an open list, close it
 	if len(*dObj.listStack) >= 0 {
-		dObj.closeList(0)
+		dObj.closeList(-1)
 //fmt.Printf("table closing list!\n")
 	}
 
@@ -3008,7 +3002,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 	if par.Bullet == nil {
 		// if we have a non-list paragraph. we assume any open lists need to be closed
 		// in a Dom we wander back to div_main
-		if dObj.listStack != nil {dObj.closeList(0)}
+		if dObj.listStack != nil {dObj.closeList(-1)}
 			//fmt.Printf("new par -> close list\n")
 	}
 
@@ -4090,10 +4084,7 @@ func (dObj *GdocDomObj) cvtBodyToDom() (bodyObj *dispObj, err error) {
 		addDispObj(bodyObj, tObj)
 	} // for el loop end
 
-	if dObj.listStack != nil {
-		dObj.closeList(0)
-	//fmt.Printf("end of doc closing list!")
-	}
+	if dObj.listStack != nil {dObj.closeList(-1)}
 
 	return bodyObj, err
 }
@@ -4131,9 +4122,7 @@ func (dObj *GdocDomObj) cvtBodySecToDom(elSt, elEnd int) (bodyObj *dispObj, err 
 		addDispObj(bodyObj, tObj)
 	} // for el loop end
 
-	if dObj.listStack != nil {
-		dObj.closeList(0)
-	}
+	if dObj.listStack != nil {dObj.closeList(-1)}
 
 	return bodyObj, nil
 }
