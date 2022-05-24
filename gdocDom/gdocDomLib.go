@@ -3909,7 +3909,7 @@ func (dObj *GdocDomObj) cvtContentElToDom(contEl *docs.StructuralElement) (GdocD
 }
 
 //ootnote div
-func (dObj *GdocDomObj) createFootnoteDiv () (ftnoteDiv *dispObj, err error) {
+func (dObj *GdocDomObj) creFtnoteDivDom () (ftnoteDiv *dispObj, err error) {
 	var ftnDiv dispObj
 	var htmlStr, cssStr, scriptStr string
 
@@ -4342,9 +4342,9 @@ func CreGdocDomDoc(folderPath string, doc *docs.Document, options *util.OptObj)(
 	}
 
 // footnotes
-	ftnoteDiv, err := dObj.createFootnoteDiv()
+	ftnoteDiv, err := dObj.creFtnoteDivDom()
 	if err != nil {
-		fmt.Errorf("createFootnoteDiv: %v", err)
+		fmt.Errorf("creFtnoteDivDom: %v", err)
 	}
 
 //	dObj.sections
@@ -4468,9 +4468,9 @@ func CreGdocDomMain(folderPath string, doc *docs.Document, options *util.OptObj)
 	}
 
 // footnotes
-	ftnoteDiv, err := dObj.createFootnoteDiv()
+	ftnoteDiv, err := dObj.creFtnoteDivDom()
 	if err != nil {
-		fmt.Errorf("createFootnoteDiv: %v", err)
+		fmt.Errorf("creFtnoteDivDom: %v", err)
 	}
 
 //	dObj.sections
@@ -4593,9 +4593,9 @@ func CreGdocDomSection(heading, folderPath string, doc *docs.Document, options *
 	}
 
 // footnotes
-	ftnoteDiv, err := dObj.createFootnoteDiv()
+	ftnoteDiv, err := dObj.creFtnoteDivDom()
 	if err != nil {
-		fmt.Errorf("createFootnoteDiv: %v", err)
+		fmt.Errorf("creFtnoteDivDom: %v", err)
 	}
 
 //	dObj.sections
@@ -4718,9 +4718,9 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *util.OptObj)(
 	}
 
 // footnotes
-	ftnoteDiv, err := dObj.createFootnoteDiv()
+	ftnoteDiv, err := dObj.creFtnoteDivDom()
 	if err != nil {
-		fmt.Errorf("createFootnoteDiv: %v", err)
+		fmt.Errorf("creFtnoteDivDom: %v", err)
 	}
 
 //	dObj.sections
