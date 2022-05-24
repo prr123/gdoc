@@ -29,7 +29,9 @@ type GdocHtmlObj struct {
 	docHeight float64
 	ImgFoldName string
     ImgCount int
+	imgCounter int
     tableCount int
+	tableCounter int
     parCount int
 	title namStyl
 	subtitle namStyl
@@ -2280,7 +2282,7 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 	}
 
 	//set up table
-	tblClass := fmt.Sprintf("%s_tbl", dObj.docName)
+//	tblClass := fmt.Sprintf("%s_tbl", dObj.docName)
 	tblCellClass := fmt.Sprintf("%s_tcel", dObj.docName)
 	htmlStr = ""
 
@@ -2290,7 +2292,7 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 		//fmt.Printf("table closing list!\n")
 	}
 
-	htmlStr += fmt.Sprintf("<table class=\"%s\">\n", tblClass)
+	htmlStr += fmt.Sprintf("<table class=\"%s_tbl tbl_%d\">\n", dObj.docName, dObj.tableCount)
 
 	if !tblWidthIsPage {
   		cssStr = fmt.Sprintf(".%s_tbl.%s_tbl%d {\n", dObj.docName, dObj.docName, dObj.tableCount)
