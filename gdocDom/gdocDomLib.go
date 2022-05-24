@@ -3640,7 +3640,7 @@ func (dObj *GdocDomObj) createDivHead(divName, idStr string) (divObj dispObj, er
 	return divObj, nil
 }
 
-func (dObj *GdocDomObj) createSectionDiv() (secHd *dispObj) {
+func (dObj *GdocDomObj) creSecDivDom() (secHd *dispObj) {
 	var secHead dispObj
 	var scriptStr string
 	var divObj, parObj elScriptObj
@@ -4249,7 +4249,7 @@ func CreGdocDomDoc(folderPath string, doc *docs.Document, options *util.OptObj)(
 	}
 
 //	dObj.sections
-	secDiv := dObj.createSectionDiv()
+	secDiv := dObj.creSecDivDom()
 	if secDiv != nil {
 		for ipage:=0; ipage<len(dObj.sections); ipage++ {
 			pgHd := dObj.creSecHeadToDom(ipage)
@@ -4375,7 +4375,7 @@ func CreGdocDomMain(folderPath string, doc *docs.Document, options *util.OptObj)
 	}
 
 //	dObj.sections
-	secDiv := dObj.createSectionDiv()
+	secDiv := dObj.creSecDivDom()
 	if secDiv != nil {
 		for ipage:=0; ipage<len(dObj.sections); ipage++ {
 			pgHd := dObj.creSecHeadToDom(ipage)
@@ -4500,7 +4500,7 @@ func CreGdocDomSection(heading, folderPath string, doc *docs.Document, options *
 	}
 
 //	dObj.sections
-	secDiv := dObj.createSectionDiv()
+	secDiv := dObj.creSecDivDom()
 	if secDiv != nil {
 		for ipage:=0; ipage<len(dObj.sections); ipage++ {
 			pgHd := dObj.creSecHeadToDom(ipage)
@@ -4625,7 +4625,7 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *util.OptObj)(
 	}
 
 //	dObj.sections
-	secDiv := dObj.createSectionDiv()
+	secDiv := dObj.creSecDivDom()
 	if secDiv != nil {
 		for ipage:=0; ipage<len(dObj.sections); ipage++ {
 			pgHd := dObj.creSecHeadToDom(ipage)
