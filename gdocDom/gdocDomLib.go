@@ -28,8 +28,10 @@ type GdocDomObj struct {
     docWidth float64
 	docHeight float64
 	ImgFoldName string
-    ImgCount int
+    imgCount int
+	imgCounter int
     tableCount int
+	tableCounter int
     parCount int
 	title namStylTyp
 	subtitle namStylTyp
@@ -1742,6 +1744,8 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
 		jsStr += "function addTblEl(tblObj) {\n"
 		jsStr += "  var tbl = document.createElement('table');\n"
 		jsStr += "  var tblBody = document.createElement('tbody');\n"
+		jsStr += "  var colgrp = document.createElement('colgroup');\n"
+
 		jsStr += "  for (var ir = 0; i < tblObj.rows; i++) {\n"
 		jsStr += "    var tblRow = document.createElement('tr');\n"
 		jsStr += "    var row = tblObj.row[ir];\n"
@@ -1754,14 +1758,12 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
 		jsStr += "      if (col.idStr != null) {tblCell.setAttribute(\"id\", col.idStr);}\n"
 		jsStr += "      if (col.cl1 != null) {tblCell.classList.add(col.cl1);}\n"
 		jsStr += "      if (col.cl2 != null) {tblCell.classList.add(col.cl2);}\n"
-						//tblCell add text
 		jsStr += "      tblRow.appendChild(tblCell);\n"
 		jsStr += "	  }/n"
 		jsStr += "	  tblBody.appendChild(tblRow);\n"
 		jsStr += "	}/n"
-
 		jsStr += "  tblp = tblObj.parent;\n"
-		jsStr += "  tblp.appendChild(tab);\n"
+		jsStr += "  tblp.appendChild(tbl);\n"
 		jsStr += "  return tbl\n}\n"
 	}
 
@@ -1860,26 +1862,40 @@ func addImgElToDom(imgObj imgScriptObj)(script string) {
 	return script
 }
 
-func addTblElToDom(tableObj tableScriptObj)(script string) {
+func addTblToDom(tblObj tableScriptObj)(script string) {
 
-	script = "// addEl \n"
-	script += "// " + tableObj.comment + "\n"
-	if !(len(tableObj.parent) > 0) {
+	script = "// *** addTbl ***\n"
+	if len(tbl.comment) > 0 {script += "// " + tblObj.comment + "\n"}
+	if !(len(tblObj.parent) > 0) {
 		script += "// error - no el parent provided!\n"
 		return script
 	}
-	script = "  for (key in tableObj) {tableObj[key] = null;}\n"
-	if len(tableObj.cl1) > 0 {script += fmt.Sprintf("  tableObj.cl1 = '%s';\n", tableObj.cl1)}
-	if len(tableObj.cl2) > 0 {script += fmt.Sprintf("  tableObj.cl2 = '%s';\n", tableObj.cl2)}
-	if len(tableObj.idStr) > 0 {script += fmt.Sprintf("  tableObj.idStr = '%s';\n", tableObj.idStr)}
-	script += fmt.Sprintf("  tableObj.parent = %s;\n", tableObj.parent)
-	script += fmt.Sprintf("  tbl = addTblEl(tableObj);\n")
-	for irow:=0; irow < tableObj.rowCount; irow++ {
-		for icol:=0; icol < tableObj.colCount; icol++ {
-
-		}
+	if !(tblObj.rowCount > 0) {
+		script += "// error -- no table rows provided!\n"
+		return script
 	}
-	script += fmt.Sprintf("  fillTblEl(tableObj);\n")
+	if !(tblObj.colCount > 0) {
+		script += "// error -- no table columns provided!\n"
+		return script
+	}
+
+	script = "  for (key in tblObj) {tblObj[key] = null;}\n"
+
+	if len(tblObj.cl1) > 0 {script += fmt.Sprintf("  tblObj.cl1 = '%s';\n", tblObj.cl1)}
+	if len(tblObj.cl2) > 0 {script += fmt.Sprintf("  tblebj.cl2 = '%s';\n", tblObj.cl2)}
+	if len(tblObj.idStr) > 0 {script += fmt.Sprintf("  tblObj.idStr = '%s';\n", tblObj.idStr)}
+
+	script += fmt.Sprintf("  tblObj.parent = %s;\n", tblObj.parent)
+//	for irow:=0; irow < tblObj.rowCount; irow++ {
+
+//		for icol:=0; icol < tblObj.colCount; icol++ {
+	script += fmt.Sprintf("  tblObj.rowCount = %d\n", tblObj.rowCount)
+	script += fmt.Sprintf("  tblObj.colCount = %d\n", tblObj.colCount)
+
+
+	script += fmt.Sprintf("  tbl = addTblEl(tblObj);\n")
+
+//	script += fmt.Sprintf("  fillTblEl(tblObj);\n")
 
 	return script
 }
@@ -2232,6 +2248,11 @@ func (dObj *GdocDomObj) initGdocDom(folderPath string, options *util.OptObj) (er
 			parHdEnd = el
 			secPtEnd = el
 		} // end paragraph
+
+		if elObj.Table != nil {
+			dObj.tableCount++
+		}
+
 	} // end el loop
 
 	hdlen := len(dObj.headings)
@@ -2834,7 +2855,6 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 	tabObj.bodyCss = cssStr
 	return tabObj, nil
 }
-
 
 func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err error) {
 // paragraph element par
