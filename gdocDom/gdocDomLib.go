@@ -3664,13 +3664,18 @@ func (dObj *GdocDomObj) creSecHeadToDom(ipage int) (secObj dispObj) {
 	var divObj, parObj elScriptObj
 	var linkObj elScriptObj
 
-	secObj.bodyCss = fmt.Sprintf(".%s_main.sec_%d {\n", dObj.docName, ipage)
+	//css
+	prefixCss := fmt.Sprintf(".%s_main.sec_%d {\n", dObj.docName, ipage)
+	secCss := ""
+	suffixCss := "}/n"
+
+	if len(secCss) > 0 {secObj.bodyCss = prefixCss + secCss + suffixCss}
 
 	// html
-	secObj.bodyHtml = fmt.Sprintf("<div class=\"%s_main sec_%d\" id=\"%s_sec_%d\">\n", dObj.docName, ipage, dObj.docName, ipage)
-	secObj.bodyHtml += fmt.Sprintf("<p class=\"%s_page\"><a href=\"#%s_sectoc\">Page %d</a></p>\n", dObj.docName, dObj.docName, ipage)
-	// script
+	// fmt.Sprintf("<div class=\"%s_main sec_%d\" id=\"%s_sec_%d\">\n", dObj.docName, ipage, dObj.docName, ipage)
+	// fmt.Sprintf("<p class=\"%s_page\"><a href=\"#%s_sectoc\">Page %d</a></p>\n", dObj.docName, dObj.docName, ipage)
 
+	// script
 	divObj.parent = "divDoc"
 	divObj.newEl = fmt.Sprintf("%s_main_%d", dObj.docName, ipage)
 	divObj.typ = "div"
