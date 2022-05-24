@@ -2542,19 +2542,25 @@ func (dObj *GdocDomObj) renderInlineImg(imgEl *docs.InlineObjectElement)(imgDisp
 
 func (dObj *GdocDomObj) renderPosImg(posImg *docs.PositionedObject, posId string)(imgDisp *dispObj, err error) {
 	var imgDispObj dispObj
+	var cssStr, scriptStr string
+	var divEl elScriptObj
+	var imgEl imgScriptObj
 
 	// html
 	posObjProp := posImg.PositionedObjectProperties
 	imgProp := posObjProp.EmbeddedObject
-	htmlStr := fmt.Sprintf("\n<!-- Positioned Image %s -->\n", posId)
+	// fmt.Sprintf("\n<!-- Positioned Image %s -->\n", posId)
+	scriptStr = "// *** Positioned Image " + posId + " ***\n"
+
 	imgDivId := fmt.Sprintf("%s_%s", dObj.docName, posId[4:])
 	imgId := imgDivId + "_img"
 	pimgId := imgDivId +"_p"
 
 	layout := posObjProp.Positioning.Layout
 	topPos := posObjProp.Positioning.TopOffset.Magnitude
-	leftPos := posObjProp.Positioning.LeftOffset.Magnitude
-	fmt.Printf("layout %s top: %.1fmm left:%.1fmm\n", layout, topPos*PtTomm, leftPos*PtTomm)
+//	leftPos := posObjProp.Positioning.LeftOffset.Magnitude
+
+//	fmt.Printf("layout %s top: %.1fmm left:%.1fmm\n", layout, topPos*PtTomm, leftPos*PtTomm)
 
 	imgSrc := imgProp.ImageProperties.ContentUri
 	if dObj.Options.ImgFold {
@@ -2562,7 +2568,7 @@ func (dObj *GdocDomObj) renderPosImg(posImg *docs.PositionedObject, posId string
 	}
 
 	//css
-	cssStr := ""
+	cssStr = ""
 	switch layout {
 		case "WRAP_TEXT", "BREAK_LEFT":
 			cssStr += fmt.Sprintf("#%s {\n", imgId)
@@ -2606,12 +2612,32 @@ func (dObj *GdocDomObj) renderPosImg(posImg *docs.PositionedObject, posId string
 			cssStr += "}\n"
 	}
 
-	htmlStr += fmt.Sprintf("  <div id=\"%s\">\n",imgDivId)
-	htmlStr += fmt.Sprintf("     <img src=\"%s\" alt=\"%s\" id=\"%s\">\n", imgSrc, imgProp.Title, imgId)
-//	htmlStr += fmt.Sprintf("     <p id=\"%s\">%s</p>\n", pimgId, imgProp.Title)
-	htmlStr += "  </div>\n"
+	// html
+	// fmt.Sprintf("  <div id=\"%s\">\n",imgDivId)
+	divEl.parent = dObj.parent
+	divEl.typ = "div"
+	divEl.newEl = "imgDiv"
+	divEl.idStr = imgDivId
+	scriptStr += addElToDom(divEl)
 
-	imgDispObj.bodyHtml = htmlStr
+	//fmt.Sprintf("     <img src=\"%s\" alt=\"%s\" id=\"%s\">\n", imgSrc, imgProp.Title, imgId)
+	imgEl.parent = "imgDiv"
+	imgEl.src = imgSrc
+	imgEl.title = imgProp.Title
+	imgEl.idStr = imgId
+	scriptStr += addImgElToDom(imgEl)
+
+	//	fmt.Sprintf("     <p id=\"%s\">%s</p>\n", pimgId, imgProp.Title)
+	if len(imgProp.Title) > 0 {
+		divEl.parent = "imgDiv"
+		divEl.typ = "p"
+		divEl.txt = imgProp.Title
+		divEl.idStr = pimgId
+		divEl.cl1 = dObj.docName + "_p"
+		scriptStr += addElToDom(divEl)
+	}
+
+	imgDispObj.script = scriptStr
 	imgDispObj.bodyCss = cssStr
 	return &imgDispObj, nil
 }
