@@ -3642,18 +3642,46 @@ func (dObj *GdocDomObj) createDivHead(divName, idStr string) (divObj dispObj, er
 
 func (dObj *GdocDomObj) createSectionDiv() (secHd *dispObj) {
 	var secHead dispObj
+	var scriptStr string
+	var divObj, parObj elScriptObj
 
 	if !dObj.Options.Sections {return nil}
 
 	if len(dObj.sections) < 2 {return nil}
 
-	htmlStr := fmt.Sprintf("<div class=\"%s_main top\" id=\"%s_sectoc\">\n", dObj.docName, dObj.docName)
-	htmlStr += fmt.Sprintf("<p class=\"%s_title %s_leftTitle_UL\">Sections</p>\n",dObj.docName, dObj.docName)
+	//html
+	// fmt.Sprintf("<div class=\"%s_main top\" id=\"%s_sectoc\">\n", dObj.docName, dObj.docName)
+	divObj.parent = dObj.parent
+	divObj.typ="div"
+	divObj.newEl = "divSec"
+	divObj.cl1 = fmt.Sprintf("%s_main_top", dObj.docName)
+	divObj.idStr = fmt.Sprintf("%s_sectoc", dObj.docName)
+	scriptStr = addElToDom(divObj)
+
+	// fmt.Sprintf("<p class=\"%s_title %s_leftTitle_UL\">Sections</p>\n",dObj.docName, dObj.docName)
+	parObj.parent = "divSec"
+	parObj.typ = "p"
+	parObj.newEl = "pel"
+	parObj.cl1 = dObj.docName + "_title"
+	parObj.cl2 = dObj.docName + "_leftTitle_UL"
+	parObj.txt = "Sections"
+	scriptStr += addElToDom(parObj)
+
 	for i:=0; i< len(dObj.sections); i++ {
-		htmlStr += fmt.Sprintf("  <p class=\"%s_p\"><a href=\"#%s_sec_%d\">Page: %3d</a></p>\n", dObj.docName, dObj.docName, i, i)
+		// fmt.Sprintf("  <p class=\"%s_p\"><a href=\"#%s_sec_%d\">Page: %3d</a></p>\n", dObj.docName, dObj.docName, i, i)
+		parObj.parent = "divSec"
+		parObj.typ = "p"
+		parObj.newEl = "pel"
+		parObj.cl1 = dObj.docName + "_p"
+		scriptStr += addElToDom(parObj)
+
+		parObj.parent = "pel"
+		parObj.href = fmt.Sprintf("#%s_sec_%d", dObj.docName, i)
+		parObj.txt = fmt.Sprintf("Page: %3d", i)
+		scriptStr += addLinkToDom(parObj)
 	}
-	htmlStr +="</div>\n"
-	secHead.bodyHtml = htmlStr
+
+	secHead.script = scriptStr
 	return &secHead
 }
 
