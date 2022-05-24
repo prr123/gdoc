@@ -4014,8 +4014,8 @@ func (dObj *GdocDomObj) createFootnoteDiv () (ftnoteDiv *dispObj, err error) {
 //toc div
 func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 	var tocDiv dispObj
-	var htmlStr, cssStr, scriptStr string
-//	var elObj elScriptObj
+	var cssStr, scriptStr string
+	var elObj elScriptObj
 
 	if dObj.Options.Toc != true { return nil, nil }
 
@@ -4078,11 +4078,22 @@ func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 	tocDiv.bodyCss = cssStr
 
 	//html
-	//fmt.Sprintf("<div class=\"%s_main top\">\n", dObj.docName)
-
+	//fmt.Sprintf("<div class=\"%s_main %s_top\">\n", dObj.docName)
+	elObj.parent = "divDoc"
+	elObj.typ = "div"
+	elObj.newEl = "divToc"
+	elObj.cl1 = dObj.docName + "_main"
+	elObj.cl2 = dObj.docName + "_top"
+	tocDiv.script = addElToDom(elObj)
 
 	//fmt.Sprintf("<p class=\"%s_title %s_leftTitle\">Table of Contents</p>\n", dObj.docName, dObj.docName)
-
+	elObj.parent = "divToc"
+	elObj.typ = "p"
+	elObj.newEl = "divToc"
+	elObj.cl1 = dObj.docName + "_title"
+	elObj.cl2 = dObj.docName + "_leftTitle"
+	elObj.txt = "Table of Contents"
+	tocDiv.script = addElToDom(elObj)
 
 	tocDiv.script = scriptStr
 
@@ -4093,60 +4104,143 @@ func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 		hdId := dObj.headings[ihead].id[3:]
 		text := dObj.headings[ihead].text
 
+
 		switch namedStyl {
 		case "TITLE":
-			prefix := fmt.Sprintf("<p class=\"%s_title %s_leftTitle_UL\">", dObj.docName, dObj.docName)
-			middle := fmt.Sprintf("<a href=\"#%s\" class=\"%s_noUl\">%s</a>", hdId, dObj.docName, text)
-			suffix := "</p>\n"
-			htmlStr = prefix + middle + suffix
+			//prefix := fmt.Sprintf("<p class=\"%s_title %s_leftTitle_UL\">", dObj.docName, dObj.docName)
+			//middle := fmt.Sprintf("<a href=\"#%s\" class=\"%s_noUl\">%s</a>", hdId, dObj.docName, text)
+
+			//script
+			elObj.parent = "divToc"
+			elObj.typ = "p"
+			elObj.cl1 = dObj.docName + "_title"
+			elObj.cl2 = dObj.docName + "_leftTitle"
+			elObj.newEl = "parel"
+			tocDiv.script += addElToDom(elObj)
+			elObj.parent = "parel"
+			elObj.txt = text
+			elObj.href = "#" + hdId
+			tocDiv.script += addLinkToDom(elObj)
 
 		case "SUBTITLE":
-			prefix := fmt.Sprintf("<p class=\"%s_subtitle\">", dObj.docName)
-			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
-			suffix := "</p>\n"
-			htmlStr = prefix + middle + suffix
+			//prefix := fmt.Sprintf("<p class=\"%s_subtitle\">", dObj.docName)
+			//middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
+
+			//script
+			elObj.parent = "divToc"
+			elObj.typ = "p"
+			elObj.cl1 = dObj.docName + "_subtitle"
+			elObj.newEl = "parel"
+			tocDiv.script += addElToDom(elObj)
+			elObj.parent = "parel"
+			elObj.txt = text
+			elObj.href = "#" + hdId
+			tocDiv.script += addLinkToDom(elObj)
 
 		case "HEADING_1":
 			//html
-			prefix := fmt.Sprintf("<h1 class=\"%s_h1 toc_h1\">", dObj.docName)
-			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
-			suffix := "</h1>\n"
-			htmlStr = prefix + middle + suffix
+			//prefix := fmt.Sprintf("<h1 class=\"%s_h1 toc_h1\">", dObj.docName)
+			//middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
+
+			//script
+			elObj.parent = "divToc"
+			elObj.typ = "h1"
+			elObj.cl1 = dObj.docName + "_h1"
+			elObj.cl2 = "toc_h1"
+			elObj.newEl = "parel"
+			tocDiv.script += addElToDom(elObj)
+			elObj.parent = "parel"
+			elObj.txt = text
+			elObj.href = "#" + hdId
+			tocDiv.script += addLinkToDom(elObj)
+
 		case "HEADING_2":
-			prefix := fmt.Sprintf("<h2 class=\"%s_h2 toc_h2\">", dObj.docName)
-			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
-			suffix := "</h2>\n"
-			htmlStr = prefix + middle + suffix
+			//prefix := fmt.Sprintf("<h2 class=\"%s_h2 toc_h2\">", dObj.docName)
+			//middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
+
+			//script
+			elObj.parent = "divToc"
+			elObj.typ = "h2"
+			elObj.cl1 = dObj.docName + "_h2"
+			elObj.cl2 = "toc_h2"
+			elObj.newEl = "parel"
+			tocDiv.script += addElToDom(elObj)
+			elObj.parent = "parel"
+			elObj.txt = text
+			elObj.href = "#" + hdId
+			tocDiv.script += addLinkToDom(elObj)
+
 		case "HEADING_3":
-			prefix := fmt.Sprintf("<h3 class=\"%s_h3 toc_h3\">", dObj.docName)
-			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
-			suffix := "</h3>\n"
-			htmlStr = prefix + middle + suffix
+			//prefix := fmt.Sprintf("<h3 class=\"%s_h3 toc_h3\">", dObj.docName)
+			//middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
+
+			//script
+			elObj.parent = "divToc"
+			elObj.typ = "h3"
+			elObj.cl1 = dObj.docName + "_h3"
+			elObj.cl2 = "toc_h3"
+			elObj.newEl = "parel"
+			tocDiv.script += addElToDom(elObj)
+			elObj.parent = "parel"
+			elObj.txt = text
+			elObj.href = "#" + hdId
+			tocDiv.script += addLinkToDom(elObj)
+
 		case "HEADING_4":
-			prefix := fmt.Sprintf("<h4 class=\"%s_h4 toc_h4\">", dObj.docName)
-			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
-			suffix := "</h4>\n"
-			htmlStr = prefix + middle + suffix
+			//prefix := fmt.Sprintf("<h4 class=\"%s_h4 toc_h4\">", dObj.docName)
+			//middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
+
+			//script
+			elObj.parent = "divToc"
+			elObj.typ = "h4"
+			elObj.cl1 = dObj.docName + "_h4"
+			elObj.cl2 = "toc_h4"
+			elObj.newEl = "parel"
+			tocDiv.script += addElToDom(elObj)
+			elObj.parent = "parel"
+			elObj.txt = text
+			elObj.href = "#" + hdId
+			tocDiv.script += addLinkToDom(elObj)
+
 		case "HEADING_5":
-			prefix := fmt.Sprintf("<h5 class=\"%s_h5 toc_h5\">", dObj.docName)
-			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
-			suffix := "</h5>\n"
-			htmlStr = prefix + middle + suffix
+			//prefix := fmt.Sprintf("<h5 class=\"%s_h5 toc_h5\">", dObj.docName)
+			//middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
+
+			//script
+			elObj.parent = "divToc"
+			elObj.typ = "h5"
+			elObj.cl1 = dObj.docName + "_h5"
+			elObj.cl2 = "toc_h5"
+			elObj.newEl = "parel"
+			tocDiv.script += addElToDom(elObj)
+			elObj.parent = "parel"
+			elObj.txt = text
+			elObj.href = "#" + hdId
+			tocDiv.script += addLinkToDom(elObj)
+
 		case "HEADING_6":
-			prefix := fmt.Sprintf("<h6 class=\"%s_h6 toc_h6\">", dObj.docName)
-			middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
-			suffix := "</h6>\n"
-			htmlStr = prefix + middle + suffix
+			//prefix := fmt.Sprintf("<h6 class=\"%s_h6 toc_h6\">", dObj.docName)
+			//middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
+
+			//script
+			elObj.parent = "divToc"
+			elObj.typ = "h6"
+			elObj.cl1 = dObj.docName + "_h6"
+			elObj.cl2 = "toc_h6"
+			elObj.newEl = "parel"
+			tocDiv.script += addElToDom(elObj)
+			elObj.parent = "parel"
+			elObj.txt = text
+			elObj.href = "#" + hdId
+			tocDiv.script += addLinkToDom(elObj)
+
 		case "NORMAL_TEXT":
 
 		default:
 
 		}
-		tocDiv.bodyHtml += htmlStr
 
 	} // end loop
-
-	tocDiv.bodyHtml += "</div>\n"
 
 	return &tocDiv, nil
 }
