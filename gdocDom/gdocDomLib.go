@@ -3912,6 +3912,7 @@ func (dObj *GdocDomObj) cvtContentElToDom(contEl *docs.StructuralElement) (GdocD
 func (dObj *GdocDomObj) creFtnoteDivDom () (ftnoteDiv *dispObj, err error) {
 	var ftnDiv dispObj
 	var htmlStr, cssStr, scriptStr string
+	var jselObj elScriptObj
 
 	doc := dObj.doc
 	if len(dObj.docFtnotes) == 0 {
@@ -3921,8 +3922,17 @@ func (dObj *GdocDomObj) creFtnoteDivDom () (ftnoteDiv *dispObj, err error) {
 	if len(dObj.docFtnotes) == 0 {return nil, nil}
 
 	//html div footnote
-	htmlStr = fmt.Sprintf("<!-- Footnotes: %d -->\n", len(dObj.docFtnotes))
-	htmlStr += fmt.Sprintf("<div class=\"%s_main %s_ftndiv\">\n", dObj.docName, dObj.docName)
+	// fmt.Sprintf("<!-- Footnotes: %d -->\n", len(dObj.docFtnotes))
+	// fmt.Sprintf("<div class=\"%s_main %s_ftndiv\">\n", dObj.docName, dObj.docName)
+
+	// script
+	scriptStr = fmt.Sprintf("// *** Footnotes: %d ***\n", len(dObj.docFtnotes))
+	jselObj.parent = "divDoc"
+	jselObj.typ = "div"
+	jselObj.cl1 = dObj.docName + "_main"
+	jselObj.cl2 = dObj.docName + "_ftndiv"
+	jselObj.newEl = "divFtn"
+	scriptStr += addElToDom(jselObj)
 
 	//css div footnote
 	cssStr = fmt.Sprintf(".%s_main.%s_ftndiv  {\n", dObj.docName, dObj.docName)
@@ -3936,16 +3946,26 @@ func (dObj *GdocDomObj) creFtnoteDivDom () (ftnoteDiv *dispObj, err error) {
 	cssStr += "}\n"
 
 	//html footnote title
-	htmlStr += fmt.Sprintf("<p class=\"%s_main %s_title %s_ftTit\">Footnotes</p>\n", dObj.docName, dObj.docName, dObj.docName)
-//	ftnDiv.bodyHtml = htmlStr
+	// fmt.Sprintf("<p class=\"%s_title %s_ftTit\">Footnotes</p>\n", dObj.docName, dObj.docName, dObj.docName)
+	
+	//script
+
+	jselObj.parent = "divFtn"
+	jselObj.typ = "p"
+	jselObj.cl1 = dObj.docName + "_title"
+	jselObj.cl2 = dObj.docName + "_ftndiv"
+	jselObj.newEl = "ft_title"
+	jselObj.txt = "Footnotes"
+	scriptStr += addElToDom(jselObj)
 
 	//css footnote title
-	cssStr += fmt.Sprintf(".%s_main.%s_title.%s_ftTit {\n", dObj.docName, dObj.docName, dObj.docName)
+	cssStr += fmt.Sprintf("%s_title.%s_ftTit {\n", dObj.docName, dObj.docName, dObj.docName)
 	cssStr += "  color: purple;\n"
 	cssStr += "}\n"
 
 	// list for footnotes
-	htmlStr +=fmt.Sprintf("<ol class=\"%s_ftnOl\">\n", dObj.docName)
+
+	//css list
 	cssStr += fmt.Sprintf(".%s_ftnOl {\n", dObj.docName)
 	cssStr += "  display:block;\n"
 	cssStr += "  list-style-type: decimal;\n"
@@ -3953,7 +3973,21 @@ func (dObj *GdocDomObj) creFtnoteDivDom () (ftnoteDiv *dispObj, err error) {
 	cssStr += "  margin: 0;\n"
 	cssStr += "}\n"
 
+	// html
+	// fmt.Sprintf("<ol class=\"%s_ftnOl\">\n", dObj.docName)
+
+	// script
+	jselObj.parent = "divFtn"
+	jselObj.typ = "ol"
+	jselObj.cl1 = dObj.docName + "_ftnOL"
+//	jselObj.cl2 = dObj.docName + "_ftndiv"
+	jselObj.newEl = "ft_Ol"
+//	jselObj.txt = "Footnotes"
+	scriptStr += addElToDom(jselObj)
+
 	// prefix for paragraphs
+
+	// css
 	cssStr += fmt.Sprintf(".%s_p.%s_pft {\n",dObj.docName, dObj.docName)
 	cssStr += "text-indent: 10pt;"
 	cssStr += "counter-increment:ftcounter;"
@@ -3962,50 +3996,58 @@ func (dObj *GdocDomObj) creFtnoteDivDom () (ftnoteDiv *dispObj, err error) {
 	cssStr += "counter(ftcounter) ' ';"
 	cssStr += "}\n"
 	ftnDiv.bodyCss = cssStr
-	ftnDiv.bodyHtml = htmlStr
 
 	// footnotes paragraph html
 	htmlStr = ""
 	cssStr = ""
 	for iFtn:=0; iFtn<len(dObj.docFtnotes); iFtn++ {
 		idStr := dObj.docFtnotes[iFtn].id
-//		ftnDiv.bodyHtml += htmlStr
-		// reset htmlStr
 		docFt, ok := doc.Footnotes[idStr]
 		if !ok {
 			htmlStr += fmt.Sprintf("<!-- error ftnote %d not found! -->\n", iFtn)
 			continue
 		}
-		htmlStr = fmt.Sprintf("<!-- FTnote: %d %s els: %d -->\n", iFtn, idStr, len(docFt.Content))
-		htmlStr +="<li>\n"
-		ftnDiv.bodyHtml += htmlStr
+		//htmlStr = fmt.Sprintf("<!-- FTnote: %d %s els: %d -->\n", iFtn, idStr, len(docFt.Content))
+		//htmlStr +="<li>\n"
+
+		// script
+		jselObj.parent = "ft_OL"
+		jselObj.typ = "li"
+		//  jselObj.cl1 = dObj.docName + "_ftnOL"
+		//	jselObj.cl2 = dObj.docName + "_ftndiv"
+		jselObj.newEl = "liEl"
+		//	jselObj.txt = "Footnotes"
+		scriptStr += addElToDom(jselObj)
+
+
 		// presumably footnotes are paragraphs only
 		for el:=0; el<len(docFt.Content); el++ {
-			htmlStr = ""
 			cssStr = ""
-			elObj := docFt.Content[el]
-			if elObj.Paragraph == nil {continue}
-			par := elObj.Paragraph
-//			pidStr := idStr[5:]
+			elDocObj := docFt.Content[el]
+			if elDocObj.Paragraph == nil {continue}
+			par := elDocObj.Paragraph
+			pidStr := idStr[5:]
+
 			//html htmlStr += fmt.Sprintf("<p class=\"%s_p %s_pft\" id=\"%s\">\n", dObj.docName, dObj.docName, pidStr)
 
-			var parElSumDisp *dispObj
-// need to change
-			tDisp, err := dObj.cvtParElToDom(par)
-			addDispObj(parElSumDisp, &tDisp)
+			jselObj.parent = "liEl"
+			jselObj.typ = "p"
+			jselObj.cl1 = dObj.docName + "_p"
+			jselObj.cl2 = dObj.docName + "_pft"
+			jselObj.idStr = pidStr
+			jselObj.newEl = "pliEl"
+			scriptStr += addElToDom(jselObj)
 
-			tObj, err := dObj.cvtContentElToDom(elObj)
-			if err != nil {
-// xxxx
-				ftnDiv.bodyHtml += fmt.Sprintf("<!-- error display el: %d -->\n", el)
-			}
-			addDispObj(&ftnDiv, tObj)
+			dObj.parent = "pliEl"
+			tDisp, err := dObj.cvtParElToDom(par)
+			if err != nil {scriptStr += fmt.Sprintf("// *** error cvtParElToDom el: %d %v\n", el, err)}
+			ftnDiv.bodyCss += tDisp.bodyCss
+			scriptStr += tDisp.script
 
 //			ftnDiv.bodyHtml += htmlStr
-			ftnDiv.bodyCss += cssStr
-			ftnDiv.script += scriptStr
 		}
 
+		ftnDiv.script += scriptStr
 	}
 
 	return &ftnDiv, nil
