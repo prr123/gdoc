@@ -3219,15 +3219,16 @@ func (dObj *GdocHtmlObj) createTocDiv () (tocObj *dispObj, err error) {
 
 	if dObj.Options.Verb {
 		if len(dObj.headings) < 2 {
-//			fmt.Printf("*** no TOC insufficient headings: %d ***\n", len(dObj.headings))
+			fmt.Printf("*** no TOC insufficient headings: %d ***\n", len(dObj.headings))
 			return nil, nil
+		} else {
+			fmt.Printf("*** creating TOC Div ***\n")
 		}
-		fmt.Printf("*** creating TOC Div ***\n")
 	}
 
 	if len(dObj.headings) < 2 {
 		tocDiv.bodyHtml = fmt.Sprintf("<!-- no toc insufficient headings -->")
-		return nil, nil
+		return &tocDiv, nil
 	}
 
 	//css
