@@ -3662,7 +3662,7 @@ func (dObj *GdocDomObj) creSecHeadToDom(ipage int) (secObj dispObj) {
 // method that creates a distinct html dvision per section with a page heading
 
 	var divObj, parObj elScriptObj
-	var linkObj linkScriptObj
+	var linkObj elScriptObj
 
 	secObj.bodyCss = fmt.Sprintf(".%s_main.sec_%d {\n", dObj.docName, ipage)
 
@@ -4219,7 +4219,7 @@ func CreGdocDomDoc(folderPath string, doc *docs.Document, options *util.OptObj)(
 	secDiv := dObj.createSectionDiv()
 	if secDiv != nil {
 		for ipage:=0; ipage<len(dObj.sections); ipage++ {
-			pgHd := dObj.createSectionHeading(ipage)
+			pgHd := dObj.creSecHeadToDom(ipage)
 			elStart := dObj.sections[ipage].secElStart
 			elEnd := dObj.sections[ipage].secElEnd
 			pgBody, err := dObj.cvtBodySecToDom(elStart, elEnd)
@@ -4345,7 +4345,7 @@ func CreGdocDomMain(folderPath string, doc *docs.Document, options *util.OptObj)
 	secDiv := dObj.createSectionDiv()
 	if secDiv != nil {
 		for ipage:=0; ipage<len(dObj.sections); ipage++ {
-			pgHd := dObj.createSectionHeading(ipage)
+			pgHd := dObj.creSecHeadToDom(ipage)
 			elStart := dObj.sections[ipage].secElStart
 			elEnd := dObj.sections[ipage].secElEnd
 			pgBody, err := dObj.cvtBodySecToDom(elStart, elEnd)
@@ -4595,7 +4595,7 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *util.OptObj)(
 	secDiv := dObj.createSectionDiv()
 	if secDiv != nil {
 		for ipage:=0; ipage<len(dObj.sections); ipage++ {
-			pgHd := dObj.createSectionHeading(ipage)
+			pgHd := dObj.creSecHeadToDom(ipage)
 			elStart := dObj.sections[ipage].secElStart
 			elEnd := dObj.sections[ipage].secElEnd
 			pgBody, err := dObj.cvtBodySecToDom(elStart, elEnd)
