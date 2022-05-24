@@ -4012,23 +4012,25 @@ func (dObj *GdocDomObj) createFootnoteDiv () (ftnoteDiv *dispObj, err error) {
 }
 
 //toc div
-func (dObj *GdocDomObj) createTocDiv () (tocObj *dispObj, err error) {
+func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 	var tocDiv dispObj
-	var htmlStr, cssStr string
+	var htmlStr, cssStr, scriptStr string
+//	var elObj elScriptObj
 
 	if dObj.Options.Toc != true { return nil, nil }
 
 	if dObj.Options.Verb {
 		if len(dObj.headings) < 2 {
-//			fmt.Printf("*** no TOC insufficient headings: %d ***\n", len(dObj.headings))
-			return nil, nil
+			fmt.Printf("*** no TOC insufficient headings: %d ***\n", len(dObj.headings))
+		} else {
+			fmt.Printf("*** creating TOC Div ***\n")
 		}
-		fmt.Printf("*** creating TOC Div ***\n")
 	}
 
 	if len(dObj.headings) < 2 {
-		tocDiv.bodyHtml = fmt.Sprintf("<!-- no toc insufficient headings -->")
-		return nil, nil
+//		tocDiv.bodyHtml = fmt.Sprintf("<!-- no toc insufficient headings -->")
+		tocObj.script = "// *** no TOC insufficient headings ***\n"
+		return tocObj, nil
 	}
 
 	//css
@@ -4076,18 +4078,21 @@ func (dObj *GdocDomObj) createTocDiv () (tocObj *dispObj, err error) {
 	tocDiv.bodyCss = cssStr
 
 	//html
-	htmlStr = fmt.Sprintf("<div class=\"%s_main top\">\n", dObj.docName)
-	htmlStr += fmt.Sprintf("<p class=\"%s_title %s_leftTitle\">Table of Contents</p>\n", dObj.docName, dObj.docName)
-	tocDiv.bodyHtml = htmlStr
+	//fmt.Sprintf("<div class=\"%s_main top\">\n", dObj.docName)
+
+
+	//fmt.Sprintf("<p class=\"%s_title %s_leftTitle\">Table of Contents</p>\n", dObj.docName, dObj.docName)
+
+
+	tocDiv.script = scriptStr
 
 	//html all headings are entries to toc table of content
 	for ihead:=0; ihead<len(dObj.headings); ihead++ {
-		cssStr = ""
-		htmlStr = ""
-//		elStart := dObj.headings[ihead].hdElStart
+
 		namedStyl := dObj.headings[ihead].namedStyl
 		hdId := dObj.headings[ihead].id[3:]
 		text := dObj.headings[ihead].text
+
 		switch namedStyl {
 		case "TITLE":
 			prefix := fmt.Sprintf("<p class=\"%s_title %s_leftTitle_UL\">", dObj.docName, dObj.docName)
@@ -4280,7 +4285,7 @@ func CreGdocDomDoc(folderPath string, doc *docs.Document, options *util.OptObj)(
 	}
 
 	//html + css for Toc Div
-	tocDiv, err := dObj.createTocDiv()
+	tocDiv, err := dObj.creTocDivDom()
 	if err != nil {
 		tocDiv.bodyHtml = fmt.Sprintf("<!--- error Toc Head: %v --->\n",err)
 	}
@@ -4406,7 +4411,7 @@ func CreGdocDomMain(folderPath string, doc *docs.Document, options *util.OptObj)
 	}
 
 	//html + css for Toc Div
-	tocDiv, err := dObj.createTocDiv()
+	tocDiv, err := dObj.creTocDivDom()
 	if err != nil {
 		tocDiv.bodyHtml = fmt.Sprintf("<!--- error Toc Head: %v --->\n",err)
 	}
@@ -4531,7 +4536,7 @@ func CreGdocDomSection(heading, folderPath string, doc *docs.Document, options *
 	}
 
 	//html + css for Toc Div
-	tocDiv, err := dObj.createTocDiv()
+	tocDiv, err := dObj.creTocDivDom()
 	if err != nil {
 		tocDiv.bodyHtml = fmt.Sprintf("<!--- error Toc Head: %v --->\n",err)
 	}
@@ -4654,7 +4659,7 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *util.OptObj)(
 	}
 
 	//html + css for Toc Div
-	tocDiv, err := dObj.createTocDiv()
+	tocDiv, err := dObj.creTocDivDom()
 	if err != nil {
 		tocDiv.bodyHtml = fmt.Sprintf("<!--- error Toc Head: %v --->\n",err)
 	}
