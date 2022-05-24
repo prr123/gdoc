@@ -1711,6 +1711,19 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
 	jsStr += "    var text =  document.createTextNode(elObj.txt);\n"
 	jsStr += "    el.appendChild(text);\n"
 	jsStr += "  }\n}\n"
+	jsStr = "function addLink(elObj) {\n"
+	jsStr += "  let el = document.createElement('a');\n"
+	jsStr += "  el.setAttribute('href', elObj.href);\n"
+	jsStr += "  if (elObj.cl1 != null) {el.classList.add(elObj.cl1);}\n"
+	jsStr += "  if (elObj.cl2 != null) {el.classList.add(elObj.cl2);}\n"
+	jsStr += "  if (elObj.idStr != null) {el.setAttribute(\"id\", elObj.idStr);}\n"
+	jsStr += "  if (elObj.txt != null) {\n"
+	jsStr += "    var text =  document.createTextNode(elObj.txt);\n"
+	jsStr += "    el.appendChild(text);\n"
+	jsStr += "  }\n"
+	jsStr += "  elp = elObj.parent;\n"
+	jsStr += "  elp.appendChild(el);\n"
+	jsStr += "  return\n}\n"
 	if imgFun {
 		jsStr += "function addImgEl(imgObj) {\n"
 		jsStr += "  if (imgObj.src == null) {return\n}\n"
@@ -1751,6 +1764,7 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
 		jsStr += "  tblp.appendChild(tab);\n"
 		jsStr += "  return tbl\n}\n"
 	}
+
 
 	jsStr += "function addBodyElScript(divDoc) {\n"
 	jsStr += "  const elObj = {};\n"
@@ -1799,6 +1813,33 @@ func addElToDom(elObj elScriptObj)(script string) {
 	script += fmt.Sprintf("  elObj.parent = %s;\n", elObj.parent)
 	script += fmt.Sprintf("  elObj.typ = '%s';\n", elObj.typ)
 	script += fmt.Sprintf("  %s = addEl(elObj);\n", elObj.newEl)
+	return script
+}
+
+func addLinkToDom(elObj elScriptObj)(script string) {
+
+	script = "// addLinkEl \n"
+	script += "// " + elObj.comment + "\n"
+	if !(len(elObj.parent) > 0) {
+		script += "// error - no el parent provided!\n"
+		return script
+	}
+	if !(len(elObj.txt) > 0) {
+		script += "// error - no text provided!\n"
+		return script
+	}
+	if !(len(elObj.href) > 0) {
+		script += "// error - no href provided!\n"
+		return script
+	}
+	script = "  for (key in elObj) {elObj[key] = null;}\n"
+	if len(elObj.cl1) > 0 {script += fmt.Sprintf("  elObj.cl1 = '%s';\n", elObj.cl1)}
+	if len(elObj.cl2) > 0 {script += fmt.Sprintf("  elObj.cl2 = '%s';\n", elObj.cl2)}
+	if len(elObj.idStr) > 0 {script += fmt.Sprintf("  elObj.idStr = '%s';\n", elObj.idStr)}
+	if len(elObj.txt) > 0 {script += fmt.Sprintf("  elObj.txt = '%s';\n", elObj.txt)}
+	script += fmt.Sprintf("  elObj.parent = %s;\n", elObj.parent)
+	script += fmt.Sprintf("  elObj.typ = 'a';\n")
+	script += fmt.Sprintf("  addLink(elObj);\n")
 	return script
 }
 
@@ -3616,14 +3657,39 @@ func (dObj *GdocDomObj) createSectionDiv() (secHd *dispObj) {
 	return &secHead
 }
 
-func (dObj *GdocDomObj) createSectionHeading(ipage int) (secObj dispObj) {
+//section
+func (dObj *GdocDomObj) creSecHeadToDom(ipage int) (secObj dispObj) {
 // method that creates a distinct html dvision per section with a page heading
+
+	var divObj, parObj elScriptObj
+	var linkObj linkScriptObj
 
 	secObj.bodyCss = fmt.Sprintf(".%s_main.sec_%d {\n", dObj.docName, ipage)
 
 	// html
 	secObj.bodyHtml = fmt.Sprintf("<div class=\"%s_main sec_%d\" id=\"%s_sec_%d\">\n", dObj.docName, ipage, dObj.docName, ipage)
 	secObj.bodyHtml += fmt.Sprintf("<p class=\"%s_page\"><a href=\"#%s_sectoc\">Page %d</a></p>\n", dObj.docName, dObj.docName, ipage)
+	// script
+
+	divObj.parent = "divDoc"
+	divObj.newEl = fmt.Sprintf("%s_main_%d", dObj.docName, ipage)
+	divObj.typ = "div"
+	dObj.parent = divObj.newEl
+	divObj.cl1 = fmt.Sprintf("%s_main", dObj.docName)
+	divObj.cl2 = fmt.Sprintf("sec_%d", ipage)
+	divObj.idStr = fmt.Sprintf("%s_sec_%d", dObj.docName, ipage)
+	secObj.script += addElToDom(divObj)
+
+	parObj.parent = dObj.parent
+	parObj.typ = "p"
+	parObj.newEl = "ptop"
+	parObj.cl1 = fmt.Sprintf("%s_page", dObj.docName)
+	secObj.script += addElToDom(parObj)
+
+	linkObj.parent = "ptop"
+	linkObj.txt = fmt.Sprintf("Page %d", ipage)
+	linkObj.href = fmt.Sprintf("%s_sectoc", dObj.docName)
+	secObj.script += addLinkToDom(linkObj)
 
 	return secObj
 }
@@ -4404,7 +4470,7 @@ func CreGdocDomSection(heading, folderPath string, doc *docs.Document, options *
 	secDiv := dObj.createSectionDiv()
 	if secDiv != nil {
 		for ipage:=0; ipage<len(dObj.sections); ipage++ {
-			pgHd := dObj.createSectionHeading(ipage)
+			pgHd := dObj.creSecHeadToDom(ipage)
 			elStart := dObj.sections[ipage].secElStart
 			elEnd := dObj.sections[ipage].secElEnd
 			pgBody, err := dObj.cvtBodySecToDom(elStart, elEnd)
