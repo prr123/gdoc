@@ -1869,6 +1869,11 @@ func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *util.OptObj) (
 			secPtEnd = el
 		} // end paragraph
 
+		// tables
+		if elObj.Table != nil {
+			dObj.tableCount++
+		}
+
 	} // end el loop
 
 	hdlen := len(dObj.headings)
@@ -2199,8 +2204,8 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 
 
 	doc := dObj.doc
-	dObj.tableCount++
-//	tblId := fmt.Sprintf("%s_tab_%d", dObj.docName, dObj.tableCount)
+	dObj.tableCounter++
+//	tblId := fmt.Sprintf("%s_tab_%d", dObj.docName, dObj.tableCounter)
 
     docPg := doc.DocumentStyle
     PgWidth := docPg.PageSize.Width.Magnitude
@@ -2292,10 +2297,10 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 		//fmt.Printf("table closing list!\n")
 	}
 
-	htmlStr += fmt.Sprintf("<table class=\"%s_tbl tbl_%d\">\n", dObj.docName, dObj.tableCount)
+	htmlStr += fmt.Sprintf("<table class=\"%s_tbl tbl_%d\">\n", dObj.docName, dObj.tableCounter)
 
 	if !tblWidthIsPage {
-  		cssStr = fmt.Sprintf(".%s_tbl.%s_tbl%d {\n", dObj.docName, dObj.docName, dObj.tableCount)
+  		cssStr = fmt.Sprintf(".%s_tbl.%s_tbl%d {\n", dObj.docName, dObj.docName, dObj.tableCounter)
  		cssStr += fmt.Sprintf("  width: %.1fpt;\n", tabWidth)
 		cssStr += "}\n"
 	}
@@ -2303,10 +2308,10 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 	// table columns
 
 	// future enhancement not fixed width columns
-	htmlStr +=fmt.Sprintf("<colgroup class=\"%s_colgrp%d\">\n", dObj.docName, dObj.tableCount)
+	htmlStr +=fmt.Sprintf("<colgroup class=\"%s_colgrp%d\">\n", dObj.docName, dObj.tableCounter)
 	for icol = 0; icol < tbl.Columns; icol++ {
 		tabWtyp :=tbl.TableStyle.TableColumnProperties[icol].WidthType
-		colId := fmt.Sprintf("%s_tab%d_col%d", dObj.docName, dObj.tableCount, icol)
+		colId := fmt.Sprintf("%s_tab%d_col%d", dObj.docName, dObj.tableCounter, icol)
 		if tabWtyp == "FIXED_WIDTH" {
 			cssStr += fmt.Sprintf("#%s {width: %.1fpt;}\n", colId, tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude)
 			htmlStr += fmt.Sprintf("<col span=\"1\" id=\"%s\">\n", colId)
@@ -2334,7 +2339,7 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 			tcell := trowobj.TableCells[tcol]
 			tblCellCount++
 			cellStr := ""
-			celId := fmt.Sprintf("tab%d_cell%d", dObj.tableCount, tblCellCount)
+			celId := fmt.Sprintf("tab%d_cell%d", dObj.tableCounter, tblCellCount)
 			// check whether cell style is different from default
 			if tcell.TableCellStyle != nil {
 				tstyl := tcell.TableCellStyle
