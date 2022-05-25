@@ -21,3 +21,10 @@ The js builds the dom to convert the gdoc file into a web file.# gdoc
 ## gdocUtilLib.go
 utility library for the options object and file/ file folder creation
 
+## mdDomLib.go
+library that will convert a markdown file into a javascript Dom script file.
+-- not functional!
+
+## mdGdocLib.go
+library that will convert a markdown file into a google document.
+-- not functional!
