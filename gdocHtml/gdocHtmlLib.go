@@ -3080,15 +3080,14 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 		cssStr += "}\n"
 
 		//css table cell
-  		cssStr = fmt.Sprintf(".%s_tblcell {\n", dObj.docName)
+  		cssStr += fmt.Sprintf(".%s_tblcell {\n", dObj.docName)
 //		cssStr += "  border-collapse: collapse;\n"
  		cssStr += "  border: 1px solid black;\n"
 //		cssStr += "  margin:auto;\n"
 		cssStr += "  padding: 0.5pt;\n"
 		cssStr += "}\n"
+		headCss += cssStr
 	}
-
-	headCss += cssStr
 
 	return headCss, nil
 }
