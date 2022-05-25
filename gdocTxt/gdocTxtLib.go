@@ -339,8 +339,8 @@ func (dObj *gdocTxtObj) dispTable(tbl *docs.Table)(outstr string, err error) {
 		for icol=0; icol<numColProp; icol++ {
 			tColProp := tbl.TableStyle.TableColumnProperties[icol]
 			outstr += fmt.Sprintf(" col[%d]: w type: %s", icol, tColProp.WidthType)
-			if tColProp.Width !=nil {
-				outstr += fmt.Sprintf(" width: %.1f", tColProp.Width.Magnitude*PtTomm)
+			if tColProp.Width != nil {
+				outstr += fmt.Sprintf(" width: %.1fpt", tColProp.Width.Magnitude)
 			}
 			outstr += "\n"
 		}
@@ -943,8 +943,6 @@ func (dObj *gdocTxtObj) dispContentEl(elStr *docs.StructuralElement)(outstr stri
 		return "", fmt.Errorf("error dispContentEl -- dObj is nil")
 	}
 
-//	doc := dObj.Doc
-//	body := doc.Body
 	notFound := true
 	if elStr.Paragraph != nil {
 		listStr := "Paragraph  "
@@ -1002,11 +1000,11 @@ func (dObj *gdocTxtObj) dispContentElShort(elStr *docs.StructuralElement)(outstr
 	}
 
 	if elStr.Paragraph != nil {
-		listStr := "Paragraph  "
+		listStr := "Paragraph"
 		if elStr.Paragraph.Bullet != nil {listStr = fmt.Sprintf("List NL: %2d", elStr.Paragraph.Bullet.NestingLevel)}
 		heading := elStr.Paragraph.ParagraphStyle.HeadingId
 		if len(heading) == 0 {heading = "---"}
-		outstr += fmt.Sprintf("type: %s parEls: %d Style: %-14s Heading: %-16s Length: %3d Start: %5d End: %5d\n", listStr, len(elStr.Paragraph.Elements),
+		outstr += fmt.Sprintf(" type: %s parEls: %d Style: %-14s Heading: %-16s Length: %3d Start: %5d End: %5d\n", listStr, len(elStr.Paragraph.Elements),
 			elStr.Paragraph.ParagraphStyle.NamedStyleType, heading, elStr.EndIndex - elStr.StartIndex, elStr.StartIndex, elStr.EndIndex)
 	}
 
