@@ -2279,7 +2279,7 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 	htmlStr = ""
 
 	// if there is an open list, close it
-	if len(*dObj.listStack) >= 0 {
+	if dObj.listStack != nil {
 		htmlStr += dObj.closeList(-1)
 		//fmt.Printf("table closing list!\n")
 	}
