@@ -2674,22 +2674,14 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 
 
 	doc := dObj.doc
-	dObj.tableCount++
-//	tblId := fmt.Sprintf("%s_tab_%d", dObj.docName, dObj.tableCount)
+	dObj.tableCounter++
+//	tblId := fmt.Sprintf("%s_tab_%d", dObj.docName, dObj.tableCounter)
 
     docPg := doc.DocumentStyle
     PgWidth := docPg.PageSize.Width.Magnitude
     NetPgWidth := PgWidth - (docPg.MarginLeft.Magnitude + docPg.MarginRight.Magnitude)
 //   fmt.Printf("Default Table Width: %.1f", NetPgWidth)
     tabWidth = NetPgWidth
-	tabw := 0.0
-    for icol=0; icol < tbl.Columns; icol++ {
-        tcolObj :=tbl.TableStyle.TableColumnProperties[icol]
-        if tcolObj.Width != nil {
-            tabw += tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude
-        }
-    }
-	if tabw > 0.0 {tabWidth = tabw}
 
 // table cell default values
 // define default cell classs
@@ -2753,36 +2745,48 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 	}
 
 	//set up table
-	tblClass := fmt.Sprintf("%s_tbl", dObj.docName)
 	tblCellClass := fmt.Sprintf("%s_tcel", dObj.docName)
 	//htmlStr = ""
 
 	// if there is an open list, close it
-	if len(*dObj.listStack) >= 0 {
+	if dObj.listStack != nil {
 		dObj.closeList(-1)
 	}
 
-	// html fmt.Sprintf("<table class=\"%s\">\n", tblClass)
+	// html fmt.Sprintf("<table class=\"%s_tbl tbl_%d\">\n", dObj.docName, dObj.tableCounter)
+	tblObj
 
-  	// table styling
-  	cssStr = fmt.Sprintf(".%s {\n",tblClass)
- 	cssStr += fmt.Sprintf("  border: 1px solid black;\n  border-collapse: collapse;\n")
- 	cssStr += fmt.Sprintf("  width: %.1fpt;\n", tabWidth)
-	cssStr += "   margin:auto;\n"
+  	// table styling -- need to compare to default style
+  	cssStr = fmt.Sprintf(".%s_tbl.tbl_%d {\n", dObj.docName, dObj.tableCounter)
+	// 	cssStr += fmt.Sprintf("  border: 1px solid black;\n  border-collapse: collapse;\n")
+	// 	cssStr += fmt.Sprintf("  width: %.1fpt;\n", tabWidth)
+	//	cssStr += "   margin:auto;\n"
 	cssStr += "}\n"
 
 	// table columns
-		// html htmlStr +="<colgroup>\n"
+	// conundrum: tables either have evenly distributed columns or not
+	// should not be possible to have a mixture of evenly distributed columns and specified width columns
+	// thus it should be sufficient to check the first column for that property
+	tabWtyp :=tbl.TableStyle.TableColumnProperties[0].WidthType
+	tabw := 0.0
+	switch tabWtyp {
+	case "EVENLY_DISTRIBUTED":
+		// no need for column groups
 
-	for icol = 0; icol < tbl.Columns; icol++ {
-		colId := fmt.Sprintf("tab%d_col%d", dObj.tableCount, icol)
-		tabWtyp :=tbl.TableStyle.TableColumnProperties[icol].WidthType
-		if tabWtyp == "FIXED_WIDTH" {
+	case "WIDTH_TYPE_UNSPECIFIED":
+		// to be determined
+
+	case "FIXED_WIDTH":
+		// html htmlStr +="<colgroup>\n"
+		for icol = 0; icol < tbl.Columns; icol++ {
+            tabw += tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude
+			colId := fmt.Sprintf("tab%d_col%d", dObj.tableCounter, icol)
 			cssStr += fmt.Sprintf("#%s {width: %.0fpt;}\n", colId, tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude)
-			//html	htmlStr += fmt.Sprintf("<col span=\"1\" id=\"%s\">\n", colId)
+		//html	htmlStr += fmt.Sprintf("<col span=\"1\" id=\"%s\">\n", colId)
 		}
+		if tabw > 0.0 {tabWidth = tabw}
+		// html htmlStr +="</colgroup>\n"
 	}
-	// html htmlStr +="</colgroup>\n"
 
 	cssStr += fmt.Sprintf(".%s {\n",tblCellClass)
  	cssStr += fmt.Sprintf("  border: %.1fpt %s %s;\n", defcel.bwidth, defcel.bdash, defcel.bcolor)
@@ -2804,7 +2808,7 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 			tcell := trowobj.TableCells[tcol]
 			tblCellCount++
 			cellStr := ""
-			celId := fmt.Sprintf("tab%d_cell%d", dObj.tableCount, tblCellCount)
+			celId := fmt.Sprintf("tab%d_cell%d", dObj.tableCounter, tblCellCount)
 			// check whether cell style is different from default
 			if tcell.TableCellStyle != nil {
 				tstyl := tcell.TableCellStyle
@@ -3718,13 +3722,23 @@ func (dObj *GdocDomObj) creCssDocHead() (headCss string, err error) {
 
    // css default table
     if dObj.tableCount > 0 {
-        //css default table styling
+
+       //css default table styling (center aligned)
         cssStr = fmt.Sprintf(".%s_tbl {\n", dObj.docName)
-        //def cell
-        cssStr += fmt.Sprintf("  border: 1px solid black;\n  border-collapse: collapse;\n")
-        cssStr += fmt.Sprintf("  width: %.1fpt;\n", dObj.docWidth)
-        cssStr += "   margin:auto;\n"
+        cssStr += "  width: 100%;\n")
+        cssStr += "  border-collapse: collapse;\n"
+        cssStr += "  border: 1px solid black;\n"
+        cssStr += "  margin-left: auto;  margin-right: auto;\n"
         cssStr += "}\n"
+
+        //css table cell
+        cssStr = fmt.Sprintf(".%s_tblcell {\n", dObj.docName)
+//      cssStr += "  border-collapse: collapse;\n"
+        cssStr += "  border: 1px solid black;\n"
+//      cssStr += "  margin:auto;\n"
+        cssStr += "  padding: 0.5pt;\n"
+        cssStr += "}\n"
+
     }
 
     headCss += cssStr
