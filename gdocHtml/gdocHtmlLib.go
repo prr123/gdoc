@@ -2198,32 +2198,19 @@ func (dObj *GdocHtmlObj) renderPosImg(posImg docs.PositionedObject, posId string
 func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 // table element
 	var htmlStr, cssStr string
-	var tabWidth float64
 	var icol, trow int64
 	var defcel tabCell
 
 
-	doc := dObj.doc
+//	doc := dObj.doc
 	dObj.tableCounter++
-//	tblId := fmt.Sprintf("%s_tab_%d", dObj.docName, dObj.tableCounter)
 
-    docPg := doc.DocumentStyle
-    PgWidth := docPg.PageSize.Width.Magnitude
-    netPgWidth := PgWidth - (docPg.MarginLeft.Magnitude + docPg.MarginRight.Magnitude)
-//   fmt.Printf("Default Table Width: %.1f", NetPgWidth)
-    tabWidth = netPgWidth
-	tabw := 0.0
-    for icol=0; icol < tbl.Columns; icol++ {
-        tcolObj :=tbl.TableStyle.TableColumnProperties[icol]
-        if tcolObj.Width != nil {
-            tabw += tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude
-        }
-    }
-	tblWidthIsPage := true
-	if (netPgWidth - tabw) < 1.0 {
-		tabWidth = tabw
-		tblWidthIsPage = false
-	}
+//    docStyl := doc.DocumentStyle
+//    PgWidth := docStyl.PageSize.Width.Magnitude
+//    netPgWidth := PgWidth - (docStyl.MarginLeft.Magnitude + docStyl.MarginRight.Magnitude)
+
+//    fmt.Printf("Default Table Width: %.1f", NetPgWidth)
+//    tabWidth = netPgWidth
 
 // table cell default values
 // define default cell classs
@@ -2299,32 +2286,41 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 
 	htmlStr += fmt.Sprintf("<table class=\"%s_tbl tbl_%d\">\n", dObj.docName, dObj.tableCounter)
 
-	if !tblWidthIsPage {
-  		cssStr = fmt.Sprintf(".%s_tbl.%s_tbl%d {\n", dObj.docName, dObj.docName, dObj.tableCounter)
- 		cssStr += fmt.Sprintf("  width: %.1fpt;\n", tabWidth)
-		cssStr += "}\n"
-	}
+   // table columns
+    // conundrum: tables either have evenly distributed columns or not
+    // should not be possible to have a mixture of evenly distributed columns and specified width columns
+    // thus it should be sufficient to check the first column for that property
 
-	// table columns
+    tabWtyp :=tbl.TableStyle.TableColumnProperties[0].WidthType
+    switch tabWtyp {
+    case "EVENLY_DISTRIBUTED":
+        // no need for column groups
 
-	// future enhancement not fixed width columns
-	htmlStr +=fmt.Sprintf("<colgroup class=\"%s_colgrp%d\">\n", dObj.docName, dObj.tableCounter)
-	for icol = 0; icol < tbl.Columns; icol++ {
-		tabWtyp :=tbl.TableStyle.TableColumnProperties[icol].WidthType
-		colId := fmt.Sprintf("%s_tab%d_col%d", dObj.docName, dObj.tableCounter, icol)
-		if tabWtyp == "FIXED_WIDTH" {
-			cssStr += fmt.Sprintf("#%s {width: %.1fpt;}\n", colId, tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude)
-			htmlStr += fmt.Sprintf("<col span=\"1\" id=\"%s\">\n", colId)
-		}
-	}
-	htmlStr +="</colgroup>\n"
+    case "WIDTH_TYPE_UNSPECIFIED":
+        // to be determined
 
-	cssStr += fmt.Sprintf(".%s {\n",tblCellClass)
- 	cssStr += fmt.Sprintf("  border: %.1fpt %s %s;\n", defcel.bwidth, defcel.bdash, defcel.bcolor)
-	cssStr += fmt.Sprintf("  vertical-align: %s;\n", defcel.vert_align )
-	cssStr += fmt.Sprintf("  padding: %.1fpt %.1fpt %.1fpt %.1fpt;\n", defcel.pad[0], defcel.pad[1], defcel.pad[2], defcel.pad[3])
- 	cssStr += "}\n"
+    case "FIXED_WIDTH":
+        // html
+		htmlStr +=fmt.Sprintf("<colgroup class=\"%s_colgrp_%d\">\n", dObj.docName, dObj.tableCounter)
+		tblW := 0.0
+        for icol = 0; icol < tbl.Columns; icol++ {
+            colW := tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude
+			tblW += colW
+            cssStr += fmt.Sprintf(".%s_colgrp_%d.col_%d {width: %.0fpt;}\n", dObj.docName, dObj.tableCounter, icol, colW)
+        	htmlStr += fmt.Sprintf("<col span=\"1\" class=\"%s_colgrp_%d col_%d\">\n", dObj.docName, dObj.tableCounter, icol)
+        }
+//        if tblW > 0.0 {tabWidth = tblW}
+        htmlStr +="</colgroup>\n"
+    }
 
+/*
+//  only if table cell is different from default
+    cssStr += fmt.Sprintf(".%s {\n",tblCellClass)
+    cssStr += fmt.Sprintf("  border: %.1fpt %s %s;\n", defcel.bwidth, defcel.bdash, defcel.bcolor)
+    cssStr += fmt.Sprintf("  vertical-align: %s;\n", defcel.vert_align )
+    cssStr += fmt.Sprintf("  padding: %.1fpt %.1fpt %.1fpt %.1fpt;\n", defcel.pad[0], defcel.pad[1], defcel.pad[2], defcel.pad[3])
+    cssStr += "}\n"
+*/
 
 // row styling
 	htmlStr += "  <tbody>\n"
@@ -2934,6 +2930,7 @@ func (dObj *GdocHtmlObj) createSectionHeading(ipage int) (secObj dispObj) {
 }
 
 func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
+// method that creates css stylings for all default elements
 
 	var cssStr, errStr string
 
@@ -3072,14 +3069,22 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 	}
 	headCss += cssStr
 
-	// css default table
+	// css default table styling
 	if dObj.tableCount > 0 {
-		//css default table styling
+		//css default table styling (center aligned)
   		cssStr = fmt.Sprintf(".%s_tbl {\n", dObj.docName)
-		//def cell
- 		cssStr += fmt.Sprintf("  border: 1px solid black;\n  border-collapse: collapse;\n")
- 		cssStr += fmt.Sprintf("  width: %.1fpt;\n", dObj.docWidth)
-		cssStr += "   margin:auto;\n"
+ 		cssStr += "  width: 100%;\n"
+		cssStr += "  border-collapse: collapse;\n"
+ 		cssStr += "  border: 1px solid black;\n"
+  		cssStr += "  margin-left: auto;  margin-right: auto;\n"
+		cssStr += "}\n"
+
+		//css table cell
+  		cssStr = fmt.Sprintf(".%s_tblcell {\n", dObj.docName)
+//		cssStr += "  border-collapse: collapse;\n"
+ 		cssStr += "  border: 1px solid black;\n"
+//		cssStr += "  margin:auto;\n"
+		cssStr += "  padding: 0.5pt;\n"
 		cssStr += "}\n"
 	}
 
