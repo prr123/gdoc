@@ -304,7 +304,7 @@ func (dObj *gdocTxtObj) dispTOC(toc *docs.TableOfContents)(outstr string, err er
 	}
 
 	numEl := len(toc.Content)
-	outstr = fmt.Sprintf("\n*** Table of Contents: (%d) ***\n", numEl)
+	outstr = fmt.Sprintf("\n  *** Table of Contents: (%d) ***\n", numEl)
 
 	for el:=0; el< numEl; el++ {
 		tocEl := toc.Content[el]
@@ -329,16 +329,16 @@ func (dObj *gdocTxtObj) dispTable(tbl *docs.Table)(outstr string, err error) {
 		return "", fmt.Errorf("error dispTable: no table pt")
 	}
 	dObj.TableCount++
-	outstr = fmt.Sprintf("*** table %d: rows: %d cols: %d ***\n",dObj.TableCount,tbl.Rows, tbl.Columns )
+	outstr = fmt.Sprintf("  *** table %d: rows: %d cols: %d ***\n",dObj.TableCount,tbl.Rows, tbl.Columns )
 	// table rows
 
-	outstr += "Table Style Properties\n"
+	outstr += "  Table Style Properties\n"
 	tabWidth = 0.0
 	if tbl.TableStyle != nil {
 		numColProp := (int64)(len(tbl.TableStyle.TableColumnProperties))
 		for icol=0; icol<numColProp; icol++ {
 			tColProp := tbl.TableStyle.TableColumnProperties[icol]
-			outstr += fmt.Sprintf(" col[%d]: w type: %s", icol, tColProp.WidthType)
+			outstr += fmt.Sprintf("    col[%d]: w type: %s", icol, tColProp.WidthType)
 			if tColProp.Width != nil {
 				outstr += fmt.Sprintf(" width: %.1fpt", tColProp.Width.Magnitude)
 			}
@@ -349,7 +349,7 @@ func (dObj *gdocTxtObj) dispTable(tbl *docs.Table)(outstr string, err error) {
 	docPg := doc.DocumentStyle
 	PgWidth := docPg.PageSize.Width.Magnitude
 	NetPgWidth := PgWidth - (docPg.MarginLeft.Magnitude + docPg.MarginRight.Magnitude)
-	outstr += fmt.Sprintf("Default Table Width: %.1f", NetPgWidth*PtTomm)
+	outstr += fmt.Sprintf("    Default Table Width: %.1f", NetPgWidth*PtTomm)
 	tabWidth = NetPgWidth
     for icol=0; icol < tbl.Columns; icol++ {
 		tcolObj :=tbl.TableStyle.TableColumnProperties[icol]
@@ -733,7 +733,7 @@ func (dObj *gdocTxtObj) dispSecStyle(secStyl *docs.SectionStyle)(outstr string, 
 func (dObj *gdocTxtObj) dispBorder(parBorder *docs.ParagraphBorder, wsp int)(outstr string) {
 
 	if parBorder == nil {
-		outstr += "error dispParStyl: no Par Border Style\n"
+		outstr += "error: no Par Border Style\n"
 		return outstr
 	}
 
@@ -773,14 +773,22 @@ func (dObj *gdocTxtObj) dispParStyl(parStyl *docs.ParagraphStyle, wsp int)(outst
 	for i:=0; i<wsp; i++ {wspStr += " "}
 
 	outstr = wspStr + "*** Paragraph Style ***\n"
-	outstr += wspStr + fmt.Sprintf("  Heading Id:  %s \n", parStyl.HeadingId)
+	if len(parStyl.HeadingId) > 0 {
+		outstr += wspStr + fmt.Sprintf("  Heading Id:  %s \n", parStyl.HeadingId)
+	} else {
+		outstr += wspStr + fmt.Sprintf("  Heading Id:  none\n")
+	}
 	outstr += wspStr + fmt.Sprintf("  Named Style: %s \n", parStyl.NamedStyleType)
 	if len(parStyl.Alignment) > 0 {
 		outstr +=  wspStr + fmt.Sprintf("  Alignment:  %s \n", parStyl.Alignment)
+	} else {
+		outstr += wspStr + "  Alignment: not specified!\n"
 	}
 	outstr += wspStr + fmt.Sprintf("  Direction: %s \n", parStyl.Direction)
 	if parStyl.LineSpacing > 0 {
 		outstr += wspStr + fmt.Sprintf("  Line Spacing: %.2f \n", parStyl.LineSpacing/100.0)
+	} else {
+		outstr += wspStr + fmt.Sprintf("  Line Spacing not specified!\n")
 	}
 	outstr += wspStr + fmt.Sprintf("  Keep Lines together: %t \n", parStyl.KeepLinesTogether)
 	outstr += wspStr + fmt.Sprintf("  Keep With Next:      %t \n", parStyl.KeepWithNext)
