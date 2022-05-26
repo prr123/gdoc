@@ -2223,15 +2223,18 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 	defcel.bwidth = 1.0
 	defcel.bdash = "solid"
 
-// xxx
 	if tcelDefStyl != nil {
 		defcel.vert_align = util.Get_vert_align(tcelDefStyl.ContentAlignment)
 
-// if left border is the only border specified, let's use it for default values
+	// if left border is the only border specified, let's use it for default values
 		tb := (tcelDefStyl.BorderTop == nil)&& (tcelDefStyl.BorderRight == nil)
 		tb = tb&&(tcelDefStyl.BorderBottom == nil)
 		if (tcelDefStyl.BorderLeft != nil) && tb {
-			if tcelDefStyl.BorderLeft.Color != nil {defcel.border[3].color = util.GetColor(tcelDefStyl.BorderLeft.Color.Color)}
+			if tcelDefStyl.BorderLeft.Color != nil {
+				if tcelDefStyl.BorderLeft.Color.Color != nil {
+					defcel.border[3].color = util.GetColor(tcelDefStyl.BorderLeft.Color.Color)
+				}
+			}
 			if tcelDefStyl.BorderLeft.Width != nil {defcel.border[3].width = tcelDefStyl.BorderLeft.Width.Magnitude}
 			defcel.border[3].dash = util.GetDash(tcelDefStyl.BorderLeft.DashStyle)
 		}
@@ -2241,41 +2244,69 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 		if tcelDefStyl.PaddingBottom != nil {defcel.pad[2] = tcelDefStyl.PaddingBottom.Magnitude}
 		if tcelDefStyl.PaddingLeft != nil {defcel.pad[3] = tcelDefStyl.PaddingLeft.Magnitude}
 
-		if tcelDefStyl.BackgroundColor != nil {defcel.bckcolor = util.GetColor(tcelDefStyl.BackgroundColor.Color)}
+        if tcelDefStyl.BackgroundColor != nil {
+            if tcelDefStyl.BackgroundColor.Color != nil {
+                defcel.bckcolor = util.GetColor(tcelDefStyl.BackgroundColor.Color)
+            }
+        }
 
-		if tcelDefStyl.BorderTop != nil {
-			if tcelDefStyl.BorderTop.Color != nil {defcel.border[0].color = util.GetColor(tcelDefStyl.BorderTop.Color.Color)}
-			if tcelDefStyl.BorderTop.Width != nil {defcel.border[0].width = tcelDefStyl.BorderTop.Width.Magnitude}
-			defcel.border[0].dash = util.GetDash(tcelDefStyl.BorderTop.DashStyle)
-		}
-		if tcelDefStyl.BorderRight != nil {
-			if tcelDefStyl.BorderRight.Color != nil {defcel.border[1].color = util.GetColor(tcelDefStyl.BorderRight.Color.Color)}
-			if tcelDefStyl.BorderRight.Width != nil {defcel.border[1].width = tcelDefStyl.BorderRight.Width.Magnitude}
-			defcel.border[1].dash = util.GetDash(tcelDefStyl.BorderRight.DashStyle)
-		}
-		if tcelDefStyl.BorderBottom != nil {
-			if tcelDefStyl.BorderBottom.Color != nil {defcel.border[2].color = util.GetColor(tcelDefStyl.BorderBottom.Color.Color)}
-			if tcelDefStyl.BorderBottom.Width != nil {defcel.border[2].width = tcelDefStyl.BorderBottom.Width.Magnitude}
-			defcel.border[2].dash = util.GetDash(tcelDefStyl.BorderBottom.DashStyle)
-		}
-		if tcelDefStyl.BorderLeft != nil {
-			if tcelDefStyl.BorderLeft.Color != nil {defcel.border[3].color = util.GetColor(tcelDefStyl.BorderLeft.Color.Color)}
-			if tcelDefStyl.BorderLeft.Width != nil {defcel.border[3].width = tcelDefStyl.BorderLeft.Width.Magnitude}
-			defcel.border[3].dash = util.GetDash(tcelDefStyl.BorderLeft.DashStyle)
-		}
-		if tcelDefStyl.BorderTop == tcelDefStyl.BorderRight {
-//			fmt.Println("same border!")
-			if tcelDefStyl.BorderTop != nil {
-				if tcelDefStyl.BorderTop.Color != nil {defcel.bcolor = util.GetColor(tcelDefStyl.BorderTop.Color.Color)}
-				defcel.bdash = util.GetDash(tcelDefStyl.BorderTop.DashStyle)
-				if tcelDefStyl.BorderTop.Width != nil {defcel.bwidth = tcelDefStyl.BorderTop.Width.Magnitude}
-			}
-		}
+        if tcelDefStyl.BorderTop != nil {
+            if tcelDefStyl.BorderTop.Color != nil {
+                if tcelDefStyl.BorderTop.Color.Color != nil {
+                    defcel.border[0].color = util.GetColor(tcelDefStyl.BorderTop.Color.Color)
+                }
+            }
+            if tcelDefStyl.BorderTop.Width != nil {defcel.border[0].width = tcelDefStyl.BorderTop.Width.Magnitude}
+            defcel.border[0].dash = util.GetDash(tcelDefStyl.BorderTop.DashStyle)
+        }
+
+        if tcelDefStyl.BorderRight != nil {
+            if tcelDefStyl.BorderRight.Color != nil {
+                if tcelDefStyl.BorderRight.Color.Color != nil {
+                    defcel.border[1].color = util.GetColor(tcelDefStyl.BorderRight.Color.Color)
+                }
+            }
+            if tcelDefStyl.BorderRight.Width != nil {defcel.border[1].width = tcelDefStyl.BorderRight.Width.Magnitude}
+            defcel.border[1].dash = util.GetDash(tcelDefStyl.BorderRight.DashStyle)
+        }
+
+        if tcelDefStyl.BorderBottom != nil {
+            if tcelDefStyl.BorderBottom.Color != nil {
+                if tcelDefStyl.BorderBottom.Color.Color != nil {
+                    defcel.border[2].color = util.GetColor(tcelDefStyl.BorderBottom.Color.Color)
+                }
+            }
+            if tcelDefStyl.BorderBottom.Width != nil {defcel.border[2].width = tcelDefStyl.BorderBottom.Width.Magnitude}
+            defcel.border[2].dash = util.GetDash(tcelDefStyl.BorderBottom.DashStyle)
+        }
+
+        if tcelDefStyl.BorderLeft != nil {
+            if tcelDefStyl.BorderLeft.Color != nil {
+                if tcelDefStyl.BorderLeft.Color.Color != nil {
+                    defcel.border[3].color = util.GetColor(tcelDefStyl.BorderLeft.Color.Color)
+                }
+            }
+            if tcelDefStyl.BorderLeft.Width != nil {defcel.border[3].width = tcelDefStyl.BorderLeft.Width.Magnitude}
+            defcel.border[3].dash = util.GetDash(tcelDefStyl.BorderLeft.DashStyle)
+        }
+
+        if tcelDefStyl.BorderTop == tcelDefStyl.BorderRight {
+//          fmt.Println("same border!")
+            if tcelDefStyl.BorderTop != nil {
+                if tcelDefStyl.BorderTop.Color != nil {
+                    if tcelDefStyl.BorderTop.Color.Color != nil {
+                        defcel.bcolor = util.GetColor(tcelDefStyl.BorderTop.Color.Color)
+                    }
+                }
+                defcel.bdash = util.GetDash(tcelDefStyl.BorderTop.DashStyle)
+                if tcelDefStyl.BorderTop.Width != nil {defcel.bwidth = tcelDefStyl.BorderTop.Width.Magnitude}
+            }
+        }
+
 	}
 
 	//set up table
-//	tblClass := fmt.Sprintf("%s_tbl", dObj.docName)
-//	tblCellClass := fmt.Sprintf("%s_tcel", dObj.docName)
+
 	htmlStr = ""
 
 	// if there is an open list, close it
@@ -2327,11 +2358,9 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 			tcell := trowobj.TableCells[tcol]
 			tblCellCount++
 			cellStr := ""
-//			celId := fmt.Sprintf("tab%d_cell%d", dObj.tableCounter, tblCellCount)
 
 			// check whether cell style is different from default
 			if tcell.TableCellStyle != nil {
-
 				tstyl := tcell.TableCellStyle
 				if tstyl.BackgroundColor != nil {
 					if tstyl.BackgroundColor.Color != nil {
