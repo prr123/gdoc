@@ -202,6 +202,7 @@ type elScriptObj struct {
 	parent string
 	newEl string
 	comment string
+	doAppend bool
 }
 
 type imgScriptObj struct {
@@ -217,34 +218,16 @@ type imgScriptObj struct {
 	comment string
 }
 
-type tableScriptObj struct {
+type colScriptObj struct {
 	cl1 string
 	cl2 string
 	idStr string
-	rowCount int
-	colCount int
 	parent string
 	newEl string
 	comment string
-	tblRows []tblRowScriptObj
+	spanCount int
 }
 
-type tblRowScriptObj struct {
-	cl1 string
-	cl2 string
-	idStr string
-	parent string
-	newEl string
-	tblCells []tblCellScriptObj
-}
-
-type tblCellScriptObj struct {
-	cl1 string
-	cl2 string
-	idStr string
-	parent string
-	newEl string
-}
 
 type tblCell struct {
 	pad [4] float64
@@ -1701,18 +1684,27 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
 	jsStr += "    var text =  document.createTextNode(elObj.txt);\n"
 	jsStr += "    el.appendChild(text);\n"
 	jsStr += "  }\n"
-	jsStr += "  elp = elObj.parent;\n"
-	jsStr += "  elp.appendChild(el);\n"
+	jsStr += "  if (elObj.doAppend) {\n"
+	jsStr += "    elp = elObj.parent;\n"
+	jsStr += "    elp.appendChild(el);\n"
+	jsStr += "  }\n"
 	jsStr += "  return el\n}\n"
+
 	jsStr += "function clearObj(elObj) {\n"
 	jsStr += "  for (key in elObj) {elObj[key] = null;}\n"
 	jsStr += "  return\n}\n"
+
 	jsStr += "function addTxt(elObj) {\n"
 	jsStr += "  let el = elObj.parent;\n"
 	jsStr += "  if (elObj.txt != null) {\n"
 	jsStr += "    var text =  document.createTextNode(elObj.txt);\n"
 	jsStr += "    el.appendChild(text);\n"
 	jsStr += "  }\n}\n"
+
+	jsStr += "function appendEl(el, parEl) {\n"
+	jsStr += "  parEl.appendChild(el);\n"
+	jsStr += "  return}\n"
+
 	jsStr = "function addLink(elObj) {\n"
 	jsStr += "  let el = document.createElement('a');\n"
 	jsStr += "  el.setAttribute('href', elObj.href);\n"
@@ -1726,6 +1718,7 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
 	jsStr += "  elp = elObj.parent;\n"
 	jsStr += "  elp.appendChild(el);\n"
 	jsStr += "  return\n}\n"
+
 	if imgFun {
 		jsStr += "function addImgEl(imgObj) {\n"
 		jsStr += "  if (imgObj.src == null) {return\n}\n"
@@ -1741,37 +1734,27 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
 		jsStr += "  return\n}\n"
 	}
 	if tableFun {
-		jsStr += "function addTblEl(tblObj) {\n"
+		jsStr += "function creTbl(tblObj) {\n"
 		jsStr += "  var tbl = document.createElement('table');\n"
 		jsStr += "  var tblBody = document.createElement('tbody');\n"
-		jsStr += "  var colgrp = document.createElement('colgroup');\n"
+		jsStr += "  tbl.appendChild(tblBody);\n"
+		jsStr += "return tbl}/n"
 
-		jsStr += "  for (var ir = 0; i < tblObj.rows; i++) {\n"
-		jsStr += "    var tblRow = document.createElement('tr');\n"
-		jsStr += "    var row = tblObj.row[ir];\n"
-		jsStr += "    if (row.idStr != null) {tblRow.setAttribute(\"id\", row.idStr);}\n"
-		jsStr += "    if (row.cl1 != null) {tblRow.classList.add(row.cl1);}\n"
-		jsStr += "    if (row.cl2 != null) {tblRow.classList.add(row.cl2);}\n"
-		jsStr += "    for (var ic = 0; i < tblObj.cols; i++) {\n"
-		jsStr += "      var tblCell = document.createElement('td');\n"
-		jsStr += "      var col = tblObj.row[ir].col[ic];\n"
-		jsStr += "      if (col.idStr != null) {tblCell.setAttribute(\"id\", col.idStr);}\n"
-		jsStr += "      if (col.cl1 != null) {tblCell.classList.add(col.cl1);}\n"
-		jsStr += "      if (col.cl2 != null) {tblCell.classList.add(col.cl2);}\n"
-		jsStr += "      tblRow.appendChild(tblCell);\n"
-		jsStr += "	  }/n"
-		jsStr += "	  tblBody.appendChild(tblRow);\n"
-		jsStr += "	}/n"
-		jsStr += "  tblp = tblObj.parent;\n"
-		jsStr += "  tblp.appendChild(tbl);\n"
-		jsStr += "  return tbl\n}\n"
+		jsStr += "function addCol(colObj) {\n"
+		jsStr += "  var col = document.createElement('col');\n"
+		jsStr += "  col.colspan = colObj.spanCount;"
+		jsStr += "  if (colObj.cl1 != null) {col.classList.add(colObj.cl1);\n"
+		jsStr += "  if (colObj.cl2 != null) {col.classList.add(colObj.cl2);\n"
+		jsStr += "  var colp = colObj.parent;\n"
+		jsStr += "  colp.appendChild(col);\n"
+		jsStr += "  }\n"
 	}
 
 
 	jsStr += "function addBodyElScript(divDoc) {\n"
 	jsStr += "  const elObj = {};\n"
 	jsStr += "  const imgObj = {};\n"
-	jsStr += "  const tblObj = {};\n"
+	jsStr += "  const colObj = {};\n"
 
 	return jsStr
 }
@@ -1812,6 +1795,11 @@ func addElToDom(elObj elScriptObj)(script string) {
 	if len(elObj.cl2) > 0 {script += fmt.Sprintf("  elObj.cl2 = '%s';\n", elObj.cl2)}
 	if len(elObj.idStr) > 0 {script += fmt.Sprintf("  elObj.idStr = '%s';\n", elObj.idStr)}
 	if len(elObj.txt) > 0 {script += fmt.Sprintf("  elObj.txt = '%s';\n", elObj.txt)}
+	if elObj.doAppend {
+		script += "  elObj.doAppend = true;\n"
+	} else {
+		script += "  elObj.doAppend = false;\n"
+	}
 	script += fmt.Sprintf("  elObj.parent = %s;\n", elObj.parent)
 	script += fmt.Sprintf("  elObj.typ = '%s';\n", elObj.typ)
 	script += fmt.Sprintf("  %s = addEl(elObj);\n", elObj.newEl)
@@ -1862,42 +1850,24 @@ func addImgElToDom(imgObj imgScriptObj)(script string) {
 	return script
 }
 
-func addTblToDom(tblObj tableScriptObj)(script string) {
+func addColToDom(colObj colScriptObj)(script string) {
 
-	script = "// *** addTbl ***\n"
-	if len(tblObj.comment) > 0 {script += "// " + tblObj.comment + "\n"}
-	if !(len(tblObj.parent) > 0) {
-		script += "// error - no el parent provided!\n"
-		return script
-	}
-	if !(tblObj.rowCount > 0) {
-		script += "// error -- no table rows provided!\n"
-		return script
-	}
-	if !(tblObj.colCount > 0) {
-		script += "// error -- no table columns provided!\n"
-		return script
-	}
+    script = "// addCol \n"
+    script += "// " + colObj.comment + "\n"
+    if !(len(colObj.parent) > 0) {
+        script += "// error - no el parent provided!\n"
+        return script
+    }
 
-	script = "  for (key in tblObj) {tblObj[key] = null;}\n"
-
-	if len(tblObj.cl1) > 0 {script += fmt.Sprintf("  tblObj.cl1 = '%s';\n", tblObj.cl1)}
-	if len(tblObj.cl2) > 0 {script += fmt.Sprintf("  tblebj.cl2 = '%s';\n", tblObj.cl2)}
-	if len(tblObj.idStr) > 0 {script += fmt.Sprintf("  tblObj.idStr = '%s';\n", tblObj.idStr)}
-
-	script += fmt.Sprintf("  tblObj.parent = %s;\n", tblObj.parent)
-//	for irow:=0; irow < tblObj.rowCount; irow++ {
-
-//		for icol:=0; icol < tblObj.colCount; icol++ {
-	script += fmt.Sprintf("  tblObj.rowCount = %d\n", tblObj.rowCount)
-	script += fmt.Sprintf("  tblObj.colCount = %d\n", tblObj.colCount)
-
-
-	script += fmt.Sprintf("  tbl = addTblEl(tblObj);\n")
-
-//	script += fmt.Sprintf("  fillTblEl(tblObj);\n")
-
-	return script
+    script = "  for (key in colObj) {colObj[key] = null;}\n"
+    if len(colObj.cl1) > 0 {script += fmt.Sprintf("  colObj.cl1 = '%s';\n", colObj.cl1)}
+    if len(colObj.cl2) > 0 {script += fmt.Sprintf("  colObj.cl2 = '%s';\n", colObj.cl2)}
+    if len(colObj.idStr) > 0 {script += fmt.Sprintf("  colObj.idStr = '%s';\n", colObj.idStr)}
+//  if len(colObj.txt) > 0 {script += fmt.Sprintf("  colObj.txt = '%s';\n", elObj.txt)}
+    script += fmt.Sprintf("  colObj.parent = %s;\n", colObj.parent)
+    script += fmt.Sprintf("  colObj.typ = 'col';\n")
+    script += fmt.Sprintf("  addCol(colObj);\n")
+    return script
 }
 
 func addDivMainScript(docName string) (jsStr string) {
@@ -2671,7 +2641,10 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 //	var tabWidth float64
 	var icol, trow int64
 	var defcel tblCell
-	var tblObj tableScriptObj
+	var tblObj, elObj elScriptObj
+	var colObj colScriptObj
+//	var tblCelObj elScriptObj
+
 //	var tabcelObj tblCellScriptObj
 
 	dObj.tableCounter++
@@ -2786,10 +2759,23 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 
 	// html fmt.Sprintf("<table class=\"%s_tbl tbl_%d\">\n", dObj.docName, dObj.tableCounter)
 	tblObj.parent = dObj.parent
+	tblObj.typ = "table"
+	tblObj.doAppend = false
+	tblObj.newEl = "tbl"
 	tblObj.cl1 = dObj.docName + "_tbl"
 	tblObj.cl2 = fmt.Sprintf("tbl_%d", dObj.tableCounter)
-//	tblObj.rows =
-//	tblObj.cols =
+	scriptStr += addElToDom(tblObj)
+
+	tblObj.parent = "tbl"
+	tblObj.typ = "tbody"
+	tblObj.doAppend = true
+	tblObj.newEl = "tblBody"
+//	tblObj.cl1 = dObj.docName + "_tbl"
+//	tblObj.cl2 = fmt.Sprintf("tbl_%d", dObj.tableCounter)
+	scriptStr += addElToDom(tblObj)
+
+//	tblObj.rows = int(tbl.Rows)
+//	tblObj.cols = int(tbl.Cols)
 
 	// table columns
 	// conundrum: tables either have evenly distributed columns or not
@@ -2806,12 +2792,22 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 
 	case "FIXED_WIDTH":
 		// html htmlStr +="<colgroup>\n"
+		elObj.parent = "tblBody"
+		elObj.typ = "colgroup"
+		elObj.newEl = "colgrp"
+		elObj.doAppend = true
+		scriptStr += addElToDom(elObj)
 		tblW := 0.0
 		for icol = 0; icol < tbl.Columns; icol++ {
             colW := tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude
 			tblW += colW
             cssStr += fmt.Sprintf(".%s_colgrp_%d.col_%d {width: %.0fpt;}\n", dObj.docName, dObj.tableCounter, icol, colW)
             //htmlStr += fmt.Sprintf("<col span=\"1\" class=\"%s_colgrp_%d col_%d\">\n", dObj.docName, dObj.tableCounter, icol)
+			colObj.parent = "colgrp"
+			colObj.cl1 = fmt.Sprintf("%s_colgrp_%d", dObj.docName, dObj.tableCounter)
+			colObj.cl2 = fmt.Sprintf("col_%d", icol)
+			colObj.spanCount = 1
+			scriptStr += addColToDom(colObj)
 		}
 		//if tabw > 0.0 {tabWidth = tabw}
 		// html htmlStr +="</colgroup>\n"
