@@ -2405,6 +2405,7 @@ func (dObj *GdocDomObj) cvtParDomElText(parElTxt *docs.TextRun, namedTyp string)
 		spanEl.idStr = spanIdStr
 		spanEl.typ = "span"
 		spanEl.newEl = "spanEl"
+		spanEl.doAppend = true
 //		spanEl.txt = cvtText(parElTxt.Content)
 		scriptStr = addElToDom(spanEl)
 		//css
@@ -2417,6 +2418,7 @@ func (dObj *GdocDomObj) cvtParDomElText(parElTxt *docs.TextRun, namedTyp string)
 		spanEl.parent = "hdel"
 		spanEl.typ = "span"
 		spanEl.newEl = "spanEl"
+		spanEl.doAppend = true
 		scriptStr = addElToDom(spanEl)
 		//css
 		cssStr = ""
@@ -2464,6 +2466,7 @@ func (dObj *GdocDomObj) cvtHrElToDom (hr *docs.HorizontalRule)(hrObj dispObj) {
 	hrEl.parent = dObj.parent
 	hrEl.typ = "hr"
 	hrEl.newEl = "hrEl"
+	hrEl.doAppend = true
     if hr.TextStyle != nil {
         cssStr = fmt.Sprintf(".%s_hr_%d {\n", dObj.docName, dObj.hrCount)
         cssStr += cvtTxtStylCss(hr.TextStyle)
@@ -2609,6 +2612,7 @@ func (dObj *GdocDomObj) renderPosImg(posImg *docs.PositionedObject, posId string
 	divEl.typ = "div"
 	divEl.newEl = "imgDiv"
 	divEl.idStr = imgDivId
+	divEl.doAppend = true
 	scriptStr += addElToDom(divEl)
 
 	//fmt.Sprintf("     <img src=\"%s\" alt=\"%s\" id=\"%s\">\n", imgSrc, imgProp.Title, imgId)
@@ -2625,6 +2629,7 @@ func (dObj *GdocDomObj) renderPosImg(posImg *docs.PositionedObject, posId string
 		divEl.txt = imgProp.Title
 		divEl.idStr = pimgId
 		divEl.cl1 = dObj.docName + "_p"
+		divEl.doAppend = true
 		scriptStr += addElToDom(divEl)
 	}
 
@@ -2973,6 +2978,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
             if par.Elements[0].TextRun.Content == "\n" {
 				brEl := elScriptObj{typ: "br", newEl: "noel",}
 				brEl.parent = dObj.parent
+				brEl.doAppend = true
                 parObj.script = addElToDom(brEl)
                 return parObj, nil
             }
@@ -3085,6 +3091,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 								orList.typ = "ol"
 								orList.cl1 = listid[4:] + "_ol"
 								orList.cl2 = fmt.Sprintf("nL_%d", nl)
+								orList.doAppend = true
 								scriptStr += addElToDom(orList)
 								// css
 								listCss = fmt.Sprintf(".%s_ol.nL_%d {\n", listid[4:], nl)
@@ -3098,6 +3105,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 								unList.typ = "ul"
 								unList.cl1 = listid[4:] + "_ul"
 								unList.cl2 = fmt.Sprintf("nL_%d", nl)
+								unList.doAppend = true
 								scriptStr += addElToDom(orList)
 								// css none
 							}
@@ -3149,6 +3157,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 					orList.typ = "ol"
 					orList.cl1 = listid[4:] + "_ol"
 					orList.cl2 = fmt.Sprintf("nL_%d", nl)
+					orList.doAppend = true
 					scriptStr += addElToDom(orList)
 					// css
 					listCss = fmt.Sprintf(".%s_ol.nL_%d {\n", listid[4:], nestIdx)
@@ -3164,6 +3173,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 					unList.typ = "ul"
 					unList.cl1 = listid[4:] + "_ul"
 					unList.cl2 = fmt.Sprintf("nL_%d", nl)
+					unList.doAppend = true
 					scriptStr += addElToDom(unList)
 					//css
 				}
@@ -3187,9 +3197,8 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 		listEl.cl2 = fmt.Sprintf("nL_%d", nestIdx)
 		listEl.typ = "li"
 		listEl.newEl = "lsIt"
+		listEl.doAppend = true
 		parObj.script += addElToDom(listEl)
-
-
 		// mark
 		if par.Bullet.TextStyle != nil {
 //      	    bulletTxtMap = fillTxtMap(par.Bullet.TextStyle)
@@ -3546,6 +3555,7 @@ func (dObj *GdocDomObj) cvtParStylToDom(parStyl *docs.ParagraphStyle, parent str
 	elObj.comment ="cvtParStyl"
 	elObj.parent = parent
 	elObj.newEl = "hdel"
+	elObj.doAppend = true
 	parStylObj.script = addElToDom(elObj)
 	parStylObj.bodyCss = cssStr
 	return parStylObj, alter, nil
@@ -3600,6 +3610,7 @@ func (dObj *GdocDomObj) creSecDivDom() (secHd *dispObj) {
 	divObj.newEl = "divSec"
 	divObj.cl1 = fmt.Sprintf("%s_main_top", dObj.docName)
 	divObj.idStr = fmt.Sprintf("%s_sectoc", dObj.docName)
+	divObj.doAppend = true
 	scriptStr = addElToDom(divObj)
 
 	// fmt.Sprintf("<p class=\"%s_title %s_leftTitle_UL\">Sections</p>\n",dObj.docName, dObj.docName)
@@ -3609,6 +3620,7 @@ func (dObj *GdocDomObj) creSecDivDom() (secHd *dispObj) {
 	parObj.cl1 = dObj.docName + "_title"
 	parObj.cl2 = dObj.docName + "_leftTitle_UL"
 	parObj.txt = "Sections"
+	parObj.doAppend = true
 	scriptStr += addElToDom(parObj)
 
 	for i:=0; i< len(dObj.sections); i++ {
@@ -3617,6 +3629,7 @@ func (dObj *GdocDomObj) creSecDivDom() (secHd *dispObj) {
 		parObj.typ = "p"
 		parObj.newEl = "pel"
 		parObj.cl1 = dObj.docName + "_p"
+		parObj.doAppend = true
 		scriptStr += addElToDom(parObj)
 
 		parObj.parent = "pel"
@@ -3655,12 +3668,14 @@ func (dObj *GdocDomObj) creSecHeadToDom(ipage int) (secObj dispObj) {
 	divObj.cl1 = fmt.Sprintf("%s_main", dObj.docName)
 	divObj.cl2 = fmt.Sprintf("sec_%d", ipage)
 	divObj.idStr = fmt.Sprintf("%s_sec_%d", dObj.docName, ipage)
+	divObj.doAppend = true
 	secObj.script += addElToDom(divObj)
 
 	parObj.parent = dObj.parent
 	parObj.typ = "p"
 	parObj.newEl = "ptop"
 	parObj.cl1 = fmt.Sprintf("%s_page", dObj.docName)
+	parObj.doAppend = true
 	secObj.script += addElToDom(parObj)
 
 	linkObj.parent = "ptop"
@@ -3886,6 +3901,7 @@ func (dObj *GdocDomObj) creFtnoteDivDom () (ftnoteDiv *dispObj, err error) {
 	jselObj.cl1 = dObj.docName + "_main"
 	jselObj.cl2 = dObj.docName + "_ftndiv"
 	jselObj.newEl = "divFtn"
+	jselObj.doAppend = true
 	scriptStr += addElToDom(jselObj)
 
 	//css div footnote
@@ -3910,6 +3926,7 @@ func (dObj *GdocDomObj) creFtnoteDivDom () (ftnoteDiv *dispObj, err error) {
 	jselObj.cl2 = dObj.docName + "_ftndiv"
 	jselObj.newEl = "ft_title"
 	jselObj.txt = "Footnotes"
+	jselObj.doAppend = true
 	scriptStr += addElToDom(jselObj)
 
 	//css footnote title
@@ -3937,6 +3954,7 @@ func (dObj *GdocDomObj) creFtnoteDivDom () (ftnoteDiv *dispObj, err error) {
 //	jselObj.cl2 = dObj.docName + "_ftndiv"
 	jselObj.newEl = "ft_Ol"
 //	jselObj.txt = "Footnotes"
+	jselObj.doAppend = true
 	scriptStr += addElToDom(jselObj)
 
 	// prefix for paragraphs
@@ -3971,6 +3989,7 @@ func (dObj *GdocDomObj) creFtnoteDivDom () (ftnoteDiv *dispObj, err error) {
 		//	jselObj.cl2 = dObj.docName + "_ftndiv"
 		jselObj.newEl = "liEl"
 		//	jselObj.txt = "Footnotes"
+		jselObj.doAppend = true
 		scriptStr += addElToDom(jselObj)
 
 
@@ -3990,6 +4009,7 @@ func (dObj *GdocDomObj) creFtnoteDivDom () (ftnoteDiv *dispObj, err error) {
 			jselObj.cl2 = dObj.docName + "_pft"
 			jselObj.idStr = pidStr
 			jselObj.newEl = "pliEl"
+			jselObj.doAppend = true
 			scriptStr += addElToDom(jselObj)
 
 			dObj.parent = "pliEl"
@@ -4079,6 +4099,7 @@ func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 	elObj.newEl = "divToc"
 	elObj.cl1 = dObj.docName + "_main"
 	elObj.cl2 = dObj.docName + "_top"
+	elObj.doAppend = true
 	tocDiv.script = addElToDom(elObj)
 
 	//fmt.Sprintf("<p class=\"%s_title %s_leftTitle\">Table of Contents</p>\n", dObj.docName, dObj.docName)
@@ -4088,6 +4109,7 @@ func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 	elObj.cl1 = dObj.docName + "_title"
 	elObj.cl2 = dObj.docName + "_leftTitle"
 	elObj.txt = "Table of Contents"
+	elObj.doAppend = true
 	tocDiv.script = addElToDom(elObj)
 
 	tocDiv.script = scriptStr
@@ -4111,6 +4133,7 @@ func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 			elObj.cl1 = dObj.docName + "_title"
 			elObj.cl2 = dObj.docName + "_leftTitle"
 			elObj.newEl = "parel"
+			elObj.doAppend = true
 			tocDiv.script += addElToDom(elObj)
 			elObj.parent = "parel"
 			elObj.txt = text
@@ -4126,6 +4149,7 @@ func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 			elObj.typ = "p"
 			elObj.cl1 = dObj.docName + "_subtitle"
 			elObj.newEl = "parel"
+			elObj.doAppend = true
 			tocDiv.script += addElToDom(elObj)
 			elObj.parent = "parel"
 			elObj.txt = text
@@ -4143,6 +4167,7 @@ func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 			elObj.cl1 = dObj.docName + "_h1"
 			elObj.cl2 = "toc_h1"
 			elObj.newEl = "parel"
+			elObj.doAppend = true
 			tocDiv.script += addElToDom(elObj)
 			elObj.parent = "parel"
 			elObj.txt = text
@@ -4159,6 +4184,7 @@ func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 			elObj.cl1 = dObj.docName + "_h2"
 			elObj.cl2 = "toc_h2"
 			elObj.newEl = "parel"
+			elObj.doAppend = true
 			tocDiv.script += addElToDom(elObj)
 			elObj.parent = "parel"
 			elObj.txt = text
@@ -4175,6 +4201,7 @@ func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 			elObj.cl1 = dObj.docName + "_h3"
 			elObj.cl2 = "toc_h3"
 			elObj.newEl = "parel"
+			elObj.doAppend = true
 			tocDiv.script += addElToDom(elObj)
 			elObj.parent = "parel"
 			elObj.txt = text
@@ -4191,6 +4218,7 @@ func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 			elObj.cl1 = dObj.docName + "_h4"
 			elObj.cl2 = "toc_h4"
 			elObj.newEl = "parel"
+			elObj.doAppend = true
 			tocDiv.script += addElToDom(elObj)
 			elObj.parent = "parel"
 			elObj.txt = text
@@ -4207,6 +4235,7 @@ func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 			elObj.cl1 = dObj.docName + "_h5"
 			elObj.cl2 = "toc_h5"
 			elObj.newEl = "parel"
+			elObj.doAppend = true
 			tocDiv.script += addElToDom(elObj)
 			elObj.parent = "parel"
 			elObj.txt = text
@@ -4223,6 +4252,7 @@ func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 			elObj.cl1 = dObj.docName + "_h6"
 			elObj.cl2 = "toc_h6"
 			elObj.newEl = "parel"
+			elObj.doAppend = true
 			tocDiv.script += addElToDom(elObj)
 			elObj.parent = "parel"
 			elObj.txt = text
@@ -4264,6 +4294,7 @@ func (dObj *GdocDomObj) cvtBodyToDom() (bodyObj *dispObj, err error) {
 	divMain.cl1 = dObj.docName + "_main"
 	dObj.parent = "divMain"
 	divMain.newEl = dObj.parent
+	divMain.doAppend = true
 	bodyObj.script = addElToDom(divMain)
 
 	elNum := len(body.Content)
