@@ -4024,8 +4024,7 @@ func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 	}
 
 	if len(dObj.headings) < 2 {
-//		tocDiv.bodyHtml = fmt.Sprintf("<!-- no toc insufficient headings -->")
-		tocObj.script = "// *** no TOC insufficient headings ***\n"
+		tocDiv.bodyHtml = fmt.Sprintf("<!-- no toc insufficient headings -->")
 		return tocObj, nil
 	}
 
