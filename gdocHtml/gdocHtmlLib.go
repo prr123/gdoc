@@ -2275,7 +2275,7 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 
 	//set up table
 //	tblClass := fmt.Sprintf("%s_tbl", dObj.docName)
-	tblCellClass := fmt.Sprintf("%s_tcel", dObj.docName)
+//	tblCellClass := fmt.Sprintf("%s_tcel", dObj.docName)
 	htmlStr = ""
 
 	// if there is an open list, close it
@@ -2313,14 +2313,6 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
         htmlStr +="</colgroup>\n"
     }
 
-/*
-//  only if table cell is different from default
-    cssStr += fmt.Sprintf(".%s {\n",tblCellClass)
-    cssStr += fmt.Sprintf("  border: %.1fpt %s %s;\n", defcel.bwidth, defcel.bdash, defcel.bcolor)
-    cssStr += fmt.Sprintf("  vertical-align: %s;\n", defcel.vert_align )
-    cssStr += fmt.Sprintf("  padding: %.1fpt %.1fpt %.1fpt %.1fpt;\n", defcel.pad[0], defcel.pad[1], defcel.pad[2], defcel.pad[3])
-    cssStr += "}\n"
-*/
 
 // row styling
 	htmlStr += "  <tbody>\n"
@@ -2335,34 +2327,103 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 			tcell := trowobj.TableCells[tcol]
 			tblCellCount++
 			cellStr := ""
-			celId := fmt.Sprintf("tab%d_cell%d", dObj.tableCounter, tblCellCount)
+//			celId := fmt.Sprintf("tab%d_cell%d", dObj.tableCounter, tblCellCount)
+
 			// check whether cell style is different from default
 			if tcell.TableCellStyle != nil {
+
 				tstyl := tcell.TableCellStyle
-				if tstyl.BackgroundColor != nil {cellStr += fmt.Sprintf(" background-color:\"%s\";",util.GetColor(tstyl.BackgroundColor.Color))}
+				if tstyl.BackgroundColor != nil {
+					if tstyl.BackgroundColor.Color != nil {
+						cellStr += fmt.Sprintf(" background-color:\"%s\";",util.GetColor(tstyl.BackgroundColor.Color))
+					}
+				}
 				if util.Get_vert_align(tstyl.ContentAlignment) != defcel.vert_align {cellStr += fmt.Sprintf(" vertical-align: %s;", util.Get_vert_align(tstyl.ContentAlignment))}
 				if tstyl.PaddingTop != nil {
 					if tstyl.PaddingTop.Magnitude != defcel.pad[0] { cellStr += fmt.Sprintf(" padding-top: %5.1fpt;", tstyl.PaddingTop.Magnitude)}
 				}
+				if tstyl.PaddingLeft != nil {
+					if tstyl.PaddingLeft.Magnitude != defcel.pad[1] { cellStr += fmt.Sprintf(" padding-left: %5.1fpt;", tstyl.PaddingLeft.Magnitude)}
+				}
+				if tstyl.PaddingBottom != nil {
+					if tstyl.PaddingBottom.Magnitude != defcel.pad[2] { cellStr += fmt.Sprintf(" padding-bottom: %5.1fpt;", tstyl.PaddingBottom.Magnitude)}
+				}
+				if tstyl.PaddingRight != nil {
+					if tstyl.PaddingRight.Magnitude != defcel.pad[3] { cellStr += fmt.Sprintf(" padding-right: %5.1fpt;", tstyl.PaddingRight.Magnitude)}
+				}
+
 
 				if tstyl.BorderTop != nil {
 					// Color
-					if tstyl.BorderTop.Color != nil {cellStr += fmt.Sprintf(" border-top-color: %s;", util.GetColor(tstyl.BorderTop.Color.Color))}
+					if tstyl.BorderTop.Color != nil {
+						if tstyl.BorderTop.Color.Color != nil {
+							cellStr += fmt.Sprintf(" border-top-color: %s;", util.GetColor(tstyl.BorderTop.Color.Color))
+						}
+					}
 					//dash
 					if util.GetDash(tstyl.BorderTop.DashStyle) != defcel.bdash {cellStr += fmt.Sprintf(" border-top-style: %s;",  util.GetDash(tstyl.BorderTop.DashStyle))}
 					//Width
-					if tstyl.BorderTop.Width != nil {cellStr += fmt.Sprintf(" border-top-width: %5.1fpt;", tstyl.BorderTop.Width.Magnitude)}
+					if tstyl.BorderTop.Width != nil {
+						cellStr += fmt.Sprintf(" border-top-width: %5.1fpt;", tstyl.BorderTop.Width.Magnitude)
+					}
+				}
+
+				if tstyl.BorderLeft != nil {
+					// Color
+					if tstyl.BorderLeft.Color != nil {
+						if tstyl.BorderLeft.Color.Color != nil {
+							cellStr += fmt.Sprintf(" border-left-color: %s;", util.GetColor(tstyl.BorderLeft.Color.Color))
+						}
+					}
+					//dash
+					if util.GetDash(tstyl.BorderLeft.DashStyle) != defcel.bdash {cellStr += fmt.Sprintf(" border-left-style: %s;",  util.GetDash(tstyl.BorderLeft.DashStyle))}
+					//Width
+					if tstyl.BorderTop.Width != nil {
+						cellStr += fmt.Sprintf(" border-left-width: %5.1fpt;", tstyl.BorderLeft.Width.Magnitude)
+					}
+				}
+
+				if tstyl.BorderBottom != nil {
+					// Color
+					if tstyl.BorderBottom.Color != nil {
+						if tstyl.BorderBottom.Color.Color != nil {
+							cellStr += fmt.Sprintf(" border-bottom-color: %s;", util.GetColor(tstyl.BorderBottom.Color.Color))
+						}
+					}
+					//dash
+					if util.GetDash(tstyl.BorderBottom.DashStyle) != defcel.bdash {cellStr += fmt.Sprintf(" border-bottom-style: %s;",  util.GetDash(tstyl.BorderBottom.DashStyle))}
+					//Width
+					if tstyl.BorderBottom.Width != nil {
+						cellStr += fmt.Sprintf(" border-bottom-width: %5.1fpt;", tstyl.BorderBottom.Width.Magnitude)
+					}
+				}
+
+				if tstyl.BorderRight != nil {
+					// Color
+					if tstyl.BorderRight.Color != nil {
+						if tstyl.BorderRight.Color.Color != nil {
+							cellStr += fmt.Sprintf(" border-right-color: %s;", util.GetColor(tstyl.BorderRight.Color.Color))
+						}
+					}
+					//dash
+					if util.GetDash(tstyl.BorderRight.DashStyle) != defcel.bdash {cellStr += fmt.Sprintf(" border-right-style: %s;",  util.GetDash(tstyl.BorderRight.DashStyle))}
+					//Width
+					if tstyl.BorderRight.Width != nil {
+						cellStr += fmt.Sprintf(" border-right-width: %5.1fpt;", tstyl.BorderRight.Width.Magnitude)
+					}
 				}
 			}
-// xxxx
+
+		// table cell [tab1_row_col]
 			if len(cellStr) >0 {
-				cssStr += fmt.Sprintf("#%s {",celId)
+				cssStr += fmt.Sprintf(".%s_tblcel.tbc%d_%d_%d {", dObj.docName, dObj.tableCounter, trow, tcol)
 				cssStr += fmt.Sprintf("%s }\n", cellStr)
-				htmlStr += fmt.Sprintf("    <td id=\"%s\" class=\"%s\">\n", celId, tblCellClass)
+				htmlStr += fmt.Sprintf("    <td class=\"%s_tblcel tbc%d_%d_%d\">\n", dObj.docName, dObj.tableCounter, trow, tcol)
 			} else {
-			// default
-				htmlStr += fmt.Sprintf("    <td class=\"%s\">\n", tblCellClass)
+				// default
+				htmlStr += fmt.Sprintf("    <td class=\"%s_tblcel\">\n", dObj.docName)
 			}
+
 			elNum := len(tcell.Content)
 			for el:=0; el< elNum; el++ {
 				elObj := tcell.Content[el]
@@ -3081,7 +3142,7 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 
 		//css table cell
   		cssStr += fmt.Sprintf(".%s_tblcell {\n", dObj.docName)
-//		cssStr += "  border-collapse: collapse;\n"
+		cssStr += "  border-collapse: collapse;\n"
  		cssStr += "  border: 1px solid black;\n"
 //		cssStr += "  margin:auto;\n"
 		cssStr += "  padding: 0.5pt;\n"
