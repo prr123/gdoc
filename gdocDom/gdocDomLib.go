@@ -1738,7 +1738,7 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
 		jsStr += "  var tbl = document.createElement('table');\n"
 		jsStr += "  var tblBody = document.createElement('tbody');\n"
 		jsStr += "  tbl.appendChild(tblBody);\n"
-		jsStr += "return tbl}/n"
+		jsStr += "return tbl}\n"
 
 		jsStr += "function addCol(colObj) {\n"
 		jsStr += "  var col = document.createElement('col');\n"
@@ -3653,7 +3653,7 @@ func (dObj *GdocDomObj) creSecHeadToDom(ipage int) (secObj dispObj) {
 	//css
 	prefixCss := fmt.Sprintf(".%s_main.sec_%d {\n", dObj.docName, ipage)
 	secCss := ""
-	suffixCss := "}/n"
+	suffixCss := "}\n"
 
 	if len(secCss) > 0 {secObj.bodyCss = prefixCss + secCss + suffixCss}
 
