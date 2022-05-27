@@ -2822,6 +2822,7 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 	for trow=0; trow < tbl.Rows; trow++ {
 		// html fmt.Sprintf("  <tr>\n")
 		elObj.typ ="tr"
+		elObj.cl1 = fmt.Sprintf("%s_tblrow", dObj.docName)
 		elObj.parent = "tblBody"
 		elObj.newEl = "trow"
 		elObj.doAppend = true
@@ -2931,7 +2932,7 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
                 //htmlStr += fmt.Sprintf("    <td class=\"%s_tblcel\">\n", dObj.docName)
             }
 
-			elObj.cl1 =  fmt.Sprintf("%s_tblcel")
+			elObj.cl1 =  fmt.Sprintf("%s_tblcel", dObj.docName)
 			elObj.typ ="td"
 			elObj.parent = "trow"
 			elObj.newEl = "tcel"
@@ -2959,7 +2960,7 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 	//"</tbody>\n</table>\n"
 	// attach table to Dom
 
-	scriptStr += "appendEl(" + tblNam + ", " + dObj.docName +");\n"
+	scriptStr += "appendEl(" + tblNam + ", " + dObj.parent +");\n"
 
 	tabObj.script = scriptStr
 	tabObj.bodyCss = cssStr
@@ -3847,13 +3848,20 @@ func (dObj *GdocDomObj) creCssDocHead() (headCss string, err error) {
         cssStr += "  margin-left: auto;  margin-right: auto;\n"
         cssStr += "}\n"
 
+		//css table row
+        cssStr += fmt.Sprintf(".%s_tblrow {\n", dObj.docName)
+		cssStr += "  min-height: 1em;\n"
+        cssStr += "}\n"
+
         //css table cell
-        cssStr += fmt.Sprintf(".%s_tblcell {\n", dObj.docName)
+        cssStr += fmt.Sprintf(".%s_tblcel {\n", dObj.docName)
 		cssStr += "  border-collapse: collapse;\n"
         cssStr += "  border: 1px solid black;\n"
 //      cssStr += "  margin:auto;\n"
         cssStr += "  padding: 0.5pt;\n"
+		cssStr += "  height: 1em;\n"
         cssStr += "}\n"
+
 		// add Css
 		headCss += cssStr
     }
