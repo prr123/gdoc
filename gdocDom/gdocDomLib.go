@@ -2818,6 +2818,7 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 	}
 
 // row styling
+	parent := dObj.parent
 	tblCellCount := 0
 	for trow=0; trow < tbl.Rows; trow++ {
 		// html fmt.Sprintf("  <tr>\n")
@@ -2942,6 +2943,7 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 			elNum := len(tcell.Content)
 			for el:=0; el< elNum; el++ {
 				elObj := tcell.Content[el]
+				dObj.parent = "tcel"
 				tObj, err:=dObj.cvtContentElToDom(elObj)
 				if err != nil {
 					tabObj.script = scriptStr + fmt.Sprintf("\n// error cnvtContentEl: %v\n", err)
@@ -2949,6 +2951,7 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 					return tabObj, fmt.Errorf("cvtContentElToDom - ConvertTable: %v", err)
 				}
 				cssStr += tObj.bodyCss
+				scriptStr += tObj.script
 				//htmlStr += "    " + tObj.bodyHtml
 			}
 			//htmlStr += "  </td>\n"
@@ -2959,7 +2962,7 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 
 	//"</tbody>\n</table>\n"
 	// attach table to Dom
-
+	dObj.parent = parent
 	scriptStr += "appendEl(" + tblNam + ", " + dObj.parent +");\n"
 
 	tabObj.script = scriptStr
