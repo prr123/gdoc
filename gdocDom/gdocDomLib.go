@@ -2945,8 +2945,9 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 		//htmlStr += "</tr>\n"
 	}
 
-	htmlStr += "  </tbody>\n</table>\n"
-	tabObj.bodyHtml = htmlStr
+//	htmlStr += "  </tbody>\n</table>\n"
+//	tabObj.bodyHtml = htmlStr
+	tabObj.script = scriptStr
 	tabObj.bodyCss = cssStr
 	return tabObj, nil
 }
