@@ -1705,7 +1705,7 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
 	jsStr += "  parEl.appendChild(el);\n"
 	jsStr += "  return}\n"
 
-	jsStr = "function addLink(elObj) {\n"
+	jsStr += "function addLink(elObj) {\n"
 	jsStr += "  let el = document.createElement('a');\n"
 	jsStr += "  el.setAttribute('href', elObj.href);\n"
 	jsStr += "  if (elObj.cl1 != null) {el.classList.add(elObj.cl1);}\n"
