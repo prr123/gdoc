@@ -1701,8 +1701,8 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
 	jsStr += "    el.appendChild(text);\n"
 	jsStr += "  }\n}\n"
 
-	jsStr += "function appendEl(el, parEl) {\n"
-	jsStr += "  parEl.appendChild(el);\n"
+	jsStr += "function appendEl(el, elPar) {\n"
+	jsStr += "  elPar.appendChild(el);\n"
 	jsStr += "  return}\n"
 
 	jsStr += "function addLink(elObj) {\n"
@@ -2642,7 +2642,7 @@ func (dObj *GdocDomObj) renderPosImg(posImg *docs.PositionedObject, posId string
 func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error) {
 	// https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model/Traversing_an_HTML_table_with_JavaScript_and_DOM_Interfaces
 	// table element
-	var htmlStr, cssStr, scriptStr string
+	var cssStr, scriptStr string
 //	var tabWidth float64
 	var icol, trow int64
 	var defcel tblCell
@@ -2666,6 +2666,7 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 // define default cell classs
 	tcelDef := tbl.TableRows[0].TableCells[0]
 	tcelDefStyl := tcelDef.TableCellStyle
+	tblNam := "tbl"
 
 // default values which google does not set but uses
 	defcel.vert_align = "top"
@@ -2766,21 +2767,19 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 	tblObj.parent = dObj.parent
 	tblObj.typ = "table"
 	tblObj.doAppend = false
-	tblObj.newEl = "tbl"
+	tblObj.newEl = tblNam
 	tblObj.cl1 = dObj.docName + "_tbl"
 	tblObj.cl2 = fmt.Sprintf("tbl_%d", dObj.tableCounter)
 	scriptStr += addElToDom(tblObj)
 
-	tblObj.parent = "tbl"
+	// html "  <tbody>\n"
+	tblObj.parent = tblNam
 	tblObj.typ = "tbody"
 	tblObj.doAppend = true
 	tblObj.newEl = "tblBody"
 //	tblObj.cl1 = dObj.docName + "_tbl"
 //	tblObj.cl2 = fmt.Sprintf("tbl_%d", dObj.tableCounter)
 	scriptStr += addElToDom(tblObj)
-
-//	tblObj.rows = int(tbl.Rows)
-//	tblObj.cols = int(tbl.Cols)
 
 	// table columns
 	// conundrum: tables either have evenly distributed columns or not
@@ -2819,10 +2818,15 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 	}
 
 // row styling
-	htmlStr += "  <tbody>\n"
 	tblCellCount := 0
 	for trow=0; trow < tbl.Rows; trow++ {
-		htmlStr += fmt.Sprintf("  <tr>\n")
+		// html fmt.Sprintf("  <tr>\n")
+		elObj.typ ="tr"
+		elObj.parent = "tblBody"
+		elObj.newEl = "trow"
+		elObj.doAppend = true
+		scriptStr += addElToDom(elObj)
+
 		trowobj := tbl.TableRows[trow]
 //		mrheight := trowobj.TableRowStyle.MinRowHeight.Magnitude
 
@@ -2921,11 +2925,18 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
                 cssStr += fmt.Sprintf(".%s_tblcel.tbc%d_%d_%d {", dObj.docName, dObj.tableCounter, trow, tcol)
                 cssStr += fmt.Sprintf("%s }\n", cellStr)
                 //htmlStr += fmt.Sprintf("    <td class=\"%s_tblcel tbc%d_%d_%d\">\n", dObj.docName, dObj.tableCounter, trow, tcol)
-
+				elObj.cl2 =  fmt.Sprintf("tbc%d_%d_%d\">\n", dObj.tableCounter, trow, tcol)
             } else {
                 // default
                 //htmlStr += fmt.Sprintf("    <td class=\"%s_tblcel\">\n", dObj.docName)
             }
+
+			elObj.cl1 =  fmt.Sprintf("%s_tblcel")
+			elObj.typ ="td"
+			elObj.parent = "trow"
+			elObj.newEl = "tcel"
+			elObj.doAppend = true
+			scriptStr += addElToDom(elObj)
 
 			elNum := len(tcell.Content)
 			for el:=0; el< elNum; el++ {
@@ -2945,8 +2956,11 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 		//htmlStr += "</tr>\n"
 	}
 
-//	htmlStr += "  </tbody>\n</table>\n"
-//	tabObj.bodyHtml = htmlStr
+	//"</tbody>\n</table>\n"
+	// attach table to Dom
+
+	scriptStr += "appendEl(" + tblNam + ", " + dObj.docName +");\n"
+
 	tabObj.script = scriptStr
 	tabObj.bodyCss = cssStr
 	return tabObj, nil
