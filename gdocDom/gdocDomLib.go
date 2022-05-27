@@ -1742,9 +1742,9 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
 
 		jsStr += "function addCol(colObj) {\n"
 		jsStr += "  var col = document.createElement('col');\n"
-		jsStr += "  col.colspan = colObj.spanCount;"
-		jsStr += "  if (colObj.cl1 != null) {col.classList.add(colObj.cl1);\n"
-		jsStr += "  if (colObj.cl2 != null) {col.classList.add(colObj.cl2);\n"
+		jsStr += "  col.colspan = colObj.spanCount;\n"
+		jsStr += "  if (colObj.cl1 != null) {col.classList.add(colObj.cl1);}\n"
+		jsStr += "  if (colObj.cl2 != null) {col.classList.add(colObj.cl2);}\n"
 		jsStr += "  var colp = colObj.parent;\n"
 		jsStr += "  colp.appendChild(col);\n"
 		jsStr += "  }\n"
