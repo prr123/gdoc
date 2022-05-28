@@ -15,8 +15,18 @@ import (
 	utilLib "google/gdoc/util"
 )
 
+type mdParseObj struct {
+	filnam string
+	inBuf []byte
+}
 
-func ParseMdFile(inpfilnam string)(err error) {
+func InitMdParse() (mdp *mdParseObj) {
+
+	mdp = new(mdParseObj)
+	return mdp
+}
+
+func (mdP *mdParseObj) ParseMdFile(inpfilnam string) (err error) {
 // function that creates doc output file
 
 	var outfilnam string
@@ -57,9 +67,15 @@ func ParseMdFile(inpfilnam string)(err error) {
 		}
 	}
 
-	fmt.Printf("*** output file: %s\n", outfilnam + ".md")
+	mdP.filnam = outfilnam
+	return nil
+}
 
-	outfil, err := os.Create(outfilnam + ".md")
+func (mdP *mdParseObj) cvtMdToHtml()(err error) {
+
+	fmt.Printf("*** output file: %s\n", mdP.filnam + ".md")
+
+	outfil, err := os.Create(mdP.filnam + ".md")
 	if err != nil { return fmt.Errorf("os.Create: %v\n", err)}
 	defer outfil.Close()
 
