@@ -17,7 +17,14 @@ import (
 
 type mdParseObj struct {
 	filnam string
-	inBuf []byte
+	inBuf *[]byte
+	elList []mdEl
+}
+
+type mdEl struct {
+	elSt int
+	elEnd int
+	elAlpha int
 }
 
 func InitMdParse() (mdp *mdParseObj) {
@@ -27,7 +34,7 @@ func InitMdParse() (mdp *mdParseObj) {
 }
 
 func (mdP *mdParseObj) ParseMdFile(inpfilnam string) (err error) {
-// function that creates doc output file
+// function that opens md file
 
 	var outfilnam string
 
@@ -68,7 +75,55 @@ func (mdP *mdParseObj) ParseMdFile(inpfilnam string) (err error) {
 	}
 
 	mdP.filnam = outfilnam
+
+    bufp := make([]byte, inpSize)
+    nb, _ := inpfil.Read(bufp)
+	if nb != int(inpSize) {return fmt.Errorf("error could not read file!")}
+	mdP.inBuf = &bufp
+
+	fmt.Println(" **** parsing md file!")
+
+	mdP.parseMdOne()
 	return nil
+}
+
+func (mdP *mdParseObj) parseMdOne()(err error) {
+	var el mdEl
+
+	buf := *(mdP.inBuf)
+	ilin := 0
+	ist := 0
+	for i:=0; i< len(buf); i++ {
+		if buf[i] == '\n' {
+			el.elSt = ist
+			el.elEnd = i
+			mdP.elList = append(mdP.elList, el)
+			ist = i+1
+			ilin++
+		}
+	}
+
+	fmt.Printf("lines: %d elList: %d\n", ilin, len(mdP.elList))
+
+	mdP.printElList()
+	return nil
+}
+
+
+func (mdP *mdParseObj) parseMdTwo()(err error) {
+
+	return nil
+}
+
+func (mdP *mdParseObj) printElList()() {
+
+	fmt.Printf("el Start End\n")
+	for el:=0; el<len(mdP.elList); el++ {
+		fmt.Printf("el %2d %3d %3d ", el, mdP.elList[el].elSt, mdP.elList[el].elEnd)
+		str:=string((*mdP.inBuf)[mdP.elList[el].elSt:mdP.elList[el].elEnd])
+		fmt.Printf("%s\n", str)
+	}
+
 }
 
 func (mdP *mdParseObj) cvtMdToHtml()(err error) {
