@@ -34,7 +34,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	err := mdParse.ParseMdFile(os.Args[1])
+	mdp := mdParse.InitMdParse()
+	err := mdp.ParseMdFile(os.Args[1])
 	if err != nil {
 		fmt.Printf("error - parseMdfile: %v\n", err)
 		os.Exit(1)
