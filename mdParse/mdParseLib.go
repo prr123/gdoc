@@ -12,7 +12,7 @@ package mdParseLib
 import (
 	"os"
 	"fmt"
-	utilLib "google/gdoc/util"
+	 "google/gdoc/util"
 )
 
 type mdParseObj struct {
@@ -24,7 +24,8 @@ type mdParseObj struct {
 type mdEl struct {
 	elSt int
 	elEnd int
-	elAlpha int
+	typ byte
+	fchar byte
 }
 
 func InitMdParse() (mdp *mdParseObj) {
@@ -111,17 +112,146 @@ func (mdP *mdParseObj) parseMdOne()(err error) {
 
 
 func (mdP *mdParseObj) parseMdTwo()(err error) {
+	var fch byte
 
+	for el:=0; el<len(mdP.elList); el++ {
+		fch = (*mdP.inBuf)[mdP.elList[el].elSt]
+		switch fch {
+			case '\r':
+				// end of par?
+				mdP.checkParEnd()
+
+			case '#':
+				// heading
+				mdP.checkHeading()
+
+			case '-':
+				// horizontal ruler ---
+				mdP.checkHr()
+				// unordered list -
+				mdP.checkUnList()
+
+			case '_':
+				// horizontal ruler ___wsp/ret
+				mdP.checkHr()
+				// bold text wsp__text__wsp
+				mdP.checkBold()
+				// italics wsp_text_wsp
+				mdP.checkItalics()
+
+			case '*':
+				// horizontal ruler ***wsp|text
+				mdP.checkHr()
+				// bold text wsp**text**wsp
+				mdP.checkBold()
+				// unordered list *wsp
+				mdP.checkUnList()
+				// italics *text*
+				mdP.checkItalics()
+
+			case '>':
+				// block quotes
+				mdP.checkBlock()
+
+			case '+':
+				// unordered list + wsp|par
+				mdP.checkUnList()
+
+			case '~':
+				// strike-through
+				mdP.checkStrike()
+
+			case ' ':
+				//bold italics wsp*/_
+
+			case '!':
+				// image
+				mdP.checkImage()
+
+			case '[':
+				// link [text](
+				mdP.checkLink()
+
+			case '|':
+				// table |text|
+				mdP.checkTable()
+
+			default:
+
+				if utilLib.IsNumeric(fch) {
+				// ordered list 1.
+					mdP.checkOrList()
+				}
+				if utilLib.IsAlpha(fch) {
+				// paragraph
+					mdP.checkPar()
+				}
+		}
+
+	}
 	return nil
 }
 
+func (mdP *mdParseObj) checkPar() {
+
+}
+
+func (mdP *mdParseObj) checkParEnd() {
+
+}
+
+func (mdP *mdParseObj) checkHeading() {
+
+}
+
+func (mdP *mdParseObj) checkHr() {
+
+}
+
+func (mdP *mdParseObj) checkBold(){
+
+}
+
+func (mdP *mdParseObj) checkItalics() {
+
+}
+
+func (mdP *mdParseObj) checkUnList() {
+
+}
+
+func (mdP *mdParseObj) checkBlock() {
+
+}
+
+func (mdP *mdParseObj) checkStrike() {
+
+}
+
+func (mdP *mdParseObj) checkImage() {
+
+}
+
+func (mdP *mdParseObj) checkLink() {
+
+}
+
+func (mdP *mdParseObj) checkTable() {
+
+}
+
+func (mdP *mdParseObj) checkOrList() {
+
+}
+
+
 func (mdP *mdParseObj) printElList()() {
 
-	fmt.Printf("el Start End\n")
+	fmt.Printf("el Start End Fch text\n")
 	for el:=0; el<len(mdP.elList); el++ {
 		fmt.Printf("el %2d %3d %3d ", el, mdP.elList[el].elSt, mdP.elList[el].elEnd)
 		str:=string((*mdP.inBuf)[mdP.elList[el].elSt:mdP.elList[el].elEnd])
-		fmt.Printf("%s\n", str)
+		fmt.Printf("%q:%s\n", (*mdP.inBuf)[mdP.elList[el].elSt], str)
 	}
 
 }
