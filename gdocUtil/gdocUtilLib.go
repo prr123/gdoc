@@ -3,6 +3,9 @@
 //
 // author: prr
 // date: 27/4/2022
+// update 30/5/2022
+// add glyphetype parse
+//
 // copyright 2022 prr, azul software
 //
 package gdocUtilLib
@@ -15,6 +18,7 @@ import (
     "unicode/utf8"
 	"gopkg.in/yaml.v3"
 	"google.golang.org/api/docs/v1"
+	"google/gdoc/util"
 )
 
 type OptObj struct {
@@ -65,6 +69,12 @@ type fil_opt struct {
 	ScriptFil bool `yaml:"ScriptFile"`
 	SummaryFil bool `yaml:"SummaryFile"`
 	TagFil bool `yaml:"TagFile"`
+}
+
+type glFmt struct {
+	counter int
+	txt [10]string
+	pos [10]int
 }
 
 func GetColor(color  *docs.Color)(outstr string) {
@@ -130,6 +140,40 @@ func Get_vert_align (alStr string) (outstr string) {
     }
     return outstr
 }
+
+func parseGlyphFormat(glyphFmt string)(glFmt glFmt, err error) {
+// format is in the form [txt](%dec[txt])
+	var pos [10]int
+	// find all % occurances
+	glFmt.counter = 0
+	pos[0] = 0
+	for i:=1; i< len(glyphFmt); i++ {
+		if glyphFmt[0] == '%' {
+			glFmt.counter++
+			pos[glFmt.counter] = i
+			if glFmt.counter > 9 {return glFmt, fmt.Errorf("nlCounter: maximum nest levels exceeded!")}
+		}
+	}
+
+	pos[glFmt.counter+1] = len(glyphFmt)
+	if glFmt.counter == 0 {return glFmt, nil}
+
+	glFmt.txt[0] = string(glyphFmt[:pos[1]])
+
+	for i:= 1; i< glFmt.counter; i++ {
+		nlNumChar := glyphFmt[pos[i]+1]
+		if !utilLib.IsNumeric(nlNumChar) {
+			return glFmt, fmt.Errorf("level is not numeric!")
+		}
+		nl := utilLib.CvtBytToNum(nlNumChar)
+		nlTxtStr := glyphFmt[pos[i]+2:pos[i+1]]
+		glFmt.pos[i] = nl
+		glFmt.txt[i] = nlTxtStr
+	}
+
+	return glFmt, nil
+}
+
 
 func GetGlyphStr(nlev *docs.NestingLevel)(glyphTyp string) {
 
@@ -237,7 +281,7 @@ func PrintOptYaml(opt *OptYaml) {
 	fmt.Printf("  Name: %s\n", opt.BaseFont.Name)
 	fmt.Printf("Output:\n")
 	fmt.Printf("  Verbose: %t\n", opt.Output.Verb)
-	fmt.Println("***************************\n")
+	fmt.Printf("***************************\n")
 }
 
 func FatErr(fs string, msg string, err error) {
