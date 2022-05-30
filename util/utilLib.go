@@ -40,7 +40,7 @@ func CvtBytToNum(let byte)(res int) {
 // function that converts a ascii byte into an integer
 	res = -1
     if (let >= '0') && (let <= '9') { 
-		res = int(let) - 49
+		res = int(let) - 48
 	}
 	return res
 }
