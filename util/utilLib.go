@@ -36,9 +36,19 @@ func IsNumeric(let byte)(res bool) {
     return res
 }
 
+func CvtBytToNum(let byte)(res int) {
+// function that converts a ascii byte into an integer
+	res = -1
+    if (let >= '0') && (let <= '9') { 
+		res = int(let) - 49
+	}
+	return res
+}
+
 func IsWsp(let byte)(res bool) {
+// fuction that tests a white space
 	res = false
-	if let ==' ' { res = true}
+	if (let ==' ')||(let == '\t') { res = true}
 	return res
 }
 
