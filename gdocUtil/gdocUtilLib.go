@@ -74,7 +74,7 @@ type fil_opt struct {
 type glFmt struct {
 	counter int
 	txt [10]string
-	pos [10]int
+	nl [10]int
 }
 
 func GetColor(color  *docs.Color)(outstr string) {
@@ -141,39 +141,54 @@ func Get_vert_align (alStr string) (outstr string) {
     return outstr
 }
 
-func parseGlyphFormat(glyphFmt string)(glFmt glFmt, err error) {
+func ParseGlyphFormat(glyphFmt string)(glFmt glFmt, err error) {
 // format is in the form [txt](%dec[txt])
 	var pos [10]int
 	// find all % occurances
 	glFmt.counter = 0
 	pos[0] = 0
 	for i:=1; i< len(glyphFmt); i++ {
-		if glyphFmt[0] == '%' {
+		if glyphFmt[i] == '%' {
 			glFmt.counter++
 			pos[glFmt.counter] = i
-			if glFmt.counter > 9 {return glFmt, fmt.Errorf("nlCounter: maximum nest levels exceeded!")}
+			if glFmt.counter > 9 {return glFmt, fmt.Errorf("counter: maximum nest levels exceeded!")}
 		}
 	}
+
+//	fmt.Printf("counter: %d\n", glFmt.counter)
 
 	pos[glFmt.counter+1] = len(glyphFmt)
 	if glFmt.counter == 0 {return glFmt, nil}
 
 	glFmt.txt[0] = string(glyphFmt[:pos[1]])
 
-	for i:= 1; i< glFmt.counter; i++ {
+	for i:= 1; i< glFmt.counter+1; i++ {
 		nlNumChar := glyphFmt[pos[i]+1]
 		if !utilLib.IsNumeric(nlNumChar) {
 			return glFmt, fmt.Errorf("level is not numeric!")
 		}
-		nl := utilLib.CvtBytToNum(nlNumChar)
+
+//fmt.Printf("num: %d char: %c %d\n", i, nlNumChar, int(nlNumChar))
 		nlTxtStr := glyphFmt[pos[i]+2:pos[i+1]]
-		glFmt.pos[i] = nl
+		glFmt.nl[i] = int(nlNumChar) - 48
 		glFmt.txt[i] = nlTxtStr
 	}
 
 	return glFmt, nil
 }
 
+func PrintGlFmt(glFmt glFmt) {
+
+	fmt.Println("************** Print glFmt **************")
+	fmt.Printf("  glyph numbers: %d\n", glFmt.counter)
+	if glFmt.counter < 1 { return}
+	fmt.Printf("  prefix: %s\n", glFmt.txt[0])
+	fmt.Printf("  nest number text\n")
+	for i:=1; i<glFmt.counter+1; i++ {
+		fmt.Printf("  %4d %5d   %s\n", i, glFmt.nl[i], glFmt.txt[i])
+	}
+	fmt.Println("*****************************************")
+}
 
 func GetGlyphStr(nlev *docs.NestingLevel)(glyphTyp string) {
 
