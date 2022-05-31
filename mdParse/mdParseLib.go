@@ -31,11 +31,43 @@ type mdLin struct {
 }
 
 type structEl struct {
-	typ int
-	subEl []parEl
+	parEl *parEl
+	tabEl *tabEl
+	imgEl *imgEl
+	ulEl *uList
+	olEl *oList
 }
 
 type parEl struct {
+	typ int
+	subEl []parSubEl
+}
+
+type tabEl struct {
+	rows int
+	cols int
+	caption string
+}
+
+type imgEl struct {
+	width int
+	height int
+	src string
+	alt string
+	title string
+}
+
+type uList struct {
+	nest int
+	parel parEl
+}
+
+type oList struct {
+	nest int
+	parel parEl
+}
+
+type parSubEl struct {
 	elSt int
 	elEnd int
 	txt string
@@ -44,6 +76,7 @@ type parEl struct {
 
 const (
 	NE = iota
+	BR
 	PAR
 	UL0
 	OL0
@@ -55,7 +88,8 @@ const (
 
 //html elements
 const (
-	par = iota
+	br = iota
+	par
 	hr
 	span
 	ul
@@ -167,9 +201,11 @@ func (mdP *mdParseObj) parseMdOne()(err error) {
 
 
 func (mdP *mdParseObj) parseMdTwo()(err error) {
-	//var fch byte
+	var
+
 	mdP.istate = NE
-	for lin:=0; lin<len(mdP.linList); lin++ {
+//	for lin:=0; lin<len(mdP.linList); lin++ {
+	for lin:=0; lin<10; lin++ {
 		linSt := mdP.linList[lin].linSt
 		linEnd := mdP.linList[lin].linEnd
 
@@ -181,14 +217,14 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 			case '\r':
 				// end of par?
 				// is cr only char?
-		fmt.Printf("istate: %d linSt: %d linEnd %d\n", mdP.istate, linSt, linEnd)
+		fmt.Printf("cr istate: %d linSt: %d linEnd %d\n", mdP.istate, linSt, linEnd)
 				if linSt+1 == linEnd {
 					if mdP.istate == PAR {
 						mdP.checkParEnd()
 						mdP.istate = NE
-					} else {
-						return fmt.Errorf("line %d: text after cr", lin)
 					}
+				} else {
+					return fmt.Errorf("line %d: text after cr", lin)
 				}
 			case '#':
 				// heading
@@ -395,3 +431,9 @@ func (mdP *mdParseObj) cvtMdToHtml()(err error) {
 	return nil
 }
 
+func (mdP *mdParseObj) printElList () {
+
+	fmt.Println("*********** El List *****")
+
+
+}
