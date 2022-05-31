@@ -18,15 +18,66 @@ import (
 type mdParseObj struct {
 	filnam string
 	inBuf *[]byte
-	elList []mdEl
+	linList []mdLin
+	elList []structEl
+	istate int
 }
 
-type mdEl struct {
-	elSt int
-	elEnd int
+type mdLin struct {
+	linSt int
+	linEnd int
 	typ byte
 	fchar byte
 }
+
+type structEl struct {
+	typ int
+	subEl []parEl
+}
+
+type parEl struct {
+	elSt int
+	elEnd int
+	txt string
+	txtTyp []int
+}
+
+const (
+	NE = iota
+	PAR
+	UL0
+	OL0
+	UL1
+	OL1
+	UL2
+	OL2
+)
+
+//html elements
+const (
+	par = iota
+	hr
+	span
+	ul
+	ol
+	li
+	img
+	ftnote
+	h1
+	h2
+	h3
+	h4
+	h5
+	h6
+)
+
+// text attributes
+const (
+	bold = iota
+	italic
+	strike
+	html
+)
 
 func InitMdParse() (mdp *mdParseObj) {
 
@@ -89,41 +140,62 @@ func (mdP *mdParseObj) ParseMdFile(inpfilnam string) (err error) {
 }
 
 func (mdP *mdParseObj) parseMdOne()(err error) {
-	var el mdEl
+	var lin mdLin
 
 	buf := *(mdP.inBuf)
 	ilin := 0
 	ist := 0
 	for i:=0; i< len(buf); i++ {
 		if buf[i] == '\n' {
-			el.elSt = ist
-			el.elEnd = i
-			mdP.elList = append(mdP.elList, el)
+			lin.linSt = ist
+			lin.linEnd = i
+			mdP.linList = append(mdP.linList, lin)
 			ist = i+1
 			ilin++
 		}
 	}
 
-	fmt.Printf("lines: %d elList: %d\n", ilin, len(mdP.elList))
+	fmt.Printf("lines: %d elList: %d\n", ilin, len(mdP.linList))
 
-	mdP.printElList()
+	mdP.printLinList()
+	err = mdP.parseMdTwo()
+	if err != nil {
+		fmt.Printf("error %v\n", err)
+	}
 	return nil
 }
 
 
 func (mdP *mdParseObj) parseMdTwo()(err error) {
-	var fch byte
+	//var fch byte
+	mdP.istate = NE
+	for lin:=0; lin<len(mdP.linList); lin++ {
+		linSt := mdP.linList[lin].linSt
+		linEnd := mdP.linList[lin].linEnd
 
-	for el:=0; el<len(mdP.elList); el++ {
-		fch = (*mdP.inBuf)[mdP.elList[el].elSt]
+		fch := (*mdP.inBuf)[mdP.linList[lin].linSt]
+		sch := (*mdP.inBuf)[mdP.linList[lin].linSt + 1]
+		tch := (*mdP.inBuf)[mdP.linList[lin].linSt + 2]
+		fmt.Printf("*** line %d: state: %d\n", lin, mdP.istate)
 		switch fch {
 			case '\r':
 				// end of par?
-				mdP.checkParEnd()
-
+				// is cr only char?
+		fmt.Printf("istate: %d linSt: %d linEnd %d\n", mdP.istate, linSt, linEnd)
+				if linSt+1 == linEnd {
+					if mdP.istate == PAR {
+						mdP.checkParEnd()
+						mdP.istate = NE
+					} else {
+						return fmt.Errorf("line %d: text after cr", lin)
+					}
+				}
 			case '#':
 				// heading
-				mdP.checkHeading()
+				err = mdP.checkHeading(lin)
+				if err != nil {
+					return fmt.Errorf("line %d: %v", lin, err)
+				}
 
 			case '-':
 				// horizontal ruler ---
@@ -140,18 +212,42 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 				mdP.checkItalics()
 
 			case '*':
-				// horizontal ruler ***wsp|text
-				mdP.checkHr()
-				// bold text wsp**text**wsp
-				mdP.checkBold()
-				// unordered list *wsp
-				mdP.checkUnList()
-				// italics *text*
-				mdP.checkItalics()
+				// check whether next char is whitespace
+				if sch == ' ' {
+					// unordered list *wsp
+					fmt.Println("*** unordered list item")
+					mdP.checkUnList()
+					break
+				}
 
+				if sch == '*' {
+					if utilLib.IsAlpha(tch) {
+						// bold text wsp**text**wsp
+						fmt.Println("*** start bold")
+						mdP.checkBold()
+					}
+					if tch == '*' {
+						fmt.Println("*** horizontal ruler")
+						// horizontal ruler ***wsp|text
+						mdP.checkHr()
+					}
+					break
+				}
+				if utilLib.IsAlpha(sch) {
+					fmt.Println("*** start italics")
+					// italics *text*
+					mdP.checkItalics()
+					break
+				}
 			case '>':
+				fmt.Println("*** start blockquote")
+
 				// block quotes
 				mdP.checkBlock()
+
+			case '<':
+				// html start <>
+				mdP.checkHtml()
 
 			case '+':
 				// unordered list + wsp|par
@@ -183,7 +279,11 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 					mdP.checkOrList()
 				}
 				if utilLib.IsAlpha(fch) {
-				// paragraph
+					// paragraph
+					fmt.Println("*** par start ***")
+					mdP.istate = PAR
+					str := string((*mdP.inBuf)[linSt:linEnd-1])
+					fmt.Println(str)
 					mdP.checkPar()
 				}
 		}
@@ -193,15 +293,39 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 }
 
 func (mdP *mdParseObj) checkPar() {
-
+	fmt.Println("*** par start")
 }
 
 func (mdP *mdParseObj) checkParEnd() {
-
+	fmt.Println("*** par end")
 }
 
-func (mdP *mdParseObj) checkHeading() {
+func (mdP *mdParseObj) checkHeading(lin int) (err error){
 
+//	listEl := mdP.elList[el]
+	linSt := mdP.linList[lin].linSt
+	linEnd := mdP.linList[lin].linEnd
+	buf := (*mdP.inBuf)[linSt:linEnd]
+	fmt.Printf("buffer: %s\n", buf[:])
+	hd := 0
+	hdEnd := linSt
+	for i:= 0; i < 7; i++ {
+		if buf[i] != '#' {
+			if buf[i] != ' ' {
+				return fmt.Errorf("no ws after #!")
+			}
+			hdEnd = i
+			break
+		}
+		hd++
+	}
+	// last char is cr. ergo paragraph not finished
+	txtstr := string(buf[hdEnd+1:len(buf)-1])
+	mdP.istate = PAR
+	fmt.Printf("header: h%d text: \"%s\" \n", hd, txtstr)
+
+
+	return nil
 }
 
 func (mdP *mdParseObj) checkHr() {
@@ -217,6 +341,10 @@ func (mdP *mdParseObj) checkItalics() {
 }
 
 func (mdP *mdParseObj) checkUnList() {
+
+}
+
+func (mdP *mdParseObj) checkHtml() {
 
 }
 
@@ -245,13 +373,13 @@ func (mdP *mdParseObj) checkOrList() {
 }
 
 
-func (mdP *mdParseObj) printElList()() {
+func (mdP *mdParseObj) printLinList()() {
 
-	fmt.Printf("el Start End Fch text\n")
-	for el:=0; el<len(mdP.elList); el++ {
-		fmt.Printf("el %2d %3d %3d ", el, mdP.elList[el].elSt, mdP.elList[el].elEnd)
-		str:=string((*mdP.inBuf)[mdP.elList[el].elSt:mdP.elList[el].elEnd])
-		fmt.Printf("%q:%s\n", (*mdP.inBuf)[mdP.elList[el].elSt], str)
+	fmt.Printf("line Start End Fch text\n")
+	for el:=0; el<len(mdP.linList); el++ {
+		fmt.Printf("el %2d %3d %3d ", el, mdP.linList[el].linSt, mdP.linList[el].linEnd)
+		str:=string((*mdP.inBuf)[mdP.linList[el].linSt:mdP.linList[el].linEnd])
+		fmt.Printf("%q:%s\n", (*mdP.inBuf)[mdP.linList[el].linSt], str)
 	}
 
 }
@@ -267,150 +395,3 @@ func (mdP *mdParseObj) cvtMdToHtml()(err error) {
 	return nil
 }
 
-func IsTyp(buf []byte)(typNam string, res bool) {
-// function that checks whether an input line is a type definition.
-// It returns the type name if the input line is a typpe definition.
-
-	if len(buf) < 5 { return "", false }
-
-	if buf[0] != 't' {return "", false}
-	if buf[1] != 'y' {return "", false}
-	if buf[2] != 'p' {return "", false}
-	if buf[3] != 'e' {return "", false}
-	if buf[4] != ' ' {return "", false}
-
-	fnamSt := 0
-	for i:= 5; i<len(buf); i++ {
-		if buf[i] == ' ' {continue}
-		if utilLib.IsAlpha(buf[i]) {
-			fnamSt = i
-			break
-		}
-	}
-
-	if fnamSt == 0 {return "", false}
-
-	fnamEnd := 0
-	for i:= fnamSt; i<len(buf); i++ {
-		if (buf[i] == ' ') {
-			fnamEnd = i
-			break
-		}
-	}
-
-	if fnamEnd == 0 {return "", false}
-
-	typNam = string(buf[fnamSt:fnamEnd])
-	return typNam, true
-}
-
-func IsFunc(buf []byte)(funcNam string, res bool) {
-// function that checks whether an input line is a function.
-// It returns the function name if the input line is a  function.
-
-	if len(buf) < 5 { return "", false }
-
-	if buf[0] != 'f' {return "", false}
-	if buf[1] != 'u' {return "", false}
-	if buf[2] != 'n' {return "", false}
-	if buf[3] != 'c' {return "", false}
-	if buf[4] != ' ' {return "", false}
-
-	fnamSt := 0
-	for i:= 5; i<len(buf); i++ {
-		if buf[i] == ' ' {continue}
-		if buf[i] == '(' {return "", false}
-		if utilLib.IsAlpha(buf[i]) {
-			fnamSt = i
-			break
-		}
-	}
-
-	if fnamSt == 0 {return "", false}
-
-	fnamEnd := 0
-	for i:= fnamSt; i<len(buf); i++ {
-		if (buf[i] == ' ') || (buf[i] == '(') {
-			fnamEnd = i
-			break
-		}
-	}
-
-	if fnamEnd == 0 {return "", false}
-
-	funcNam = string(buf[fnamSt:fnamEnd])
-	return funcNam, true
-}
-
-func IsMethod(buf []byte)(methNam string, typNam string, res bool) {
-// function that detemines whether a input line is a  method.
-// if so, the function returns the method name and the name of the structure the method is associated with
-
-	if len(buf) < 5 { return "","", false }
-
-	if buf[0] != 'f' {return "", "", false}
-	if buf[1] != 'u' {return "", "", false}
-	if buf[2] != 'n' {return "", "", false}
-	if buf[3] != 'c' {return "", "", false}
-	if buf[4] != ' ' {return "", "", false}
-
-	typSt := 0
-	for i:= 5; i<len(buf); i++ {
-		if buf[i] == ' ' {continue}
-		if utilLib.IsAlpha(buf[i]) {return "", "", false}
-		if buf[i] == '(' {
-			typSt = i
-			break
-		}
-	}
-
-	if typSt == 0 {return "", "", false}
-
-	typEnd := 0
-	for i:= typSt; i<len(buf); i++ {
-		if buf[i] == ')' {
-			typEnd = i
-			break
-		}
-	}
-
-	if typEnd == 0 {return "", "", false}
-
-	typNam = string(buf[typSt+1:typEnd-1])
-	methSt := 0
-	for i:= typEnd + 1; i<len(buf); i++ {
-		if utilLib.IsAlpha(buf[i]) {
-			methSt = i
-			break
-		}
-	}
-
-	if methSt == 0 {return "", "", false}
-
-	methEnd := 0
-	for i:= methSt; i<len(buf); i++ {
-		if (buf[i] == ' ') || (buf[i] == '(') {
-			methEnd = i
-			break
-		}
-	}
-
-	if methEnd == 0 {return "", "", false}
-
-	methNam = string(buf[methSt:methEnd])
-
-	return methNam, typNam, true
-}
-
-func IsComment (buf []byte)(desc string, res bool) {
-// function that determines whether the input line is a comment line.
-// If so, it returns the comment in the desc.
-
-	if len(buf) < 2 {return "", false}
-	if buf[0] != '/' {return "", false}
-	if buf[1] != '/' {return "",  false}
-
-	desc = string(buf[2:])
-
-	return desc, true
-}
