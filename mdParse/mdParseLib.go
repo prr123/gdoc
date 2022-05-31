@@ -201,7 +201,8 @@ func (mdP *mdParseObj) parseMdOne()(err error) {
 
 
 func (mdP *mdParseObj) parseMdTwo()(err error) {
-	var
+// function that parses the linList and create an el List
+//	var el  structEl
 
 	mdP.istate = NE
 //	for lin:=0; lin<len(mdP.linList); lin++ {
@@ -328,6 +329,16 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 	return nil
 }
 
+func checkEOL(buf []byte)(res bool) {
+// function to test whether a line is completed with a md cr
+
+	linLen := len(buf)
+	if linLen < 2 {return false}
+
+	if (buf[linLen] == ' ') && (buf[linLen -1] == ' ') { return true}
+	return false
+}
+
 func (mdP *mdParseObj) checkPar() {
 	fmt.Println("*** par start")
 }
@@ -355,6 +366,8 @@ func (mdP *mdParseObj) checkHeading(lin int) (err error){
 		}
 		hd++
 	}
+	// check the end of the line
+
 	// last char is cr. ergo paragraph not finished
 	txtstr := string(buf[hdEnd+1:len(buf)-1])
 	mdP.istate = PAR
