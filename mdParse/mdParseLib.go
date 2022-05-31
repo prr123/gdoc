@@ -40,7 +40,9 @@ type structEl struct {
 
 type parEl struct {
 	typ int
+	fin bool
 	subEl []parSubEl
+	txtbuf []byte
 }
 
 type tblEl struct {
@@ -223,6 +225,10 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 					if mdP.istate == PAR {
 						mdP.checkParEnd()
 						mdP.istate = NE
+					} else {
+						// insert BR element
+						mdP.checkBR()
+						mdP.istate = BR
 					}
 				} else {
 					return fmt.Errorf("line %d: text after cr", lin)
@@ -336,7 +342,8 @@ func checkEOL(buf []byte)(res bool) {
 	linLen := len(buf)
 	if linLen < 2 {return false}
 
-	if (buf[linLen] == ' ') && (buf[linLen -1] == ' ') { return true}
+	fmt.Printf("EOL: \"%s\"\n", string(buf[linLen-2: linLen]))
+	if (buf[linLen-1] == ' ') && (buf[linLen -2] == ' ') { return true}
 	return false
 }
 
@@ -370,7 +377,7 @@ func (mdP *mdParseObj) checkHeading(lin int) (err error){
 		hd++
 	}
 	// check the end of the line
-//	crEOL := checkEOL(buf[hdEnd+1:len(buf)-1])
+	crEOL := checkEOL(buf[hdEnd+1:len(buf)-1])
 	// last char is cr. ergo paragraph not finished
 
 	txtstr := string(buf[hdEnd+1:len(buf)-1])
@@ -382,11 +389,22 @@ func (mdP *mdParseObj) checkHeading(lin int) (err error){
 			hdtyp = h1
 		case 2:
 			hdtyp = h2
+		case 3:
+			hdtyp = h3
+		case 4:
+			hdtyp = h4
+		case 5:
+			hdtyp = h5
+		case 6:
+			hdtyp = h6
 		default:
 	}
 
 	fmt.Printf("header: %d %s text: \"%s\" \n", hdtyp, hdStr, txtstr)
 	parEl.typ = hdtyp
+	parEl.txtbuf = buf[hdEnd+1:len(buf)-1]
+	parEl.fin = false
+	if crEOL {parEl.fin = true}
 	el.parEl = &parEl
 	mdP.elList = append(mdP.elList, el)
 
@@ -437,6 +455,11 @@ func (mdP *mdParseObj) checkOrList() {
 
 }
 
+func (mdP *mdParseObj) checkBR() {
+
+
+}
+
 
 func (mdP *mdParseObj) printLinList()() {
 
@@ -464,12 +487,12 @@ func (mdP *mdParseObj) printElList () {
 // function that prints out the structural element list
 
 	fmt.Println("*********** El List *****")
-	fmt.Printf(" el  typ subel\n")
+	fmt.Printf(" el eltyp  typ subels fin txt\n")
 	for i:=0; i < len(mdP.elList); i++ {
 		el := mdP.elList[i]
-		fmt.Printf("  %d : ", i)
+		fmt.Printf("  %d: ", i)
 		if el.parEl != nil {
-			fmt.Printf( "par %d %d ", el.parEl.typ, len(el.parEl.subEl))
+			fmt.Printf( "par %d: %d %t %s", el.parEl.typ, len(el.parEl.subEl), el.parEl.fin, string(el.parEl.txtbuf[:]))
 		}
 		if el.tblEl != nil {
 			fmt.Printf( "tbl %d %d ", el.tblEl.rows, el.tblEl.cols)
@@ -478,7 +501,7 @@ func (mdP *mdParseObj) printElList () {
 			fmt.Printf( "img %d %d %s", el.imgEl.height, el.imgEl.width, el.imgEl.src)
 		}
 		if el.ulEl != nil {
-			fmt.Printf( "ul %d ", el.ulEl.nest)	
+			fmt.Printf( "ul %d ", el.ulEl.nest)
 			if el.ulEl.parEl != nil {
 				fmt.Printf( "par %d %d ", el.ulEl.parEl.typ, len(el.ulEl.parEl.subEl))
 			} else {
