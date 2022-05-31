@@ -32,7 +32,7 @@ type mdLin struct {
 
 type structEl struct {
 	parEl *parEl
-	tabEl *tabEl
+	tblEl *tblEl
 	imgEl *imgEl
 	ulEl *uList
 	olEl *oList
@@ -43,7 +43,7 @@ type parEl struct {
 	subEl []parSubEl
 }
 
-type tabEl struct {
+type tblEl struct {
 	rows int
 	cols int
 	caption string
@@ -59,12 +59,12 @@ type imgEl struct {
 
 type uList struct {
 	nest int
-	parel parEl
+	parEl *parEl
 }
 
 type oList struct {
 	nest int
-	parel parEl
+	parEl *parEl
 }
 
 type parSubEl struct {
@@ -326,6 +326,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 		}
 
 	}
+	mdP.printElList()
 	return nil
 }
 
@@ -348,7 +349,9 @@ func (mdP *mdParseObj) checkParEnd() {
 }
 
 func (mdP *mdParseObj) checkHeading(lin int) (err error){
-
+// function that parses a line for headings
+	var el structEl
+	var parEl parEl
 //	listEl := mdP.elList[el]
 	linSt := mdP.linList[lin].linSt
 	linEnd := mdP.linList[lin].linEnd
@@ -367,12 +370,25 @@ func (mdP *mdParseObj) checkHeading(lin int) (err error){
 		hd++
 	}
 	// check the end of the line
-
+//	crEOL := checkEOL(buf[hdEnd+1:len(buf)-1])
 	// last char is cr. ergo paragraph not finished
+
 	txtstr := string(buf[hdEnd+1:len(buf)-1])
 	mdP.istate = PAR
-	fmt.Printf("header: h%d text: \"%s\" \n", hd, txtstr)
+	hdStr := fmt.Sprintf("h%d", hd)
+	hdtyp := 0
+	switch hd {
+		case 1:
+			hdtyp = h1
+		case 2:
+			hdtyp = h2
+		default:
+	}
 
+	fmt.Printf("header: %d %s text: \"%s\" \n", hdtyp, hdStr, txtstr)
+	parEl.typ = hdtyp
+	el.parEl = &parEl
+	mdP.elList = append(mdP.elList, el)
 
 	return nil
 }
@@ -434,10 +450,10 @@ func (mdP *mdParseObj) printLinList()() {
 }
 
 func (mdP *mdParseObj) cvtMdToHtml()(err error) {
+// function that converts the structural Element
+	fmt.Printf("*** input file: %s\n", mdP.filnam + ".md")
 
-	fmt.Printf("*** output file: %s\n", mdP.filnam + ".md")
-
-	outfil, err := os.Create(mdP.filnam + ".md")
+	outfil, err := os.Create(mdP.filnam + ".html")
 	if err != nil { return fmt.Errorf("os.Create: %v\n", err)}
 	defer outfil.Close()
 
@@ -445,8 +461,39 @@ func (mdP *mdParseObj) cvtMdToHtml()(err error) {
 }
 
 func (mdP *mdParseObj) printElList () {
+// function that prints out the structural element list
 
 	fmt.Println("*********** El List *****")
+	fmt.Printf(" el  typ subel\n")
+	for i:=0; i < len(mdP.elList); i++ {
+		el := mdP.elList[i]
+		fmt.Printf("  %d : ", i)
+		if el.parEl != nil {
+			fmt.Printf( "par %d %d ", el.parEl.typ, len(el.parEl.subEl))
+		}
+		if el.tblEl != nil {
+			fmt.Printf( "tbl %d %d ", el.tblEl.rows, el.tblEl.cols)
+		}
+		if el.imgEl != nil {
+			fmt.Printf( "img %d %d %s", el.imgEl.height, el.imgEl.width, el.imgEl.src)
+		}
+		if el.ulEl != nil {
+			fmt.Printf( "ul %d ", el.ulEl.nest)	
+			if el.ulEl.parEl != nil {
+				fmt.Printf( "par %d %d ", el.ulEl.parEl.typ, len(el.ulEl.parEl.subEl))
+			} else {
+				fmt.Printf( "ulEl par nil!")
+			}
+		}
+		if el.olEl != nil {
+			fmt.Printf( "ol %d ", el.olEl.nest)
+			if el.olEl.parEl != nil {
+				fmt.Printf( "par %d %d ", el.olEl.parEl.typ, len(el.olEl.parEl.subEl))
+			} else {
+				fmt.Printf( "olEl par nil!")
+			}
+		}
 
-
+		fmt.Printf("\n")
+	}
 }
