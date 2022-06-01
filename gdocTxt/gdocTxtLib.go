@@ -39,11 +39,11 @@ type gdocTxtObj struct {
     imgFoldPath string
 	DocOpt	bool
     docLists []docList
-    headings []heading
+//    headings []heading
     sections []sect
 	pgCounter int
     docFtnotes []docFtnote
-	namStylMap map[string]bool
+//	namStylMap map[string]bool
 	Options *gdocUtil.OptObj
 	txtfil *os.File
 
@@ -94,7 +94,6 @@ func findDocList(list []docList, listid string) (res int) {
 
 func (dObj *gdocTxtObj) initGdocTxt(folderPath string, options *gdocUtil.OptObj) (err error) {
     var listItem docList
-    var heading heading
     var sec sect
     var ftnote docFtnote
 
@@ -122,18 +121,6 @@ func (dObj *gdocTxtObj) initGdocTxt(folderPath string, options *gdocUtil.OptObj)
 		dObj.Options = options
 	}
 
-    dObj.namStylMap = make(map[string]bool, 8)
-
-    dObj.namStylMap["NORMAL_TEXT"] = true
-    dObj.namStylMap["TITLE"] = false
-    dObj.namStylMap["SUBTITLE"] = false
-    dObj.namStylMap["HEADING_1"] = false
-    dObj.namStylMap["HEADING_2"] = false
-    dObj.namStylMap["HEADING_3"] = false
-    dObj.namStylMap["HEADING_4"] = false
-    dObj.namStylMap["HEADING_5"] = false
-    dObj.namStylMap["HEADING_6"] = false
-
 	dObj.parCount = 0
 	dObj.posImgCount = 0
 	dObj.inImgCount = 0
@@ -144,7 +131,7 @@ func (dObj *gdocTxtObj) initGdocTxt(folderPath string, options *gdocUtil.OptObj)
 //    dObj.ftnoteCount = 0
 
     // section breaks
-    parHdEnd := 0
+//    parHdEnd := 0
 
     // last element of section
     secPtEnd := 0
@@ -174,36 +161,6 @@ func (dObj *gdocTxtObj) initGdocTxt(folderPath string, options *gdocUtil.OptObj)
 
             }
 
-           // named styles
-            namedStyl := elObj.Paragraph.ParagraphStyle.NamedStyleType
-            if len(namedStyl) > 0 {
-                if !dObj.namStylMap[namedStyl] {
-                    dObj.namStylMap[namedStyl] = true
-                }
-            }
-
-            // headings
-            text := ""
-            if len(elObj.Paragraph.ParagraphStyle.HeadingId) > 0 {
-                heading.id = elObj.Paragraph.ParagraphStyle.HeadingId
-                heading.hdElStart = el
-
-                for parel:=0; parel<len(elObj.Paragraph.Elements); parel++ {
-                    if elObj.Paragraph.Elements[parel].TextRun != nil {
-                        text += elObj.Paragraph.Elements[parel].TextRun.Content
-                    }
-                }
-                txtlen:= len(text)
-                if text[txtlen -1] == '\n' { text = text[:txtlen-1] }
-                heading.text = text
-
-                dObj.headings = append(dObj.headings, heading)
-                hdlen := len(dObj.headings)
-                if hdlen > 1 {
-                    dObj.headings[hdlen-2].hdElEnd = parHdEnd
-                }
-            } // end headings
-
             // footnotes
             if len(doc.Footnotes)> 0 {
                 for parEl:=0; parEl<len(elObj.Paragraph.Elements); parEl++ {
@@ -218,26 +175,17 @@ func (dObj *gdocTxtObj) initGdocTxt(folderPath string, options *gdocUtil.OptObj)
                 }
             }
 
-            parHdEnd = el
+//            parHdEnd = el
             secPtEnd = el
         } // end paragraph
     } // end el loop
 
-    hdlen := len(dObj.headings)
-    if hdlen > 0 {
-        dObj.headings[hdlen-1].hdElEnd = parHdEnd
-    }
     seclen = len(dObj.sections)
     if seclen > 0 {
         dObj.sections[seclen-1].secElEnd = secPtEnd
     }
 
     if dObj.Options.Verb {
-        fmt.Printf("********** Headings in Document: %2d ***********\n", len(dObj.headings))
-        for i:=0; i< len(dObj.headings); i++ {
-            fmt.Printf("  heading %3d  Id: %-15s text: %-20s El Start:%3d End:%3d\n", i, dObj.headings[i].id, dObj.headings[i].text,
-                dObj.headings[i].hdElStart, dObj.headings[i].hdElEnd)
-		}
         fmt.Printf("\n********** Pages in Document: %2d ***********\n", len(dObj.sections))
         for i:=0; i< len(dObj.sections); i++ {
             fmt.Printf("  Page %3d  El Start:%3d End:%3d\n", i, dObj.sections[i].secElStart, dObj.sections[i].secElEnd)
@@ -479,12 +427,8 @@ func (dObj *gdocTxtObj) cvtTable(tbl *docs.Table)(outstr string, err error) {
 				outstr += "\n"
 
 				for el:=0; el< len(tcell.Content); el++ {
-					tstr, err := dObj.cvtPar(tcell.Content[el].Paragraph)
-					if err != nil {
-						outstr += fmt.Sprintf("error par of tablecel %d\n",el)
-					} else {
-						outstr += tstr
-					}
+					tstr := dObj.cvtPar(tcell.Content[el].Paragraph)
+					outstr += tstr
 				}
 			}
             tblCellCount++
@@ -526,19 +470,14 @@ func (dObj *gdocTxtObj) dispListProp(listp *docs.ListProperties)(outstr string, 
 	return outstr, nil
 }
 
-func (dObj *gdocTxtObj) cvtPar(par *docs.Paragraph)(outstr string, err error) {
+func (dObj *gdocTxtObj) cvtPar(par *docs.Paragraph)(outstr string) {
 
-	if par == nil {
-		return "", fmt.Errorf("error dispPar: no par element provided! ")
-	}
+//	if par.Bullet != nil {
+// lists tbd
 
-	if par.Bullet != nil {
-		outstr += fmt.Sprintf(" *** List Paragraph with %d Sub-Elements ***\n", len(par.Elements))
-		outstr += fmt.Sprintf("       list id: %s nest level %d \n", par.Bullet.ListId, par.Bullet.NestingLevel)
-	} else {
-		outstr += fmt.Sprintf(" *** Paragraph with %d Sub-Elements ***\n", len(par.Elements))
-	}
 
+/*
+	// indent styles
 	if par.ParagraphStyle != nil {
 		tstr,err := dObj.dispParStyl(par.ParagraphStyle, 4)
 		if err != nil {
@@ -548,25 +487,26 @@ func (dObj *gdocTxtObj) cvtPar(par *docs.Paragraph)(outstr string, err error) {
 	} else {
 		outstr += "    *** no Pargraph Style ***\n"
 	}
-	outstr += fmt.Sprintf("\n  *** Paragraph Elements: %d ***\n", len(par.Elements))
+*/
+	parStr :=""
 	for pEl:=0; pEl< len(par.Elements); pEl++ {
-		parDet := par.Elements[pEl]
-		outstr += fmt.Sprintf("    *** Par-El[%d]: [%d-%d] ", pEl, parDet.StartIndex, parDet.EndIndex)
-		t2str, err := dObj.cvtParEl(parDet)
-		if err != nil {
-			outstr += fmt.Sprintf("error dispParEl %d: %v\n", pEl, err)
-		}
-		outstr += t2str
+		parSubEl := par.Elements[pEl]
+		if parSubEl.TextRun != nil {parStr += parSubEl.TextRun.Content}
 	}
 
+
+
+/*
+	// images tbd
 	if par.PositionedObjectIds != nil {
 		outstr += fmt.Sprintf("    *** Has Positioned Objects: %d ***\n", len(par.PositionedObjectIds))
 		for id:=0; id< len(par.PositionedObjectIds); id++ {
 			outstr += fmt.Sprintf("      posObject Id[%d]: %s\n", id, par.PositionedObjectIds[id])
 		}
 	}
-
-	return outstr, nil
+*/
+	outstr += parStr + "/n"
+	return outstr
 }
 
 func (dObj *gdocTxtObj) cvtParEl(parDet *docs.ParagraphElement)(outstr string, err error) {
@@ -893,11 +833,7 @@ func (dObj *gdocTxtObj) cvtBody()(outstr string, err error) {
 	for el:=0; el< len(body.Content); el++ {
 		elBody := body.Content[el]
 		if elBody.Paragraph != nil {
-			tstr, err := dObj.cvtPar(elBody.Paragraph)
-			if err != nil {
-				errCount++
-				outstr += fmt.Sprintf("error %d: %v\n", errCount, err)
-			}
+			tstr := dObj.cvtPar(elBody.Paragraph)
 			outstr += tstr
 		}
 		if elBody.SectionBreak != nil {
