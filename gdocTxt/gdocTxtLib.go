@@ -15,7 +15,7 @@ import (
 	"os"
 	"unicode/utf8"
 	"google.golang.org/api/docs/v1"
-    util "google/gdoc/gdocUtil"
+    gdocUtil "google/gdoc/gdocUtil"
 )
 
 const (
@@ -41,10 +41,12 @@ type gdocTxtObj struct {
     docLists []docList
     headings []heading
     sections []sect
+	pgCounter int
     docFtnotes []docFtnote
 	namStylMap map[string]bool
-	Options *util.OptObj
+	Options *gdocUtil.OptObj
 	txtfil *os.File
+
 }
 
 type docList struct {
@@ -90,7 +92,7 @@ func findDocList(list []docList, listid string) (res int) {
     return res
 }
 
-func (dObj *gdocTxtObj) initGdocTxt(folderPath string, options *util.OptObj) (err error) {
+func (dObj *gdocTxtObj) initGdocTxt(folderPath string, options *gdocUtil.OptObj) (err error) {
     var listItem docList
     var heading heading
     var sec sect
@@ -112,9 +114,9 @@ func (dObj *gdocTxtObj) initGdocTxt(folderPath string, options *util.OptObj) (er
     dObj.DocName = string(x[:])
 
 	if options == nil {
-		defOpt := new(util.OptObj)
-		util.GetDefOption(defOpt)
-		if defOpt.Verb {util.PrintOptions(defOpt)}
+		defOpt := new(gdocUtil.OptObj)
+		gdocUtil.GetDefOption(defOpt)
+		if defOpt.Verb {gdocUtil.PrintOptions(defOpt)}
  		dObj.Options = defOpt
 	} else {
 		dObj.Options = options
@@ -136,6 +138,7 @@ func (dObj *gdocTxtObj) initGdocTxt(folderPath string, options *util.OptObj) (er
 	dObj.posImgCount = 0
 	dObj.inImgCount = 0
 	dObj.TableCount = 0
+	dObj.pgCounter = 0
 
     // footnotes
 //    dObj.ftnoteCount = 0
@@ -163,7 +166,7 @@ func (dObj *gdocTxtObj) initGdocTxt(folderPath string, options *util.OptObj) (er
                     listItem.listId = listId
                     listItem.maxNestLev = elObj.Paragraph.Bullet.NestingLevel
                     nestL := doc.Lists[listId].ListProperties.NestingLevels[nestlev]
-                    listItem.ord = util.GetGlyphOrd(nestL)
+                    listItem.ord = gdocUtil.GetGlyphOrd(nestL)
                     dObj.docLists = append(dObj.docLists, listItem)
                 } else {
                     if dObj.docLists[found].maxNestLev < nestlev { dObj.docLists[found].maxNestLev = nestlev }
@@ -257,9 +260,9 @@ func (dObj *gdocTxtObj) initGdocTxt(folderPath string, options *util.OptObj) (er
     dObj.posImgCount = len(doc.PositionedObjects)
 
 	// create folders
-    fPath, fexist, err := util.CreateFileFolder(folderPath, dObj.DocName)
-	//    fPath, _, err := util.CreateFileFolder(folderPath, dObj.DocName)
-    if err!= nil { return fmt.Errorf("error -- util.CreateFileFolder: %v", err)}
+    fPath, fexist, err := gdocUtil.CreateFileFolder(folderPath, dObj.DocName)
+	//    fPath, _, err := gdocUtil.CreateFileFolder(folderPath, dObj.DocName)
+    if err!= nil { return fmt.Errorf("error -- gdocUtil.CreateFileFolder: %v", err)}
 
     dObj.folderPath = fPath
 
@@ -273,21 +276,21 @@ func (dObj *gdocTxtObj) initGdocTxt(folderPath string, options *util.OptObj) (er
     }
 
     // create output file path/outfilNam.txt
-    outfil, err := util.CreateOutFil(fPath, dObj.DocName,"txt")
+    outfil, err := gdocUtil.CreateOutFil(fPath, dObj.DocName,"txt")
     if err != nil {
-        return fmt.Errorf("error -- util.CreateOutFil: %v", err)
+        return fmt.Errorf("error -- gdocUtil.CreateOutFil: %v", err)
     }
     dObj.txtfil = outfil
 
 	totObjNum := dObj.inImgCount + dObj.posImgCount
 
     if dObj.Options.CreImgFolder && (totObjNum > 0) {
-        imgFoldPath, err := util.CreateImgFolder(fPath ,dObj.DocName)
+        imgFoldPath, err := gdocUtil.CreateImgFolder(fPath ,dObj.DocName)
         if err != nil {
             return fmt.Errorf("error -- CreateImgFolder: could create ImgFolder: %v!", err)
         }
         dObj.imgFoldNam = imgFoldPath
-        err = util.DownloadImages(doc, imgFoldPath, dObj.Options)
+        err = gdocUtil.DownloadImages(doc, imgFoldPath, dObj.Options)
         if err != nil {
             return fmt.Errorf("error -- downloadImages could download images: %v!", err)
         }
@@ -297,7 +300,7 @@ func (dObj *gdocTxtObj) initGdocTxt(folderPath string, options *util.OptObj) (er
 }
 
 
-func (dObj *gdocTxtObj) dispTOC(toc *docs.TableOfContents)(outstr string, err error) {
+func (dObj *gdocTxtObj) cvtTOC(toc *docs.TableOfContents)(outstr string, err error) {
 
 	if toc == nil {
 		return "", fmt.Errorf("error dispTOC: toc is nil")
@@ -307,19 +310,21 @@ func (dObj *gdocTxtObj) dispTOC(toc *docs.TableOfContents)(outstr string, err er
 	outstr = fmt.Sprintf("\n  *** Table of Contents: (%d) ***\n", numEl)
 
 	for el:=0; el< numEl; el++ {
-		tocEl := toc.Content[el]
-		outstr += fmt.Sprintf("\n *** element: %d ***", el)
+//		tocEl := toc.Content[el]
+//		outstr += fmt.Sprintf("\n *** element: %d ***", el)
+/*
 		tStr,err := dObj.dispContentEl(tocEl)
 		if err != nil {
 			outstr += fmt.Sprintf("\n error dispContentEl: %v\n", err) + tStr
 		} else {
 			outstr += tStr
 		}
+*/
 	}
 	return outstr, nil
 }
 
-func (dObj *gdocTxtObj) dispTable(tbl *docs.Table)(outstr string, err error) {
+func (dObj *gdocTxtObj) cvtTable(tbl *docs.Table)(outstr string, err error) {
 	var tabWidth, tabHeight float64
 	var icol, irow int64
 
@@ -328,6 +333,7 @@ func (dObj *gdocTxtObj) dispTable(tbl *docs.Table)(outstr string, err error) {
 	if tbl == nil {
 		return "", fmt.Errorf("error dispTable: no table pt")
 	}
+
 	dObj.TableCount++
 	outstr = fmt.Sprintf("  *** table %d: rows: %d cols: %d ***\n",dObj.TableCount,tbl.Rows, tbl.Columns )
 	// table rows
@@ -398,7 +404,7 @@ func (dObj *gdocTxtObj) dispTable(tbl *docs.Table)(outstr string, err error) {
             tcellstyl := tcell.TableCellStyle
 			if tcellstyl != nil {
 				if tcellstyl.BackgroundColor.Color != nil {
-					outstr += fmt.Sprintf(" color: %s", util.GetColor(tcellstyl.BackgroundColor.Color))
+					outstr += fmt.Sprintf(" color: %s", gdocUtil.GetColor(tcellstyl.BackgroundColor.Color))
 				}
 				outstr += fmt.Sprintf(" vert align: %s", tcellstyl.ContentAlignment)
 				padTop := 0.0
@@ -430,7 +436,7 @@ func (dObj *gdocTxtObj) dispTable(tbl *docs.Table)(outstr string, err error) {
 						outstr += fmt.Sprintf(" width: %.1f", tcellstyl.BorderTop.Width.Magnitude)
 					}
 					if tcellstyl.BorderTop.Color != nil {
-						outstr += fmt.Sprintf(" color: %s", util.GetColor(tcellstyl.BorderTop.Color.Color))
+						outstr += fmt.Sprintf(" color: %s", gdocUtil.GetColor(tcellstyl.BorderTop.Color.Color))
 					}
 				} else { outstr += " <no char>" }
 
@@ -442,7 +448,7 @@ func (dObj *gdocTxtObj) dispTable(tbl *docs.Table)(outstr string, err error) {
 						outstr += fmt.Sprintf(" width: %.1f", tcellstyl.BorderRight.Width.Magnitude)
 					}
 					if tcellstyl.BorderRight.Color != nil {
-						outstr += fmt.Sprintf(" color: %s", util.GetColor(tcellstyl.BorderRight.Color.Color))
+						outstr += fmt.Sprintf(" color: %s", gdocUtil.GetColor(tcellstyl.BorderRight.Color.Color))
 					}
 				} else { outstr += " <no char>" }
 
@@ -454,7 +460,7 @@ func (dObj *gdocTxtObj) dispTable(tbl *docs.Table)(outstr string, err error) {
 						outstr += fmt.Sprintf(" width: %.1f", tcellstyl.BorderBottom.Width.Magnitude)
 					}
 					if tcellstyl.BorderBottom.Color != nil {
-						outstr += fmt.Sprintf(" color: %s", util.GetColor(tcellstyl.BorderBottom.Color.Color))
+						outstr += fmt.Sprintf(" color: %s", gdocUtil.GetColor(tcellstyl.BorderBottom.Color.Color))
 					}
 				} else { outstr += " <no char>" }
 
@@ -466,14 +472,14 @@ func (dObj *gdocTxtObj) dispTable(tbl *docs.Table)(outstr string, err error) {
 						outstr += fmt.Sprintf(" width: %.1f", tcellstyl.BorderLeft.Width.Magnitude)
 					}
 					if tcellstyl.BorderLeft.Color != nil {
-						outstr += fmt.Sprintf(" color: %s", util.GetColor(tcellstyl.BorderLeft.Color.Color))
+						outstr += fmt.Sprintf(" color: %s", gdocUtil.GetColor(tcellstyl.BorderLeft.Color.Color))
 					}
 				} else { outstr += " <no char>" }
 
 				outstr += "\n"
 
 				for el:=0; el< len(tcell.Content); el++ {
-					tstr, err := dObj.dispPar(tcell.Content[el].Paragraph)
+					tstr, err := dObj.cvtPar(tcell.Content[el].Paragraph)
 					if err != nil {
 						outstr += fmt.Sprintf("error par of tablecel %d\n",el)
 					} else {
@@ -520,7 +526,7 @@ func (dObj *gdocTxtObj) dispListProp(listp *docs.ListProperties)(outstr string, 
 	return outstr, nil
 }
 
-func (dObj *gdocTxtObj) dispPar(par *docs.Paragraph)(outstr string, err error) {
+func (dObj *gdocTxtObj) cvtPar(par *docs.Paragraph)(outstr string, err error) {
 
 	if par == nil {
 		return "", fmt.Errorf("error dispPar: no par element provided! ")
@@ -546,7 +552,7 @@ func (dObj *gdocTxtObj) dispPar(par *docs.Paragraph)(outstr string, err error) {
 	for pEl:=0; pEl< len(par.Elements); pEl++ {
 		parDet := par.Elements[pEl]
 		outstr += fmt.Sprintf("    *** Par-El[%d]: [%d-%d] ", pEl, parDet.StartIndex, parDet.EndIndex)
-		t2str, err := dObj.dispParEl(parDet)
+		t2str, err := dObj.cvtParEl(parDet)
 		if err != nil {
 			outstr += fmt.Sprintf("error dispParEl %d: %v\n", pEl, err)
 		}
@@ -563,7 +569,7 @@ func (dObj *gdocTxtObj) dispPar(par *docs.Paragraph)(outstr string, err error) {
 	return outstr, nil
 }
 
-func (dObj *gdocTxtObj) dispParEl(parDet *docs.ParagraphElement)(outstr string, err error) {
+func (dObj *gdocTxtObj) cvtParEl(parDet *docs.ParagraphElement)(outstr string, err error) {
 
 	if parDet.TextRun != nil {
 		cLen := len(parDet.TextRun.Content)
@@ -588,13 +594,6 @@ func (dObj *gdocTxtObj) dispParEl(parDet *docs.ParagraphElement)(outstr string, 
 		}
 		outstr += fmt.Sprintf("   Last Char: %q\n",parDet.TextRun.Content[cLen-1:cLen])
 
-		if (parDet.TextRun.TextStyle != nil) {
-			tstr, err := dObj.dispTxtStyl(parDet.TextRun.TextStyle, 6)
-			if err != nil {
-				outstr += fmt.Sprintf("/* error disp Text Style: %v */\n", err)
-			}
-			outstr += tstr
-		}
 	} else { outstr +="\n" }
 
 	if parDet.ColumnBreak != nil {
@@ -628,11 +627,7 @@ func (dObj *gdocTxtObj) dispParEl(parDet *docs.ParagraphElement)(outstr string, 
 		}
 		outstr += fmt.Sprintf("      *** Has Page Break %s txtstyle ***\n", insTxt)
 		if (parDet.PageBreak.TextStyle != nil) {
-			tstr, err := dObj.dispTxtStyl(parDet.HorizontalRule.TextStyle, 8)
-			if err != nil {
-				outstr += fmt.Sprintf("/* error disp Text Style: %v */\n", err)
-			}
-			outstr += tstr
+//			outstr += tstr
 		}
 	} else {
 		outstr += "      *** no Page Break ***\n"
@@ -657,11 +652,8 @@ func (dObj *gdocTxtObj) dispParEl(parDet *docs.ParagraphElement)(outstr string, 
 		}
 		outstr += fmt.Sprintf("      *** Has Horizontal Rule %s txtstyle ***\n", insTxt)
 		if (parDet.HorizontalRule.TextStyle != nil) {
-			tstr, err := dObj.dispTxtStyl(parDet.HorizontalRule.TextStyle, 8)
-			if err != nil {
-				outstr += fmt.Sprintf("/* error disp Text Style: %v */\n", err)
-			}
-			outstr += tstr
+//			tstr, err := dObj.dispTxtStyl(parDet.HorizontalRule.TextStyle, 8)
+//			outstr += tstr
 		}
 	} else {
 		outstr += "      *** no Horizontal Rule ***\n"
@@ -672,8 +664,8 @@ func (dObj *gdocTxtObj) dispParEl(parDet *docs.ParagraphElement)(outstr string, 
 		outstr += fmt.Sprintf("      *** Has Footnote Reference ***\n")
 		outstr += fmt.Sprintf("          Id:     %s\n", ftref.FootnoteId)
 		outstr += fmt.Sprintf("          Number: %s\n", ftref.FootnoteNumber)
-		tstr, err := dObj.dispTxtStyl(ftref.TextStyle, 8)
-		if err == nil {outstr += tstr} else { outstr += fmt.Sprintf("       *** error %v\n", err) }
+//		tstr, err := dObj.dispTxtStyl(ftref.TextStyle, 8)
+//		if err == nil {outstr += tstr} else { outstr += fmt.Sprintf("       *** error %v\n", err) }
 	} else {
 			outstr += "      *** no Footnote Reference ***\n"
 	}
@@ -729,40 +721,6 @@ func (dObj *gdocTxtObj) dispSecStyle(secStyl *docs.SectionStyle)(outstr string, 
 	return outstr, nil
 }
 
-
-func (dObj *gdocTxtObj) dispBorder(parBorder *docs.ParagraphBorder, wsp int)(outstr string) {
-
-	if parBorder == nil {
-		outstr += "error: no Par Border Style\n"
-		return outstr
-	}
-
-	wspStr := ""
-	for i:=0; i<wsp; i++ {wspStr += " "}
-	outstr = wspStr + fmt.Sprintf("    Border Style:   %s\n", parBorder.DashStyle)
-	outstr += wspStr + fmt.Sprintf("    Border Width:   %.1f %s\n", parBorder.Width.Magnitude, parBorder.Width.Unit)
-	outstr += wspStr + fmt.Sprintf("    Border Padding: %.1f %s\n", parBorder.Padding.Magnitude, parBorder.Padding.Unit)
-	if parBorder.Color != nil {
-		if parBorder.Color.Color != nil {
-			colStr := util.GetColor(parBorder.Color.Color)
-			outstr += wspStr + fmt.Sprintf("    Border Color: %s\n", colStr)
-		}
-	}
-	return outstr
-}
-
-func (dObj *gdocTxtObj) getColor(color  *docs.Color)(outstr string) {
-	outstr = ""
-	if color != nil {
-        blue := int(color.RgbColor.Blue*255.0)
-        red := int(color.RgbColor.Red*255.0)
-        green := int(color.RgbColor.Green*255)
-        outstr += fmt.Sprintf("rgb(%d, %d, %d);\n", red, green, blue)
-		return outstr
-	}
-	outstr = "no color\n"
-	return outstr
-}
 
 func (dObj *gdocTxtObj) dispParStyl(parStyl *docs.ParagraphStyle, wsp int)(outstr string, err error) {
 
@@ -823,89 +781,9 @@ func (dObj *gdocTxtObj) dispParStyl(parStyl *docs.ParagraphStyle, wsp int)(outst
 	}
 
 
-	if parStyl.BorderBetween != nil {
-		outstr += wspStr + "  *** Border Between ***\n"
-		outstr += dObj.dispBorder(parStyl.BorderBetween, 4)
-		outstr += "\n"
-	}
-
-	if parStyl.BorderTop != nil {
-		outstr += wspStr + "  *** Border Top ***\n"
-		outstr += dObj.dispBorder(parStyl.BorderTop, 4)
-		outstr += "\n"
-	}
-
-	if parStyl.BorderRight != nil {
-		outstr += wspStr + "  *** Border Right ***\n"
-		outstr += dObj.dispBorder(parStyl.BorderRight, 4)
-		outstr += "\n"
-	}
-
-	if parStyl.BorderBottom != nil {
-		outstr += wspStr + "  *** Border Bottom ***\n"
-		outstr += dObj.dispBorder(parStyl.BorderBottom, 4)
-		outstr += "\n"
-	}
-
-	if parStyl.BorderLeft != nil {
-		outstr += wspStr + "  *** Border Left ***\n"
-		outstr += dObj.dispBorder(parStyl.BorderLeft, 4)
-		outstr += "\n"
-	}
-
 	return outstr, nil
 }
 
-func (dObj *gdocTxtObj) dispTxtStyl(txtStyl *docs.TextStyle, wsp int)(outstr string, err error) {
-
-	if txtStyl == nil {
-		return "", fmt.Errorf("error dispTxtStyl: TextStyle is nil!")
-	}
-	wspStr :=""
-	for i:=0; i< wsp; i++ {wspStr +=" "}
-
-	outstr = wspStr + "*** Text Style ***\n"
-	if len(txtStyl.BaselineOffset) > 0 {
-		outstr +=  wspStr + fmt.Sprintf("    BaseLine Offset: %s\n",txtStyl.BaselineOffset)
-	}
-	outstr += wspStr + fmt.Sprintf("    Bold:      %t\n", txtStyl.Bold)
-	outstr += wspStr + fmt.Sprintf("    Italic:    %t\n", txtStyl.Italic)
-	outstr += wspStr + fmt.Sprintf("    Underline: %t\n", txtStyl.Underline)
-	outstr += wspStr + fmt.Sprintf("    strike through: %t\n", txtStyl.Strikethrough)
-	outstr += wspStr + fmt.Sprintf("    small caps: %t\n", txtStyl.SmallCaps)
-
-	if txtStyl.WeightedFontFamily != nil {
-		outstr += wspStr + fmt.Sprintf("    Weighted Font: %s %d\n", txtStyl.WeightedFontFamily.FontFamily, txtStyl.WeightedFontFamily.Weight)
-	} else {
-		outstr += wspStr + fmt.Sprintf("    Weighted Font:  nil\n")
-	}
-	if txtStyl.FontSize != nil {
-		outstr += wspStr + fmt.Sprintf("    Font Size: %f %s\n", txtStyl.FontSize.Magnitude, txtStyl.FontSize.Unit)
-	} else {
-		outstr += wspStr + fmt.Sprintf("    Font Size: nil!\n")
-	}
-
-    if txtStyl.ForegroundColor != nil {
-        if txtStyl.ForegroundColor.Color != nil {
-            outstr += wspStr + "     foreground-color: "
-            outstr += util.GetColor(txtStyl.ForegroundColor.Color)
-            outstr += "\n"
-        }
-    }
-    if txtStyl.BackgroundColor != nil {
-        if txtStyl.BackgroundColor.Color != nil {
-            outstr += wspStr + fmt.Sprintf("     background-color:  ")
-            outstr += util.GetColor(txtStyl.BackgroundColor.Color)
-            outstr += "\n"
-        }
-    }
-    if txtStyl.Link != nil {
-		outstr += wspStr + "     Link TBD\n"
-	} else {
-		outstr += wspStr + "     Link is nil!\n"
-	}
-	return outstr, nil
-}
 
 func (dObj *gdocTxtObj) dispBodySummary()(outstr string, err error) {
 //    var listItem docList
@@ -942,6 +820,17 @@ func (dObj *gdocTxtObj) dispBodySummary()(outstr string, err error) {
 	return outstr, nil
 }
 
+func (dObj *gdocTxtObj) cvtSec(sec *docs.SectionBreak)(outstr string, err error) {
+
+	secStyl := sec.SectionStyle
+	if secStyl.SectionType == "Next_Page" {
+		dObj.pgCounter++
+		outstr += fmt.Sprintf("<<page %d>>\n", dObj.pgCounter)
+	}
+
+	return outstr, err
+}
+
 func (dObj *gdocTxtObj) dispContentEl(elStr *docs.StructuralElement)(outstr string, err error) {
 
 	if elStr == nil {
@@ -957,12 +846,10 @@ func (dObj *gdocTxtObj) dispContentEl(elStr *docs.StructuralElement)(outstr stri
 		if elStr.Paragraph.Bullet != nil {listStr = fmt.Sprintf("List Id:%-18s NL:%3d", elStr.Paragraph.Bullet.ListId, elStr.Paragraph.Bullet.NestingLevel)}
 		outstr += fmt.Sprintf(" type: %s StartIndex: %d EndIndex: %d\n",  listStr, elStr.StartIndex, elStr.EndIndex)
 		notFound = false
-		par := elStr.Paragraph
-		tstr, err := dObj.dispPar(par)
-		if err != nil {
-			return tstr, fmt.Errorf("**error** Par Style: %v", err)
-		}
-		outstr +=tstr
+//		par := elStr.Paragraph
+//		tstr, err := dObj.dispPar(par)
+//		if err != nil {return tstr, fmt.Errorf("**error** Par Style: %v", err)}
+//		outstr +=tstr
 	}
 	if elStr.SectionBreak != nil {
 		outstr += fmt.Sprintf(" type: Section Break StartIndex: %d EndIndex: %d\n", elStr.StartIndex, elStr.EndIndex)
@@ -977,7 +864,7 @@ func (dObj *gdocTxtObj) dispContentEl(elStr *docs.StructuralElement)(outstr stri
 	if elStr.Table != nil {
 		outstr += fmt.Sprintf(" type: Table StartIndex: %d EndIndex: %d\n", elStr.StartIndex, elStr.EndIndex)
 		notFound = false
-		tstr, err := dObj.dispTable(elStr.Table)
+		tstr, err := dObj.cvtTable(elStr.Table)
 		if err != nil {
 			return tstr, fmt.Errorf("**error** disp Table: %v", err)
 		}
@@ -986,7 +873,7 @@ func (dObj *gdocTxtObj) dispContentEl(elStr *docs.StructuralElement)(outstr stri
 	if elStr.TableOfContents != nil {
 		outstr += fmt.Sprintf(" type: TOC StartIndex: %d EndIndex: %d\n", elStr.StartIndex, elStr.EndIndex)
 		notFound = false
-		tstr, err := dObj.dispTOC(elStr.TableOfContents)
+		tstr, err := dObj.cvtTOC(elStr.TableOfContents)
 		if err != nil {
 			return tstr, fmt.Errorf("**error** disp TOC: %v", err)
 		}
@@ -998,44 +885,45 @@ func (dObj *gdocTxtObj) dispContentEl(elStr *docs.StructuralElement)(outstr stri
 	return outstr, nil
 }
 
-func (dObj *gdocTxtObj) dispContentElShort(elStr *docs.StructuralElement)(outstr string, err error) {
+func (dObj *gdocTxtObj) cvtBody()(outstr string, err error) {
 
-	if elStr == nil {
-		return "", fmt.Errorf("error dispContentEl -- elStr is nil")
-	}
-	if dObj == nil {
-		return "", fmt.Errorf("error dispContentEl -- dObj is nil")
-	}
-
-	if elStr.Paragraph != nil {
-		listStr := "Paragraph"
-		if elStr.Paragraph.Bullet != nil {listStr = fmt.Sprintf("List NL: %2d", elStr.Paragraph.Bullet.NestingLevel)}
-		heading := elStr.Paragraph.ParagraphStyle.HeadingId
-		if len(heading) == 0 {heading = "---"}
-		outstr += fmt.Sprintf(" type: %s parEls: %d Style: %-14s Heading: %-16s Length: %3d Start: %5d End: %5d\n", listStr, len(elStr.Paragraph.Elements),
-			elStr.Paragraph.ParagraphStyle.NamedStyleType, heading, elStr.EndIndex - elStr.StartIndex, elStr.StartIndex, elStr.EndIndex)
-	}
-
-	if elStr.SectionBreak != nil {
-		if elStr.SectionBreak.SectionStyle != nil {
-			outstr += fmt.Sprintf(" type: Section *** %s *** StartIndex: %d EndIndex: %d\n", elStr.SectionBreak.SectionStyle.SectionType, elStr.StartIndex, elStr.EndIndex)
-		} else {
-			outstr += fmt.Sprintf(" type: Section *** no Section Style *** StartIndex: %d EndIndex: %d\n", elStr.StartIndex, elStr.EndIndex)
+	body := dObj.doc.Body
+	err = nil
+	errCount := 0
+	for el:=0; el< len(body.Content); el++ {
+		elBody := body.Content[el]
+		if elBody.Paragraph != nil {
+			tstr, err := dObj.cvtPar(elBody.Paragraph)
+			if err != nil {
+				errCount++
+				outstr += fmt.Sprintf("error %d: %v\n", errCount, err)
+			}
+			outstr += tstr
 		}
-	}
+		if elBody.SectionBreak != nil {
+			tstr, err := dObj.cvtSec(elBody.SectionBreak)
+			if err != nil {
+				errCount++
+				outstr += fmt.Sprintf("error %d: %v\n", errCount, err)
+			}
+			outstr += tstr
+		}
+		if elBody.Table != nil {
+			tstr, err := dObj.cvtTable(elBody.Table)
+			if err != nil {
+				errCount++
+				outstr += fmt.Sprintf("error %d: %v\n", errCount, err)
+			}
+			outstr += tstr
+		}
 
-	if elStr.Table != nil {
-		outstr += fmt.Sprintf(" type: Table rows: %d columns: %d StartIndex: %d EndIndex: %d\n", elStr.Table.Rows, elStr.Table.Columns, elStr.StartIndex, elStr.EndIndex)
 	}
-
-	if elStr.TableOfContents != nil {
-		outstr += fmt.Sprintf(" type: TOC StartIndex: %d EndIndex: %d\n", elStr.StartIndex, elStr.EndIndex)
-	}
-
-	return outstr, nil
+	if errCount > 0 {err = fmt.Errorf("error cvtBody count: %d", errCount)}
+	return outstr, err
 }
 
-func CvtGdocToTxt(folderPath string, doc *docs.Document, options *util.OptObj)(err error) {
+
+func CvtGdocToTxt(folderPath string, doc *docs.Document, options *gdocUtil.OptObj)(err error) {
 	var outstr string
 
 	if doc == nil { return fmt.Errorf("error -- doc is nil!")}
@@ -1057,8 +945,14 @@ func CvtGdocToTxt(folderPath string, doc *docs.Document, options *util.OptObj)(e
 	outfil := docObj.txtfil
 
 	outstr = fmt.Sprintf("Document Id: %s \n", doc.DocumentId)
-	outstr += fmt.Sprintf("Revision Id: %s \n", doc.RevisionId)
+	outstr += fmt.Sprintf("Revision Id: %s \n\n", doc.RevisionId)
 	outfil.WriteString(outstr)
+
+	tstr, err := docObj.cvtBody()
+	if err != nil {
+		outstr += "*** error cvtBody ***\n"
+	}
+	outstr += tstr
 
 	// external objects
 	inObjLen := len(doc.InlineObjects)
@@ -1086,53 +980,11 @@ func CvtGdocToTxt(folderPath string, doc *docs.Document, options *util.OptObj)(e
 	}
 	outfil.WriteString(outstr)
 
-	// headers
-	headLen := len(doc.Headers)
-	outstr = fmt.Sprintf("\n*** Headers: %d ****\n",headLen)
-	knum := 0
-	for key, header := range doc.Headers {
-		knum++
-		outstr += fmt.Sprintf("  header %d: key %s  id %s elements %s\n", knum, key,header.HeaderId, len(header.Content) )
-		for i:= 0; i< len(header.Content); i++ {
-			outstr += fmt.Sprintf("  content [%d]\n", i)
-			tstr, err := docObj.dispContentEl(header.Content[i])
-			if err == nil {outstr += tstr} else {outstr += fmt.Sprintf("error %v", err)}
-		}
-	}
-	outfil.WriteString(outstr)
-
-	// footers
-	footLen := len(doc.Footers)
-	outstr = fmt.Sprintf("\n*** Footers: %d ***\n",footLen)
-	knum = 0
-	for key, footer := range doc.Footers {
-		knum++
-		outstr += fmt.Sprintf("  footer %d: key %s id %s elements: %d\n", knum, key, footer.FooterId, len(footer.Content) )
-		for i:= 0; i< len(footer.Content); i++ {
-			outstr += fmt.Sprintf("  content [%d]\n", i)
-			tstr, err := docObj.dispContentEl(footer.Content[i])
-			if err == nil {outstr += tstr} else {outstr += fmt.Sprintf("error %v", err)}
-		}
-	}
-	outfil.WriteString(outstr)
-
-	// named styles
-	outstr = ""
-	namStylCount := 0
-	for  namStyl, val := range docObj.namStylMap {
-		if val {
-			namStylCount++
-			outstr += fmt.Sprintf("  %-20s\n", namStyl)
-		}
-	}
-	outstr = fmt.Sprintf("\n*** NamedStyles: %d ***\n", namStylCount) + outstr
-
-	outfil.WriteString(outstr)
 
 	// footnotes
 	ftnoteLen := len(doc.Footnotes)
 	outstr = fmt.Sprintf("\n*** Footnotes: %d ***\n",ftnoteLen)
-	knum = 0
+	knum := 0
 	for key, ftnote := range doc.Footnotes {
 		knum++
 		outstr += fmt.Sprintf("  ftnote %2d: key: %-16s elements: %2d", knum, key, len(ftnote.Content) )
@@ -1163,186 +1015,7 @@ func CvtGdocToTxt(folderPath string, doc *docs.Document, options *util.OptObj)(e
 		}
 	}
 	outfil.WriteString(outstr)
-	// Document Lists
 
-	// Lists
-	outstr = fmt.Sprintf("\n*** Doc Lists: %d ***\n",len(docObj.docLists))
-	for i:=0; i<len(docObj.docLists); i++ {
-		outstr += fmt.Sprintf("    List %2d: id: %-18s order: %t max Nlevel: %d\n", i, docObj.docLists[i].listId, docObj.docLists[i].ord, docObj.docLists[i].maxNestLev)
-	}
-	outfil.WriteString(outstr)
-
-	// doc.Lists
-	listLen := len(doc.Lists)
-	outstr = fmt.Sprintf("\n*** Lists: %d ***\n",listLen)
-	knum = 0
-	for key, list := range doc.Lists {
-		knum++
-		nest := list.ListProperties.NestingLevels
-		outstr += fmt.Sprintf("    List %2d: id: %-18s nest levels: %d\n", knum, key, len(nest) )
-	}
-	outfil.WriteString(outstr)
-
-	// named ranges
-	nrLen := len(doc.NamedRanges)
-	outstr = fmt.Sprintf("\n*** NamedRanges: %d ***\n",nrLen)
-	knum = 0
-	for key, namrange := range doc.NamedRanges {
-		knum++
-		outstr += fmt.Sprintf("  nam range %d: key %s id %s elements %d\n", knum, key, namrange.Name, len(namrange.NamedRanges) )
-	}
-
-	outfil.WriteString(outstr)
-
-	// named styles
-	hdstyles := doc.NamedStyles
-	hdstyLen := len(hdstyles.Styles)
-	outstr = fmt.Sprintf("\n*** Named Styles: %d ***\n", hdstyLen)
-	for i:=0; i<hdstyLen; i++ {
-		stylel := hdstyles.Styles[i]
-		outstr += fmt.Sprintf("    Style[%1d]: %s \n", i,  stylel.NamedStyleType)
-	}
-
-	body := doc.Body
-	hdCount:=0
-	hdstr := ""
-	for el:=0; el< len(body.Content); el++ {
-		elObj := body.Content[el]
-		if elObj.Paragraph != nil {
-			if len(elObj.Paragraph.ParagraphStyle.HeadingId) > 0 {
-				hdstr += fmt.Sprintf("heading [%d]: namedStyle: %s Heading Id: %s\n", hdCount,
-					elObj.Paragraph.ParagraphStyle.NamedStyleType,
-					elObj.Paragraph.ParagraphStyle.HeadingId)
-				hdCount++
-			}
-		}
-	}
-	outstr = fmt.Sprintf("\n*** Headings: %d ***\n", hdCount)
-	outstr += hdstr
-	outfil.WriteString(outstr)
-
-	outstr ="\n****************** Document Style **************************\n"
-	docstyl := doc.DocumentStyle
-	outstr += fmt.Sprintf("Height: %f %s  Width %f %s\n",docstyl.PageSize.Height.Magnitude,	docstyl.PageSize.Height.Unit,docstyl.PageSize.Width.Magnitude,docstyl.PageSize.Width.Unit)
-
-	outstr += fmt.Sprintf("margin top: %f %s \n",docstyl.MarginTop.Magnitude, docstyl.MarginTop.Unit)
-	outstr += fmt.Sprintf("margin right: %f %s \n",docstyl.MarginRight.Magnitude, docstyl.MarginTop.Unit)
-	outstr += fmt.Sprintf("margin bottom: %f %s \n",docstyl.MarginBottom.Magnitude, docstyl.MarginTop.Unit)
-	outstr += fmt.Sprintf("margin left: %f %s \n",docstyl.MarginLeft.Magnitude, docstyl.MarginTop.Unit)
-
-	outfil.WriteString(outstr)
-
-
-	outstr = "\n******************** Body *********************************\n"
-	numEl := len(body.Content)
-	outstr += fmt.Sprintf("*** Body - Number of Elements: %d ***\n", numEl)
-	outstr += fmt.Sprintf("*** Body - Element Summary ***\n")
-
-	sumStr, el := docObj.dispBodySummary()
-	if err != nil {
-		outstr += fmt.Sprintf("\n *** error dispContent[%d]: %v\n", el, err)
-	}
-	outstr += sumStr
-
-	outfil.WriteString(outstr)
-
-	outstr = fmt.Sprintf("\n*** Body - Element Detail ***\n")
-
-	for el:=0; el< numEl; el++ {
-		elObj := body.Content[el]
-		outstr += fmt.Sprintf(" element:%3d ", el)
-		tStr,err := docObj.dispContentElShort(elObj)
-		if err != nil {
-			outstr += fmt.Sprintf("\n error dispContent[%d]: %v\n", el, err) + tStr
-		} else {
-			outstr += tStr
-		}
-	}
-	outfil.WriteString(outstr)
-
-	outstr = fmt.Sprintf("\n\n********************** Details *********************\n\n")
-	outstr += fmt.Sprintf("*** Body - Elements: %d ***\n", numEl)
-
-	for el:=0; el< numEl; el++ {
-		elObj := body.Content[el]
-		outstr += fmt.Sprintf("\n element: %d ", el)
-		tStr,err := docObj.dispContentEl(elObj)
-		if err != nil {
-			outstr += fmt.Sprintf("\n error dispContent[%d]: %v\n", el, err) + tStr
-		} else {
-			outstr += tStr
-		}
-	}
-	outfil.WriteString(outstr)
-
-	outstr = fmt.Sprintf("\n*** Lists (Detail): %d ***\n",len(doc.Lists))
-	knum = 0
-	for key, list := range doc.Lists {
-		knum++
-		nest := list.ListProperties.NestingLevels
-		outstr += fmt.Sprintf("\nList [%d]: id: %-15s nest levels: %d\n", knum, key, len(nest) )
-		tstr, err := docObj.dispListProp(list.ListProperties)
-		if err != nil {
-			outstr += fmt.Sprintf("error dispLists: %v\n",err)
-			break
-		}
-		outstr += tstr
-	}
-	outfil.WriteString(outstr)
-
-	outstr = "\n\n******* Named Styles **********\n"
-	hdstyles = doc.NamedStyles
-	hdstyLen = len(hdstyles.Styles)
-	outstr += fmt.Sprintf("document named styles: %d \n",hdstyLen)
-
-	for i:=0; i<hdstyLen; i++ {
-		stylel := hdstyles.Styles[i]
-		outstr += fmt.Sprintf("\nstyle[%1d]: %s \n", i,  stylel.NamedStyleType)
-		parStyl := stylel.ParagraphStyle
-		parstr, err := docObj.dispParStyl(parStyl, 4)
-		if err != nil {
-			return fmt.Errorf("error dispParStyl %d: %v", i, err)
-		}
-		outstr += parstr
-		txtStyl:= stylel.TextStyle
-		txtstr,err := docObj.dispTxtStyl(txtStyl, 4)
-		if err != nil {
-			return fmt.Errorf("error dispTxtStyl %d: %v", i, err)
-		}
-		outstr += txtstr
-	}
-	outfil.WriteString(outstr)
-
-	outstr = "\n\n************* Footnotes ************\n"
-	knum = 0
-	for key, ftnote := range doc.Footnotes {
-		knum++
-		outstr += fmt.Sprintf("  ftnote %d: key %s elements %d\n", knum, key, len(ftnote.Content) )
-		for i:= 0; i< len(ftnote.Content); i++ {
-			outstr += fmt.Sprintf("  content [%d]\n", i)
-			tstr, err := docObj.dispContentEl(ftnote.Content[i])
-			if err == nil {outstr += tstr} else {outstr += fmt.Sprintf("error %v", err)}
-		}
-	}
-
-	outstr += "****************************************\n"
-	outfil.WriteString(outstr)
-
-
-	outstr = "\n******************** Body *********************************\n"
-	outstr += fmt.Sprintf("Body - Number of Elements: %d\n", numEl)
-
-	for el:=0; el< numEl; el++ {
-		elObj := body.Content[el]
-		outstr += fmt.Sprintf("\n element: %d ", el)
-		tStr,err := docObj.dispContentEl(elObj)
-		if err != nil {
-			outstr += fmt.Sprintf("\n error dispContent[%d]: %v\n", el, err) + tStr
-		} else {
-			outstr += tStr
-		}
-	}
-	outfil.WriteString(outstr)
 
 	outfil.Close()
 	return nil
