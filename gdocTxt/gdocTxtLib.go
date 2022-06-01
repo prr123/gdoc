@@ -43,10 +43,11 @@ type gdocTxtObj struct {
     sections []sect
 	pgCounter int
     docFtnotes []docFtnote
+	ftnoteCount int
 //	namStylMap map[string]bool
 	Options *gdocUtil.OptObj
 	txtfil *os.File
-
+	listCount [10]int
 }
 
 type docList struct {
@@ -128,7 +129,7 @@ func (dObj *gdocTxtObj) initGdocTxt(folderPath string, options *gdocUtil.OptObj)
 	dObj.pgCounter = 0
 
     // footnotes
-//    dObj.ftnoteCount = 0
+    dObj.ftnoteCount = 0
 
     // section breaks
 //    parHdEnd := 0
@@ -472,10 +473,30 @@ func (dObj *gdocTxtObj) dispListProp(listp *docs.ListProperties)(outstr string, 
 
 func (dObj *gdocTxtObj) cvtPar(par *docs.Paragraph)(outstr string) {
 
-//	if par.Bullet != nil {
-// lists tbd
+	wsp := "  "
+	if par.Bullet == nil {
+		for i:=0; i< 10; i++ {dObj.listCount[i] = 0}
+	}
+	listPrefix := ""
+	if par.Bullet != nil {
+		// lists tbd
+        listid := par.Bullet.ListId
+        nestIdx := int(par.Bullet.NestingLevel)
 
+        // retrieve the list properties from the doc.Lists map
+        nestL := dObj.doc.Lists[listid].ListProperties.NestingLevels[nestIdx]
+        listOrd := gdocUtil.GetGlyphOrd(nestL)
 
+		for j:=0; j< nestIdx ; j++ {wsp += wsp}
+
+		if listOrd {
+			dObj.listCount[nestIdx]++
+			listPrefix = wsp + fmt.Sprintf("%d.  ", dObj.listCount)
+		} else {
+			listPrefix = wsp + "*  "
+		}
+
+	}
 /*
 	// indent styles
 	if par.ParagraphStyle != nil {
@@ -505,7 +526,7 @@ func (dObj *gdocTxtObj) cvtPar(par *docs.Paragraph)(outstr string) {
 		}
 	}
 */
-	outstr += parStr + "/n"
+	outstr += listPrefix + parStr + "/n"
 	return outstr
 }
 
