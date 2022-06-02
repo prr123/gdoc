@@ -273,7 +273,7 @@ func (dObj *gdocTxtDbgObj) initGdocTxt(folderPath string, options *gdocUtil.OptO
     }
 
     // create output file path/outfilNam.txt
-    outfil, err := gdocUtil.CreateOutFil(fPath, dObj.DocName,"txt")
+    outfil, err := gdocUtil.CreateOutFil(fPath, dObj.DocName,"dbgtxt")
     if err != nil {
         return fmt.Errorf("error -- gdocUtil.CreateOutFil: %v", err)
     }
