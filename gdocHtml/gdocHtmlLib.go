@@ -5,7 +5,7 @@
 //
 // for changes see github
 //
-// start: CreGdocHtmlTil
+// start: CvtGdocToHtml
 //
 
 package gdocHtml
@@ -4038,3 +4038,4 @@ func CreGdocHtmlAll(folderPath string, doc *docs.Document, options *gdocUtil.Opt
 	outfil.Close()
 	return nil
 }
+
