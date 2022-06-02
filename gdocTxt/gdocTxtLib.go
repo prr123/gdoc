@@ -26,6 +26,7 @@ const (
 
 type gdocTxtObj struct {
 	parCount int
+	cpl int
 	posImgCount int
  	inImgCount int
 	TableCount int
@@ -127,6 +128,7 @@ func (dObj *gdocTxtObj) initGdocTxt(folderPath string, options *gdocUtil.OptObj)
 	dObj.inImgCount = 0
 	dObj.TableCount = 0
 	dObj.pgCounter = 0
+	dObj.cpl = 70
 
     // footnotes
     dObj.ftnoteCount = 0
@@ -512,10 +514,28 @@ func (dObj *gdocTxtObj) cvtPar(par *docs.Paragraph)(outstr string) {
 	parStr :=""
 	for pEl:=0; pEl< len(par.Elements); pEl++ {
 		parSubEl := par.Elements[pEl]
-		if parSubEl.TextRun != nil {parStr += parSubEl.TextRun.Content}
+		if parSubEl.TextRun == nil { continue }
+		parStr += parSubEl.TextRun.Content
 	}
 
-
+	tbuf := []byte(parStr)
+	wsPos := 0
+	pEnd := 0
+	fmt.Printf("cpl: %d %d\n", dObj.cpl, len(tbuf))
+	for i:= 0; i<len(tbuf); i++ {
+		switch tbuf[i] {
+		case '\n':
+			wsPos = i
+		case ' ':
+			wsPos = i
+		default:
+			if (i - pEnd) > dObj.cpl {
+				tbuf[wsPos] = '\n'
+	fmt.Printf("wsPos: %d, pEnd: %d\n", wsPos, pEnd)
+				pEnd = wsPos
+			}
+		}
+	}
 
 /*
 	// images tbd
@@ -526,7 +546,7 @@ func (dObj *gdocTxtObj) cvtPar(par *docs.Paragraph)(outstr string) {
 		}
 	}
 */
-	outstr += listPrefix + parStr + "/n"
+	outstr += listPrefix + string(tbuf)
 	return outstr
 }
 
@@ -905,11 +925,13 @@ func CvtGdocToTxt(folderPath string, doc *docs.Document, options *gdocUtil.OptOb
 	outstr += fmt.Sprintf("Revision Id: %s \n\n", doc.RevisionId)
 	outfil.WriteString(outstr)
 
+	outstr = ""
 	tstr, err := docObj.cvtBody()
 	if err != nil {
 		outstr += "*** error cvtBody ***\n"
 	}
 	outstr += tstr
+	outfil.WriteString(outstr)
 
 	// external objects
 	inObjLen := len(doc.InlineObjects)
@@ -977,4 +999,5 @@ func CvtGdocToTxt(folderPath string, doc *docs.Document, options *gdocUtil.OptOb
 	outfil.Close()
 	return nil
 }
+
 
