@@ -1,12 +1,12 @@
-// gdocApiLib
+// gdocApiRWLib
 // author: prr
 // date: v3 11/Jan 2022
+// v4 2/6/2022
 // copyright 2022 prr azul software
 //
-// v1 from rd_Gdocv3
-// v2 added ext parameter to CreTxtOutFile
-// v3
-// 11 Jan 2022 added more error routines to Init
+// for license description and documentation:
+// see github.com/prr123/gdoc/gdocApiRW
+//
 //
 
 package gdocApiRWLib
@@ -15,13 +15,13 @@ import (
         "context"
         "encoding/json"
         "fmt"
-//        "io/ioutil"
+        "io/ioutil"
         "net/http"
         "os"
         "golang.org/x/oauth2"
-//        "golang.org/x/oauth2/google"
-//        "google.golang.org/api/docs/v1"
-//        "google.golang.org/api/option"
+        "golang.org/x/oauth2/google"
+        "google.golang.org/api/docs/v1"
+        "google.golang.org/api/option"
 )
 /*
 type GdocApiStruct  struct {
@@ -153,7 +153,7 @@ func CreOutFile(filnam string, ext string)(outfil *os.File, err error) {
 	return outfil, nil
 }
 
-/*
+
 func InitGdocRWApi() (svc *docs.Service, err error) {
         ctx := context.Background()
         b, err := ioutil.ReadFile("credGdoc.json")
@@ -167,12 +167,12 @@ func InitGdocRWApi() (svc *docs.Service, err error) {
 			return nil, fmt.Errorf("Unable to parse client secret file to config: %v", err)
         }
 
-        client := getClient(config)
+        client := GetClient(config)
 
-        svc, err := docs.NewService(ctx, option.WithHTTPClient(client))
+        svc, err = docs.NewService(ctx, option.WithHTTPClient(client))
         if err != nil {
 			return nil, fmt.Errorf("Unable to retrieve Docs client: %v", err)
         }
 	return svc, nil
 }
-*/
+
