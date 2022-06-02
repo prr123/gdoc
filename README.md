@@ -20,18 +20,22 @@ The js builds the dom to convert the gdoc file into a web file.
 
 ## gdocDomLib.go
 library that converts a Gdoc document to a base html file with a a js section and a css section.
-The js builds the dom to convert the gdoc file into a web file.# gdoc
+The js builds the dom to convert the gdoc file into a web file.
 
 ## gdocUtilLib.go  
 utility library for the options object and file/ file folder creation
 
 ## mdDomLib.go  
 library that will convert a markdown file into a javascript Dom script file.
--- not functional!
+-- not functional yet!
 
 ## mdGdocLib.go  
 library that will convert a markdown file into a google document.
--- not functional!
+-- not functional yet!
 
-=======
+## txtGdocLib.go
+library that creates a new google document from a plain text file..
+-- not functional yet!
+
+---
 
