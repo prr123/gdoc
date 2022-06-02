@@ -1,6 +1,4 @@
-# gdoc
-
-golang library for google docs
+golang libraries for google docs
 
 still work in progress!
 
@@ -19,3 +17,20 @@ library that converts a Gdoc document file to a html file with a css section or 
 ## gdocDocLib
 library that converts a Gdoc document to a base html file with a a js section and a css section.
 The js builds the dom to convert the gdoc file into a web file.
+
+## gdocDomLib.go
+library that converts a Gdoc document to a base html file with a a js section and a css section.
+The js builds the dom to convert the gdoc file into a web file.# gdoc
+
+## gdocUtilLib.go
+utility library for the options object and file/ file folder creation
+
+## mdDomLib.go
+library that will convert a markdown file into a javascript Dom script file.
+-- not functional!
+
+## mdGdocLib.go
+library that will convert a markdown file into a google document.
+-- not functional!
+=======
+

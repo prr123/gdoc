@@ -4,6 +4,8 @@
 // author: prr
 // copyright 2022 prr azul software
 //
+//		gdocHtml "google/gdoc/gdocHtml"
+
 
 package main
 
@@ -19,11 +21,16 @@ import (
 
 func main() {
 	var gd gdocApi.GdocApiStruct
+	// initialise default values
+	baseFolder := "output"
+	baseFolderSlash := baseFolder + "/"
+	opt:=""
 
     numArgs := len(os.Args)
 //	fmt.Printf("args: %d\n", numArgs)
 	cmd := os.Args[0]
-	opt:=""
+
+
 	switch numArgs {
 		case 1:
        		fmt.Println("error - no comand line arguments!")
@@ -47,24 +54,31 @@ func main() {
     docId := os.Args[1]
 
 	err := gd.InitGdocApi()
+	if err != nil {
+		fmt.Printf("error - InitGdocApi: %v!", err)
+		os.Exit(1)
+	}
+
 	srv := gd.Svc
 
 	outfilPath:= ""
 	switch {
-		case os.Args[2] == "output":
+		case numArgs == 2:
+			outfilPath = baseFolder
+		case os.Args[2] == baseFolder:
 			outfilPath = os.Args[2]
-		case strings.Index(os.Args[2], "output/")< 0:
- 			outfilPath = "output/" + os.Args[2]
-		case strings.Index(os.Args[2], "output/") == 0:
+		case strings.Index(os.Args[2], baseFolderSlash)< 0:
+ 			outfilPath = baseFolderSlash + os.Args[2]
+		case strings.Index(os.Args[2], baseFolderSlash) == 0:
 			outfilPath = os.Args[2]
 		case os.Args[2] == "":
-			outfilPath = "output"
+			outfilPath = baseFolder
 		default:
 			fmt.Printf("no valid input folder: %s", os.Args[2])
 			os.Exit(1)
 	}
 
-	fmt.Printf("*************** CctGdocToDom ************\n")
+	fmt.Printf("*************** CvtGdocToDom ************\n")
 	fmt.Printf("output folder: %s option: %s\n", outfilPath, opt)
 
 	doc, err := srv.Documents.Get(docId).Do()
@@ -80,7 +94,7 @@ func main() {
 		os.Exit(1)
 //		err = gdocHtml.CreGdocHtmlSection("", outfilPath, doc, nil)
 		if err != nil {
-			fmt.Println("error main: CreGdocHtmlSummary -- cannot convert gdoc doc: ", err)
+			fmt.Println("error main: CreGdocDomSummary -- cannot convert gdoc doc: ", err)
 			os.Exit(1)
 		}
 		fmt.Println("*** success summary ***!")
@@ -91,7 +105,7 @@ func main() {
 		os.Exit(1)
 //		err = gdocHtml.CreGdocHtmlMain(outfilPath, doc, nil)
 		if err != nil {
-			fmt.Println("error main CreGdocHtmlMain -- cannot convert gdoc file: ", err)
+			fmt.Println("error main CreGdocDomMain -- cannot convert gdoc file: ", err)
 			os.Exit(1)
 		}
 		fmt.Println("*** success main ***!")
@@ -102,15 +116,15 @@ func main() {
 		os.Exit(1)
 //		err = gdocHtml.CreGdocHtmlDoc(outfilPath, doc, nil)
 		if err != nil {
-			fmt.Println("error CreGdocHtmlDoc -- cannot convert gdoc file: ", err)
+			fmt.Println("error CreGdocDomDoc -- cannot convert gdoc file: ", err)
 			os.Exit(1)
 		}
 
-		fmt.Println("*** success all ***!")
+		fmt.Println("*** success doc ***!")
 		os.Exit(0)
 
 	case "all":
-		err = gdocDom.CreGdocAll(outfilPath, doc, nil)
+		err = gdocDom.CreGdocDomAll(outfilPath, doc, nil)
 		if err != nil {
 			fmt.Println("error CreGdocDomAll -- cannot convert gdoc file: ", err)
 			os.Exit(1)
@@ -124,4 +138,5 @@ func main() {
 		fmt.Println("exiting!")
 		os.Exit(1)
 	}
+	fmt.Println("Success!")
 }

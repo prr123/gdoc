@@ -1,0 +1,16 @@
+BaseFont:
+  Font: Calibri
+  Size: 16
+  LineSpacing: 1.2
+Output:
+  Verbose: yes
+  TOC: Yes
+  Sections: Yes
+  Img Folder: yes
+  Css File: no
+Files:
+  CssFile: yes
+  ScriptFile: yes
+  SummaryFile: yes
+Doc:
+  Doc Margin: [10, 25, 20, 25]

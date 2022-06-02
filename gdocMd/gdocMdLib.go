@@ -1,7 +1,9 @@
 // gdocMdLib.go
+// library to convert gdoc document to markdown document
+//
 // author: prr
-// created 10/2021
-// copyright 2022 prr
+// created 1/10/2021
+// copyright 2022 prr, azul software
 //
 //
 
@@ -11,9 +13,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"net/http"
-	"io"
 	"google.golang.org/api/docs/v1"
+    util "google/gdoc/gdocUtil"
 )
 
 const (
@@ -32,205 +33,261 @@ type gdocMdObj struct {
 	listmap  map[string][]int
 	listid	string
 	nestlev int
-	folder *os.File
+	folderPath string
+	outfil *os.File
 	imgFoldNam string
-	imgFoldPath string
-	verb bool
+//	imgFoldPath string
+	docLists []docList
+    headings []heading
+    sections []sect
+    docFtnotes []docFtnote
+    headCount int
+    secCount int
+    elCount int
+    ftnoteCount int
+    Options *util.OptObj
 }
 
-func (dObj *gdocMdObj) downloadImg()(err error) {
-
-	doc := dObj.doc
-	if !(len(dObj.imgFoldNam) >0) {
-		return fmt.Errorf("error downloadImg:: no imgfolder found!")
-	}
-	imgFoldPath := dObj.imgFoldPath + "/"
-	fmt.Println("image dir: ", imgFoldPath)
-
-	fmt.Printf("*** Inline Imgs: %d ***\n", len(doc.InlineObjects))
-	for k, inlObj := range doc.InlineObjects {
-		imgProp := inlObj.InlineObjectProperties.EmbeddedObject.ImageProperties
-		if verb {
-			fmt.Printf("Source: %s Obj %s\n", k, imgProp.SourceUri)
-			fmt.Printf("Content: %s Obj %s\n", k, imgProp.ContentUri)
-		}
-		if !(len(imgProp.SourceUri) > 0) {
-			return fmt.Errorf("error downloadImg:: image %s has no URI\n", k)
-		}
-		imgNam := imgFoldPath + k[4:] + ".jpeg"
-		if verb	{fmt.Printf("image path: %s\n", imgNam)}
-		URL := imgProp.ContentUri
-		httpResp, err := http.Get(URL)
-    	if err != nil {
-        	return fmt.Errorf("error downloadImg:: could not fetch %s! %v", URL, err)
-    	}
-    	defer httpResp.Body.Close()
-//	fmt.Printf("http got %s!\n", URL)
-    	if httpResp.StatusCode != 200 {
-        	return fmt.Errorf("error downloadImg:: Received non 200 response code %d!", httpResp.StatusCode)
-    	}
-//	fmt.Printf("http status: %d\n ", httpResp.StatusCode)
-    //Create a empty file
-    	outfil, err := os.Create(imgNam)
-    	if err != nil {
-        	return fmt.Errorf("error downloadImg:: cannot create img file! %v", err)
-    	}
-    	defer outfil.Close()
-//	fmt.Println("created dir")
-    	//Write the bytes to the fiel
-    	_, err = io.Copy(outfil, httpResp.Body)
-    	if err != nil {
-        	return fmt.Errorf("error downloadImg:: cannot copy img file content! %v", err)
-    	}
-	}
-
-	fmt.Printf("*** Positioned Imgs: %d ***\n", len(doc.PositionedObjects))
-	for k, posObj := range doc.PositionedObjects {
-		imgProp := posObj.PositionedObjectProperties.EmbeddedObject.ImageProperties
-		if verb {
-			fmt.Printf("Source: %s Obj %s\n", k, imgProp.SourceUri)
-			fmt.Printf("Content: %s Obj %s\n", k, imgProp.ContentUri)
-		}
-		if !(len(imgProp.SourceUri) > 0) {
-			return fmt.Errorf("error downloadImg:: image %s has no URI\n", k)
-		}
-		imgNam := imgFoldPath + k[4:] + ".jpeg"
-		if verb	{fmt.Printf("image path: %s\n", imgNam)}
-		URL := imgProp.ContentUri
-		httpResp, err := http.Get(URL)
-    	if err != nil {
-        	return fmt.Errorf("error downloadImg:: could not fetch %s! %v", URL, err)
-    	}
-    	defer httpResp.Body.Close()
-//	fmt.Printf("http got %s!\n", URL)
-    	if httpResp.StatusCode != 200 {
-        	return fmt.Errorf("error downloadImg:: Received non 200 response code %d!", httpResp.StatusCode)
-    	}
-//	fmt.Printf("http status: %d\n ", httpResp.StatusCode)
-    //Create a empty file
-    	outfil, err := os.Create(imgNam)
-    	if err != nil {
-        	return fmt.Errorf("error downloadImg:: cannot create img file! %v", err)
-    	}
-    	defer outfil.Close()
-//	fmt.Println("created dir")
-    	//Write the bytes to the fiel
-    	_, err = io.Copy(outfil, httpResp.Body)
-    	if err != nil {
-        	return fmt.Errorf("error downloadImg:: cannot copy img file content! %v", err)
-    	}
-	}
-
-    return nil
+type sect struct {
+    sNum int
+    secElStart int
+    secElEnd int
 }
 
-
-func (dObj *gdocMdObj) createImgFolder()(err error) {
-
-	filnam :=dObj.DocName
-    if len(filnam) < 2 {
-        return fmt.Errorf("error createImgFolder:: filename %s too short!", filnam)
-    }
-
-    bf := []byte(filnam)
-    // replace empty space with underscore
-    for i:= 0; i< len(filnam); i++ {
-        if bf[i] == ' ' {bf[i]='_'}
-        if bf[i] == '.' {
-            return fmt.Errorf("error createImgFolder:: filnam has period!")
-        }
-    }
-
-    imgFoldNam := "imgs_" + string(bf)
-
-	fmt.Println("output file name: ", dObj.folder.Name())
-	foldNamb := []byte(dObj.folder.Name())
-	idx := 0
-	for i:=len(foldNamb)-1; i> 0; i-- {
-		if foldNamb[i] == '/' {
-			idx = i
-			break
-		}
-	}
-
-	imgFoldPath := imgFoldNam
-	if idx > 0 {
-		imgFoldPath = string(foldNamb[:idx]) + "/" + imgFoldNam
-	}
-
-	fmt.Println("img folder path: ", imgFoldPath)
-
-	// check whether dir folder exists, if not create one
-    newDir := false
-    _, err = os.Stat(imgFoldPath)
-	if os.IsNotExist(err) {
-        err1 := os.Mkdir(imgFoldPath, os.ModePerm)
-        if err1 != nil {
-            return fmt.Errorf("error createImgFolder:: could not create img folder! %v", err1)
-        }
-        newDir = true
-    } else {
-		if err != nil {
-            return fmt.Errorf("error createImgFolder:: could not find img folder! %v", err)
-		}
-	}
-
-    // open directory
-    if !newDir {
-        err = os.RemoveAll(imgFoldPath)
-        if err != nil {
-            return fmt.Errorf("error createImgFolder:: could not delete files in image folder! %v", err)
-        }
-        err = os.Mkdir(imgFoldPath, os.ModePerm)
-        if err != nil {
-            return fmt.Errorf("error createImgFolder:: could not create img folder! %v", err)
-        }
-    }
-	dObj.imgFoldNam = imgFoldNam
-	dObj.imgFoldPath = imgFoldPath
-
-    return nil
+type heading struct {
+    hdElEnd int
+    hdElStart int
+    id string
+    text string
 }
 
+type docFtnote struct {
+    el int
+    parel int
+    id string
+    numStr string
+}
 
-func (dObj *gdocMdObj) InitGdocMd() (err error) {
+type docList struct {
+    listId string
+    maxNestLev int64
+    ord bool
+}
+
+func findDocList(list []docList, listid string) (res int) {
+
+    res = -1
+    for i:=0; i< len(list); i++ {
+        if list[i].listId == listid {
+            return i
+        }
+    }
+    return res
+}
+
+func (dObj *gdocMdObj) InitGdocMd(folderPath string, options *util.OptObj) (err error) {
+    var listItem docList
+    var heading heading
+    var sec sect
+    var ftnote docFtnote
+
     if dObj == nil {
         return fmt.Errorf("error gdocMD::Init: dObj is nil!")
     }
 	doc := dObj.doc
-	dObj.DocName = doc.Title
 	dObj.inImgCount = len(doc.InlineObjects)
 	dObj.posImgCount = len(doc.PositionedObjects)
-	totObjNum := dObj.inImgCount + dObj.posImgCount
+
     dObj.parCount = len(doc.Body.Content)
 
-	if totObjNum == 0 {return nil}
+	dNam := doc.Title
+    x := []byte(dNam)
+    for i:=0; i<len(x); i++ {
+        if x[i] == ' ' {
+            x[i] = '_'
+        }
+    }
+    dObj.DocName = string(x[:])
 
-	err = dObj.createImgFolder()
-	if err != nil {
-		return fmt.Errorf("error gdocMd::Init: could create ImgFolder: %v!", err)
+    if options == nil {
+        defOpt := new(util.OptObj)
+        util.GetDefOption(defOpt)
+        if defOpt.Verb {util.PrintOptions(defOpt)}
+        dObj.Options = defOpt
+    } else {
+        dObj.Options = options
+    }
+
+//    fPath, fexist, err := util.CreateFileFolder(folderPath, dObj.DocName)
+    fPath, fexist, err := util.CreateFileFolder(folderPath, dObj.DocName)
+    if err!= nil {
+        return fmt.Errorf("error -- util.CreateFileFolder: %v", err)
+    }
+    dObj.folderPath = fPath
+
+    // create output file path/outfilNam.txt
+    outfil, err := util.CreateOutFil(fPath, dObj.DocName,"md")
+    if err!= nil {
+        return fmt.Errorf("error -- util.CreateOutFil: %v", err)
+    }
+    dObj.outfil = outfil
+
+    if dObj.Options.Verb {
+        fmt.Println("******************* Output File ************")
+        fmt.Printf("folder path: %s ", fPath)
+        fstr := "is new!"
+        if fexist { fstr = "exists!" }
+        fmt.Printf("%s\n", fstr)
+        fmt.Println("********************************************")
+    }
+
+
+	totObjNum := dObj.inImgCount + dObj.posImgCount
+//	if totObjNum == 0 {return nil}
+
+
+	if dObj.Options.CreImgFolder && (totObjNum > 0) {
+		imgFoldPath, err := util.CreateImgFolder(fPath ,dObj.DocName)
+		if err != nil {
+			return fmt.Errorf("error -- CreateImgFolder: could create ImgFolder: %v!", err)
+		}
+		dObj.imgFoldNam = imgFoldPath
+		err = util.DownloadImages(doc, imgFoldPath, dObj.Options)
+		if err != nil {
+			return fmt.Errorf("error -- downloadImages could download images: %v!", err)
+		}
 	}
-	err = dObj.downloadImg()
-	if err != nil {
-		return fmt.Errorf("error gdocMd::Init: could download images: %v!", err)
-	}
+
+    dObj.elCount = len(doc.Body.Content)
+    // footnotes
+    dObj.ftnoteCount = 0
+
+    // section breaks
+    parHdEnd := 0
+    // last element of section
+    secPtEnd := 0
+    // set up first page
+    sec.secElStart = 0
+    dObj.sections = append(dObj.sections, sec)
+    seclen := len(dObj.sections)
+//      fmt.Println("el: ", el, "section len: ", seclen, " secPtEnd: ", secPtEnd)
+
+    for el:=0; el<dObj.elCount; el++ {
+        elObj:= doc.Body.Content[el]
+        if elObj.SectionBreak != nil {
+            if elObj.SectionBreak.SectionStyle.SectionType == "NEXT_PAGE" {
+//sss
+                sec.secElStart = el
+                dObj.sections = append(dObj.sections, sec)
+                seclen := len(dObj.sections)
+//      fmt.Println("el: ", el, "section len: ", seclen, " secPtEnd: ", secPtEnd)
+                if seclen > 1 {
+                    dObj.sections[seclen-2].secElEnd = secPtEnd
+                }
+            }
+        }
+
+       if elObj.Paragraph != nil {
+
+            if elObj.Paragraph.Bullet != nil {
+
+            // lists
+                listId := elObj.Paragraph.Bullet.ListId
+                found := findDocList(dObj.docLists, listId)
+                nestlev := elObj.Paragraph.Bullet.NestingLevel
+                if found < 0 {
+                    listItem.listId = listId
+                    listItem.maxNestLev = elObj.Paragraph.Bullet.NestingLevel
+                    nestL := doc.Lists[listId].ListProperties.NestingLevels[nestlev]
+                    listItem.ord = util.GetGlyphOrd(nestL)
+                    dObj.docLists = append(dObj.docLists, listItem)
+                } else {
+                    if dObj.docLists[found].maxNestLev < nestlev { dObj.docLists[found].maxNestLev = nestlev }
+                }
+
+            }
+
+            // headings
+            text := ""
+            if len(elObj.Paragraph.ParagraphStyle.HeadingId) > 0 {
+                heading.id = elObj.Paragraph.ParagraphStyle.HeadingId
+                heading.hdElStart = el
+
+                for parel:=0; parel<len(elObj.Paragraph.Elements); parel++ {
+                    if elObj.Paragraph.Elements[parel].TextRun != nil {
+                        text += elObj.Paragraph.Elements[parel].TextRun.Content
+                    }
+                }
+                txtlen:= len(text)
+                if text[txtlen -1] == '\n' { text = text[:txtlen-1] }
+//  fmt.Printf(" text: %s %d\n", text, txtlen)
+                heading.text = text
+
+                dObj.headings = append(dObj.headings, heading)
+                hdlen := len(dObj.headings)
+//      fmt.Println("el: ", el, "hdlen: ", hdlen, "parHdEnd: ", parHdEnd)
+                if hdlen > 1 {
+                    dObj.headings[hdlen-2].hdElEnd = parHdEnd
+                }
+            } // end headings
+
+            // footnotes
+            if len(doc.Footnotes)> 0 {
+                for parEl:=0; parEl<len(elObj.Paragraph.Elements); parEl++ {
+                    parElObj := elObj.Paragraph.Elements[parEl]
+                    if parElObj.FootnoteReference != nil {
+                        ftnote.el = el
+                        ftnote.parel = parEl
+                        ftnote.id = parElObj.FootnoteReference.FootnoteId
+                        ftnote.numStr = parElObj.FootnoteReference.FootnoteNumber
+                        dObj.docFtnotes = append(dObj.docFtnotes, ftnote)
+                    }
+                }
+            }
+
+            parHdEnd = el
+            secPtEnd = el
+        } // end paragraph
+    } // end el loop
+
+    hdlen := len(dObj.headings)
+    if hdlen > 0 {
+        dObj.headings[hdlen-1].hdElEnd = parHdEnd
+    }
+
+    seclen = len(dObj.sections)
+    if seclen > 0 {
+        dObj.sections[seclen-1].secElEnd = secPtEnd
+    }
+
+   if dObj.Options.Verb {
+        fmt.Printf("********** Headings in Document: %2d ***********\n", len(dObj.headings))
+        for i:=0; i< len(dObj.headings); i++ {
+            fmt.Printf("  heading %3d  Id: %-15s text: %-20s El Start:%3d End:%3d\n", i, dObj.headings[i].id, dObj.headings[i].text, 
+				dObj.headings[i].hdElStart, dObj.headings[i].hdElEnd)
+		}
+        fmt.Printf("\n********** Pages in Document: %2d ***********\n", len(dObj.sections))
+        for i:=0; i< len(dObj.sections); i++ {
+            fmt.Printf("  Page %3d  El Start:%3d End:%3d\n", i, dObj.sections[i].secElStart, dObj.sections[i].secElEnd)
+        }
+        fmt.Printf("\n************ Lists in Document: %2d ***********\n", len(dObj.docLists))
+        for i:=0; i< len(dObj.docLists); i++ {
+            fmt.Printf("list %3d id: %s max level: %d ordered: %t\n", i, dObj.docLists[i].listId, 
+			dObj.docLists[i].maxNestLev, dObj.docLists[i].ord)
+		}
+        fmt.Printf("\n************ Footnotes in Document: %2d ***********\n", len(dObj.docFtnotes))
+        for i:=0; i< len(dObj.docFtnotes); i++ {
+            ftn := dObj.docFtnotes[i]
+            fmt.Printf("ft %3d: Number: %-4s id: %-15s el: %3d parel: %3d\n", i, ftn.numStr, ftn.id, ftn.el, ftn.parel)
+        }
+
+        fmt.Printf("**************************************************\n\n")
+    }
+
 
     return nil
 }
 
-
-func (dObj *gdocMdObj) getColor(color  *docs.Color)(outstr string) {
-    outstr = ""
-        if color != nil {
-            blue := int(color.RgbColor.Blue*255.0)
-            red := int(color.RgbColor.Red*255.0)
-            green := int(color.RgbColor.Green*255)
-            outstr += fmt.Sprintf("rgb(%d, %d, %d);\n", red, green, blue)
-            return outstr
-        }
-    outstr = "no color\n"
-    return outstr
-}
 
 func (dObj *gdocMdObj) cvtTocName(parstr string)(tocstr string) {
 	var yLen int
@@ -341,7 +398,7 @@ func (dObj *gdocMdObj) renderPosImg(par *docs.Paragraph)(outstr string, err erro
 }
 
 
-func (dObj *gdocMdObj) cvtPelInlineImg(imgEl *docs.InlineObjectElement)(outstr string, err error) {
+func (dObj *gdocMdObj) renderInlineImg(imgEl *docs.InlineObjectElement)(outstr string, err error) {
 
    	if imgEl == nil {
         return "", fmt.Errorf("error convertPelInlineImg:: imgEl is nil!")
@@ -415,93 +472,57 @@ func (dObj *gdocMdObj) cvtPelTxt(parEl *docs.ParagraphElement)(outstr string, er
     return outstr, nil
 }
 
-func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr string, err error) {
+func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr string) {
 	var prefix, suffix, tocPrefix, tocSuffix string
-	var parStr, liststr string
+	var parStr, listStr, hdStr string
 	var NamedTxtStyl *docs.TextStyle
-	var ListProp *docs.NestingLevel
 	var doc *docs.Document
 
 	doc = dObj.doc
 
-    if par == nil {
-        return "","", fmt.Errorf("error dispParStyl: no par pt")
-    }
+	numParEl := len(par.Elements)
+	if (numParEl == 1) && (!(len(par.Elements[0].TextRun.Content) >0)) {
+		// html		return "<br>\n","", nil
+		return "\n",""
+	}
+
 
 //	fmt.Printf("  Paragraph with %d Par-Elements\n", len(par.Elements))
 	outstr = ""
 	if par.Bullet != nil {
-		liststr = ""
-		ListId := par.Bullet.ListId
-		NestLev:= par.Bullet.NestingLevel
-//		outstr += fmt.Sprintf("[//]: * (List: %s Nest: %d )\n", ListId, NestLev)
-		// need to determine whether ordered or unordered
-		ListProp = nil
-		for key, list := range doc.Lists {
-			if key == ListId {
-				ListProp = list.ListProperties.NestingLevels[NestLev]
-				break
-			}
-		}
-		if ListProp == nil {
-			outstr += "[//]: * (Error List " + ListId + " cannot find listid )\n"
-		} else {
-			liststr = ""
-			if dObj.listid != ListId {
-				// new list
-				dObj.listmap[ListId] = make([]int,5)
-				dObj.listmap[ListId][NestLev] = 1
-				dObj.listid = ListId
-				dObj.nestlev = int(NestLev)
-			} else {
-				// same list
-				if dObj.nestlev == int(NestLev) {
-					dObj.listmap[ListId][NestLev]++
-				} else {
-//	fmt.Printf("ListId: %s Nest: %d prev nest: %d val: %d\n", ListId, NestLev, dObj.nestlev, dObj.listmap[ListId][NestLev])
-					if dObj.nestlev < int(NestLev) {
-					// new sublist
-						dObj.listmap[ListId][NestLev] = 1
-						dObj.nestlev = int(NestLev)
-					} else {
-						dObj.nestlev = int(NestLev)
-						dObj.listmap[ListId][NestLev]++
-					}
-				}
-			}
+		listStr = ""
+		listid := par.Bullet.ListId
+		nestIdx:= int(par.Bullet.NestingLevel)
 
-			var i int64
-			for i=0; i<NestLev+1; i++ {
-				liststr += "   "
-			}
-			if len(ListProp.GlyphSymbol)>0 {
-				liststr += "* "
-			} else {
-				switch ListProp.GlyphType {
-					case "DECIMAL":
-						liststr += fmt.Sprintf("%d. ",dObj.listmap[ListId][NestLev])
-					default:
-						liststr += fmt.Sprintf("%d. ",dObj.listmap[ListId][NestLev])
-				}
-			}
+//        if dObj.Options.Verb {hdStr = fmt.Sprintf("<!--- List Element %d --->", dObj.parCount)}
+
+        // retrieve the list properties from the doc.Lists map
+        nestL := dObj.doc.Lists[listid].ListProperties.NestingLevels[nestIdx]
+        listOrd := util.GetGlyphOrd(nestL)
+
+        // html <li>
+		listPrefix := ""
+		for nl:=0; nl < nestIdx; nl++ {
+			listPrefix += "  "
 		}
-	}
+		if listOrd {
+	        listStr = listPrefix + "1. "
+		} else {
+			listStr = listPrefix + "* "
+		}
+    }
+
 
 	parStylTyp := par.ParagraphStyle.NamedStyleType
 	// doc styles
-	NamedStylIdx := -1
 	for i:=0; i < len(doc.NamedStyles.Styles); i++ {
 		nstyl := doc.NamedStyles.Styles[i].NamedStyleType;
 		if nstyl  == parStylTyp {
-			NamedStylIdx = i
 //			NamedParStyl = doc.NamedStyles.Styles[i].ParagraphStyle
 			NamedTxtStyl = doc.NamedStyles.Styles[i].TextStyle
 		}
 	}
 
-	if NamedStylIdx == -1 {
-		return "","",fmt.Errorf("error cvtParToMd: par style not a named style!")
-	}
 //
 //	fmt.Println("par style type: ", parStylTyp, " index: ", NamedStylIdx);
 
@@ -526,12 +547,13 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 		case "TITLE":
 			prefix ="<p style=\"font-size:20pt; text-align:center;"
 			suffix = "</p>\n\n"
-			if boldStyl {prefix += " font-weight:bold;"}
+			if boldStyl {prefix += " font-weight: 800;"}
 			if italicStyl {prefix += " font-style:italic;"}
 			titlestyl = true
 			prefix += "\">"
 			tocPrefix = prefix
 			tocSuffix = suffix
+
       	case "SUBTITLE":
 			prefix ="<p style=\"font-size:16pt;text-align:center;"
 			suffix = "</p>\n\n"
@@ -546,48 +568,49 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 			tocPrefix = "\n# ["
 			tocSuffix = fmt.Sprintf("](#")
 			decode = true
+
 		case "HEADING_2":
             prefix = "## "
 			suffix = fmt.Sprintf("    \n")
 			tocPrefix = "\n## ["
 			tocSuffix = fmt.Sprintf("](#")
 			decode = true
+
         case "HEADING_3":
 			prefix = "### "
 			suffix = fmt.Sprintf("     \n")
 			tocPrefix = "\n### ["
 			tocSuffix = fmt.Sprintf("](#")
 			decode = true
+
         case "HEADING_4":
             prefix = "#### "
 			suffix = fmt.Sprintf("     \n")
 			tocPrefix = "\n#### ["
 			tocSuffix = fmt.Sprintf("](#")
 			decode = true
+
         case "HEADING_5":
             prefix = "##### "
 			suffix = fmt.Sprintf("    \n")
 			tocPrefix = "\n##### ["
 			tocSuffix = fmt.Sprintf("](#")
 			decode = true
+
         case "HEADING_6":
             prefix = "###### "
 			suffix = fmt.Sprintf("    \n")
 			tocPrefix = "\n###### ["
 			tocSuffix = fmt.Sprintf("](#")
 			decode = true
+
         case "NORMAL_TEXT":
             prefix = ""
 			suffix = "\n\n"
+			if par.Bullet != nil {suffix = "\n"}
         default:
             prefix = fmt.Sprintf("[//]: * (Name Style: %s unknown)\n", par.ParagraphStyle.NamedStyleType)
     }
-
-	numParEl := len(par.Elements)
-	if (numParEl == 1) && (!(len(par.Elements[0].TextRun.Content) >0)) {
-//		return "<br>\n","", nil
-		return "\n","", nil
-	}
 
 	parStr = ""
 	for p:=0; p< numParEl; p++ {
@@ -618,9 +641,9 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 
 		// inline image
 		if parEl.InlineObjectElement != nil {
-            tstr, err := dObj.cvtPelInlineImg(parEl.InlineObjectElement)
+            tstr, err := dObj.renderInlineImg(parEl.InlineObjectElement)
             if err != nil {
-				outstr = fmt.Sprintf("\n[//]: # (error cvtPelInlineImg: %v)\n",err)
+				outstr = fmt.Sprintf("\n[//]: # (error renderInlineImg: %v)\n",err)
             }
 			parStr += tstr + outstr
 		}
@@ -631,11 +654,7 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 		}
 	} // loop parEl
 
-
-//	parLen := len(parStr)
-//	xb := []byte(parStr)
 	nparStr := parStr
-//fmt.Println("parstr: ",parStr," : ",len(parStr))
 
 // case of string terminated by new line
 /*
@@ -645,10 +664,10 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 */
 //fmt.Println("nparstr: ",nparStr," : ",len(nparStr))
 
-	if !(len(nparStr) > 0) {
+	if !(len(nparStr) > 0) && (par.Bullet == nil) {
 		outstr ="\n"
 		tocstr = "\n"
-		return outstr, tocstr,nil
+		return outstr, tocstr
 	}
 
 // check of new line in the middle of the string
@@ -672,70 +691,68 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 		itPrefix := "";
 		if titlestyl {
 			tocstr+= tocPrefix + n2parStr + tocSuffix + "\n"
-	    	outstr += prefix + n2parStr + suffix
+	    	outstr = prefix + n2parStr + suffix
 		} else {
 //			if subtitlestyl {
 //	    		outstr += prefix + n2parStr + suffix
 //			} else {
 				if italicStyl {itPrefix = "_"}
 				if boldStyl {boldPrefix = "**"}
-	    		outstr += "\n" + liststr + prefix + boldPrefix + itPrefix + n2parStr + itPrefix + boldPrefix + suffix
+//	    		outstr = "\n" + listStr + prefix + boldPrefix + itPrefix + n2parStr + itPrefix + boldPrefix + suffix
+	    		outstr = listStr + prefix + boldPrefix + itPrefix + n2parStr + itPrefix + boldPrefix + suffix
 //			}
 		}
 
 	if par.PositionedObjectIds != nil {
 
-
 	}
 
-	return outstr, tocstr,nil
+	return hdStr + outstr, tocstr
 }
 
 
-func CvtGdocToMd(outfil *os.File, doc *docs.Document, toc bool)(err error) {
+func CvtGdocToMd(folderPath string, doc *docs.Document, options *util.OptObj)(err error) {
 	var outstr, tocstr string
+
     docObj := new(gdocMdObj)
     docObj.doc = doc
-	docObj.folder = outfil
-    err = docObj.InitGdocMd()
+
+    err = docObj.InitGdocMd(folderPath, options)
     if err != nil {
         return fmt.Errorf("error CvtGdocToMd: could not initialise! %v", err)
     }
+
 	outstr = "[//]: * (Document Title: " + doc.Title + ")\n"
 
 	outstr += fmt.Sprintf("[//]: * (Document Id: %s)\n", doc.DocumentId)
 //	outstr += fmt.Sprintf("Revision Id: %s \n", doc.RevisionId)
+
+	outfil := docObj.outfil
 
 	_, err = outfil.WriteString(outstr)
 	if err != nil {
 		return fmt.Errorf("error CvtGdocTpMd: cannot write to file! %v", err)
 	}
 
-	outstr = ""
-	tocstr = "<p style=\"font-size:20pt; text-align:center\">Table of Contents</p>\n"
+	if (docObj.Options.Toc) && (len(docObj.headings)>2) {
+		tocstr = "<p style=\"font-size:20pt; text-align:center\">Table of Contents</p>\n"
+	}
 
 	body := doc.Body
 	elNum := len(body.Content)
 //	outstr = "\n******************** Body *********************************\n"
 
+	docObj.parCount = 0;
+	bodyStr :=""
 	for el:=0; el< elNum; el++ {
 		bodyEl := body.Content[el]
 //		outstr += fmt.Sprintf("\nelement: %d StartIndex: %d EndIndex: %d\n", el, bodyEl.StartIndex, bodyEl.EndIndex)
 		if bodyEl.Paragraph != nil {
 			par := bodyEl.Paragraph
-//			outstr += fmt.Sprintf("  Paragraph with %d Par-Elements\n", len(par.Elements))
-
-			tstr, toctstr, err :=docObj.cvtParToMd(par)
-			if err != nil {
-				outstr += fmt.Sprintf("error cvtPar: %v\n",err)
-			} else {
-				outstr += tstr
-				tocstr += toctstr
-			}
-
-			if par.ParagraphStyle != nil {
-//				outstr += "  Has Style Structure\n"
-			}
+			tstr, toctstr := docObj.cvtParToMd(par)
+			docObj.parCount++
+			bodyStr += tstr
+			tocstr += toctstr
 
 			if par.PositionedObjectIds != nil {
 				fmt.Printf("  Has Positioned Objects: %d\n", len(par.PositionedObjectIds))
@@ -744,11 +761,10 @@ func CvtGdocToMd(outfil *os.File, doc *docs.Document, toc bool)(err error) {
 					errstr := fmt.Sprintf("\n[//]: # (error cvtParPosImg: %v)\n",err)
 					imgstr = errstr + imgstr
         	    }
-				outstr += imgstr
-
+				bodyStr += imgstr
 			}
+		} // end par
 
-		}
 		if bodyEl.SectionBreak != nil {
 //			outstr += fmt.Sprintf("Section Break\n")
 		}
@@ -761,14 +777,14 @@ func CvtGdocToMd(outfil *os.File, doc *docs.Document, toc bool)(err error) {
 
 	}
 
-	if toc {
+	if (docObj.Options.Toc) && (len(docObj.headings)>2) {
+//	if len(tocstr) > 0  {
 		tocstr += "\n\n"
 		outfil.WriteString(tocstr)
 	}
 
-	outfil.WriteString(outstr)
+	outfil.WriteString(bodyStr)
 
 	outfil.Close()
 	return nil
 }
-

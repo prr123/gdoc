@@ -14,6 +14,7 @@ package main
 import (
         "fmt"
         "os"
+		"strings"
 		gdocApi "google/gdoc/gdocApi"
 		gdocTxt "google/gdoc/gdocTxt"
 )
@@ -21,43 +22,74 @@ import (
 
 func main() {
 	var gd gdocApi.GdocApiStruct
+	// intialise
+    baseFolder := "output"
+    baseFolderSlash := baseFolder + "/"
 
     numArgs := len(os.Args)
 
 	cmd := os.Args[0]
-    if numArgs < 2 {
-        fmt.Printf("*** error %s:: -- no gdoc id!\n", string(cmd[2:]))
-  		  fmt.Printf(" usage is: \"%s docId\"\n", cmd)
-        os.Exit(2)
-    }
+
+ 	switch numArgs {
+        case 1:
+            fmt.Println("error - no comand line arguments!")
+            fmt.Printf("%s usage is:\n  %s docId folder\n", cmd[2:], cmd)
+            os.Exit(1)
+        case 2:
+		// doc id
+		case 3:
+		// output folder
+		default:
+            fmt.Println("error - too many arguments!")
+            fmt.Printf("%s usage is:\n  %s folder docId\n", cmd[2:], cmd)
+            os.Exit(1)
+	}
 
     docId := os.Args[1]
 
 	err := gd.InitGdocApi()
+    if err != nil {
+        fmt.Printf("error - InitGdocApi: %v!", err)
+        os.Exit(1)
+    }
 	srv := gd.Svc
 
+    outfilPath:= ""
+    switch {
+        case numArgs == 2:
+            outfilPath = baseFolder
+        case os.Args[2] == baseFolder:
+            outfilPath = os.Args[2]
+        case strings.Index(os.Args[2], baseFolderSlash)< 0:
+            outfilPath = baseFolderSlash + os.Args[2]
+        case strings.Index(os.Args[2], baseFolderSlash) == 0:
+            outfilPath = os.Args[2]
+        case os.Args[2] == "":
+            outfilPath = baseFolder
+        default:
+            fmt.Printf("no valid input folder: %s", os.Args[2])
+            os.Exit(1)
+    }
+
+
 //	docId := "1pdI_GFPR--q88V3WNKogcPfqa5VFOpzDZASo4alCKrE"
+
+
 	doc, err := srv.Documents.Get(docId).Do()
 	if err != nil {
 		fmt.Println("Unable to retrieve data from document: ", err)
 		os.Exit(1)
 	}
+
+    fmt.Printf("*************** CvtGdocToTxt ************\n")
 	fmt.Printf("The title of the doc is: %s\n", doc.Title)
+	fmt.Printf("Destination folder: %s\n", outfilPath)
 
-	outFilNam := fmt.Sprintf("output/%s", doc.Title)
-	outfil, err := gd.CreOutFile(outFilNam, "txt")
-	if err != nil {
-		fmt.Println("error main -- cannot open out file: ", err)
-		os.Exit(1)
-	}
-
-	err = gdocTxt.CvtGdocToTxt(outfil, doc)
+	err = gdocTxt.CvtGdocToTxt(outfilPath, doc, nil)
 	if err != nil {
 		fmt.Println("error main -- cannot convert gdoc file: ", err)
 		os.Exit(1)
 	}
 
-	outfil.Close()
 	fmt.Println("Success!")
-	os.Exit(0)
 }
