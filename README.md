@@ -14,6 +14,10 @@ This library contains the subroutines to access the google docs api.
 ## gdocHtmlLib.go
 library that converts a Gdoc document file to a html file with a css section or a html file and a css file
 
+## gdocDocLib
+library that converts a Gdoc document to a base html file with a a js section and a css section.
+The js builds the dom to convert the gdoc file into a web file.
+
 ## gdocDomLib.go
 library that converts a Gdoc document to a base html file with a a js section and a css section.
 The js builds the dom to convert the gdoc file into a web file.# gdoc
@@ -28,3 +32,5 @@ library that will convert a markdown file into a javascript Dom script file.
 ## mdGdocLib.go
 library that will convert a markdown file into a google document.
 -- not functional!
+=======
+
