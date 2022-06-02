@@ -1,9 +1,12 @@
-// CvtTxtToGdoc
+// CvtTxtToGdoc.go
 // program that converts text doc to a gdoc file
 // author prr
 // created 02/06/20212
 //
+// copyright 2022 prr, Azul Software//
 //
+// for license description and documentation: 
+// see github.com/prr123/gdoc
 
 package main
 
@@ -42,13 +45,6 @@ func main() {
 
     inpFil := os.Args[1]
 
-	doc, err := txtGdoc.InitTxtGdoc(inpFil)
-    if err != nil {
-        fmt.Printf("error - InitTxtGdoc: %v!", err)
-        os.Exit(1)
-    }
-
-	srv := gd.Svc
 
     outfilPath:= ""
     switch {
@@ -67,20 +63,13 @@ func main() {
             os.Exit(1)
     }
 
-	// need to create a minimal doc first
-	doc, _ := txtGdoc.CreMinDoc(inpfil)
+	gd, err := txtGdoc.InitTxtGdoc(inpFil)
+    if err != nil {
+        fmt.Printf("error - InitTxtGdoc: %v!", err)
+        os.Exit(1)
+    }
 
-	doc, err := srv.Documents.Create(doc).Do()
-	if err != nil {
-		fmt.Println("Unable to retrieve data from document: ", err)
-		os.Exit(1)
-	}
-
-
-    fmt.Printf("*************** CvtGdocToTxt ************\n")
-	fmt.Printf("The title of the doc is: %s\n", doc.Title)
-	fmt.Printf("Destination folder: %s\n", outfilPath)
-
+	gd.OutfilPath = outfilPath
 /*
 	err = txtGdoc.CvtGdocToTxt(outfilPath, doc, nil)
 	if err != nil {
