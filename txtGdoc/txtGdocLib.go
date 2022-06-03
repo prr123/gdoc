@@ -30,7 +30,8 @@ const (
 type TxtGdocObj struct {
     doc *docs.Document
 	inpFil *os.File
-	OutfilPath string
+	InpFilPath string
+	OutFilPath string
 }
 
 func InitTxtGdoc(title string) (dObj *TxtGdocObj, err error) {
@@ -38,6 +39,8 @@ func InitTxtGdoc(title string) (dObj *TxtGdocObj, err error) {
 	var doc docs.Document
 	var ndoc *docs.Document
 	var gd TxtGdocObj
+
+	gd.InpFilPath = "inpTestTxt"
 
 	if len(title) == 0 {
 		return nil, fmt.Errorf("title has no string!")
@@ -61,7 +64,7 @@ func InitTxtGdoc(title string) (dObj *TxtGdocObj, err error) {
 
 	doc.Title = title
 
-	inpfilnam:= title + ".txt"
+	inpfilnam:= gd.InpFilPath + "/" + title + ".txt"
 
 	inpFil, err := os.Open(inpfilnam)
 	if err != nil {
@@ -85,8 +88,10 @@ func InitTxtGdoc(title string) (dObj *TxtGdocObj, err error) {
 
 
     fmt.Printf("*************** CvtGdocToTxt ************\n")
-    fmt.Printf("The title of the doc is: %s\n", ndoc.Title)
-//    fmt.Printf("Destination folder: %s\n", outfilPath)
+    fmt.Printf("The doc title is: %s\n", ndoc.Title)
+    fmt.Printf("The doc Id is:    %s\n", ndoc.DocumentId)
+
+//    fmt.Printf("Destination folder: %s\n", outFilPath)
 
 
 	return &gd, nil
