@@ -116,8 +116,10 @@ type docList struct {
 	listId string
 	maxNestLev int64
 	ord bool
+	counter [10]int
 }
 
+/*
 type nestLevel struct {
 	GlAl string
 	GlFmt string
@@ -129,7 +131,7 @@ type nestLevel struct {
     StInd float64
 	glTxtmap *textMap
 }
-
+*/
 
 type tabCell struct {
 	pad [4] float64
