@@ -17,9 +17,11 @@ import (
     "fmt"
     "os"
     "google.golang.org/api/docs/v1"
+	"google.golang.org/api/drive/v3"
 //    gdocUtil "google/gdoc/gdocUtil"
 	gdocApi "google/gdoc/gdocApiRW"
 	util "google/gdoc/util"
+	gdApi "google/gdoc/gdApi"
 )
 
 const (
@@ -29,6 +31,7 @@ const (
 
 type TxtGdocObj struct {
     doc *docs.Document
+	drSvc *drive.Service
 	inpFil *os.File
 	InpFilPath string
 	OutFilPath string
@@ -81,11 +84,16 @@ func InitTxtGdoc(title string) (dObj *TxtGdocObj, err error) {
 
     ndoc, err = srv.Documents.Create(&doc).Do()
     if err != nil {
-        fmt.Println("Unable to retrieve data from document: ", err)
+        fmt.Println("Unable to create document: ", err)
         os.Exit(1)
     }
-	gd.doc = ndoc
 
+	gdSvc, err := gdApi.InitDriveApi()
+    if err != nil {
+        fmt.Println("Unable to start drive service: ", err)
+        os.Exit(1)
+    }
+	gd.drSvc = gdSvc
 
     fmt.Printf("*************** CvtGdocToTxt ************\n")
     fmt.Printf("The doc title is: %s\n", ndoc.Title)
