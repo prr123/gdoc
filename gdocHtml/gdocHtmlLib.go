@@ -108,7 +108,7 @@ type docFtnoteTyp struct {
 
 type cList struct {
 	cListId string
-	cListCount int
+	count int
 	cOrd bool
 }
 
@@ -116,7 +116,7 @@ type docList struct {
 	listId string
 	maxNestLev int64
 	ord bool
-	counter [10]int
+//	counter [10]int
 }
 
 /*
@@ -2629,6 +2629,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parDisp dispObj, err error)
 						for nl:=cNest + 1; nl <= nestIdx; nl++ {
 							newList.cListId = listid
 							newList.cOrd = listOrd
+							newList.count = 0
 							newStack := pushLiStack(dObj.listStack, newList)
 							dObj.listStack = newStack
 
@@ -2668,6 +2669,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parDisp dispObj, err error)
 				// start a new list
 				newList.cListId = listid
 				newList.cOrd = listOrd
+				newList.count = 0
 				newStack := pushLiStack(dObj.listStack, newList)
 				dObj.listStack = newStack
 				if listOrd {
@@ -2682,10 +2684,19 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parDisp dispObj, err error)
 				}
 		}
 
+//lll
+		// CSS
+		liCss := fmt.Sprintf(".%s_li.nl_%d.lc_%d {\n", listid[4:], nestIdx, listAtt.count)
+
+		glfmt := nestL.GlyphFormat
+fmt.Printf("list count: %d glyph Format: %s\n", listAtt.count, glfmt)
+		liCss += "}/n"
 		// html <li>
-		listPrefix = fmt.Sprintf("<li class=\"%s_li nL_%d\">", listid[4:], nestIdx)
+		listPrefix = fmt.Sprintf("<li class=\"%s_li nL_%d lc_%d\">", listid[4:], nestIdx, listAtt.count)
 		listSuffix = "</li>"
 
+		listAtt.count++
+		listCss += liCss
 		// mark is css only handled by cvtPar
 
 	}
