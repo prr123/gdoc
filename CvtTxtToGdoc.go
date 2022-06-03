@@ -65,11 +65,11 @@ func main() {
 
 	gd, err := txtGdoc.InitTxtGdoc(inpFil)
     if err != nil {
-        fmt.Printf("error - InitTxtGdoc: %v!", err)
+        fmt.Printf("error - InitTxtGdoc: %v!\n", err)
         os.Exit(1)
     }
 
-	gd.OutfilPath = outfilPath
+	gd.OutFilPath = outfilPath
 /*
 	err = txtGdoc.CvtGdocToTxt(outfilPath, doc, nil)
 	if err != nil {
