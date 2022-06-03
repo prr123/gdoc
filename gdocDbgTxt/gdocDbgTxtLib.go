@@ -514,6 +514,11 @@ func (dObj *gdocTxtDbgObj) dispListProp(listp *docs.ListProperties)(outstr strin
 			outstr += "    *** no text style ***\n"
 		} else {
 			outstr += "    *** has text style ***\n"
+			tstr, err := dObj.dispTxtStyl(nlObj.TextStyle, 6)
+			if err != nil {
+				outstr += fmt.Sprintf("/* error disp Text Style: %v */\n", err)
+			}
+			outstr += tstr
 		}
 	}
 
