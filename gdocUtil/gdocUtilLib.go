@@ -72,9 +72,9 @@ type fil_opt struct {
 }
 
 type glFmt struct {
-	counter int
-	txt [10]string
-	nl [10]int
+	Counter int
+	Txt [10]string
+	Nl [10]int
 }
 
 func GetColor(color  *docs.Color)(outstr string) {
@@ -145,24 +145,24 @@ func ParseGlyphFormat(glyphFmt string)(glFmt glFmt, err error) {
 // format is in the form [txt](%dec[txt])
 	var pos [10]int
 	// find all % occurances
-	glFmt.counter = 0
+	glFmt.Counter = 0
 	pos[0] = 0
 	for i:=1; i< len(glyphFmt); i++ {
 		if glyphFmt[i] == '%' {
-			glFmt.counter++
-			pos[glFmt.counter] = i
-			if glFmt.counter > 9 {return glFmt, fmt.Errorf("counter: maximum nest levels exceeded!")}
+			glFmt.Counter++
+			pos[glFmt.Counter] = i
+			if glFmt.Counter > 9 {return glFmt, fmt.Errorf("counter: maximum nest levels exceeded!")}
 		}
 	}
 
 //	fmt.Printf("counter: %d\n", glFmt.counter)
 
-	pos[glFmt.counter+1] = len(glyphFmt)
-	if glFmt.counter == 0 {return glFmt, nil}
+	pos[glFmt.Counter+1] = len(glyphFmt)
+	if glFmt.Counter == 0 {return glFmt, nil}
 
-	glFmt.txt[0] = string(glyphFmt[:pos[1]])
+	glFmt.Txt[0] = string(glyphFmt[:pos[1]])
 
-	for i:= 1; i< glFmt.counter+1; i++ {
+	for i:= 1; i< glFmt.Counter+1; i++ {
 		nlNumChar := glyphFmt[pos[i]+1]
 		if !utilLib.IsNumeric(nlNumChar) {
 			return glFmt, fmt.Errorf("level is not numeric!")
@@ -170,8 +170,8 @@ func ParseGlyphFormat(glyphFmt string)(glFmt glFmt, err error) {
 
 //fmt.Printf("num: %d char: %c %d\n", i, nlNumChar, int(nlNumChar))
 		nlTxtStr := glyphFmt[pos[i]+2:pos[i+1]]
-		glFmt.nl[i] = int(nlNumChar) - 48
-		glFmt.txt[i] = nlTxtStr
+		glFmt.Nl[i] = int(nlNumChar) - 48
+		glFmt.Txt[i] = nlTxtStr
 	}
 
 	return glFmt, nil
@@ -180,12 +180,12 @@ func ParseGlyphFormat(glyphFmt string)(glFmt glFmt, err error) {
 func PrintGlFmt(glFmt glFmt) {
 
 	fmt.Println("************** Print glFmt **************")
-	fmt.Printf("  glyph numbers: %d\n", glFmt.counter)
-	if glFmt.counter < 1 { return}
-	fmt.Printf("  prefix: %s\n", glFmt.txt[0])
+	fmt.Printf("  glyph numbers: %d\n", glFmt.Counter)
+	if glFmt.Counter < 1 { return}
+	fmt.Printf("  prefix: %s\n", glFmt.Txt[0])
 	fmt.Printf("  nest number text\n")
-	for i:=1; i<glFmt.counter+1; i++ {
-		fmt.Printf("  %4d %5d   %s\n", i, glFmt.nl[i], glFmt.txt[i])
+	for i:=1; i<glFmt.Counter+1; i++ {
+		fmt.Printf("  %4d %5d   %s\n", i, glFmt.Nl[i], glFmt.Txt[i])
 	}
 	fmt.Println("*****************************************")
 }
