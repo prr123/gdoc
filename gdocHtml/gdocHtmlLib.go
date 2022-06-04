@@ -2590,9 +2590,6 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parDisp dispObj, err error)
     if par.Bullet != nil {
 //		var bulletTxtMap *textMap
 		// there is paragraph style for each ul and a text style for each list element
-		if par.Bullet.TextStyle != nil {
-//			bulletTxtMap = fillTxtMap(par.Bullet.TextStyle)
-		}
 
 		if dObj.Options.Verb {listHtml += fmt.Sprintf("<!-- List Element %d -->\n", dObj.parCount)}
 
@@ -2686,11 +2683,26 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parDisp dispObj, err error)
 
 //lll
 		// CSS
-		liCss := fmt.Sprintf(".%s_li.nl_%d.lc_%d {\n", listid[4:], nestIdx, listAtt.count)
+		liCss := fmt.Sprintf("li.%s_li.nl_%d.lc_%d::marker {\n", listid[4:], nestIdx, listAtt.count)
+		if par.Bullet.TextStyle != nil {
+			liCss += cvtTxtStylCss(par.Bullet.TextStyle)
+		}
+		glfmtStr := nestL.GlyphFormat
+fmt.Printf("list count: %d glyph Format: %s\n", listAtt.count, glfmtStr)
 
-		glfmt := nestL.GlyphFormat
-fmt.Printf("list count: %d glyph Format: %s\n", listAtt.count, glfmt)
+		glFmt, err := gdocUtil.ParseGlyphFormat(glfmtStr)
+		if err != nil {
+			liCss += fmt.Sprintf("/* error %s */\n", glfmtStr)
+		}
+		gdocUtil.PrintGlFmt(glFmt)
+		liCss += fmt.Sprintf("  content: %s", glFmt.Txt[0])
+		for i:=1; i<glFmt.Counter+1; i++ {
+			liCss += fmt.Sprintf("counter(%s_nL_%d)%s",listid[4:], glFmt.Nl[i] ,glFmt.Txt[i])
+		}
+		liCss +=";\n"
+		liCss += fmt.Sprintf(" \n")
 		liCss += "}/n"
+
 		// html <li>
 		listPrefix = fmt.Sprintf("<li class=\"%s_li nL_%d lc_%d\">", listid[4:], nestIdx, listAtt.count)
 		listSuffix = "</li>"
