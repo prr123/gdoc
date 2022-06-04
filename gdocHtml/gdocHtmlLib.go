@@ -2039,6 +2039,7 @@ func (dObj *GdocHtmlObj) cvtParElText(parElTxt *docs.TextRun, namedTyp string)(p
 			linkSuffix = "</a>"
 		}
 	}
+
 	if len(spanCssStr)>0 {
 		// the text has a different styling than the named style for this paragraph
 		dObj.spanCount++
@@ -2683,25 +2684,28 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parDisp dispObj, err error)
 
 //lll
 		// CSS
-		liCss := fmt.Sprintf("li.%s_li.nl_%d.lc_%d::marker {\n", listid[4:], nestIdx, listAtt.count)
+		liCss := fmt.Sprintf(".%s_li.nL_%d.lc_%d::marker {\n", listid[4:], nestIdx, listAtt.count)
 		if par.Bullet.TextStyle != nil {
 			liCss += cvtTxtStylCss(par.Bullet.TextStyle)
 		}
 		glfmtStr := nestL.GlyphFormat
-fmt.Printf("list count: %d glyph Format: %s\n", listAtt.count, glfmtStr)
+//fmt.Printf("list count: %d glyph Format: %s\n", listAtt.count, glfmtStr)
 
 		glFmt, err := gdocUtil.ParseGlyphFormat(glfmtStr)
 		if err != nil {
 			liCss += fmt.Sprintf("/* error %s */\n", glfmtStr)
 		}
-		gdocUtil.PrintGlFmt(glFmt)
-		liCss += fmt.Sprintf("  content: %s", glFmt.Txt[0])
+
+//		gdocUtil.PrintGlFmt(glFmt)
+
+		liCss += fmt.Sprintf("  content: \"%s\" ", glFmt.Txt[0])
+		liCss += fmt.Sprintf("  counter-increment: %s_li_nL_%d;\n", listid[4:], nestIdx)
 		for i:=1; i<glFmt.Counter+1; i++ {
-			liCss += fmt.Sprintf("counter(%s_nL_%d)%s",listid[4:], glFmt.Nl[i] ,glFmt.Txt[i])
+			liCss += fmt.Sprintf("counter(%s_nL_%d) \"%s\"",listid[4:], glFmt.Nl[i] ,glFmt.Txt[i])
 		}
 		liCss +=";\n"
-		liCss += fmt.Sprintf(" \n")
-		liCss += "}/n"
+//		liCss += fmt.Sprintf(" \n")
+		liCss += "}\n"
 
 		// html <li>
 		listPrefix = fmt.Sprintf("<li class=\"%s_li nL_%d lc_%d\">", listid[4:], nestIdx, listAtt.count)
@@ -3174,7 +3178,7 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 //					markprefix, marksuffix := parseGlyphFormat(glyphFormat)
 					markprefix := ""
 					marksuffix := ""
-					cssStr += fmt.Sprintf(" content: \"%s\" counter(%s_li_nL_%d, %s) \"%s\";", markprefix, listClass, nl, glyphStr, marksuffix)
+					cssStr += fmt.Sprintf(" content: \"%s\" counter(%s_li_nL_%d, %s) \"%s\";\n", markprefix, listClass, nl, glyphStr, marksuffix)
 				case false:
 
 			}
