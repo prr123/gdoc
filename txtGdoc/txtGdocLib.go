@@ -31,6 +31,7 @@ const (
 
 type TxtGdocObj struct {
     doc *docs.Document
+	svc *docs.Service
 	drSvc *drive.Service
 	inpFil *os.File
 	InpFilPath string
@@ -77,16 +78,19 @@ func InitTxtGdoc(title string) (dObj *TxtGdocObj, err error) {
 	gd.inpFil = inpFil
 
     // need to create a minimal doc first
-    srv, err := gdocApi.InitGdocRWApi()
+    svc, err := gdocApi.InitGdocRWApi()
 	if err != nil {
 		return nil, fmt.Errorf("initGocRWApi: %v", err)
 	}
 
-    ndoc, err = srv.Documents.Create(&doc).Do()
+    ndoc, err = svc.Documents.Create(&doc).Do()
     if err != nil {
         fmt.Println("Unable to create document: ", err)
         os.Exit(1)
     }
+
+	gd.svc = svc
+	gd.doc = ndoc
 
 	gdSvc, err := gdApi.InitDriveApi()
     if err != nil {
@@ -95,12 +99,72 @@ func InitTxtGdoc(title string) (dObj *TxtGdocObj, err error) {
     }
 	gd.drSvc = gdSvc
 
+	// need to add parent
+
     fmt.Printf("*************** CvtGdocToTxt ************\n")
     fmt.Printf("The doc title is: %s\n", ndoc.Title)
     fmt.Printf("The doc Id is:    %s\n", ndoc.DocumentId)
 
 //    fmt.Printf("Destination folder: %s\n", outFilPath)
 
+	// convert text into gdoc
+	gd.CvtTxtFil()
 
+	inpFil.Close()
 	return &gd, nil
+}
+
+func (dObj *TxtGdocObj) CvtTxtFil() (err error) {
+// function that reads input file
+	var eos docs.EndOfSegmentLocation
+//	var insTxtReq docs.InsertText
+	var updreqs [](*docs.Request)
+//	var bUpdResp docs.BatchUpdateDocumentResponse
+
+	infil := dObj.inpFil
+	fileInfo, err := infil.Stat()
+	if err != nil {return fmt.Errorf("infil.Stat: %v", err)}
+
+	size := fileInfo.Size()
+
+	fmt.Printf("input file size: %d\n", size)
+
+	inBuf := make([]byte, size)
+
+	infil.Read(inBuf)
+
+	doc := dObj.doc
+	svc := dObj.svc
+
+	docId := doc.DocumentId
+	eos.SegmentId = ""
+
+	ilin := 0
+	linSt:=0
+	linEnd:=0
+
+	for i:=0; i<int(size); i++ {
+		if inBuf[i] == '\n' {
+			linEnd = i
+			str := string(inBuf[linSt:linEnd])
+			insTxtReq := new(docs.InsertTextRequest)
+			(*insTxtReq).EndOfSegmentLocation = &eos
+			(*insTxtReq).Text = str
+			req := new(docs.Request)
+			(*req).InsertText = insTxtReq
+			updreqs = append(updreqs, req)
+
+			linSt = i+1
+			ilin++
+		}
+
+	}
+
+	bUpdReq := new(docs.BatchUpdateDocumentRequest)
+	bUpdReq.Requests = updreqs
+
+	bUpdResp, err := svc.Documents.BatchUpdate(docId, bUpdReq).Do()
+	if err != nil {return fmt.Errorf("BatchUpdate: %v", err)}
+	fmt.Printf("batch Update Response: %v\n", bUpdResp)
+	return nil
 }
