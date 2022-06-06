@@ -108,8 +108,10 @@ func InitTxtGdoc(title string) (dObj *TxtGdocObj, err error) {
 //    fmt.Printf("Destination folder: %s\n", outFilPath)
 
 	// convert text into gdoc
-	gd.CvtTxtFil()
-
+	err = gd.CvtTxtFil()
+	if err != nil {
+		return &gd, fmt.Errorf("cvtTxtFil: %v", err)
+	}
 	inpFil.Close()
 	return &gd, nil
 }
@@ -131,7 +133,8 @@ func (dObj *TxtGdocObj) CvtTxtFil() (err error) {
 
 	inBuf := make([]byte, size)
 
-	infil.Read(inBuf)
+	_,err = infil.Read(inBuf)
+	if err != nil {return fmt.Errorf("cannot read input file: %v", err)}
 
 	doc := dObj.doc
 	svc := dObj.svc
@@ -146,10 +149,12 @@ func (dObj *TxtGdocObj) CvtTxtFil() (err error) {
 	for i:=0; i<int(size); i++ {
 		if inBuf[i] == '\n' {
 			linEnd = i
-			str := string(inBuf[linSt:linEnd])
+			str := string(inBuf[linSt:linEnd+1])
 			insTxtReq := new(docs.InsertTextRequest)
 			(*insTxtReq).EndOfSegmentLocation = &eos
 			(*insTxtReq).Text = str
+//	fmt.Printf("insTxtReq: %v ", insTxtReq)
+//	fmt.Printf("End of Seg: %v Loc: %v Text: %s\n", (*insTxtReq).EndOfSegmentLocation, (*insTxtReq).Location, (*insTxtReq).Text)
 			req := new(docs.Request)
 			(*req).InsertText = insTxtReq
 			updreqs = append(updreqs, req)
@@ -160,11 +165,15 @@ func (dObj *TxtGdocObj) CvtTxtFil() (err error) {
 
 	}
 
+	fmt.Printf("udpreqs: %d\n", len(updreqs))
 	bUpdReq := new(docs.BatchUpdateDocumentRequest)
 	bUpdReq.Requests = updreqs
 
 	bUpdResp, err := svc.Documents.BatchUpdate(docId, bUpdReq).Do()
-	if err != nil {return fmt.Errorf("BatchUpdate: %v", err)}
-	fmt.Printf("batch Update Response: %v\n", bUpdResp)
+	if err != nil {
+		fmt.Printf("BatchUpdate: %v", err)
+		return fmt.Errorf("BatchUpdate: %v", err)
+	}
+//	fmt.Printf("batch Update Response: %v\n", bUpdResp)
 	return nil
 }
