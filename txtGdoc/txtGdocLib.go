@@ -154,7 +154,7 @@ func (dObj *TxtGdocObj) CvtTxtFil(cr bool) (err error) {
 	linEnd:=0
 	txtStr :=""
 	parEnd := false
-
+	reqCount := 0
 	for i:=0; i<int(size); i++ {
 
 		if inBuf[i] == '\n' {
@@ -174,8 +174,8 @@ func (dObj *TxtGdocObj) CvtTxtFil(cr bool) (err error) {
 							inBuf[linEnd] = ' '
 							txtStr += string(inBuf[linSt:linEnd+1])
 						} else {
-							// if the  line only contains a cr (if lineEnd !> linSt -> lineEnd = linSt)
-							txtStr = string(inBuf[linSt:])
+							// if the  line only contains a cr , print it (if lineEnd !> linSt -> lineEnd = linSt)
+							txtStr = string(inBuf[linSt:linEnd+1])
 							parEnd = true
 						}
 					default:
@@ -183,7 +183,7 @@ func (dObj *TxtGdocObj) CvtTxtFil(cr bool) (err error) {
 					}
 				} else {
 					// last char
-					txtStr += string(inBuf[linSt:linEnd+1])
+					txtStr += string(inBuf[linSt:])
 					parEnd = true
 				}
 			} else {
@@ -200,6 +200,8 @@ func (dObj *TxtGdocObj) CvtTxtFil(cr bool) (err error) {
 		}
 
 		if parEnd {
+				reqCount++
+//	fmt.Printf("req %d: %s\n", reqCount, txtStr)
 				insTxtReq := new(docs.InsertTextRequest)
 				(*insTxtReq).EndOfSegmentLocation = &eos
 				(*insTxtReq).Text = txtStr
