@@ -101,14 +101,14 @@ func InitTxtGdoc(title string) (dObj *TxtGdocObj, err error) {
 
 	// need to add parent
 
-    fmt.Printf("*************** CvtGdocToTxt ************\n")
+    fmt.Printf("*************** CvtTxtToGdoc ************\n")
     fmt.Printf("The doc title is: %s\n", ndoc.Title)
     fmt.Printf("The doc Id is:    %s\n", ndoc.DocumentId)
 
 //    fmt.Printf("Destination folder: %s\n", outFilPath)
 
 	// convert text into gdoc
-	err = gd.CvtTxtFil()
+	err = gd.CvtTxtFil(true)
 	if err != nil {
 		return &gd, fmt.Errorf("cvtTxtFil: %v", err)
 	}
@@ -116,8 +116,15 @@ func InitTxtGdoc(title string) (dObj *TxtGdocObj, err error) {
 	return &gd, nil
 }
 
-func (dObj *TxtGdocObj) CvtTxtFil() (err error) {
-// function that reads input file
+func (dObj *TxtGdocObj) CvtTxtFil(cr bool) (err error) {
+// function that reads input file and converts text into update requests
+// the cr parameter is an option that, if set, combines text lines into one paragraph.
+// the cr remove the cr at the end of a line and substitutes a white space
+// paragaph ends are:
+// 1. a text line followed by an empty line
+// 2. a text line that is less than x% of the following line
+
+
 	var eos docs.EndOfSegmentLocation
 //	var insTxtReq docs.InsertText
 	var updreqs [](*docs.Request)
@@ -131,7 +138,7 @@ func (dObj *TxtGdocObj) CvtTxtFil() (err error) {
 
 	fmt.Printf("input file size: %d\n", size)
 
-	inBuf := make([]byte, size)
+	inBuf := make([]byte, size + 2)
 
 	_,err = infil.Read(inBuf)
 	if err != nil {return fmt.Errorf("cannot read input file: %v", err)}
@@ -145,24 +152,63 @@ func (dObj *TxtGdocObj) CvtTxtFil() (err error) {
 	ilin := 0
 	linSt:=0
 	linEnd:=0
+	txtStr :=""
+	parEnd := false
 
 	for i:=0; i<int(size); i++ {
+
 		if inBuf[i] == '\n' {
 			linEnd = i
-			str := string(inBuf[linSt:linEnd+1])
-			insTxtReq := new(docs.InsertTextRequest)
-			(*insTxtReq).EndOfSegmentLocation = &eos
-			(*insTxtReq).Text = str
-//	fmt.Printf("insTxtReq: %v ", insTxtReq)
-//	fmt.Printf("End of Seg: %v Loc: %v Text: %s\n", (*insTxtReq).EndOfSegmentLocation, (*insTxtReq).Location, (*insTxtReq).Text)
-			req := new(docs.Request)
-			(*req).InsertText = insTxtReq
-			updreqs = append(updreqs, req)
+			if cr {
+				if i < int(size) - 1 {
+				// for all char but last char
+					switch {
+					case inBuf[i+1] == '\n':
+						// next line is an empty line
+						txtStr = string(inBuf[linSt:linEnd+1])
+						parEnd = true
+					case util.IsAlpha(inBuf[i+1]):
+						// next line is a text line
+						if linEnd > linSt {
+							// if the line contains text and then add text to par string
+							inBuf[linEnd] = ' '
+							txtStr += string(inBuf[linSt:linEnd+1])
+						} else {
+							// if the  line only contains a cr (if lineEnd !> linSt -> lineEnd = linSt)
+							txtStr = string(inBuf[linSt:])
+							parEnd = true
+						}
+					default:
+
+					}
+				} else {
+					// last char
+					txtStr += string(inBuf[linSt:linEnd+1])
+					parEnd = true
+				}
+			} else {
+				if i < int(size) - 1 {
+					txtStr = string(inBuf[linSt:linEnd+1])
+				} else {
+					txtStr = string(inBuf[linSt:])
+				}
+				parEnd = true
+			}
 
 			linSt = i+1
 			ilin++
 		}
 
+		if parEnd {
+				insTxtReq := new(docs.InsertTextRequest)
+				(*insTxtReq).EndOfSegmentLocation = &eos
+				(*insTxtReq).Text = txtStr
+				req := new(docs.Request)
+				(*req).InsertText = insTxtReq
+				updreqs = append(updreqs, req)
+				txtStr = ""
+				parEnd = false
+		}
 	}
 
 	fmt.Printf("udpreqs: %d\n", len(updreqs))
@@ -174,6 +220,6 @@ func (dObj *TxtGdocObj) CvtTxtFil() (err error) {
 		fmt.Printf("BatchUpdate: %v", err)
 		return fmt.Errorf("BatchUpdate: %v", err)
 	}
-//	fmt.Printf("batch Update Response: %v\n", bUpdResp)
+	fmt.Printf("batch Update Response: %v\n", bUpdResp)
 	return nil
 }
