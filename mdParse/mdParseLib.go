@@ -31,6 +31,8 @@ type mdLin struct {
 }
 
 type structEl struct {
+	emEl bool
+	comEl *comEl
 	parEl *parEl
 	tblEl *tblEl
 	imgEl *imgEl
@@ -43,6 +45,10 @@ type parEl struct {
 	fin bool
 	subEl []parSubEl
 	txtbuf []byte
+}
+
+type comEl struct {
+	txt string
 }
 
 type tblEl struct {
@@ -206,39 +212,61 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 // function that parses the linList and create an el List
 //	var el  structEl
 
+	var fch, sch, tch byte
+
 	mdP.istate = NE
 //	for lin:=0; lin<len(mdP.linList); lin++ {
-	for lin:=0; lin<10; lin++ {
+	maxLin := 10
+	if len(mdP.linList) < maxLin {maxLin = len(mdP.linList)}
+
+	for lin:=0; lin<maxLin; lin++ {
+
 		linSt := mdP.linList[lin].linSt
 		linEnd := mdP.linList[lin].linEnd
+		linLen := linEnd - linSt
 
-		fch := (*mdP.inBuf)[mdP.linList[lin].linSt]
-		sch := (*mdP.inBuf)[mdP.linList[lin].linSt + 1]
-		tch := (*mdP.inBuf)[mdP.linList[lin].linSt + 2]
-		fmt.Printf("*** line %d: state: %d\n", lin, mdP.istate)
+		fch = (*mdP.inBuf)[mdP.linList[lin].linSt]
+		sch = 0
+		tch = 0
+		if linLen > 1 {sch = (*mdP.inBuf)[mdP.linList[lin].linSt + 1]}
+		if linLen > 2 {tch = (*mdP.inBuf)[mdP.linList[lin].linSt + 2]}
+
+		fmt.Printf("*** line %d len %d: state: %d fch: %c sch: %c tch: %c\n", lin, linLen, mdP.istate, fch, sch, tch)
 		switch fch {
-			case '\r':
+			case '\n':
 				// end of par?
 				// is cr only char?
-		fmt.Printf("cr istate: %d linSt: %d linEnd %d\n", mdP.istate, linSt, linEnd)
-				if linSt+1 == linEnd {
-					if mdP.istate == PAR {
-						mdP.checkParEnd()
-						mdP.istate = NE
-					} else {
+			fmt.Printf("cr istate: %d linSt: %d linEnd %d\n", mdP.istate, linSt, linEnd)
+				if linEnd > linSt + 1 {return fmt.Errorf("line %d: text after cr", lin)}
+
+				switch mdP.istate {
+				case PAR:
+					err = mdP.checkParEnd(lin)
+					if err != nil {return fmt.Errorf("line %d ParEnd %v", lin, err)}
+					err = mdP.checkBR()
+					if err != nil {return fmt.Errorf("line %d checkBR %v", lin, err)}
+					mdP.istate = BR
+
+				case NE:
 						// insert BR element
-						mdP.checkBR()
-						mdP.istate = BR
-					}
-				} else {
-					return fmt.Errorf("line %d: text after cr", lin)
+					err = mdP.checkBR()
+					if err != nil {return fmt.Errorf("line %d checkBR %v", lin, err)}
+					mdP.istate = BR
+
+				case BR:
+					err = mdP.checkBR()
+					if err != nil {return fmt.Errorf("line %d checkBR %v", lin, err)}
+					mdP.istate = BR
+
+				default:
+					return fmt.Errorf("line %d istate %d cr", lin, mdP.istate)
 				}
+
 			case '#':
 				// heading
 				err = mdP.checkHeading(lin)
-				if err != nil {
-					return fmt.Errorf("line %d: %v", lin, err)
-				}
+				if err != nil {return fmt.Errorf("line %d: %v", lin, err)}
+				mdP.istate = NE
 
 			case '-':
 				// horizontal ruler ---
@@ -308,6 +336,10 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 				mdP.checkImage()
 
 			case '[':
+				// check comment
+				res, err := mdP.checkComment(lin)
+				if err != nil { return fmt.Errorf("lin %d comment: %v",lin, err)}
+				if res {break}
 				// link [text](
 				mdP.checkLink()
 
@@ -325,9 +357,8 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 					// paragraph
 					fmt.Println("*** par start ***")
 					mdP.istate = PAR
-					str := string((*mdP.inBuf)[linSt:linEnd-1])
-					fmt.Println(str)
-					mdP.checkPar()
+					fmt.Println(string((*mdP.inBuf)[linSt:linEnd]))
+					mdP.checkPar(lin)
 				}
 		}
 
@@ -336,23 +367,98 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 	return nil
 }
 
+
+
 func checkEOL(buf []byte)(res bool) {
 // function to test whether a line is completed with a md cr
 
 	linLen := len(buf)
 	if linLen < 2 {return false}
 
-	fmt.Printf("EOL: \"%s\"\n", string(buf[linLen-2: linLen]))
+fmt.Printf("EOL: \"%s\"\n", string(buf[linLen-2: linLen]))
 	if (buf[linLen-1] == ' ') && (buf[linLen -2] == ' ') { return true}
 	return false
 }
 
-func (mdP *mdParseObj) checkPar() {
-	fmt.Println("*** par start")
+func (mdP *mdParseObj) checkComment(lin int)(res bool, err error) {
+// method that checks whether line is a comment
+
+	var el structEl
+	var comEl comEl
+
+	linSt := mdP.linList[lin].linSt
+	linEnd := mdP.linList[lin].linEnd
+	linLen := linEnd - linSt
+	if linLen < 10 {return false, nil}
+	buf := (*mdP.inBuf)
+	if buf[linSt + 1] != '/' {return false, nil}
+	if buf[linSt + 2] != '/' {return false, nil}
+	if buf[linSt + 3] != ']' {return false, nil}
+	if buf[linSt + 4] != ':' {return false, nil}
+	if buf[linSt + 5] != ' ' {return false, nil}
+	if buf[linSt + 6] != '*' {return false, nil}
+	if buf[linSt + 7] != ' ' {return false, nil}
+	if buf[linSt + 8] != '(' {return false, fmt.Errorf("lin %d comment: no '(' found!", lin)}
+
+	closPar :=0
+	for i:= linEnd; i> linSt+8; i-- {
+		if buf[linSt + 8] != ')' {
+			closPar = i
+			break
+		}
+	}
+	if closPar == 0 {return false, fmt.Errorf("lin %d no ')' found!", lin)}
+
+	comEl.txt = string(buf[linSt+9:closPar-1])
+	el.comEl = &comEl
+	mdP.elList = append(mdP.elList, el)
+
+
+	return true, nil
 }
 
-func (mdP *mdParseObj) checkParEnd() {
-	fmt.Println("*** par end")
+func (mdP *mdParseObj) checkPar(lin int)(res bool, err error) {
+
+	var el structEl
+	var parEl parEl
+	var subEl parSubEl
+
+fmt.Println("*** checkpar start")
+	linSt := mdP.linList[lin].linSt
+	linEnd := mdP.linList[lin].linEnd
+	buf := (*mdP.inBuf)
+
+	crEOL := checkEOL(buf[linSt:linEnd-1])
+	if crEOL {
+		parEl.fin = true
+		mdP.istate = NE
+		subEl.txt = string(buf[linSt:linEnd+1])
+	} else {
+		parEl.fin = false
+		mdP.istate = PAR
+		subEl.txt = string(buf[linSt:linEnd])
+	}
+
+	parEl.subEl = append(parEl.subEl, subEl)
+	el.parEl = &parEl
+	mdP.elList = append(mdP.elList, el)
+	mdP.istate = PAR
+
+	return true, nil
+}
+
+func (mdP *mdParseObj) checkParEnd(lin int) (err error){
+
+fmt.Println("*** par end")
+	elLast := len(mdP.elList) -1
+	lastEl := mdP.elList[elLast]
+	ParEl := *lastEl.parEl
+	lastPar := len(ParEl.subEl) -1
+	subEl := ParEl.subEl[lastPar]
+	subEl.txt +="\n"
+	ParEl.fin = true
+	mdP.istate = NE
+	return nil
 }
 
 func (mdP *mdParseObj) checkHeading(lin int) (err error){
@@ -362,14 +468,14 @@ func (mdP *mdParseObj) checkHeading(lin int) (err error){
 //	listEl := mdP.elList[el]
 	linSt := mdP.linList[lin].linSt
 	linEnd := mdP.linList[lin].linEnd
-	buf := (*mdP.inBuf)[linSt:linEnd]
-	fmt.Printf("buffer: %s\n", buf[:])
+	buf := (*mdP.inBuf)
+fmt.Printf("buffer: %s\n", buf[linSt:linEnd])
 	hd := 0
 	hdEnd := linSt
 	for i:= 0; i < 7; i++ {
 		if buf[i] != '#' {
 			if buf[i] != ' ' {
-				return fmt.Errorf("no ws after #!")
+				return fmt.Errorf("line %d: no ws after #!", lin)
 			}
 			hdEnd = i
 			break
@@ -377,6 +483,7 @@ func (mdP *mdParseObj) checkHeading(lin int) (err error){
 		hd++
 	}
 	// check the end of the line
+
 	crEOL := checkEOL(buf[hdEnd+1:len(buf)-1])
 	// last char is cr. ergo paragraph not finished
 
@@ -455,9 +562,14 @@ func (mdP *mdParseObj) checkOrList() {
 
 }
 
-func (mdP *mdParseObj) checkBR() {
+func (mdP *mdParseObj) checkBR()(err error) {
 
+	var el structEl
 
+	el.emEl = true
+	mdP.elList = append(mdP.elList, el)
+
+	return nil
 }
 
 
@@ -487,12 +599,23 @@ func (mdP *mdParseObj) printElList () {
 // function that prints out the structural element list
 
 	fmt.Println("*********** El List *****")
-	fmt.Printf(" el eltyp  typ subels fin txt\n")
+	fmt.Printf("  el nam typ  subels fin txt\n")
 	for i:=0; i < len(mdP.elList); i++ {
 		el := mdP.elList[i]
-		fmt.Printf("  %d: ", i)
+		fmt.Printf(" %d: ", i)
+		if el.emEl {
+			fmt.Printf("eL: %t", el.emEl)
+		}
+		if el.comEl != nil {
+			fmt.Printf( "com: %s", el.comEl.txt)
+		}
 		if el.parEl != nil {
-			fmt.Printf( "par %d: %d %t %s", el.parEl.typ, len(el.parEl.subEl), el.parEl.fin, string(el.parEl.txtbuf[:]))
+			fmt.Printf( "par %d: %d %t\n", el.parEl.typ, len(el.parEl.subEl), el.parEl.fin)
+			ParEl := *el.parEl
+			subLen := len(ParEl.subEl)
+			for i:=0; i< subLen; i++ {
+				fmt.Printf("sub %d: %s\n", i, ParEl.subEl[i].txt)
+			}
 		}
 		if el.tblEl != nil {
 			fmt.Printf( "tbl %d %d ", el.tblEl.rows, el.tblEl.cols)
@@ -517,6 +640,6 @@ func (mdP *mdParseObj) printElList () {
 			}
 		}
 
-		fmt.Printf("\n")
+		if !(el.parEl != nil) {fmt.Printf("\n")}
 	}
 }
