@@ -219,6 +219,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 	maxLin := 10
 	if len(mdP.linList) < maxLin {maxLin = len(mdP.linList)}
 
+	fmt.Println("*************** lines **************************")
 	for lin:=0; lin<maxLin; lin++ {
 
 		linSt := mdP.linList[lin].linSt
@@ -235,6 +236,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 		switch fch {
 			case '\n':
 				// end of par?
+				// end of header?
 				// is cr only char?
 			fmt.Printf("cr istate: %d linSt: %d linEnd %d\n", mdP.istate, linSt, linEnd)
 				if linEnd > linSt + 1 {return fmt.Errorf("line %d: text after cr", lin)}
@@ -272,7 +274,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 				// horizontal ruler ---
 				mdP.checkHr()
 				// unordered list -
-				mdP.checkUnList()
+				mdP.checkUnList(lin)
 
 			case '_':
 				// horizontal ruler ___wsp/ret
@@ -287,7 +289,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 				if sch == ' ' {
 					// unordered list *wsp
 					fmt.Println("*** unordered list item")
-					mdP.checkUnList()
+					mdP.checkUnList(lin)
 					break
 				}
 
@@ -322,15 +324,18 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 
 			case '+':
 				// unordered list + wsp|par
-				mdP.checkUnList()
+				mdP.checkUnList(lin)
 
 			case '~':
 				// strike-through
 				mdP.checkStrike()
 
 			case ' ':
-				//bold italics wsp*/_
-
+				// ws
+				// nested list
+				FNCh, err := mdP.checkWs(lin)
+				if err != nil { return fmt.Errorf("lin %d checkWs: %v",lin, err)}
+				fmt.Printf("FNCh: %c\n",FNCh)
 			case '!':
 				// image
 				mdP.checkImage()
@@ -375,9 +380,28 @@ func checkEOL(buf []byte)(res bool) {
 	linLen := len(buf)
 	if linLen < 2 {return false}
 
-fmt.Printf("EOL: \"%s\"\n", string(buf[linLen-2: linLen]))
-	if (buf[linLen-1] == ' ') && (buf[linLen -2] == ' ') { return true}
+fmt.Printf("EOL: '%c' '%c'\n", buf[linLen-2], buf[linLen-1])
+	if (buf[linLen-2] == ' ') && (buf[linLen-1] == ' ') { return true}
 	return false
+}
+
+func (mdP *mdParseObj) checkWs(lin int)(fch byte, err error) {
+
+	linSt := mdP.linList[lin].linSt
+	linEnd := mdP.linList[lin].linEnd
+//	linLen := linEnd - linSt
+
+	buf := (*mdP.inBuf)
+	fnchpos := 0;
+	for i:=linSt; i < linEnd; i++ {
+		if buf[i] != ' ' {
+			fnchpos = i
+		}
+	}
+	if fnchpos == 0 { return 0, fmt.Errorf("line %d all ws", lin) }
+
+	fch = buf[fnchpos]
+	return fch, nil
 }
 
 func (mdP *mdParseObj) checkComment(lin int)(res bool, err error) {
@@ -461,6 +485,22 @@ fmt.Println("*** par end")
 	return nil
 }
 
+/*
+func (mdP *mdParseObj) checkHeadEnd(lin int) (err error){
+
+fmt.Println("*** heading end")
+	elLast := len(mdP.elList) -1
+	lastEl := mdP.elList[elLast]
+	HdEl := *lastEl.hdEl
+	lastPar := len(HdEl.subEl) -1
+	subEl := HdEl.subEl[lastPar]
+	subEl.txt +="\n"
+	HdEl.fin = true
+	mdP.istate = NE
+	return nil
+}
+*/
+
 func (mdP *mdParseObj) checkHeading(lin int) (err error){
 // function that parses a line for headings
 	var el structEl
@@ -469,7 +509,7 @@ func (mdP *mdParseObj) checkHeading(lin int) (err error){
 	linSt := mdP.linList[lin].linSt
 	linEnd := mdP.linList[lin].linEnd
 	buf := (*mdP.inBuf)
-fmt.Printf("buffer: %s\n", buf[linSt:linEnd])
+fmt.Printf("heading buffer: %s\n", buf[linSt:linEnd])
 	hd := 0
 	hdEnd := linSt
 	for i:= 0; i < 7; i++ {
@@ -484,10 +524,10 @@ fmt.Printf("buffer: %s\n", buf[linSt:linEnd])
 	}
 	// check the end of the line
 
-	crEOL := checkEOL(buf[hdEnd+1:len(buf)-1])
+	crEOL := checkEOL(buf[hdEnd+1:linEnd])
 	// last char is cr. ergo paragraph not finished
 
-	txtstr := string(buf[hdEnd+1:len(buf)-1])
+	txtstr := string(buf[hdEnd+1:linEnd])
 	mdP.istate = PAR
 	hdStr := fmt.Sprintf("h%d", hd)
 	hdtyp := 0
@@ -514,7 +554,7 @@ fmt.Printf("buffer: %s\n", buf[linSt:linEnd])
 	if crEOL {parEl.fin = true}
 	el.parEl = &parEl
 	mdP.elList = append(mdP.elList, el)
-
+	mdP.istate = PAR
 	return nil
 }
 
@@ -530,7 +570,54 @@ func (mdP *mdParseObj) checkItalics() {
 
 }
 
-func (mdP *mdParseObj) checkUnList() {
+// lll
+func (mdP *mdParseObj) checkUnList(lin int) {
+
+	var el structEl
+	var ulEl uList
+	var parEl parEl
+	var subEl parSubEl
+
+//	listEl := mdP.elList[el]
+	linSt := mdP.linList[lin].linSt
+	linEnd := mdP.linList[lin].linEnd
+	buf := (*mdP.inBuf)
+	parSt:=0
+	istate := 0
+	for i:= linSt; i< linEnd; i++ {
+		switch istate {
+			case 0:
+			if buf[i] == '*' {
+				istate = 1
+			}
+
+			case 1:
+			if !(buf[i] == ' ') {
+				parSt = i
+			}
+			default:
+		}
+		if parSt > 0 {break}
+	}
+
+
+	crEOL := checkEOL(buf[parSt:linEnd-1])
+	if crEOL {
+		parEl.fin = true
+		mdP.istate = NE
+		subEl.txt = string(buf[parSt:linEnd+1])
+	} else {
+		parEl.fin = false
+		mdP.istate = PAR
+		subEl.txt = string(buf[parSt:linEnd])
+	}
+fmt.Printf("uel: %s\n", subEl.txt)
+	parEl.subEl = append(parEl.subEl, subEl)
+	ulEl.nest = 0
+	ulEl.parEl = &parEl
+	el.ulEl = &ulEl
+	mdP.elList = append(mdP.elList, el)
+	mdP.istate = PAR
 
 }
 
