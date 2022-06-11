@@ -88,12 +88,8 @@ const (
 	BR
 	HR
 	PAR
-	UL0
-	OL0
-	UL1
-	OL1
-	UL2
-	OL2
+	UL
+	OL
 )
 
 //html elements
@@ -125,17 +121,18 @@ const (
 
 func dispState(num int)(str string) {
 
-	var stateDisp [9]string
+	var stateDisp [6]string
 
 	stateDisp[0] = "NE"
 	stateDisp[1] = "BR"
-	stateDisp[2] = "PAR"
-	stateDisp[3] = "UL0"
-	stateDisp[4] = "OL0"
-	stateDisp[5] = "UL1"
-	stateDisp[6] = "OL1"
-	stateDisp[7] = "UL2"
-	stateDisp[8] = "OL2"
+	stateDisp[2] = "HR"
+	stateDisp[3] = "PAR"
+	stateDisp[4] = "UL"
+	stateDisp[5] = "OL"
+//	stateDisp[5] = "UL1"
+//	stateDisp[6] = "OL1"
+//	stateDisp[7] = "UL2"
+//	stateDisp[8] = "OL2"
 
 	if num > len(stateDisp)-1 {return ""}
 	return stateDisp[num]
@@ -276,13 +273,16 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 		if linLen > 1 {sch = (*mdP.inBuf)[mdP.linList[lin].linSt + 1]}
 		if linLen > 2 {tch = (*mdP.inBuf)[mdP.linList[lin].linSt + 2]}
 
-		fmt.Printf("*** line %d: state-st: %s fch: %c sch: %c tch: %c ::", lin, dispState(mdP.istate), fch, sch, tch)
+		if fch == '\n' {
+			fmt.Printf("*** line %d: state-st: %s fch: CR sch: %c tch: %c ::", lin, dispState(mdP.istate), sch, tch)
+		} else {
+			fmt.Printf("*** line %d: state-st: %s fch: %c sch: %c tch: %c ::", lin, dispState(mdP.istate), fch, sch, tch)
+		}
 		switch fch {
 			case '\n':
 				// end of par?
 				// end of header?
 				// is cr only char?
-//			fmt.Printf("cr istate: %s \n", mdP.istate, linSt, linEnd)
 				if linEnd > linSt + 1 {return fmt.Errorf("line %d: text after cr", lin)}
 
 				switch mdP.istate {
@@ -291,18 +291,31 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 					if err != nil {return fmt.Errorf("line %d ParEnd %v", lin, err)}
 					err = mdP.checkBR()
 					if err != nil {return fmt.Errorf("line %d checkBR %v", lin, err)}
+		fmt.Println(" PAR empty line")
 
 				case NE:
 						// insert BR element
 					err = mdP.checkBR()
 					if err != nil {return fmt.Errorf("line %d checkBR %v", lin, err)}
+		fmt.Println(" empty line")
 
 				case BR:
 					err = mdP.checkBR()
 					if err != nil {return fmt.Errorf("line %d checkBR %v", lin, err)}
+		fmt.Println(" empty line")
+
+				case HR:
+					err = mdP.checkBR()
+					if err != nil {return fmt.Errorf("line %d checkBR %v", lin, err)}
+		fmt.Println(" empty line")
+
+				case UL, OL:
+					err = mdP.checkBR()
+					if err != nil {return fmt.Errorf("line %d checkBR %v", lin, err)}
+		fmt.Println(" UL empty line")
 
 				default:
-					return fmt.Errorf("line %d istate %d cr", lin, mdP.istate)
+					return fmt.Errorf("line %d istate %s cr", lin, dispState(mdP.istate))
 				}
 
 			case '#':
@@ -315,6 +328,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 				if mdP.checkHr(lin) {break}
 
 				// unordered list -
+fmt.Println("- check Unlist")
 				mdP.checkUnList(lin)
 //				if err != nil {return fmt.Errorf("line %d: checkUnList %v", lin, err)}
 			case '_':
@@ -758,6 +772,7 @@ func (mdP *mdParseObj) checkHr(lin int) (res bool) {
 			break
 		}
 	}
+fmt.Printf("HR %c numCh: %d ", ch, numCh)
 	res = false
 	if numCh >2 {
 		el.hrEl = true
@@ -765,6 +780,7 @@ func (mdP *mdParseObj) checkHr(lin int) (res bool) {
 		mdP.istate = HR
 		res = true
 	}
+fmt.Printf(" res %t state: %s \n", res, dispState(mdP.istate))
 	return res
 }
 
@@ -871,7 +887,7 @@ func (mdP *mdParseObj) checkBR()(err error) {
 
 	el.emEl = true
 	mdP.elList = append(mdP.elList, el)
-
+	mdP.istate = BR
 	return nil
 }
 
@@ -907,18 +923,18 @@ func (mdP *mdParseObj) printElList () {
 		el := mdP.elList[i]
 		fmt.Printf("el %3d: ", i)
 		if el.emEl {
-			fmt.Printf("eL: %t", el.emEl)
+			fmt.Printf("eL: %t\n", el.emEl)
 			continue
 		}
 
 		if el.hrEl {
-			fmt.Printf("HL: %t", el.hrEl)
+			fmt.Printf("HR: %t\n", el.hrEl)
 			continue
 		}
 
 
 		if el.comEl != nil {
-			fmt.Printf( "com: %s", el.comEl.txt)
+			fmt.Printf( "com: %s\n", el.comEl.txt)
 			continue
 		}
 
@@ -934,24 +950,25 @@ func (mdP *mdParseObj) printElList () {
 					fmt.Printf("         subel %d: %s\n", i, ParEl.subEl[i].txt)
 				}
 			}
+			fmt.Printf("\n")
 			continue
 		}
 		if el.tblEl != nil {
-			fmt.Printf( "tbl: rows: %d  cols: %d ", el.tblEl.rows, el.tblEl.cols)
+			fmt.Printf( "tbl: rows: %d  cols: %d \n", el.tblEl.rows, el.tblEl.cols)
 			continue
 		}
 		if el.imgEl != nil {
-			fmt.Printf( "img h: %d w: %d src: %s", el.imgEl.height, el.imgEl.width, el.imgEl.src)
+			fmt.Printf( "img h: %d w: %d src: %s \n", el.imgEl.height, el.imgEl.width, el.imgEl.src)
 			continue
 		}
 		if el.ulEl != nil {
-			fmt.Printf( "ul nest %d ", el.ulEl.nest)
+			fmt.Printf( "ul nest %d: ", el.ulEl.nest)
 			if el.ulEl.parEl != nil {
 				ParEl := el.ulEl.parEl
-				fmt.Printf( "par typ: %-5s subels: %d stat: %t", dispHtmlEl(ParEl.typ), len(ParEl.subEl), ParEl.fin)
+				fmt.Printf( "  par typ: %-5s subels: %d stat: %t", dispHtmlEl(ParEl.typ), len(ParEl.subEl), ParEl.fin)
 				subLen := len(ParEl.subEl)
 				if subLen == 1 {
-					fmt.Printf("         subel 0: %s", ParEl.subEl[0].txt)
+					fmt.Printf("         subel 0: %s\n", ParEl.subEl[0].txt)
 				} else {
 					for i:=0; i< subLen; i++ {
 						fmt.Printf("         subel %d: %s\n", i, ParEl.subEl[i].txt)
@@ -970,7 +987,7 @@ func (mdP *mdParseObj) printElList () {
 				fmt.Printf( "par typ: %-5s subels: %d stat %t", dispHtmlEl(ParEl.typ), len(ParEl.subEl), ParEl.fin)
 				subLen := len(ParEl.subEl)
 				if subLen == 1 {
-					fmt.Printf("         subel 0: %s", ParEl.subEl[0].txt)
+					fmt.Printf("         subel 0: %s\n", ParEl.subEl[0].txt)
 				} else {
 					for i:=0; i< subLen; i++ {
 						fmt.Printf("         subel %d: %s\n", i, ParEl.subEl[i].txt)
@@ -982,6 +999,5 @@ func (mdP *mdParseObj) printElList () {
 			continue
 		}
 
-		if !(el.parEl != nil) {fmt.Printf("\n")}
 	}
 }
