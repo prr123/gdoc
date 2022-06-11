@@ -741,7 +741,7 @@ func (mdP *mdParseObj) printElList () {
 	fmt.Printf("  el nam typ  subels fin txt\n")
 	for i:=0; i < len(mdP.elList); i++ {
 		el := mdP.elList[i]
-		fmt.Printf("el %d: ", i)
+		fmt.Printf("el %3d: ", i)
 		if el.emEl {
 			fmt.Printf("eL: %t", el.emEl)
 		}
@@ -753,7 +753,7 @@ func (mdP *mdParseObj) printElList () {
 			fmt.Printf( "par %-5s: subels: %d status: %t\n", dispHtmlEl(ParEl.typ), len(ParEl.subEl), ParEl.fin)
 			subLen := len(ParEl.subEl)
 			if subLen == 1 {
-				fmt.Printf("         subel 0: %s", ParEl.subEl[0].txt)
+				fmt.Printf("         subel 0: %s\n", ParEl.subEl[0].txt)
 			} else {
 				for i:=0; i< subLen; i++ {
 					fmt.Printf("         subel %d: %s\n", i, ParEl.subEl[i].txt)
