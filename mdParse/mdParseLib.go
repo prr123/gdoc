@@ -32,6 +32,7 @@ type mdLin struct {
 
 type structEl struct {
 	emEl bool
+	hrEl bool
 	comEl *comEl
 	parEl *parEl
 	tblEl *tblEl
@@ -85,6 +86,7 @@ type parSubEl struct {
 const (
 	NE = iota
 	BR
+	HR
 	PAR
 	UL0
 	OL0
@@ -310,13 +312,14 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 
 			case '-':
 				// horizontal ruler ---
-				mdP.checkHr()
+				if mdP.checkHr(lin) {break}
+
 				// unordered list -
 				mdP.checkUnList(lin)
-
+//				if err != nil {return fmt.Errorf("line %d: checkUnList %v", lin, err)}
 			case '_':
 				// horizontal ruler ___wsp/ret
-				mdP.checkHr()
+				if mdP.checkHr(lin) {break}
 				// bold text wsp__text__wsp
 				mdP.checkBold()
 				// italics wsp_text_wsp
@@ -340,7 +343,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 					if tch == '*' {
 						fmt.Println("*** horizontal ruler")
 						// horizontal ruler ***wsp|text
-						mdP.checkHr()
+						mdP.checkHr(lin)
 					}
 					break
 				}
@@ -738,8 +741,31 @@ func (mdP *mdParseObj) checkHeading(lin int) (err error){
 	return nil
 }
 
-func (mdP *mdParseObj) checkHr() {
 
+func (mdP *mdParseObj) checkHr(lin int) (res bool) {
+	var el structEl
+
+//	listEl := mdP.elList[el]
+	linSt := mdP.linList[lin].linSt
+	linEnd := mdP.linList[lin].linEnd
+	buf := (*mdP.inBuf)
+	numCh:=0
+	ch := buf[linSt]
+	for i:= linSt+1; i< linEnd; i++ {
+		if buf[i] == ch {
+			numCh++
+		} else {
+			break
+		}
+	}
+	res = false
+	if numCh >2 {
+		el.hrEl = true
+		mdP.elList = append(mdP.elList, el)
+		mdP.istate = HR
+		res = true
+	}
+	return res
 }
 
 func (mdP *mdParseObj) checkBold(){
@@ -854,7 +880,7 @@ func (mdP *mdParseObj) printLinList()() {
 
 	fmt.Printf("line Start End Fch text\n")
 	for el:=0; el<len(mdP.linList); el++ {
-		fmt.Printf("el %2d %3d %3d ", el, mdP.linList[el].linSt, mdP.linList[el].linEnd)
+		fmt.Printf("line %3d: %3d %3d ", el, mdP.linList[el].linSt, mdP.linList[el].linEnd)
 		str:=string((*mdP.inBuf)[mdP.linList[el].linSt:mdP.linList[el].linEnd])
 		fmt.Printf("%q:%s\n", (*mdP.inBuf)[mdP.linList[el].linSt], str)
 	}
@@ -882,10 +908,20 @@ func (mdP *mdParseObj) printElList () {
 		fmt.Printf("el %3d: ", i)
 		if el.emEl {
 			fmt.Printf("eL: %t", el.emEl)
+			continue
 		}
+
+		if el.hrEl {
+			fmt.Printf("HL: %t", el.hrEl)
+			continue
+		}
+
+
 		if el.comEl != nil {
 			fmt.Printf( "com: %s", el.comEl.txt)
+			continue
 		}
+
 		if el.parEl != nil {
 			ParEl := *el.parEl
 			fmt.Printf( "par %-5s: subels: %d status: %t", dispHtmlEl(ParEl.typ), len(ParEl.subEl), ParEl.fin)
@@ -898,12 +934,15 @@ func (mdP *mdParseObj) printElList () {
 					fmt.Printf("         subel %d: %s\n", i, ParEl.subEl[i].txt)
 				}
 			}
+			continue
 		}
 		if el.tblEl != nil {
 			fmt.Printf( "tbl: rows: %d  cols: %d ", el.tblEl.rows, el.tblEl.cols)
+			continue
 		}
 		if el.imgEl != nil {
 			fmt.Printf( "img h: %d w: %d src: %s", el.imgEl.height, el.imgEl.width, el.imgEl.src)
+			continue
 		}
 		if el.ulEl != nil {
 			fmt.Printf( "ul nest %d ", el.ulEl.nest)
@@ -921,7 +960,9 @@ func (mdP *mdParseObj) printElList () {
 			} else {
 				fmt.Printf( "ulEl par nil!")
 			}
+			continue
 		}
+
 		if el.olEl != nil {
 			fmt.Printf( "ol nest %d ", el.olEl.nest)
 			if el.olEl.parEl != nil {
@@ -938,6 +979,7 @@ func (mdP *mdParseObj) printElList () {
 			} else {
 				fmt.Printf( "olEl par nil!")
 			}
+			continue
 		}
 
 		if !(el.parEl != nil) {fmt.Printf("\n")}
