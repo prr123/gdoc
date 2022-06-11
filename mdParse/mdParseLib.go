@@ -104,7 +104,7 @@ const (
 	ol
 	li
 	img
-	ftnote
+	ftn
 	h1
 	h2
 	h3
@@ -120,6 +120,30 @@ const (
 	strike
 	html
 )
+
+func dispHtmlEl(num int)(str string) {
+
+	var htmlDisp [15]string
+
+	htmlDisp[0] = "br"
+	htmlDisp[1] = "par"
+	htmlDisp[2] = "hr"
+	htmlDisp[3] = "span"
+	htmlDisp[4] = "ul"
+	htmlDisp[5] = "ol"
+	htmlDisp[6] = "li"
+	htmlDisp[7] = "img"
+	htmlDisp[8] = "ftn"
+	htmlDisp[9] = "h1"
+	htmlDisp[10] = "h2"
+	htmlDisp[11] = "h3"
+	htmlDisp[12] = "h4"
+	htmlDisp[13] = "h5"
+	htmlDisp[14] = "h6"
+
+	if num > len(htmlDisp)-1 {return ""}
+	return htmlDisp[num]
+}
 
 func InitMdParse() (mdp *mdParseObj) {
 
@@ -216,7 +240,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 
 	mdP.istate = NE
 //	for lin:=0; lin<len(mdP.linList); lin++ {
-	maxLin := 10
+	maxLin := 30
 	if len(mdP.linList) < maxLin {maxLin = len(mdP.linList)}
 
 	fmt.Println("*************** lines **************************")
@@ -489,6 +513,11 @@ func (mdP *mdParseObj) checkParEnd(lin int) (err error){
 fmt.Println("*** par end")
 	elLast := len(mdP.elList) -1
 	lastEl := mdP.elList[elLast]
+	// check for empty line
+	if lastEl.emEl {return nil}
+	// see whether last element was a par el
+	if lastEl.parEl == nil {return nil}
+	// parEl pointer points to a parEl
 	ParEl := *lastEl.parEl
 	lastPar := len(ParEl.subEl) -1
 	subEl := ParEl.subEl[lastPar]
@@ -708,11 +737,11 @@ func (mdP *mdParseObj) cvtMdToHtml()(err error) {
 func (mdP *mdParseObj) printElList () {
 // function that prints out the structural element list
 
-	fmt.Println("*********** El List *****")
+	fmt.Println("*********** El List ***********")
 	fmt.Printf("  el nam typ  subels fin txt\n")
 	for i:=0; i < len(mdP.elList); i++ {
 		el := mdP.elList[i]
-		fmt.Printf(" %d: ", i)
+		fmt.Printf("el %d: ", i)
 		if el.emEl {
 			fmt.Printf("eL: %t", el.emEl)
 		}
@@ -720,31 +749,53 @@ func (mdP *mdParseObj) printElList () {
 			fmt.Printf( "com: %s", el.comEl.txt)
 		}
 		if el.parEl != nil {
-			fmt.Printf( "par %d: %d %t\n", el.parEl.typ, len(el.parEl.subEl), el.parEl.fin)
 			ParEl := *el.parEl
+			fmt.Printf( "par %-5s: subels: %d status: %t\n", dispHtmlEl(ParEl.typ), len(ParEl.subEl), ParEl.fin)
 			subLen := len(ParEl.subEl)
-			for i:=0; i< subLen; i++ {
-				fmt.Printf("sub %d: %s\n", i, ParEl.subEl[i].txt)
+			if subLen == 1 {
+				fmt.Printf("         subel 0: %s", ParEl.subEl[0].txt)
+			} else {
+				for i:=0; i< subLen; i++ {
+					fmt.Printf("         subel %d: %s\n", i, ParEl.subEl[i].txt)
+				}
 			}
 		}
 		if el.tblEl != nil {
-			fmt.Printf( "tbl %d %d ", el.tblEl.rows, el.tblEl.cols)
+			fmt.Printf( "tbl: rows: %d  cols: %d ", el.tblEl.rows, el.tblEl.cols)
 		}
 		if el.imgEl != nil {
-			fmt.Printf( "img %d %d %s", el.imgEl.height, el.imgEl.width, el.imgEl.src)
+			fmt.Printf( "img h: %d w: %d src: %s", el.imgEl.height, el.imgEl.width, el.imgEl.src)
 		}
 		if el.ulEl != nil {
-			fmt.Printf( "ul %d ", el.ulEl.nest)
+			fmt.Printf( "ul nest %d ", el.ulEl.nest)
 			if el.ulEl.parEl != nil {
-				fmt.Printf( "par %d %d ", el.ulEl.parEl.typ, len(el.ulEl.parEl.subEl))
+				ParEl := el.ulEl.parEl
+				fmt.Printf( "par typ: %-5s subels: %d stat: %t", dispHtmlEl(ParEl.typ), len(ParEl.subEl), ParEl.fin)
+				subLen := len(ParEl.subEl)
+				if subLen == 1 {
+					fmt.Printf("         subel 0: %s", ParEl.subEl[0].txt)
+				} else {
+					for i:=0; i< subLen; i++ {
+						fmt.Printf("         subel %d: %s\n", i, ParEl.subEl[i].txt)
+					}
+				}
 			} else {
 				fmt.Printf( "ulEl par nil!")
 			}
 		}
 		if el.olEl != nil {
-			fmt.Printf( "ol %d ", el.olEl.nest)
+			fmt.Printf( "ol nest %d ", el.olEl.nest)
 			if el.olEl.parEl != nil {
-				fmt.Printf( "par %d %d ", el.olEl.parEl.typ, len(el.olEl.parEl.subEl))
+				ParEl := el.olEl.parEl
+				fmt.Printf( "par typ: %-5s subels: %d stat %t", dispHtmlEl(ParEl.typ), len(ParEl.subEl), ParEl.fin)
+				subLen := len(ParEl.subEl)
+				if subLen == 1 {
+					fmt.Printf("         subel 0: %s", ParEl.subEl[0].txt)
+				} else {
+					for i:=0; i< subLen; i++ {
+						fmt.Printf("         subel %d: %s\n", i, ParEl.subEl[i].txt)
+					}
+				}
 			} else {
 				fmt.Printf( "olEl par nil!")
 			}
