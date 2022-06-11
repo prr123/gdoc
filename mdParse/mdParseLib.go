@@ -121,6 +121,24 @@ const (
 	html
 )
 
+func dispState(num int)(str string) {
+
+	var stateDisp [9]string
+
+	stateDisp[0] = "NE"
+	stateDisp[1] = "BR"
+	stateDisp[2] = "PAR"
+	stateDisp[3] = "UL0"
+	stateDisp[4] = "OL0"
+	stateDisp[5] = "UL1"
+	stateDisp[6] = "OL1"
+	stateDisp[7] = "UL2"
+	stateDisp[8] = "OL2"
+
+	if num > len(stateDisp)-1 {return ""}
+	return stateDisp[num]
+}
+
 func dispHtmlEl(num int)(str string) {
 
 	var htmlDisp [15]string
@@ -199,7 +217,7 @@ func (mdP *mdParseObj) ParseMdFile(inpfilnam string) (err error) {
 	if nb != int(inpSize) {return fmt.Errorf("error could not read file!")}
 	mdP.inBuf = &bufp
 
-	fmt.Println(" **** parsing md file!")
+	fmt.Println("\n******* parsing md file! ************")
 
 	mdP.parseMdOne()
 	return nil
@@ -243,7 +261,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 	maxLin := 30
 	if len(mdP.linList) < maxLin {maxLin = len(mdP.linList)}
 
-	fmt.Println("*************** lines **************************")
+	fmt.Println("\n*************** lines **************************")
 	for lin:=0; lin<maxLin; lin++ {
 
 		linSt := mdP.linList[lin].linSt
@@ -256,13 +274,13 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 		if linLen > 1 {sch = (*mdP.inBuf)[mdP.linList[lin].linSt + 1]}
 		if linLen > 2 {tch = (*mdP.inBuf)[mdP.linList[lin].linSt + 2]}
 
-		fmt.Printf("*** line %d len %d: state: %d fch: %c sch: %c tch: %c\n", lin, linLen, mdP.istate, fch, sch, tch)
+		fmt.Printf("*** line %d: state-st: %s fch: %c sch: %c tch: %c ::", lin, dispState(mdP.istate), fch, sch, tch)
 		switch fch {
 			case '\n':
 				// end of par?
 				// end of header?
 				// is cr only char?
-			fmt.Printf("cr istate: %d linSt: %d linEnd %d\n", mdP.istate, linSt, linEnd)
+//			fmt.Printf("cr istate: %s \n", mdP.istate, linSt, linEnd)
 				if linEnd > linSt + 1 {return fmt.Errorf("line %d: text after cr", lin)}
 
 				switch mdP.istate {
@@ -271,18 +289,15 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 					if err != nil {return fmt.Errorf("line %d ParEnd %v", lin, err)}
 					err = mdP.checkBR()
 					if err != nil {return fmt.Errorf("line %d checkBR %v", lin, err)}
-					mdP.istate = BR
 
 				case NE:
 						// insert BR element
 					err = mdP.checkBR()
 					if err != nil {return fmt.Errorf("line %d checkBR %v", lin, err)}
-					mdP.istate = BR
 
 				case BR:
 					err = mdP.checkBR()
 					if err != nil {return fmt.Errorf("line %d checkBR %v", lin, err)}
-					mdP.istate = BR
 
 				default:
 					return fmt.Errorf("line %d istate %d cr", lin, mdP.istate)
@@ -292,7 +307,6 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 				// heading
 				err = mdP.checkHeading(lin)
 				if err != nil {return fmt.Errorf("line %d: %v", lin, err)}
-				mdP.istate = NE
 
 			case '-':
 				// horizontal ruler ---
@@ -399,11 +413,93 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 		}
 
 	}
+
 	mdP.printElList()
 	return nil
 }
 
 
+func (mdP *mdParseObj) checkHeadingEOL(lin int)(res bool) {
+// function to test whether a line is completed with a md cr
+
+	linSt := mdP.linList[lin].linSt
+	linEnd := mdP.linList[lin].linEnd
+//fmt.Printf("line %d: st %d:%d\n", lin, linSt, linEnd)
+	linLen := linEnd - linSt
+	if linLen < 2 {return false}
+
+	buf := (*mdP.inBuf)
+
+fmt.Printf("*** heading EOL: '%c' '%c'\n", buf[linEnd-2], buf[linEnd -1])
+//	if (buf[linLen-2] == ' ') && (buf[linLen-1] == ' ') { return true}
+
+	// check where the text line acutally ends
+	istate := 0
+	newLinEnd:= 0
+	numWs := 0
+	for i:=linEnd -1; i>linSt; i-- {
+fmt.Printf("i: %d char:\"%c\" \n", i, buf[i])
+		switch istate {
+		case 0:
+			if utilLib.IsSentence(buf[i]) {
+				newLinEnd = i
+				istate = 3
+				break
+			}
+			if buf[i] == '#' {
+				istate = 1
+				break
+			}
+			// white spaces
+			if buf[i] == ' ' {
+				istate = 0
+				numWs++
+				break
+			}
+			istate = 3
+
+		case 1:
+		//#
+			if buf[i] == '#' {
+				istate = 1
+				break
+			}
+			if buf[i] == ' ' {
+				istate = 2
+				break
+			}
+			if utilLib.IsSentence(buf[i]) {
+				newLinEnd = i
+				break
+			}
+			istate = 3
+
+		case 2:
+			if buf[i] == ' ' {
+				istate = 2
+				break
+			}
+			if utilLib.IsSentence(buf[i]) {
+				newLinEnd = i
+				break
+			}
+			istate = 3
+		default:
+			istate = 3
+		}
+
+		if newLinEnd > 0 {
+			mdP.linList[lin].linEnd = newLinEnd
+			break
+		}
+		if istate == 3 {break}
+
+	}
+	res = false
+	if numWs > 2 {res = true}
+	fmt.Printf(" header txt: %s %t\n", string((*mdP.inBuf)[linSt:newLinEnd+1]), res)
+	return res
+}
 
 func checkEOL(buf []byte)(res bool) {
 // function to test whether a line is completed with a md cr
@@ -520,6 +616,7 @@ fmt.Println("*** par end")
 	// parEl pointer points to a parEl
 	ParEl := *lastEl.parEl
 	lastPar := len(ParEl.subEl) -1
+	if lastPar <0 {return nil}
 	subEl := ParEl.subEl[lastPar]
 	subEl.txt +="\n"
 	ParEl.fin = true
@@ -547,30 +644,51 @@ func (mdP *mdParseObj) checkHeading(lin int) (err error){
 // function that parses a line for headings
 	var el structEl
 	var parEl parEl
+	var subEl parSubEl
+
 //	listEl := mdP.elList[el]
 	linSt := mdP.linList[lin].linSt
 	linEnd := mdP.linList[lin].linEnd
 	buf := (*mdP.inBuf)
-fmt.Printf("heading buffer: %s\n", buf[linSt:linEnd])
+//fmt.Printf("heading buffer: %s\n", buf[linSt:linEnd])
 	hd := 0
-	hdEnd := linSt
-	for i:= 0; i < 7; i++ {
-		if buf[i] != '#' {
-			if buf[i] != ' ' {
-				return fmt.Errorf("line %d: no ws after #!", lin)
+	parSt := 0
+	istate := 0
+	for i:=linSt; i < linEnd; i++ {
+		switch istate {
+		case 0:
+			if buf[i] == '#' {
+				hd++
+				break
 			}
-			hdEnd = i
-			break
+			if buf[i] == ' ' {
+				istate = 1
+				break
+			}
+			return fmt.Errorf("lin %d istate: %d char %c \n", lin, istate, buf[i])
+		case 1:
+			if buf[i] == ' ' {
+				istate = 1
+				break
+			} else {
+				parSt = i
+				istate = 2
+				break
+			}
+
+		default:
 		}
-		hd++
+		if istate > 1 {break}
 	}
-	// check the end of the line
 
-	crEOL := checkEOL(buf[hdEnd+1:linEnd])
-	// last char is cr. ergo paragraph not finished
+	// heading level
+	if !(hd>0) {return fmt.Errorf(" heading: h0 not valid")}
+	// no heading text start
+	if parSt <1 {return fmt.Errorf(" heading txt start not found!")}
 
-	txtstr := string(buf[hdEnd+1:linEnd])
-	mdP.istate = PAR
+	mdP.linList[lin].linSt = parSt
+	linSt = parSt
+
 	hdStr := fmt.Sprintf("h%d", hd)
 	hdtyp := 0
 	switch hd {
@@ -589,11 +707,31 @@ fmt.Printf("heading buffer: %s\n", buf[linSt:linEnd])
 		default:
 	}
 
-	fmt.Printf("header: %d %s text: \"%s\" \n", hdtyp, hdStr, txtstr)
+	txtstr := string(buf[parSt:linEnd])
+	fmt.Printf(" heading: %s %s text: \"%s\" \n", dispHtmlEl(hdtyp), hdStr, txtstr)
+
 	parEl.typ = hdtyp
-	parEl.txtbuf = buf[hdEnd+1:len(buf)-1]
-	parEl.fin = false
-	if crEOL {parEl.fin = true}
+
+	// need to check  for heading endings
+	// adjusts linEnd
+	crEOL := mdP.checkHeadingEOL(lin)
+	linEnd = mdP.linList[lin].linEnd
+
+//fmt.Printf("linSt: %d linEnd: %d\n", linSt, linEnd)
+
+	if crEOL {
+		parEl.fin = true
+		mdP.istate = NE
+		subEl.txt = string(buf[linSt:linEnd+2])
+	} else {
+		parEl.fin = false
+		mdP.istate = PAR
+		subEl.txt = string(buf[linSt:linEnd+1])
+	}
+
+	parEl.txtbuf = buf[linSt:linEnd]
+	parEl.subEl = append(parEl.subEl, subEl)
+
 	el.parEl = &parEl
 	mdP.elList = append(mdP.elList, el)
 	mdP.istate = PAR
@@ -750,11 +888,12 @@ func (mdP *mdParseObj) printElList () {
 		}
 		if el.parEl != nil {
 			ParEl := *el.parEl
-			fmt.Printf( "par %-5s: subels: %d status: %t\n", dispHtmlEl(ParEl.typ), len(ParEl.subEl), ParEl.fin)
+			fmt.Printf( "par %-5s: subels: %d status: %t", dispHtmlEl(ParEl.typ), len(ParEl.subEl), ParEl.fin)
 			subLen := len(ParEl.subEl)
 			if subLen == 1 {
-				fmt.Printf("         subel 0: %s\n", ParEl.subEl[0].txt)
+				fmt.Printf(" subel 0: \"%s\"\n", ParEl.subEl[0].txt)
 			} else {
+				fmt.Printf("\n")
 				for i:=0; i< subLen; i++ {
 					fmt.Printf("         subel %d: %s\n", i, ParEl.subEl[i].txt)
 				}
