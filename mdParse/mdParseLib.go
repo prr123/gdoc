@@ -333,9 +333,16 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 			case ' ':
 				// ws
 				// nested list
+				mdP.checkUnList(lin)
+/*
 				FNCh, err := mdP.checkWs(lin)
 				if err != nil { return fmt.Errorf("lin %d checkWs: %v",lin, err)}
 				fmt.Printf("FNCh: %c\n",FNCh)
+				if FNCh == '*' {
+					mdP.checkUnList(lin)
+					break
+				}
+*/
 			case '!':
 				// image
 				mdP.checkImage()
@@ -393,14 +400,20 @@ func (mdP *mdParseObj) checkWs(lin int)(fch byte, err error) {
 
 	buf := (*mdP.inBuf)
 	fnchpos := 0;
+	numWs :=0
 	for i:=linSt; i < linEnd; i++ {
-		if buf[i] != ' ' {
+		if buf[i] == ' ' {
+			numWs++
+		} else {
 			fnchpos = i
+			break
 		}
 	}
 	if fnchpos == 0 { return 0, fmt.Errorf("line %d all ws", lin) }
 
 	fch = buf[fnchpos]
+fmt.Printf("fch: %c numWs: %d\n", fch, numWs)
+
 	return fch, nil
 }
 
@@ -584,22 +597,32 @@ func (mdP *mdParseObj) checkUnList(lin int) {
 	buf := (*mdP.inBuf)
 	parSt:=0
 	istate := 0
+	wsNum := 0
 	for i:= linSt; i< linEnd; i++ {
 		switch istate {
 			case 0:
-			if buf[i] == '*' {
-				istate = 1
-			}
+				switch buf[i] {
+				case ' ':
+					wsNum++
+				case '*':
+					istate = 1
+				default:
+				}
 
 			case 1:
-			if !(buf[i] == ' ') {
-				parSt = i
-			}
+				switch buf[i] {
+				case ' ':
+
+				default:
+					parSt = i
+				}
+
 			default:
 		}
 		if parSt > 0 {break}
 	}
-
+	// nest lev
+	nestLev := wsNum/4
 
 	crEOL := checkEOL(buf[parSt:linEnd-1])
 	if crEOL {
@@ -613,7 +636,7 @@ func (mdP *mdParseObj) checkUnList(lin int) {
 	}
 fmt.Printf("uel: %s\n", subEl.txt)
 	parEl.subEl = append(parEl.subEl, subEl)
-	ulEl.nest = 0
+	ulEl.nest = nestLev
 	ulEl.parEl = &parEl
 	el.ulEl = &ulEl
 	mdP.elList = append(mdP.elList, el)
