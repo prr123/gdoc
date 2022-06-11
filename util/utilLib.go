@@ -29,6 +29,23 @@ func IsAlphaNumeric(let byte)(res bool) {
     return res
 }
 
+func IsSentence(let byte)(res bool) {
+// function that test whether byte is aphanumeric
+    tbool := (let >= 'a' && let <= 'z') || (let >= 'A' && let <= 'Z')
+    tbool = tbool || (let >= '0' && let <= '9')
+	marks:=".;!?"
+	found := false
+	for i:= 0; i< 4; i++ {
+		if let == marks[i] {
+			found = true
+			break
+		}
+	}
+
+	res = found || tbool
+    return res
+}
+
 func IsNumeric(let byte)(res bool) {
 // function that test whether byte is aphanumeric
     res = false
