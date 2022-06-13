@@ -78,7 +78,16 @@ type comEl struct {
 type tblEl struct {
 	rows int
 	cols int
+	trows []tblRow
 	caption string
+}
+
+type tblRow struct {
+	tblRow []tblCel
+}
+
+type tblCel struct {
+	parEl *parEl
 }
 
 type imgEl struct {
@@ -408,8 +417,9 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 
 			case '|':
 				// table |text|
-				err = mdP.checkTable(lin)
+				endLin, err := mdP.checkTable(lin)
 				if err != nil {fmt.Printf("line %d: table error %v\n", lin, err)}
+				lin = endLin
 
 			default:
 
@@ -1025,12 +1035,106 @@ func (mdP *mdParseObj) checkLink() {
 
 }
 
-func (mdP *mdParseObj) checkTable(lin int)(err error) {
+func (mdP *mdParseObj) checkTable(lin int)(endLin int, err error) {
+	var el structEl
+	var tblEl tblEl
 
-	return nil
+	linSt := mdP.linList[lin].linSt
+	linEnd := mdP.linList[lin].linEnd
+	buf := (*mdP.inBuf)
+
+	// determine the number of cols
+	col := 0
+	for i:=linSt+1; i<linEnd; i++ {
+		if buf[i] == '|' {
+			col++
+		}
+	}
+	if col == 0 {return lin, fmt.Errorf("no columns in table!")}
+
+	// table rows
+	row:=0
+
+	for ilin := lin+1; ilin < lin + 10; ilin++ {
+		tblLinSt := mdP.linList[ilin].linSt
+//		tblLinEnd:= mdP.linList[ilin].linEnd
+		if buf[tblLinSt] != '|' {
+			endLin = ilin
+			break
+		}
+		if buf[tblLinSt+1] == '-' {
+			row++
+		}
+	}
+	if row == 0 {return lin, fmt.Errorf("no rows in table!")}
+
+
+	// table cells
+
+	tblEl.rows = row
+	tblEl.cols = col
+
+	el.tblEl = &tblEl
+	mdP.elList = append(mdP.elList, el)
+
+	return endLin, nil
 }
 
 func (mdP *mdParseObj) checkOrList(lin int)(err error) {
+	var el structEl
+	var orEl oList
+	var parEl parEl
+
+	linSt := mdP.linList[lin].linSt
+	linEnd := mdP.linList[lin].linEnd
+	buf := (*mdP.inBuf)
+
+	parSt:=0
+	markEnd := 0
+	wsNum := 0
+	for i:= linSt; i< linSt +4; i++ {
+		ch:= buf[i]
+		if ch == '.' {
+			markEnd = i
+			break
+		}
+		if !utilLib.IsNumeric(ch) {return fmt.Errorf(" nonumeric char in counter")}
+	}
+
+	if markEnd == 0 {return fmt.Errorf(" orList no period after counter!")}
+
+	// check for par start
+	for i:= markEnd+1; i< linEnd; i++ {
+		ch:= buf[i]
+		if utilLib.IsAlpha(ch) {
+			parSt = i
+			break
+		}
+		if ch == ' ' {
+			wsNum++
+			continue
+		}
+		return fmt.Errorf(" unacceptable char in pos %d before par start!", i)
+	}
+
+	if parSt == 0 {return fmt.Errorf("ol no text found!")}
+
+	// nest lev
+	nestLev := wsNum/4
+
+	parEl.txtSt = parSt
+
+	mdP.checkParEOL(lin, &parEl)
+	parEl.txt = string(buf[parEl.txtSt:parEl.txtEnd-1])
+
+fmt.Printf(" OL txt: %s ", parEl.txt)
+
+	orEl.nest = nestLev
+	orEl.parEl = &parEl
+
+	el.olEl = &orEl
+	mdP.elList = append(mdP.elList, el)
+	mdP.istate = PAR
 
 	return nil
 }
