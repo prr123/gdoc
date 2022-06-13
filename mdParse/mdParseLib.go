@@ -39,6 +39,8 @@ type structEl struct {
 	imgEl *imgEl
 	ulEl *uList
 	olEl *oList
+	bkEl *bkEl
+	errEl *errEl
 }
 
 type parEl struct {
@@ -57,6 +59,17 @@ type parSubEl struct {
 	txtTyp int
 }
 
+type errEl struct {
+	fch byte
+	line int
+	errmsg string
+	txt string
+}
+
+type bkEl struct {
+	parEl *	parEl
+	nest int
+}
 
 type comEl struct {
 	txt string
@@ -93,7 +106,8 @@ const (
 	UL
 	OL
 	IMG
-	BL
+	BLK
+	ERR
 )
 
 //html elements
@@ -287,147 +301,125 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 				// end of par?
 				// end of header?
 				// is cr only char?
-				if linEnd > linSt + 1 {return fmt.Errorf("line %d: text after cr", lin)}
-
+				if linEnd > linSt + 1 {
+					fmt.Printf("line %d: text after cr", lin)
+					break
+				}
 				switch mdP.istate {
 				case PAR:
 					err = mdP.checkParEnd(lin)
-					if err != nil {return fmt.Errorf("line %d ParEnd %v", lin, err)}
+					if err != nil {fmt.Printf("line %d ParEnd %v\n", lin, err)}
 					err = mdP.checkBR()
-					if err != nil {return fmt.Errorf("line %d checkBR %v", lin, err)}
-		fmt.Println(" PAR empty line")
+					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err)}
 
-				case EL:
+				case EL, HR:
 					err = mdP.checkBR()
-					if err != nil {return fmt.Errorf("line %d checkBR %v", lin, err)}
-		fmt.Println(" empty line")
-
-				case HR:
-					err = mdP.checkBR()
-					if err != nil {return fmt.Errorf("line %d checkBR %v", lin, err)}
-		fmt.Println(" empty line")
+					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err)}
 
 				case UL, OL:
 					err = mdP.checkBR()
-					if err != nil {return fmt.Errorf("line %d checkBR %v", lin, err)}
-		fmt.Println(" UL empty line")
+					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err)}
 
 				default:
-					return fmt.Errorf("line %d istate %s cr", lin, dispState(mdP.istate))
+					fmt.Printf("line %d error istate %s cr", lin, dispState(mdP.istate))
 				}
 
 			case '#':
 				// headings
 				err = mdP.checkHeading(lin)
-				if err != nil {return fmt.Errorf("line %d: %v", lin, err)}
-
-			case '-':
-				// horizontal ruler ---
-				if mdP.checkHr(lin) {break}
-
-				// unordered list -
-fmt.Println("- check Unlist")
-				mdP.checkUnList(lin)
-//				if err != nil {return fmt.Errorf("line %d: checkUnList %v", lin, err)}
+				if err != nil {fmt.Printf("line %d: heading error %v\n", lin, err)}
 
 			case '_':
 				// horizontal ruler ___wsp/ret
-				if mdP.checkHr(lin) {break}
-				// bold text wsp__text__wsp
-				mdP.checkBold()
-				// italics wsp_text_wsp
-				mdP.checkItalics()
+				err = mdP.checkHr(lin)
+				if err != nil {fmt.Printf("line %d: horiz ruler error %v\n", lin, err)}
 
-			case '*':
+			case '*','+','-':
 				// check whether next char is whitespace
-				if sch == ' ' {
+				switch {
+				case sch == ' ':
 					// unordered list *wsp
 					fmt.Println("*** unordered list item")
-					mdP.checkUnList(lin)
-					break
+					err = mdP.checkUnList(lin)
+					if err != nil {fmt.Printf("line %d: unordered list error %v\n", lin, err)}
+
+				case sch == fch:
+					err = mdP.checkHr(lin)
+					if err != nil {fmt.Printf("line %d: horiz ruler error %v\n", lin, err)}
+
+				case utilLib.IsAlpha(sch) :
+					fmt.Println(string((*mdP.inBuf)[linSt:linEnd]))
+					err = mdP.checkPar(lin)
+					if err != nil {fmt.Printf("line %d: par error %v\n", lin, err)}
+
+				default:
+				// error
+					if err != nil {fmt.Printf("line %d unsuitable char %c %d after *+-", sch, sch)}
+//					mdP.checkError(lin, fch, errStr)
 				}
 
-				if sch == '*' {
-/*
-					if utilLib.IsAlpha(tch) {
-						// bold text wsp**text**wsp
-						fmt.Println("*** start bold")
-						mdP.checkBold()
-					}
-					if tch == '*' {
-						fmt.Println("*** horizontal ruler")
-						// horizontal ruler ***wsp|text
-						mdP.checkHr(lin)
-					}
-					break
-*/
-				}
-				if utilLib.IsAlpha(sch) {
-					fmt.Println("*** start italics")
-					// italics *text*
-					mdP.checkItalics()
-					break
-				}
 			case '>':
 				fmt.Println("*** start blockquote")
 
 				// block quotes
-				mdP.checkBlock()
-
-			case '<':
-				// html start <>
-				mdP.checkHtml()
-
-			case '+':
-				// unordered list + wsp|par
-				mdP.checkUnList(lin)
-
-			case '~':
-				// strike-through
-				mdP.checkStrike()
+				err = mdP.checkBlock(lin)
+				if err != nil {fmt.Printf("line %d: block error %v\n", lin, err)}
 
 			case ' ':
 				// ws
 				// nested list
-				mdP.checkUnList(lin)
-/*
-				FNCh, err := mdP.checkWs(lin)
-				if err != nil { return fmt.Errorf("lin %d checkWs: %v",lin, err)}
-				fmt.Printf("FNCh: %c\n",FNCh)
-				if FNCh == '*' {
-					mdP.checkUnList(lin)
+//				nestLev, ord, err := mdP.checkIndent(lin)
+				_, ord, err := mdP.checkIndent(lin)
+				if err != nil {
+					fmt.Printf("line %d: indent error %v\n", lin, err)
 					break
 				}
-*/
+				if ord {
+					err := mdP.checkUnList(lin)
+					if err != nil {fmt.Printf("line %d: unordered list error %v\n", lin, err)}
+					break
+				}
+				err = mdP.checkOrList(lin)
+				if err != nil {fmt.Printf("line %d: ordered list error %v\n", lin, err)}
+
 			case '!':
 				// image
-				mdP.checkImage()
+				err = mdP.checkImage(lin)
+				if err != nil { return fmt.Errorf("lin %d image: %v\n",lin, err)}
 
 			case '[':
 				// check comment
-				res, err := mdP.checkComment(lin)
-				if err != nil { return fmt.Errorf("lin %d comment: %v",lin, err)}
-				if res {break}
-				// link [text](
-				mdP.checkLink()
+				err = mdP.checkComment(lin)
+				if err != nil {
+					err1 := mdP.checkPar(lin)
+					if err1 != nil {fmt.Printf("lin %d comment: %v\n        par: %v\n",lin, err, err1) }
+				}
 
 			case '|':
 				// table |text|
-				mdP.checkTable()
+				err = mdP.checkTable(lin)
+				if err != nil {fmt.Printf("line %d: table error %v\n", lin, err)}
 
 			default:
 
 				if utilLib.IsNumeric(fch) {
 				// ordered list 1.
-					mdP.checkOrList()
+					err = mdP.checkOrList(lin)
+					if err != nil {fmt.Printf("line %d: ordered list error %v\n", lin, err)}
+					break
 				}
+
 				if utilLib.IsAlpha(fch) {
 					// paragraph
 					fmt.Println("*** par start ***")
 					mdP.istate = PAR
-					fmt.Println(string((*mdP.inBuf)[linSt:linEnd]))
-					mdP.checkPar(lin)
+			fmt.Println(string((*mdP.inBuf)[linSt:linEnd]))
+					err = mdP.checkPar(lin)
+					if err != nil {fmt.Printf("line %d: par error %v\n", lin, err)}
+					break
 				}
+				fmt.Printf("line %d: no fit for first char: %c\n", lin, fch)
+//				mdP.checkError(lin, fch, errmsg)
 		}
 
 	}
@@ -436,6 +428,28 @@ fmt.Println("- check Unlist")
 	return nil
 }
 
+
+
+func (mdP *mdParseObj) checkError(lin int, fch byte,  errStr string) {
+
+	var el structEl
+	var errEl errEl
+
+
+	fmt.Printf("line %d fch %c errmsg: %s\n", lin, fch, errStr)
+	linSt := mdP.linList[lin].linSt
+	linEnd := mdP.linList[lin].linEnd
+
+	buf := (*mdP.inBuf)
+
+	errEl.txt = string(buf[linSt:linEnd])
+	errEl.fch = fch
+	errEl.errmsg = errStr
+	errEl.line = lin
+	el.errEl = &errEl
+	mdP.elList = append(mdP.elList, el)
+
+}
 
 func (mdP *mdParseObj) checkHeadingEOL(lin int, parEl *parEl)(err error) {
 // function to test whether a line is completed with a md cr
@@ -583,7 +597,7 @@ fmt.Printf("fch: %c numWs: %d\n", fch, numWs)
 	return fch, nil
 }
 
-func (mdP *mdParseObj) checkComment(lin int)(res bool, err error) {
+func (mdP *mdParseObj) checkComment(lin int)(err error) {
 // method that checks whether line is a comment
 
 	var el structEl
@@ -592,16 +606,16 @@ func (mdP *mdParseObj) checkComment(lin int)(res bool, err error) {
 	linSt := mdP.linList[lin].linSt
 	linEnd := mdP.linList[lin].linEnd
 	linLen := linEnd - linSt
-	if linLen < 10 {return false, nil}
+	if linLen < 10 {return fmt.Errorf("line length too little!")}
 	buf := (*mdP.inBuf)
-	if buf[linSt + 1] != '/' {return false, nil}
-	if buf[linSt + 2] != '/' {return false, nil}
-	if buf[linSt + 3] != ']' {return false, nil}
-	if buf[linSt + 4] != ':' {return false, nil}
-	if buf[linSt + 5] != ' ' {return false, nil}
-	if buf[linSt + 6] != '*' {return false, nil}
-	if buf[linSt + 7] != ' ' {return false, nil}
-	if buf[linSt + 8] != '(' {return false, fmt.Errorf("lin %d comment: no '(' found!", lin)}
+	if buf[linSt + 1] != '/' {return fmt.Errorf("invalid char 1!")}
+	if buf[linSt + 2] != '/' {return fmt.Errorf("invalid char 2!")}
+	if buf[linSt + 3] != ']' {return fmt.Errorf("invalid char 3!")}
+	if buf[linSt + 4] != ':' {return fmt.Errorf("invalid char 4!")}
+	if buf[linSt + 5] != ' ' {return fmt.Errorf("invalid char 5!")}
+	if buf[linSt + 6] != '*' {return fmt.Errorf("invalid char 6!")}
+	if buf[linSt + 7] != ' ' {return fmt.Errorf("invalid char 7!")}
+	if buf[linSt + 8] != '(' {return fmt.Errorf("lin %d comment: no '(' found!", lin)}
 
 	closPar :=0
 	for i:= linEnd; i> linSt+8; i-- {
@@ -610,17 +624,16 @@ func (mdP *mdParseObj) checkComment(lin int)(res bool, err error) {
 			break
 		}
 	}
-	if closPar == 0 {return false, fmt.Errorf("lin %d no ')' found!", lin)}
+	if closPar == 0 {return fmt.Errorf("lin %d no ')' found!", lin)}
 
 	comEl.txt = string(buf[linSt+9:closPar-1])
 	el.comEl = &comEl
 	mdP.elList = append(mdP.elList, el)
 
-
-	return true, nil
+	return nil
 }
 
-func (mdP *mdParseObj) checkPar(lin int)(res bool, err error) {
+func (mdP *mdParseObj) checkPar(lin int)(err error) {
 
 	var el structEl
 	var parEl parEl
@@ -638,7 +651,7 @@ func (mdP *mdParseObj) checkPar(lin int)(res bool, err error) {
 fmt.Printf("txt st: %d %d text: %s\n", parEl.txtSt, parEl.txtEnd, parEl.txt)
 	mdP.elList = append(mdP.elList, el)
 
-	return true, nil
+	return nil
 }
 
 
@@ -725,7 +738,7 @@ func (mdP *mdParseObj) checkHeading(lin int) (err error){
 }
 
 
-func (mdP *mdParseObj) checkHr(lin int) (res bool) {
+func (mdP *mdParseObj) checkHr(lin int) (err error) {
 	var el structEl
 
 //	listEl := mdP.elList[el]
@@ -742,15 +755,16 @@ func (mdP *mdParseObj) checkHr(lin int) (res bool) {
 		}
 	}
 fmt.Printf("HR %c numCh: %d ", ch, numCh)
-	res = false
+
 	if numCh >2 {
 		el.hrEl = true
 		mdP.elList = append(mdP.elList, el)
 		mdP.istate = HR
-		res = true
+		err = nil
+	} else {
+		err = fmt.Errorf("too insufficient char %c", ch)
 	}
-fmt.Printf(" res %t state: %s \n", res, dispState(mdP.istate))
-	return res
+	return err
 }
 
 func (mdP *mdParseObj) checkBold(){
@@ -824,28 +838,186 @@ func (mdP *mdParseObj) checkHtml() {
 
 }
 
-func (mdP *mdParseObj) checkBlock() {
+func (mdP *mdParseObj) checkIndent(lin int) (nest int, ord bool, err error){
 
+	linSt := mdP.linList[lin].linSt
+	linEnd := mdP.linList[lin].linEnd
+	buf := (*mdP.inBuf)
+
+	wsCount := 0
+	for i:=linSt; i< linEnd; i++ {
+		switch buf[i] {
+		case ' ':
+			wsCount++
+
+		case '*','-','+':
+			if wsCount < 4 {return 0,false, fmt.Errorf("insufficient ws!")}
+			return wsCount/4, false, nil
+
+		case '1','2','3','4','5','6','7','8','9','0':
+			if wsCount < 4 {return wsCount/4, true, fmt.Errorf("insufficient ws!")}
+			return wsCount/4, true, nil
+
+		default:
+			err = fmt.Errorf("invalid indent char!")
+			return 0,false, err
+		}
+	}
+
+	return 0, false, fmt.Errorf("no list char found!")
+}
+
+func (mdP *mdParseObj) checkBlock(lin int) (err error){
+	var el structEl
+	var bkEl bkEl
+	var parEl parEl
+
+	linSt := mdP.linList[lin].linSt
+	linEnd := mdP.linList[lin].linEnd
+	buf := (*mdP.inBuf)
+
+	nest := 0
+	istate :=0
+	parSt :=0
+	for i:=linSt; i< linEnd; i++ {
+		ch := buf[i]
+		switch istate {
+		case 0:
+			if ch == ' ' {istate = 1}
+			if ch == '>' {
+				nest++
+				istate = 0
+			}
+
+		case 1:
+			if ch == '>' {
+				nest++
+				istate = 0
+			}
+			if utilLib.IsAlpha(ch) {
+				istate = 2
+				parSt = i
+			}
+
+		default:
+			break
+		}
+	}
+
+	if parSt == 0 {return fmt.Errorf("no text string found!")}
+
+	parEl.txt = string(buf[parSt:linEnd])
+	parEl.txtSt = parSt
+	parEl.txtEnd = linEnd
+	bkEl.nest = nest
+	bkEl.parEl = &parEl
+	el.bkEl = &bkEl
+	mdP.elList = append(mdP.elList, el)
+	mdP.istate = BLK
+
+	return nil
 }
 
 func (mdP *mdParseObj) checkStrike() {
 
 }
 
-func (mdP *mdParseObj) checkImage() {
+func (mdP *mdParseObj) checkImage(lin int) (err error){
 
+	var el structEl
+	var imgEl imgEl
+
+//	listEl := mdP.elList[el]
+	linSt := mdP.linList[lin].linSt
+	linEnd := mdP.linList[lin].linEnd
+	buf := (*mdP.inBuf)
+
+	altSt := 0
+	altEnd := 0
+	srcSt := 0
+	srcEnd := 0
+
+	istate := 0
+	imgEnd :=false
+	for i:=linSt; i < linEnd; i++ {
+		switch istate {
+		case 0:
+			if buf[i] == ']' {
+				imgEl.alt = string(buf[linSt+2:i])
+				istate = 1
+			}
+
+		case 1:
+			if buf[i] == '(' {
+				srcSt = i
+				istate = 2
+			}
+
+		case 2:
+			if buf[i] == ' ' {
+				altSt = i
+				srcEnd = i-1
+				istate = 3
+			}
+
+			if buf[i] == ')' {
+				srcEnd = i-1
+				imgEnd = true
+				istate = 5
+			}
+
+		case 3:
+			if buf[i] == '"' {
+				istate = 4
+				altSt = i+1
+			}
+
+		case 4:
+			if buf[i] == '"' {
+				istate = 5
+				altEnd = i-1
+			}
+
+		case 5:
+			if buf[i] == ')' {
+				imgEnd = true
+			}
+//				return fmt.Errorf("no starting double par!")
+		default:
+
+		}
+		if imgEnd {break}
+
+	}
+
+	if altEnd - altSt < 3 {return fmt.Errorf("no viable altText!")
+	} else { imgEl.alt = string(buf[altSt+1: altEnd -1]) }
+
+	if srcEnd - srcSt < 3 {return fmt.Errorf("no viable img uri!")
+	} else { imgEl.src = string(buf[srcSt+1: srcEnd -1]) }
+
+	if istate == 0 {return fmt.Errorf("could not parse img el! no ']'")}
+	if !imgEnd {return fmt.Errorf("could not parse img el!")}
+
+	el.imgEl = &imgEl
+	mdP.elList = append(mdP.elList, el)
+	mdP.istate = IMG
+
+	return nil
 }
 
 func (mdP *mdParseObj) checkLink() {
 
 }
 
-func (mdP *mdParseObj) checkTable() {
+func (mdP *mdParseObj) checkTable(lin int)(err error) {
 
+	return nil
 }
 
-func (mdP *mdParseObj) checkOrList() {
+func (mdP *mdParseObj) checkOrList(lin int)(err error) {
 
+	return nil
 }
 
 func (mdP *mdParseObj) checkBR()(err error) {
@@ -900,11 +1072,6 @@ func (mdP *mdParseObj) printElList () {
 		}
 
 
-		if el.comEl != nil {
-			fmt.Printf( "com: %s\n", el.comEl.txt)
-			continue
-		}
-
 		if el.parEl != nil {
 			ParEl := *el.parEl
 			fmt.Printf( "par %-5s: subels: %d status: %t", dispHtmlEl(ParEl.typ), len(ParEl.subEl), ParEl.fin)
@@ -918,14 +1085,6 @@ func (mdP *mdParseObj) printElList () {
 				}
 			}
 			fmt.Printf("\n")
-			continue
-		}
-		if el.tblEl != nil {
-			fmt.Printf( "tbl: rows: %d  cols: %d \n", el.tblEl.rows, el.tblEl.cols)
-			continue
-		}
-		if el.imgEl != nil {
-			fmt.Printf( "img h: %d w: %d src: %s \n", el.imgEl.height, el.imgEl.width, el.imgEl.src)
 			continue
 		}
 		if el.ulEl != nil {
@@ -963,6 +1122,26 @@ func (mdP *mdParseObj) printElList () {
 			} else {
 				fmt.Printf( "olEl par nil!")
 			}
+			continue
+		}
+
+		if el.tblEl != nil {
+			fmt.Printf( "tbl: rows: %d  cols: %d \n", el.tblEl.rows, el.tblEl.cols)
+			continue
+		}
+
+		if el.imgEl != nil {
+			fmt.Printf( "img h: %d w: %d src: %s \n", el.imgEl.height, el.imgEl.width, el.imgEl.src)
+			continue
+		}
+
+		if el.comEl != nil {
+			fmt.Printf( "com: %s\n", el.comEl.txt)
+			continue
+		}
+
+		if el.errEl!= nil {
+			fmt.Printf("error line %d: fch %c %d:: error %s\n", el.errEl.line, el.errEl.fch, el.errEl.fch, el.errEl.errmsg)
 			continue
 		}
 
