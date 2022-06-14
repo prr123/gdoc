@@ -265,23 +265,30 @@ func (mdP *mdParseObj) parseMdOne()(err error) {
 	buf := *(mdP.inBuf)
 	ilin := 0
 	ist := 0
-	for i:=0; i< len(buf); i++ {
+	for i:=0; i< len(buf) ; i++ {
+
 		if buf[i] == '\n' || buf[i] == '\r' {
 			lin.linSt = ist
 			lin.linEnd = i
 			mdP.linList = append(mdP.linList, lin)
 			ist = i+1
 			ilin++
+			if buf[i] == '\r' {
+				i++
+				ist++
+			}
 		}
 	}
 
 	fmt.Printf("lines: %d elList: %d\n", ilin, len(mdP.linList))
 
 	mdP.printLinList()
+
 	err = mdP.parseMdTwo()
 	if err != nil {
 		fmt.Printf("error %v\n", err)
 	}
+
 	return nil
 }
 
@@ -308,9 +315,9 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 		if linLen > 1 {sch = (*mdP.inBuf)[mdP.linList[lin].linSt + 1]}
 
 		if fch == '\n'||fch == '\r' {
-			fmt.Printf("*** line %d: fch: CR sch: '%c' ", lin, sch)
+			fmt.Printf("*** line %d: fch: CR sch: '%q' ", lin, sch)
 		} else {
-			fmt.Printf("*** line %d: fch: '%c' sch: '%c' ", lin, fch, sch)
+			fmt.Printf("*** line %d: fch: '%q' sch: '%q' ", lin, fch, sch)
 		}
 		switch fch {
 			case '\n', '\r':
@@ -379,7 +386,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 
 				default:
 				// error
-					if err != nil {fmt.Printf("line %d unsuitable char %c %d after *+-\n", sch, sch)}
+					if err != nil {fmt.Printf("line %d unsuitable char %q %d after *+-\n", sch, sch)}
 //					mdP.checkError(lin, fch, errStr)
 				}
 
@@ -454,7 +461,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 					if err != nil {fmt.Printf("line %d: par error %v\n", lin, err)}
 					break
 				}
-				fmt.Printf("line %d: no fit for first char: %c\n", lin, fch)
+				fmt.Printf("line %d: no fit for first char: %q\n", lin, fch)
 //				mdP.checkError(lin, fch, errmsg)
 		}
 	fmt.Printf(" state: %s\n",dispState(mdP.istate))
@@ -473,7 +480,7 @@ func (mdP *mdParseObj) checkError(lin int, fch byte,  errStr string) {
 	var errEl errEl
 
 
-	fmt.Printf("line %d fch %c errmsg: %s\n", lin, fch, errStr)
+	fmt.Printf("line %d fch %q errmsg: %s\n", lin, fch, errStr)
 	linSt := mdP.linList[lin].linSt
 	linEnd := mdP.linList[lin].linEnd
 
@@ -494,13 +501,13 @@ func (mdP *mdParseObj) checkHeadingEOL(lin int, parEl *parEl)(err error) {
 
 	linSt := parEl.txtSt
 	linEnd := mdP.linList[lin].linEnd
-fmt.Printf("checkHeadingEOL line %d: buf %d:%d\n", lin, linSt, linEnd)
+//fmt.Printf("checkHeadingEOL line %d: buf %d:%d\n", lin, linSt, linEnd)
 	linLen := linEnd - linSt
 	if linLen < 2 {return nil}
 
 	buf := (*mdP.inBuf)
 
-//fmt.Printf("*** heading EOL: '%c' '%c'\n", buf[linEnd-2], buf[linEnd -1])
+//fmt.Printf("*** heading EOL: '%q' '%q'\n", buf[linEnd-2], buf[linEnd -1])
 //	if (buf[linLen-2] == ' ') && (buf[linLen-1] == ' ') { return true}
 
 	// check where the text line acutally ends
@@ -508,12 +515,13 @@ fmt.Printf("checkHeadingEOL line %d: buf %d:%d\n", lin, linSt, linEnd)
 	newLinEnd:= 0
 	numWs := 0
 	for i:=linEnd -1; i>linSt; i-- {
-
+/*
 if buf[i] == '\r' || buf[i] == '\n' {
 	fmt.Printf("char pos: %d char CR \n", i)
 } else {
-	fmt.Printf("char pos: %d char %c %d \n", i, buf[i], buf[i])
+	fmt.Printf("char pos: %d char %q %d \n", i, buf[i], buf[i])
 }
+*/
 		switch istate {
 		case 0:
 			if utilLib.IsSentence(buf[i]) {
@@ -606,7 +614,7 @@ func (mdP *mdParseObj) checkParEOL(lin int, parel *parEl)(res bool) {
 
 	if (linEnd - linSt) < 2 {return false}
 
-//fmt.Printf("EOL: '%c' '%c'\n", buf[linEnd-1], buf[linEnd])
+//fmt.Printf("EOL: '%q' '%q'\n", buf[linEnd-1], buf[linEnd])
 	if (buf[linEnd] == ' ') && (buf[linEnd-1] == ' ') { 
 		parel.txtEnd = linEnd
 		parel.fin = false
@@ -638,7 +646,7 @@ func (mdP *mdParseObj) checkWs(lin int)(fch byte, err error) {
 	if fnchpos == 0 { return 0, fmt.Errorf("line %d all ws", lin) }
 
 	fch = buf[fnchpos]
-fmt.Printf("fch: %c numWs: %d\n", fch, numWs)
+fmt.Printf("fch: %q numWs: %d\n", fch, numWs)
 
 	return fch, nil
 }
@@ -728,7 +736,7 @@ func (mdP *mdParseObj) checkHeading(lin int) (err error){
 				istate = 1
 				break
 			}
-			return fmt.Errorf("lin %d istate: %d char %c \n", lin, istate, buf[i])
+			return fmt.Errorf("lin %d istate: %d char %q \n", lin, istate, buf[i])
 		case 1:
 			if buf[i] == ' ' {
 				istate = 1
@@ -805,7 +813,7 @@ func (mdP *mdParseObj) checkHr(lin int) (err error) {
 			break
 		}
 	}
-//fmt.Printf("HR %c numCh: %d ", ch, numCh)
+//fmt.Printf("HR %q numCh: %d ", ch, numCh)
 
 	if numCh >2 {
 		el.hrEl = true
@@ -813,7 +821,7 @@ func (mdP *mdParseObj) checkHr(lin int) (err error) {
 		mdP.istate = HR
 		err = nil
 	} else {
-		err = fmt.Errorf("too insufficient chars %c", ch)
+		err = fmt.Errorf("too insufficient chars %q", ch)
 	}
 	return err
 }
@@ -1357,7 +1365,7 @@ func (mdP *mdParseObj) printElList () {
 		}
 
 		if el.errEl!= nil {
-			fmt.Printf("error line %d: fch %c %d:: error %s\n", el.errEl.line, el.errEl.fch, el.errEl.fch, el.errEl.errmsg)
+			fmt.Printf("error line %d: fch %q %d:: error %s\n", el.errEl.line, el.errEl.fch, el.errEl.fch, el.errEl.errmsg)
 			continue
 		}
 
