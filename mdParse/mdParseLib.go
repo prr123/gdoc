@@ -258,7 +258,7 @@ func (mdP *mdParseObj) parseMdOne()(err error) {
 	ilin := 0
 	ist := 0
 	for i:=0; i< len(buf); i++ {
-		if buf[i] == '\n' {
+		if buf[i] == '\n' || buf[i] == '\r' {
 			lin.linSt = ist
 			lin.linEnd = i
 			mdP.linList = append(mdP.linList, lin)
@@ -286,7 +286,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 
 	mdP.istate = EL
 //	for lin:=0; lin<len(mdP.linList); lin++ {
-	maxLin := 30
+	maxLin := 500
 	if len(mdP.linList) < maxLin {maxLin = len(mdP.linList)}
 
 	fmt.Println("\n*************** lines **************************")
@@ -300,13 +300,13 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 		sch = 0
 		if linLen > 1 {sch = (*mdP.inBuf)[mdP.linList[lin].linSt + 1]}
 
-		if fch == '\n' {
+		if fch == '\n'||fch == '\r' {
 			fmt.Printf("*** line %d: fch: CR sch: '%c' ", lin, sch)
 		} else {
 			fmt.Printf("*** line %d: fch: '%c' sch: '%c' ", lin, fch, sch)
 		}
 		switch fch {
-			case '\n':
+			case '\n', '\r':
 				// end of par?
 				// end of header?
 				// is cr only char?
@@ -478,7 +478,7 @@ func (mdP *mdParseObj) checkHeadingEOL(lin int, parEl *parEl)(err error) {
 
 	linSt := parEl.txtSt
 	linEnd := mdP.linList[lin].linEnd
-//fmt.Printf("line %d: st %d:%d\n", lin, linSt, linEnd)
+fmt.Printf("checkHeadingEOL line %d: buf %d:%d\n", lin, linSt, linEnd)
 	linLen := linEnd - linSt
 	if linLen < 2 {return nil}
 
@@ -493,8 +493,11 @@ func (mdP *mdParseObj) checkHeadingEOL(lin int, parEl *parEl)(err error) {
 	numWs := 0
 	for i:=linEnd -1; i>linSt; i-- {
 
-//fmt.Printf("i: %d char:\"%c\" \n", i, buf[i])
-
+if buf[i] == '\r' || buf[i] == '\n' {
+	fmt.Printf("char pos: %d char CR \n", i)
+} else {
+	fmt.Printf("char pos: %d char %c %d \n", i, buf[i], buf[i])
+}
 		switch istate {
 		case 0:
 			if utilLib.IsSentence(buf[i]) {
@@ -551,6 +554,8 @@ func (mdP *mdParseObj) checkHeadingEOL(lin int, parEl *parEl)(err error) {
 		if istate == 3 {break}
 
 	}
+
+	if newLinEnd == 0 {return fmt.Errorf("checkHeadingEOL no lineEnd!")}
 
 	parEl.fin = false
 	if numWs > 2 {
@@ -1194,7 +1199,8 @@ func (mdP *mdParseObj) printElList () {
 
 		if el.parEl != nil {
 			ParEl := *el.parEl
-			fmt.Printf( "par %-5s: subels: %d status: %t", dispHtmlEl(ParEl.typ), len(ParEl.subEl), ParEl.fin)
+			fmt.Printf( "par %-5s: text: %s status: %t", dispHtmlEl(ParEl.typ), ParEl.txt, ParEl.fin)
+/*
 			subLen := len(ParEl.subEl)
 			if subLen == 1 {
 				fmt.Printf(" subel 0: \"%s\"\n", ParEl.subEl[0].txt)
@@ -1204,6 +1210,7 @@ func (mdP *mdParseObj) printElList () {
 					fmt.Printf("         subel %d: %s\n", i, ParEl.subEl[i].txt)
 				}
 			}
+*/
 			fmt.Printf("\n")
 			continue
 		}
@@ -1211,7 +1218,7 @@ func (mdP *mdParseObj) printElList () {
 			fmt.Printf( "ul nest %d: ", el.ulEl.nest)
 			if el.ulEl.parEl != nil {
 				ParEl := el.ulEl.parEl
-				fmt.Printf( "  par typ: %-5s subels: %d stat: %t\n", dispHtmlEl(ParEl.typ), len(ParEl.subEl), ParEl.fin)
+				fmt.Printf( "  par typ: %-5s text: %s stat: %t\n", dispHtmlEl(ParEl.typ), ParEl.txt, ParEl.fin)
 /*
 				subLen := len(ParEl.subEl)
 				if subLen == 1 {
