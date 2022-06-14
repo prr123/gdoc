@@ -315,9 +315,9 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 		if linLen > 1 {sch = (*mdP.inBuf)[mdP.linList[lin].linSt + 1]}
 
 		if fch == '\n'||fch == '\r' {
-			fmt.Printf("*** line %d: fch: CR sch: '%q' ", lin, sch)
+			fmt.Printf("*** line %d: fch: CR sch: %q ", lin, sch)
 		} else {
-			fmt.Printf("*** line %d: fch: '%q' sch: '%q' ", lin, fch, sch)
+			fmt.Printf("*** line %d: fch: %q sch: %q ", lin, fch, sch)
 		}
 		switch fch {
 			case '\n', '\r':
@@ -507,7 +507,7 @@ func (mdP *mdParseObj) checkHeadingEOL(lin int, parEl *parEl)(err error) {
 
 	buf := (*mdP.inBuf)
 
-//fmt.Printf("*** heading EOL: '%q' '%q'\n", buf[linEnd-2], buf[linEnd -1])
+//fmt.Printf("*** heading EOL: %q %q\n", buf[linEnd-2], buf[linEnd -1])
 //	if (buf[linLen-2] == ' ') && (buf[linLen-1] == ' ') { return true}
 
 	// check where the text line acutally ends
@@ -614,7 +614,7 @@ func (mdP *mdParseObj) checkParEOL(lin int, parel *parEl)(res bool) {
 
 	if (linEnd - linSt) < 2 {return false}
 
-//fmt.Printf("EOL: '%q' '%q'\n", buf[linEnd-1], buf[linEnd])
+//fmt.Printf("EOL: %q %q\n", buf[linEnd-1], buf[linEnd])
 	if (buf[linEnd] == ' ') && (buf[linEnd-1] == ' ') { 
 		parel.txtEnd = linEnd
 		parel.fin = false
