@@ -1,5 +1,5 @@
 // gdocUtilLib_test.go
-// test program for utilLib.go
+// test program for gdocUtilLib.go
 //
 // author: prr
 // date: 27/4/2022
@@ -13,6 +13,37 @@ import (
 	"os"
 
 )
+
+func TestParseGlyphFormat(t* testing.T) {
+
+	tstStr := "Step%0.%1:"
+	glFmt, err := ParseGlyphFormat(tstStr)
+	if err != nil {
+		t.Error("error")
+		return
+	}
+
+	if glFmt.counter != 2 {
+		t.Error("should be 2!")
+		return
+	}
+	if glFmt.txt[0] != "Step" {
+		t.Error("should be Step!")
+	}
+	if glFmt.nl[1] != 0 {
+		t.Error("should be 0!")
+	}
+	if glFmt.txt[1] != "." {
+		t.Error("should be '.'!")
+	}
+	if glFmt.nl[2] != 1 {
+		t.Error("should be 0!")
+	}
+	if glFmt.txt[2] != ":" {
+		t.Error("should be ':'!")
+	}
+
+}
 
 func TestCreateFileFolder(t *testing.T) {
 
