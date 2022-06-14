@@ -671,7 +671,7 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 	}
 
 // check of new line in the middle of the string
-		xnb := []byte(nparStr)
+	xnb := []byte(nparStr)
 		n2parStr := ""
 		ist := 0
 		for i:= 0; i< len(nparStr); i++ {
@@ -680,28 +680,29 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 				ist = i
 			}
 		}
-		n2parStr += string(xnb[ist:])
+	n2parStr += string(xnb[ist:])
 //fmt.Println("n2parstr: ",n2parStr," : ",len(n2parStr))
-		if decode {
+	if decode {
 			tocParStr := dObj.cvtTocName(n2parStr)
 //    	outstr += prefix + parStr + suffix
 			tocstr+= tocPrefix + n2parStr + tocSuffix + tocParStr + ")\n\n"
-		}
-		boldPrefix := "";
-		itPrefix := "";
-		if titlestyl {
+	}
+	boldPrefix := "";
+	itPrefix := "";
+
+	switch {
+		case titlestyl:
 			tocstr+= tocPrefix + n2parStr + tocSuffix + "\n"
 	    	outstr = prefix + n2parStr + suffix
-		} else {
-//			if subtitlestyl {
-//	    		outstr += prefix + n2parStr + suffix
-//			} else {
-				if italicStyl {itPrefix = "_"}
-				if boldStyl {boldPrefix = "**"}
-//	    		outstr = "\n" + listStr + prefix + boldPrefix + itPrefix + n2parStr + itPrefix + boldPrefix + suffix
-	    		outstr = listStr + prefix + boldPrefix + itPrefix + n2parStr + itPrefix + boldPrefix + suffix
-//			}
+		case subtitlestyl:
+	    		outstr += prefix + n2parStr + suffix
+		default:
 		}
+		if italicStyl {itPrefix = "_"}
+		if boldStyl {boldPrefix = "**"}
+//	    		outstr = "\n" + listStr + prefix + boldPrefix + itPrefix + n2parStr + itPrefix + boldPrefix + suffix
+	    outstr = listStr + prefix + boldPrefix + itPrefix + n2parStr + itPrefix + boldPrefix + suffix
+	}
 
 	if par.PositionedObjectIds != nil {
 
