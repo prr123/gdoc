@@ -108,6 +108,7 @@ type oList struct {
 	parEl *parEl
 }
 
+// line attributes
 const (
 	EL = iota
 	HR
@@ -150,6 +151,7 @@ const (
 )
 
 func dispState(num int)(str string) {
+// function that converts state constants to strings
 
 	var stateDisp [7]string
 
@@ -168,6 +170,7 @@ func dispState(num int)(str string) {
 }
 
 func dispHtmlEl(num int)(str string) {
+// function that converts html const to strings
 
 	var htmlDisp [15]string
 
@@ -192,13 +195,14 @@ func dispHtmlEl(num int)(str string) {
 }
 
 func InitMdParse() (mdp *mdParseObj) {
+// function that initialises the mdParse object
 
 	mdp = new(mdParseObj)
 	return mdp
 }
 
 func (mdP *mdParseObj) ParseMdFile(inpfilnam string) (err error) {
-// function that opens md file
+// method that opens an md file and reads it into a buffer
 
 	var outfilnam string
 
@@ -244,6 +248,7 @@ func (mdP *mdParseObj) ParseMdFile(inpfilnam string) (err error) {
     nb, _ := inpfil.Read(bufp)
 	if nb != int(inpSize) {return fmt.Errorf("error could not read file!")}
 	mdP.inBuf = &bufp
+	inpfil.Close()
 
 	fmt.Println("\n******* parsing md file! ************")
 
@@ -252,6 +257,9 @@ func (mdP *mdParseObj) ParseMdFile(inpfilnam string) (err error) {
 }
 
 func (mdP *mdParseObj) parseMdOne()(err error) {
+// method that conducts the first pass of the parser.
+// the first pass creates and slice of lines.
+
 	var lin mdLin
 
 	buf := *(mdP.inBuf)
@@ -279,8 +287,7 @@ func (mdP *mdParseObj) parseMdOne()(err error) {
 
 
 func (mdP *mdParseObj) parseMdTwo()(err error) {
-// function that parses the linList and create an el List
-//	var el  structEl
+// method that reads the linList, parses the list and creates a List of elements
 
 	var fch, sch byte
 
@@ -381,7 +388,14 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 
 				// block quotes
 				err = mdP.checkBlock(lin)
-				if err != nil {fmt.Printf("line %d: block error %v\n", lin, err)}
+				if err != nil {fmt.Printf("line %d: quote block error %v\n", lin, err)}
+
+			case '`':
+				fmt.Println("*** start code")
+
+				// block quotes
+				err = mdP.checkCode(lin)
+				if err != nil {fmt.Printf("line %d: code block error %v\n", lin, err)}
 
 			case ' ':
 				// ws
@@ -453,6 +467,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 
 
 func (mdP *mdParseObj) checkError(lin int, fch byte,  errStr string) {
+// method that checks for an error in a line
 
 	var el structEl
 	var errEl errEl
@@ -474,7 +489,8 @@ func (mdP *mdParseObj) checkError(lin int, fch byte,  errStr string) {
 }
 
 func (mdP *mdParseObj) checkHeadingEOL(lin int, parEl *parEl)(err error) {
-// function to test whether a line is completed with a md cr
+// method that tests a heading line to see whether the heading is completed in that line
+// or continues.
 
 	linSt := parEl.txtSt
 	linEnd := mdP.linList[lin].linEnd
@@ -566,6 +582,7 @@ if buf[i] == '\r' || buf[i] == '\n' {
 }
 
 func (mdP *mdParseObj) checkParEnd(lin int)(err error) {
+// method that checks terminates the previous paragraph after an empty line
 
 	lastEl := len(mdP.elList) -1
 	if lastEl < 0 {return fmt.Errorf("no elList")}
@@ -602,6 +619,7 @@ func (mdP *mdParseObj) checkParEOL(lin int, parel *parEl)(res bool) {
 }
 
 func (mdP *mdParseObj) checkWs(lin int)(fch byte, err error) {
+// method that checks indented lines to find the first character
 
 	linSt := mdP.linList[lin].linSt
 	linEnd := mdP.linList[lin].linEnd
@@ -662,6 +680,7 @@ func (mdP *mdParseObj) checkComment(lin int)(err error) {
 }
 
 func (mdP *mdParseObj) checkPar(lin int)(err error) {
+// method that parses a line  to check whether it is paragraph
 
 	var el structEl
 	var parEl parEl
@@ -684,7 +703,8 @@ fmt.Printf(" par txt: %s ", parEl.txt)
 
 
 func (mdP *mdParseObj) checkHeading(lin int) (err error){
-// function that parses a line for headings
+// method that parses a line for headings
+
 	var el structEl
 	var parEl parEl
 
@@ -769,9 +789,10 @@ func (mdP *mdParseObj) checkHeading(lin int) (err error){
 
 
 func (mdP *mdParseObj) checkHr(lin int) (err error) {
+// method that parses a horizontal ruler line
+
 	var el structEl
 
-//	listEl := mdP.elList[el]
 	linSt := mdP.linList[lin].linSt
 	linEnd := mdP.linList[lin].linEnd
 	buf := (*mdP.inBuf)
@@ -805,8 +826,8 @@ func (mdP *mdParseObj) checkItalics() {
 
 }
 
-// lll
 func (mdP *mdParseObj) checkUnList(lin int) (err error){
+// method that parsese and unordered list item
 
 	var el structEl
 	var ulEl uList
@@ -869,6 +890,7 @@ func (mdP *mdParseObj) checkHtml() {
 }
 
 func (mdP *mdParseObj) checkIndent(lin int) (nest int, ord bool, err error){
+// method that chck indents and returns the nesting level and list type
 
 	linSt := mdP.linList[lin].linSt
 	linEnd := mdP.linList[lin].linEnd
@@ -898,6 +920,61 @@ func (mdP *mdParseObj) checkIndent(lin int) (nest int, ord bool, err error){
 }
 
 func (mdP *mdParseObj) checkBlock(lin int) (err error){
+// A method that parses a blockquote
+
+	var el structEl
+	var bkEl bkEl
+	var parEl parEl
+
+	linSt := mdP.linList[lin].linSt
+	linEnd := mdP.linList[lin].linEnd
+	buf := (*mdP.inBuf)
+
+	nest := 0
+	istate :=0
+	parSt :=0
+	for i:=linSt; i< linEnd; i++ {
+		ch := buf[i]
+		switch istate {
+		case 0:
+			if ch == ' ' {istate = 1}
+			if ch == '>' {
+				nest++
+				istate = 0
+			}
+
+		case 1:
+			if ch == '>' {
+				nest++
+				istate = 0
+			}
+			if utilLib.IsAlpha(ch) {
+				istate = 2
+				parSt = i
+			}
+
+		default:
+			break
+		}
+	}
+
+	if parSt == 0 {return fmt.Errorf("no text string found!")}
+
+	parEl.txt = string(buf[parSt:linEnd])
+	parEl.txtSt = parSt
+	parEl.txtEnd = linEnd
+	bkEl.nest = nest
+	bkEl.parEl = &parEl
+	el.bkEl = &bkEl
+	mdP.elList = append(mdP.elList, el)
+	mdP.istate = BLK
+
+	return nil
+}
+
+func (mdP *mdParseObj) checkCode(lin int) (err error){
+// A method that parses a code block
+
 	var el structEl
 	var bkEl bkEl
 	var parEl parEl
@@ -953,6 +1030,7 @@ func (mdP *mdParseObj) checkStrike() {
 }
 
 func (mdP *mdParseObj) checkImage(lin int) (err error){
+// a method that parse an image
 
 	var el structEl
 	var imgEl imgEl
@@ -1041,6 +1119,9 @@ func (mdP *mdParseObj) checkLink() {
 }
 
 func (mdP *mdParseObj) checkTable(lin int)(endLin int, err error) {
+// method that parses a table. The method returns the last line of the table.
+// A table consists of several lines, unlike other elements
+
 	var el structEl
 	var tblEl tblEl
 
@@ -1086,6 +1167,8 @@ func (mdP *mdParseObj) checkTable(lin int)(endLin int, err error) {
 }
 
 func (mdP *mdParseObj) checkOrList(lin int)(err error) {
+// method that parses an ordered list
+
 	var el structEl
 	var orEl oList
 	var parEl parEl
@@ -1145,6 +1228,7 @@ fmt.Printf(" OL txt: %s ", parEl.txt)
 }
 
 func (mdP *mdParseObj) checkBR()(err error) {
+// method that parses an empty line
 
 	var el structEl
 
@@ -1167,7 +1251,7 @@ func (mdP *mdParseObj) printLinList()() {
 }
 
 func (mdP *mdParseObj) cvtMdToHtml()(err error) {
-// function that converts the structural Element
+// method that converts the parsed element list of an md file inot an html file
 	fmt.Printf("*** input file: %s\n", mdP.filnam + ".md")
 
 	outfil, err := os.Create(mdP.filnam + ".html")
@@ -1178,7 +1262,7 @@ func (mdP *mdParseObj) cvtMdToHtml()(err error) {
 }
 
 func (mdP *mdParseObj) printElList () {
-// function that prints out the structural element list
+// method that prints out the structural element list
 
 	fmt.Println("*********** El List ***********")
 	fmt.Printf("Elements: %d\n", len(mdP.elList))
