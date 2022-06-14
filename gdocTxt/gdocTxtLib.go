@@ -521,7 +521,7 @@ func (dObj *gdocTxtObj) cvtPar(par *docs.Paragraph)(outstr string) {
 	tbuf := []byte(parStr)
 	wsPos := 0
 	pEnd := 0
-	fmt.Printf("cpl: %d %d\n", dObj.cpl, len(tbuf))
+//	fmt.Printf("cpl: %d %d\n", dObj.cpl, len(tbuf))
 	for i:= 0; i<len(tbuf); i++ {
 		switch tbuf[i] {
 		case '\n':
@@ -531,7 +531,7 @@ func (dObj *gdocTxtObj) cvtPar(par *docs.Paragraph)(outstr string) {
 		default:
 			if (i - pEnd) > dObj.cpl {
 				tbuf[wsPos] = '\n'
-	fmt.Printf("wsPos: %d, pEnd: %d\n", wsPos, pEnd)
+//	fmt.Printf("wsPos: %d, pEnd: %d\n", wsPos, pEnd)
 				pEnd = wsPos
 			}
 		}
