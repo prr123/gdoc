@@ -22,15 +22,15 @@ func main() {
 	switch numArg {
 	case 0, 1:
 		fmt.Printf("no input file provided\n")
-		fmt.Printf("usage is: credoc file\n")
+		fmt.Printf("usage is: ./mdparse file\n")
 		os.Exit(1)
 
  	case 2:
 		fmt.Printf("input file: %s\n", os.Args[1])
 
 	default:
-		fmt.Printf("in correct number of command line parameters: %d\n", numArg)
-		fmt.Printf("usage is: credoc file\n")
+		fmt.Printf("too many command line parameters: %d\n", numArg)
+		fmt.Printf("usage is: ./mdparse file\n")
 		os.Exit(1)
 	}
 
