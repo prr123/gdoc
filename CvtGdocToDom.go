@@ -15,7 +15,6 @@ import (
 		"strings"
 		gdocApi "google/gdoc/gdocApi"
 		gdocDom "google/gdoc/gdocDom"
-//		gdocHtml "google/gdoc/gdocHtml"
 )
 
 
