@@ -1,6 +1,18 @@
-golang libraries for google docs
+golang libraries for google document and markdown files
 
-still work in progress!
+The libraries allow the text conversion from one file format into another.
+
+Input files are:  
+*  gdoc
+*  txt
+*  md
+
+Output files are:
+*  gdoc
+*  txt
+*  md
+*  html (integrated css with html file and seperate html and css files)
+*  dom (js and css files; base html file)
 
 ## gdocTxtLib.go
 This library is mostly for debugging. It generates a text output of a gdoc sutructure.
