@@ -107,9 +107,11 @@ type docFtnoteTyp struct {
 }
 
 type cList struct {
-	cListId string
 	count int
 	cOrd bool
+	cListId string
+	glFmt string
+	mkCss string
 }
 
 type docList struct {
@@ -2594,6 +2596,14 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parDisp dispObj, err error)
 
 		if dObj.Options.Verb {listHtml += fmt.Sprintf("<!-- List Element %d -->\n", dObj.parCount)}
 
+		bulletCssStr := ""
+		if par.Bullet.TextStyle != nil {
+			_, defTxtStyl, err := dObj.getNamedStyl("NORMAl_TEXT")
+			if err != nil {parDisp.bodyCss += "/* cannot find normal txt style*/\n"}
+			defTxtMap := fillTxtMap(defTxtStyl)
+			bulletCssStr = cvtTxtMapStylCss(defTxtMap, par.Bullet.TextStyle)
+		}
+
 		// find list id of paragraph
 		listid := par.Bullet.ListId
 		nestIdx := int(par.Bullet.NestingLevel)
@@ -2628,6 +2638,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parDisp dispObj, err error)
 							newList.cListId = listid
 							newList.cOrd = listOrd
 							newList.count = 0
+							//add bullet css Str
 							newStack := pushLiStack(dObj.listStack, newList)
 							dObj.listStack = newStack
 
@@ -2668,6 +2679,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parDisp dispObj, err error)
 				newList.cListId = listid
 				newList.cOrd = listOrd
 				newList.count = 0
+				//add bullet css Str
 				newStack := pushLiStack(dObj.listStack, newList)
 				dObj.listStack = newStack
 				if listOrd {
@@ -2677,6 +2689,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parDisp dispObj, err error)
 					listCss = fmt.Sprintf(".%s_ol.nL_%d {\n", listid[4:], nestIdx)
 					listCss += fmt.Sprintf("  counter-reset: %s_nL_%d\n",listid[4:], nestIdx)
 					listCss += "}\n"
+					// create bullet css styl
 				} else {
 					listHtml += fmt.Sprintf("<ul class=\"%s_ul nL_%d\">\n", listid[4:], nestIdx)
 				}
@@ -2685,6 +2698,8 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parDisp dispObj, err error)
 //lll
 		// CSS
 		liCss := fmt.Sprintf(".%s_li.nL_%d.lc_%d::marker {\n", listid[4:], nestIdx, listAtt.count)
+		listAtt.counter++
+
 		if par.Bullet.TextStyle != nil {
 			liCss += cvtTxtStylCss(par.Bullet.TextStyle)
 		}
@@ -2698,10 +2713,10 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parDisp dispObj, err error)
 
 //		gdocUtil.PrintGlFmt(glFmt)
 
-		liCss += fmt.Sprintf("  content: \"%s\" ", glFmt.Txt[0])
 		liCss += fmt.Sprintf("  counter-increment: %s_li_nL_%d;\n", listid[4:], nestIdx)
+		liCss += fmt.Sprintf("  content: \"%s\" ", glFmt.Txt[0])
 		for i:=1; i<glFmt.Counter+1; i++ {
-			liCss += fmt.Sprintf("counter(%s_nL_%d) \"%s\"",listid[4:], glFmt.Nl[i] ,glFmt.Txt[i])
+			liCss += fmt.Sprintf("counter(%s_li_nL_%d) \"%s\"",listid[4:], glFmt.Nl[i] ,glFmt.Txt[i])
 		}
 		liCss +=";\n"
 //		liCss += fmt.Sprintf(" \n")
