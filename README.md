@@ -14,6 +14,12 @@ Output files are:
 *  html (integrated css with html file and seperate html and css files)
 *  dom (js and css files; base html file)
 
+## documentation
+There will be md files for each library
+
+## examples
+to come 
+
 ## gdocTxtLib.go
 This library is mostly for debugging. It generates a text output of a gdoc sutructure.
 
