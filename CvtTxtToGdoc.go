@@ -13,7 +13,7 @@ package main
 import (
         "fmt"
         "os"
-		"strings"
+//		"strings"
 		txtGdoc "google/gdoc/txtGdoc"
 )
 
@@ -21,8 +21,8 @@ import (
 func main() {
 
 	// intialise
-    baseFolder := "output"
-    baseFolderSlash := baseFolder + "/"
+//    baseFolder := "azul"
+//    baseFolderSlash := baseFolder + "/"
 
     numArgs := len(os.Args)
 
@@ -31,21 +31,19 @@ func main() {
  	switch numArgs {
         case 1:
             fmt.Println("error - no comand line arguments!")
-            fmt.Printf("%s usage is:\n  %s docId folder\n", cmd[2:], cmd)
+            fmt.Printf("%s usage is:\n  %s \"input file\" folder\n", cmd[2:], cmd)
             os.Exit(1)
-        case 2:
-		// input file
-		case 3:
+		case 2:
 		// output folder
 		default:
             fmt.Println("error - too many arguments!")
-            fmt.Printf("%s usage is:\n  %s folder docId\n", cmd[2:], cmd)
+            fmt.Printf("%s usage is:\n  %s \"input file\" folder\n", cmd[2:], cmd)
             os.Exit(1)
 	}
 
     inpFil := os.Args[1]
 
-
+/*
     outfilPath:= ""
     switch {
         case numArgs == 2:
@@ -59,24 +57,18 @@ func main() {
         case os.Args[2] == "":
             outfilPath = baseFolder
         default:
-            fmt.Printf("no valid input folder: %s", os.Args[2])
+            fmt.Printf("no valid output folder provided: %s", os.Args[2])
             os.Exit(1)
     }
+*/
 
-	gd, err := txtGdoc.InitTxtGdoc(inpFil)
+	_, err := txtGdoc.InitTxtGdoc(inpFil)
     if err != nil {
         fmt.Printf("error - InitTxtGdoc: %v!\n", err)
         os.Exit(1)
     }
 
-	gd.OutFilPath = outfilPath
-/*
-	err = txtGdoc.CvtGdocToTxt(outfilPath, doc, nil)
-	if err != nil {
-		fmt.Println("error main -- cannot convert gdoc file: ", err)
-		os.Exit(1)
-	}
+//	gd.OutFilPath = outfilPath
 
-*/
 	fmt.Println("Success!")
 }
