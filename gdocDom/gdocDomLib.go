@@ -2955,7 +2955,6 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 				//htmlStr += "    " + tObj.bodyHtml
 			}
 			//htmlStr += "  </td>\n"
-
 		}
 		//htmlStr += "</tr>\n"
 	}
