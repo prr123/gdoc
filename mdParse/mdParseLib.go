@@ -408,20 +408,32 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 				// ws
 				// nested list
 //				nestLev, ord, err := mdP.checkIndent(lin)
-				nl, ord, err := mdP.checkIndent(lin)
+				ch, wsNum, err := mdP.checkIndent(lin)
 				if err != nil {
 					fmt.Printf("line %d: indent error %v\n", lin, err)
 					break
 				}
-				if !ord {
-					err := mdP.checkUnList(lin)
-					if err != nil {fmt.Printf("line %d: unordered list error %v\n", lin, err)}
-		fmt.Printf(" un List Nl: %d", nl)
+
+				if utilLib.IsAlpha(ch) {
+					err = mdP.checkBlock(lin)
+					if err != nil {fmt.Printf("line %d: ind block error %v\n", lin, err)}
 					break
 				}
-				err = mdP.checkOrList(lin)
-				if err != nil {fmt.Printf("line %d: ordered list error %v\n", lin, err)}
-		fmt.Printf(" or List Nl: %d", nl)
+
+				if (ch == '*' || ch == '+') || ch == '-' {
+					err := mdP.checkUnList(lin)
+					if err != nil {fmt.Printf("line %d: unordered list error %v\n", lin, err)}
+		fmt.Printf(" un List Nl: %d", wsNum/4)
+					break
+				}
+
+				if utilLib.IsNumeric(ch) {
+					err = mdP.checkOrList(lin)
+					if err != nil {fmt.Printf("line %d: ordered list error %v\n", lin, err)}
+		fmt.Printf(" or List Nl: %d", wsNum/4)
+					break
+				}
+				fmt.Printf("line %d: indent error start char %q in pos: %d\n", lin, ch, wsNum +1)
 
 			case '!':
 				// image
@@ -1044,23 +1056,44 @@ func (mdP *mdParseObj) checkPar(lin int)(err error) {
 	// see whether the previous element of elList is a parEl
 	last := len(mdP.elList) -1
 	lastEl := mdP.elList[last]
-	if lastEl.parEl == nil {
+	// prev element: par
+	if lastEl.parEl != nil {
+		// lastEl is a parEl
+		// we tack the txtstring onto the parEl
+		lastParEl := lastEl.parEl
+		if !lastParEl.fin {
 fmt.Printf(" new el par txt: %s ", parEl.txt)
-		mdP.elList = append(mdP.elList, el)
-		return nil
-	}
-	// lastEl is a parEl
-	// we tack the txtstring onto the parEl
-	lastParEl := lastEl.parEl
-	if !lastParEl.fin {
-fmt.Printf(" new el par txt: %s ", parEl.txt)
-		mdP.elList = append(mdP.elList, el)
-		return nil
-	}
-	lastParEl.txt += " " + parEl.txt
-	lastParEl.txtEnd = parEl.txtEnd
+			mdP.elList = append(mdP.elList, el)
+			return nil
+		}
+		lastParEl.txt += " " + parEl.txt
+		lastParEl.txtEnd = parEl.txtEnd
 fmt.Printf(" ex el par txt: %s ", parEl.txt)
-	return nil
+	}
+
+	// prev element: blk
+	if lastEl.bkEl != nil {
+		lastParEl := lastEl.bkEl.parEl
+		if !lastParEl.fin {
+fmt.Printf(" new blk el txt: %s ", parEl.txt)
+			mdP.elList = append(mdP.elList, el)
+			return nil
+		}
+		lastParEl.txt += " " + parEl.txt
+		lastParEl.txtEnd = parEl.txtEnd
+fmt.Printf(" ex blk el txt: %s ", parEl.txt)
+	}
+
+	// prev elment: code
+
+	//previous element: empty line
+	if lastEl.emEl {
+fmt.Printf(" new el par txt: %s ", parEl.txt)
+		mdP.elList = append(mdP.elList, el)
+		return nil
+	}
+
+	return fmt.Errorf("elList at %d has no valid el")
 }
 
 
@@ -1251,7 +1284,7 @@ func (mdP *mdParseObj) checkHtml() {
 
 }
 
-func (mdP *mdParseObj) checkIndent(lin int) (nest int, ord bool, err error){
+func (mdP *mdParseObj) checkIndent(lin int) (ch byte, numWs int, err error){
 // method that chck indents and returns the nesting level and list type
 
 	linSt := mdP.linList[lin].linSt
@@ -1260,10 +1293,19 @@ func (mdP *mdParseObj) checkIndent(lin int) (nest int, ord bool, err error){
 
 	wsCount := 0
 	for i:=linSt; i< linEnd; i++ {
-		switch buf[i] {
-		case ' ':
+		if buf[i] == ' ' {
 			wsCount++
+		} else {
+			ch = buf[i]
+			break
+		}
+	}
 
+	if ch == 0 {return 0, numWs, fmt.Errorf("lin %d: checkIndent: no char found!")}
+
+	if wsCount < 4 { return ch, numWs, fmt.Errorf("lin %d: checkIndent: insufficient ws!")}
+
+/*
 		case '*','-','+':
 			if wsCount < 4 {return 0,false, fmt.Errorf("insufficient ws!")}
 			return wsCount/4, false, nil
@@ -1271,15 +1313,11 @@ func (mdP *mdParseObj) checkIndent(lin int) (nest int, ord bool, err error){
 		case '1','2','3','4','5','6','7','8','9','0':
 			if wsCount < 4 {return wsCount/4, true, fmt.Errorf("insufficient ws!")}
 			return wsCount/4, true, nil
+*/
 
-		default:
-			err = fmt.Errorf("invalid indent char!")
-			return 0,false, err
-		}
-	}
-
-	return 0, false, fmt.Errorf("no list char found!")
+	return ch, wsCount, nil
 }
+
 
 func (mdP *mdParseObj) checkBlock(lin int) (err error){
 // A method that parses a blockquote
@@ -1295,23 +1333,57 @@ func (mdP *mdParseObj) checkBlock(lin int) (err error){
 	nest := 0
 	istate :=0
 	parSt :=0
+	wsCount := 0
 	for i:=linSt; i< linEnd; i++ {
 		ch := buf[i]
 		switch istate {
 		case 0:
-			if ch == ' ' {istate = 1}
-			if ch == '>' {
-				nest++
-				istate = 0
+			if ch == ' ' {
+				istate = 10
+				break
 			}
-
-		case 1:
 			if ch == '>' {
 				nest++
-				istate = 0
+				istate = 1
+				break
+			}
+		// else error
+		case 1:
+			// >
+			if ch == ' ' {
+				// >ws
+			}
+			if ch == '>' {
+				// >>
+				nest++
+				break
 			}
 			if utilLib.IsAlpha(ch) {
+				// >a
 				istate = 2
+				parSt = i
+				break
+			}
+
+		case 2:
+			// >a, >>a, > a, >  a
+			if ch == '>' {
+				nest++
+				istate = 0
+				break
+			}
+			if utilLib.IsAlpha(ch) {
+				istate = 98
+				parSt = i
+			}
+		case 10:
+			// ' '
+			if ch == ' ' {
+				wsCount++
+				break
+			}
+			if utilLib.IsAlpha(ch) {
+				istate = 99
 				parSt = i
 			}
 
