@@ -523,18 +523,26 @@ func (mdP *mdParseObj) parseMdTxt(parEl *parEl)(err error) {
 		istate := 0
 		switch istate {
 		case 0:
-			if ch == ' ' {
+			switch ch {
+			case ' ':
 				// ws
 				istate = 1
-			}
-			if ch == '*' {
+
+			case '*':
 				// *
 				istate = 2
-			}
-			if ch == '[' {
+
+			case '_' :
+				// _
+				istate = 11
+
+			case '[' :
 				// [
 				istate = 40
+
+			default:
 			}
+
 		case 1:
 			// ws
 			if utilLib.IsAlphaNumeric(ch) {
@@ -546,31 +554,94 @@ func (mdP *mdParseObj) parseMdTxt(parEl *parEl)(err error) {
 				istate = 2
 			}
 			if ch == '[' {
-				// [
+				// ws[
 				istate = 40
 			}
 
 		case 2:
 			// *
 			if ch == '*' {
+				// **
 				istate = 20
+				break
 			}
+
 			if utilLib.IsAlphaNumeric(ch) {
+				// *t
 				istate = 3
 			}
 
 		case 3:
+				// *t
 			if ch == '*' {
+				// *t*
 				istate = 4
 			}
 
 		case 4:
-			// case *txt*
+			// *txt*
 			if ch == ' ' {
+				// *txt*ws
 				istate = 1
 			} else {
 				//error
 			}
+
+		case 11:
+			// _
+			if ch == '_' {
+				// __
+				istate = 15
+				break
+			}
+
+			if utilLib.IsAlpha(ch) {
+				// _t
+				istate = 12
+			}
+		case 12:
+			// _t
+			if ch == '_' {
+				// _t_
+				istate = 13
+			}
+		case 13:
+			// _t_
+			if ch == ' ' {
+				// _t_ws
+				istate = 4
+			}
+
+		case 15:
+			// __
+			if utilLib.IsAlpha(ch) {
+				// __t
+				istate = 16
+			}
+
+		case 16:
+			// __t
+			if ch == '_' {
+				// __t_
+				istate = 17
+			}
+
+		case 17:
+			// __t_
+			if ch == '_' {
+				// __t__
+				istate = 18
+			} else {
+				//error
+			}
+
+		case 18:
+			// __t__
+			if ch == ' ' {
+				// __t__ws
+				istate = 4
+			}
+
 		case 20:
 			// **
 			if ch == '*' {
