@@ -29,6 +29,22 @@ func IsAlphaNumeric(let byte)(res bool) {
     return res
 }
 
+func IsUriCh(let byte)(res bool) {
+// function that test whether byte is aphanumeric
+    res = false
+    tbool := (let >= 'a' && let <= 'z') || (let >= 'A' && let <= 'Z')
+    if tbool || (let >= '0' && let <= '9') { res = true }
+	if res {return res}
+
+	switch let {
+		case ':','.', '/':
+			res = true
+		default:
+			res = false
+	}
+    return res
+}
+
 func IsSentence(let byte)(res bool) {
 // function that test whether byte is aphanumeric
     tbool := (let >= 'a' && let <= 'z') || (let >= 'A' && let <= 'Z')
