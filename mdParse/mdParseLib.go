@@ -391,8 +391,6 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 				}
 
 			case '>':
-				fmt.Println("*** start blockquote")
-
 				// block quotes
 				err = mdP.checkBlock(lin)
 				if err != nil {fmt.Printf("line %d: quote block error %v\n", lin, err)}
@@ -1330,7 +1328,7 @@ func (mdP *mdParseObj) checkBlock(lin int) (err error){
 	linEnd := mdP.linList[lin].linEnd
 	buf := (*mdP.inBuf)
 
-	nest := 0
+	nest := -1
 	istate :=0
 	parSt :=0
 	wsCount := 0
@@ -1338,65 +1336,69 @@ func (mdP *mdParseObj) checkBlock(lin int) (err error){
 		ch := buf[i]
 		switch istate {
 		case 0:
-			if ch == ' ' {
+			switch ch {
+				case ' ':
 				istate = 10
-				break
-			}
-			if ch == '>' {
+				case '>':
 				nest++
 				istate = 1
-				break
+				default:
 			}
 		// else error
 		case 1:
 			// >
-			if ch == ' ' {
+			switch ch {
+				case ' ':
 				// >ws
-			}
-			if ch == '>' {
+
+				case '>':
 				// >>
 				nest++
-				break
-			}
-			if utilLib.IsAlpha(ch) {
+				default:
+				if utilLib.IsAlpha(ch) {
 				// >a
-				istate = 2
-				parSt = i
-				break
-			}
-
-		case 2:
-			// >a, >>a, > a, >  a
-			if ch == '>' {
-				nest++
-				istate = 0
-				break
-			}
-			if utilLib.IsAlpha(ch) {
 				istate = 98
 				parSt = i
+				}
+			}
+		case 2:
+			// >a, >>a, > a, >  a
+			switch ch {
+				case '>':
+				nest++
+				istate = 0
+
+				default:
+				if utilLib.IsAlpha(ch) {
+					istate = 98
+					parSt = i
+				}
 			}
 		case 10:
 			// ' '
-			if ch == ' ' {
+			switch ch {
+				case ' ':
 				wsCount++
-				break
+				default:
+				if utilLib.IsAlpha(ch) {
+					istate = 99
+					parSt = i
+				}
 			}
-			if utilLib.IsAlpha(ch) {
-				istate = 99
-				parSt = i
-			}
-
 		default:
 			break
 		}
 	}
 
-	if parSt == 0 {return fmt.Errorf("no text string found!")}
-
-	parEl.txt = string(buf[parSt:linEnd])
-	parEl.txtSt = parSt
-	parEl.txtEnd = linEnd
+	if parSt == 0 {
+		parEl.txt = ""
+		parEl.txtSt = linEnd -1
+		parEl.txtEnd = linEnd -1
+	} else {
+		parEl.txt = string(buf[parSt:linEnd])
+		parEl.txtSt = parSt
+		parEl.txtEnd = linEnd
+	}
 	bkEl.nest = nest
 	bkEl.parEl = &parEl
 	el.bkEl = &bkEl
@@ -1404,7 +1406,7 @@ func (mdP *mdParseObj) checkBlock(lin int) (err error){
 	mdP.istate = BLK
 
 //bbb
-fmt.Printf(" nest: % d par txt: %s ", nest, parEl.txt)
+fmt.Printf(" nest: %d par txt: %s ", nest, parEl.txt)
 
 	return nil
 }
