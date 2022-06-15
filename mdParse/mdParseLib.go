@@ -471,7 +471,274 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 	return nil
 }
 
+//ppp
+func (mdP *mdParseObj) parseMdTextEls()(err error) {
+// method that parses the text fields
 
+	for i:=0; i < len(mdP.elList); i++ {
+		el := mdP.elList[i]
+		fmt.Printf("el %3d: ", i)
+
+		// parse par el
+		if el.parEl != nil {
+
+		}
+
+		// parse par el
+		if el.bkEl != nil {
+
+		}
+
+		//parse blkEl
+		if el.ulEl != nil {
+
+		}
+
+		//parse blkEl
+		if el.olEl != nil {
+
+		}
+
+	}
+
+	return nil
+}
+
+func (mdP *mdParseObj) parseMdTxt(parEl *parEl)(err error) {
+
+	buf := []byte(parEl.txt)
+
+	linkSt := 0
+	linkEnd := 0
+	uriSt := 0
+	uriEnd := 0
+
+	ftnNumSt:=0
+	ftnNumEnd:=0
+	ftnStrSt:=0
+	ftnStrEnd :=0
+
+	for i:=0; i< len(buf); i++ {
+		ch := buf[i]
+		istate := 0
+		switch istate {
+		case 0:
+			if ch == ' ' {
+				// ws
+				istate = 1
+			}
+			if ch == '*' {
+				// *
+				istate = 2
+			}
+			if ch == '[' {
+				// [
+				istate = 40
+			}
+		case 1:
+			// ws
+			if utilLib.IsAlphaNumeric(ch) {
+				// wst
+				istate = 0
+			}
+			if ch == '*' {
+				// ws*
+				istate = 2
+			}
+			if ch == '[' {
+				// [
+				istate = 40
+			}
+
+		case 2:
+			// *
+			if ch == '*' {
+				istate = 20
+			}
+			if utilLib.IsAlphaNumeric(ch) {
+				istate = 3
+			}
+
+		case 3:
+			if ch == '*' {
+				istate = 4
+			}
+
+		case 4:
+			// case *txt*
+			if ch == ' ' {
+				istate = 1
+			} else {
+				//error
+			}
+		case 20:
+			// **
+			if ch == '*' {
+				// ***
+				istate = 30
+			}
+			if utilLib.IsAlphaNumeric(ch) {
+				// **t
+				istate = 21
+			}
+			if ch == ' ' {
+				//error
+				istate = 50
+			}
+
+		case 21:
+			// **t
+			if ch == '*' {
+				// **t*
+				istate = 22
+			}
+
+		case 22:
+			// **text*
+			if ch == '*' {
+				// **text**
+				istate = 4
+			}
+
+		case 30:
+			// ***
+			if utilLib.IsAlphaNumeric(ch) {
+				istate = 31
+			}
+			if ch == ' ' {
+				//error ***ws
+				istate = 50
+			}
+
+		case 31:
+			// ***t
+			if ch == '*' {
+				// ***t*
+				istate = 32
+			}
+
+		case 32:
+			// ***text*
+			if ch == '*' {
+				// ***text**
+				istate = 33
+			}
+
+		case 33:
+			// **text**
+			if ch == '*' {
+				// ***text***
+				istate = 4
+			}
+
+// links & footnotes
+		case 40:
+			// [
+			if utilLib.IsAlphaNumeric(ch) {
+				// [t
+				linkSt = i
+				istate = 41
+			}
+			if ch == '^' {
+				// [^
+				istate = 50
+			}
+
+		case 41:
+			// [t
+			if ch == ']' {
+				// [t]
+				linkEnd = i-1
+				istate =42
+			}
+		case 42:
+			// [t]
+			if ch == '(' {
+				// [t](
+				istate = 43
+			}
+		case 43:
+			// [t](
+			if utilLib.IsUriCh(ch) {
+				// [t](uri
+				uriSt = i
+				istate = 44
+			}
+		case 44:
+			// [t](uri
+			if ch == ')' {
+				// [t](uri)
+				uriEnd = i-1
+				istate = 4
+			}
+
+		case 50:
+			// [^
+			if utilLib.IsNumeric(ch) {
+				// [^1
+				istate = 51
+				ftnNumSt = i
+			}
+			if utilLib.IsAlpha(ch) {
+				// [^t
+				istate = 59
+				ftnStrSt = i
+			} else {
+				fmt.Printf("error istate 50: ch %q is non-numeric!\n")
+				istate = 4
+			}
+		case 51:
+			// [^1
+			if ch == ']' {
+				// [^1]
+				ftnNumEnd = i-1
+				istate = 52
+			}
+
+		case 52:
+			// [^1]
+			if ch == '(' {
+				// [^1](
+				istate = 53
+			}
+		case 53:
+			// [^1](
+			if utilLib.IsAlpha(ch) {
+				// [^1](a
+				ftnStrSt =  i+1
+				istate = 54
+			}
+		case 54:
+			// [^1](a
+			if ch == ')' {
+				// [^1](text)
+				istate = 4
+				ftnStrEnd = i-1
+			}
+		case 59:
+			// [^a
+			if ch == ']' {
+				// [^a]
+				ftnStrEnd = i-1
+				istate = 4
+			}
+		default:
+		}
+		if ftnStrEnd != 0 {
+			// ftnStr = string(buf[ftnStrSt:ftnStrEnd+1])
+			ftnStrSt = 0
+			ftnStrEnd = 0
+			//ftn Number
+			fmt.Printf("*** ftn num %d:%d str %d:%d\n", ftnNumSt, ftnNumEnd, ftnStrSt, ftnStrEnd)
+		}
+		// link
+		if linkEnd != 0 {
+			linkEnd = 0
+			fmt.Printf("link str: %d:%d uri: %d:%d\n", linkSt, linkEnd, uriSt, uriEnd)
+		}
+	}
+	return nil
+}
 
 func (mdP *mdParseObj) checkError(lin int, fch byte,  errStr string) {
 // method that checks for an error in a line
@@ -703,9 +970,25 @@ func (mdP *mdParseObj) checkPar(lin int)(err error) {
 	el.parEl = &parEl
 	mdP.istate = PAR
 
-fmt.Printf(" par txt: %s ", parEl.txt)
-	mdP.elList = append(mdP.elList, el)
-
+	// see whether the previous element of elList is a parEl
+	last := len(mdP.elList) -1
+	lastEl := mdP.elList[last]
+	if lastEl.parEl == nil {
+fmt.Printf(" new el par txt: %s ", parEl.txt)
+		mdP.elList = append(mdP.elList, el)
+		return nil
+	}
+	// lastEl is a parEl
+	// we tack the txtstring onto the parEl
+	lastParEl := lastEl.parEl
+	if !lastParEl.fin {
+fmt.Printf(" new el par txt: %s ", parEl.txt)
+		mdP.elList = append(mdP.elList, el)
+		return nil
+	}
+	lastParEl.txt += " " + parEl.txt
+	lastParEl.txtEnd = parEl.txtEnd
+fmt.Printf(" ex el par txt: %s ", parEl.txt)
 	return nil
 }
 
@@ -976,6 +1259,9 @@ func (mdP *mdParseObj) checkBlock(lin int) (err error){
 	el.bkEl = &bkEl
 	mdP.elList = append(mdP.elList, el)
 	mdP.istate = BLK
+
+//bbb
+fmt.Printf(" nest: % d par txt: %s ", nest, parEl.txt)
 
 	return nil
 }
@@ -1361,6 +1647,11 @@ func (mdP *mdParseObj) printElList () {
 
 		if el.comEl != nil {
 			fmt.Printf( "com: %s\n", el.comEl.txt)
+			continue
+		}
+
+		if el.bkEl != nil {
+			fmt.Printf( "blk lev: %d text: %s\n", el.bkEl.nest, el.bkEl.parEl.txt)
 			continue
 		}
 
