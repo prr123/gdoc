@@ -1726,10 +1726,10 @@ func (mdP *mdParseObj) checkOrList(lin int)(err error) {
 			markEnd = i
 			break
 		}
-		if !utilLib.IsNumeric(ch) {return fmt.Errorf(" nonumeric char in counter")}
+		if !utilLib.IsNumeric(ch) {return fmt.Errorf(" orList: non-numeric char %q in counter", ch)}
 	}
 
-	if markEnd == 0 {return fmt.Errorf(" orList no period after counter!")}
+	if markEnd == 0 {return fmt.Errorf(" orList: no period after counter!")}
 
 	// check for par start
 	for i:= markEnd+1; i< linEnd; i++ {
@@ -1742,13 +1742,13 @@ func (mdP *mdParseObj) checkOrList(lin int)(err error) {
 			wsNum++
 			continue
 		}
-		return fmt.Errorf(" unacceptable char in pos %d before par start!", i)
+		return fmt.Errorf(" orList: unacceptable char %q in pos %d before par start!", ch, i)
 	}
 
-	if parSt == 0 {return fmt.Errorf("ol no text found!")}
+	if parSt == 0 {return fmt.Errorf("olList no text start found!")}
 
 	// nest lev
-	nestLev := wsNum/4
+	nest := wsNum/4
 
 	parEl.txtSt = parSt
 
@@ -1757,12 +1757,13 @@ func (mdP *mdParseObj) checkOrList(lin int)(err error) {
 
 fmt.Printf(" OL txt: %s ", parEl.txt)
 
-	orEl.nest = nestLev
+	orEl.nest = nest
+	orEl.count[nest]++
 	orEl.parEl = &parEl
 
 	el.olEl = &orEl
 	mdP.elList = append(mdP.elList, el)
-	mdP.istate = PAR
+	mdP.istate = OL
 
 	return nil
 }
