@@ -105,6 +105,7 @@ type uList struct {
 
 type oList struct {
 	nest int
+	count [6]int
 	parEl *parEl
 }
 
@@ -112,11 +113,14 @@ type oList struct {
 const (
 	EL = iota
 	HR
+	COM
 	PAR
 	UL
 	OL
 	IMG
 	BLK
+	COD
+	TBL
 	ERR
 )
 
@@ -153,17 +157,19 @@ const (
 func dispState(num int)(str string) {
 // function that converts state constants to strings
 
-	var stateDisp [7]string
+	var stateDisp [12]string
 
-	stateDisp[0] = "EL"
-	stateDisp[1] = "HR"
-	stateDisp[2] = "PAR"
-	stateDisp[3] = "UL"
-	stateDisp[4] = "OL"
-	stateDisp[5] = "IMG"
-	stateDisp[6] = "BL"
-//	stateDisp[7] = "UL2"
-//	stateDisp[8] = "OL2"
+	stateDisp[EL] = "EL"
+	stateDisp[HR] = "HR"
+	stateDisp[COM] = "COM"
+	stateDisp[PAR] = "PAR"
+	stateDisp[UL] = "UL"
+	stateDisp[OL] = "OL"
+	stateDisp[IMG] = "IMG"
+	stateDisp[BLK] = "BLK"
+	stateDisp[COD] = "COD"
+	stateDisp[TBL] = "TBL"
+	stateDisp[ERR] = "ERR"
 
 	if num > len(stateDisp)-1 {return ""}
 	return stateDisp[num]
@@ -326,22 +332,33 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 				// is cr only char?
 				if linEnd > linSt + 1 {
 					fmt.Printf("line %d: text after cr", lin)
+					mdP.istate = ERR
 					break
 				}
 				switch mdP.istate {
 				case PAR:
 					err = mdP.checkParEnd(lin)
-					if err != nil {fmt.Printf("line %d ParEnd %v\n", lin, err)}
+					if err != nil {fmt.Printf("line %d ParEnd %v\n", lin, err); mdP.istate = ERR;}
 					err = mdP.checkBR()
-					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err)}
+					mdP.istate = EL
+					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err); mdP.istate = ERR;}
 
 				case EL, HR:
 					err = mdP.checkBR()
-					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err)}
+					mdP.istate = EL
+					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err); mdP.istate = ERR}
 
-				case UL, OL:
+				case UL:
 					err = mdP.checkBR()
-					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err)}
+					mdP.istate = EL
+					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err); mdP.istate = ERR;}
+
+				case OL:
+					err = mdP.closeOrList(lin)
+					if err != nil {fmt.Printf("line %d closeOL %v\n", lin, err)}
+					err = mdP.checkBR()
+					mdP.istate = EL
+					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err); mdP.istate = ERR;}
 
 				default:
 					fmt.Printf("line %d error istate %s cr", lin, dispState(mdP.istate))
@@ -350,6 +367,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 			case '#':
 				// headings
 				err = mdP.checkHeading(lin)
+				mdP.istate = PAR
 				if err != nil {fmt.Printf("line %d: heading error %v\n", lin, err)}
 
 			case '_':
@@ -359,9 +377,11 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 					break
 				}
 				err = mdP.checkHr(lin)
+				mdP.istate = HR
 				if err != nil {
 					err1 := mdP.checkPar(lin)
-					if err1 != nil { fmt.Printf("line %d: neither HR %v nor Par %v\n", err, err1)}
+					mdP.istate = PAR
+					if err1 != nil { fmt.Printf("line %d: neither HR %v nor Par %v\n", err, err1); mdP.istate = ERR}
 				}
 			case '*','+','-':
 				// check whether next char is whitespace
@@ -371,55 +391,62 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 		fmt.Printf("un List NL:0 ")
 					err = mdP.checkUnList(lin)
 					if err != nil {fmt.Printf("line %d: unordered list error %v\n", lin, err)}
+					mdP.istate = UL
 
 				case sch == fch:
 					err = mdP.checkHr(lin)
 					if err != nil {
 						err1 := mdP.checkPar(lin)
-						if err1 != nil { fmt.Printf("line %d: neither HR %v nor Par %v\n", err, err1)}
-					}
+						if err1 != nil {
+							fmt.Printf("line %d: neither HR %v nor Par %v\n", err, err1)
+							mdP.istate = ERR
+						}
+					} else {mdP.istate = HR}
 
 				case utilLib.IsAlpha(sch) :
-					fmt.Println(string((*mdP.inBuf)[linSt:linEnd]))
+//					fmt.Println(string((*mdP.inBuf)[linSt:linEnd]))
 					err = mdP.checkPar(lin)
+					mdP.istate = PAR
 					if err != nil {fmt.Printf("line %d: par error %v\n", lin, err)}
 
 				default:
 				// error
-					if err != nil {fmt.Printf("line %d unsuitable char %q %d after *+-\n", sch, sch)}
-//					mdP.checkError(lin, fch, errStr)
+					fmt.Printf("line %d unsuitable char %q %d after *+-\n", sch, sch)
+					mdP.istate = ERR
 				}
 
 			case '>':
 				// block quotes
 				err = mdP.checkBlock(lin)
+				mdP.istate = BLK
 				if err != nil {fmt.Printf("line %d: quote block error %v\n", lin, err)}
 
 			case '`':
-				fmt.Println("*** start code")
-
 				// block quotes
 				err = mdP.checkCode(lin)
+				mdP.istate = COD
 				if err != nil {fmt.Printf("line %d: code block error %v\n", lin, err)}
 
 			case ' ':
 				// ws
 				// nested list
-//				nestLev, ord, err := mdP.checkIndent(lin)
 				ch, wsNum, err := mdP.checkIndent(lin)
 				if err != nil {
+					mdP.istate = ERR
 					fmt.Printf("line %d: indent error %v\n", lin, err)
 					break
 				}
 
 				if utilLib.IsAlpha(ch) {
 					err = mdP.checkBlock(lin)
+					mdP.istate = BLK
 					if err != nil {fmt.Printf("line %d: ind block error %v\n", lin, err)}
 					break
 				}
 
 				if (ch == '*' || ch == '+') || ch == '-' {
 					err := mdP.checkUnList(lin)
+					mdP.istate = UL
 					if err != nil {fmt.Printf("line %d: unordered list error %v\n", lin, err)}
 		fmt.Printf(" un List Nl: %d", wsNum/4)
 					break
@@ -427,6 +454,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 
 				if utilLib.IsNumeric(ch) {
 					err = mdP.checkOrList(lin)
+					mdP.istate = OL
 					if err != nil {fmt.Printf("line %d: ordered list error %v\n", lin, err)}
 		fmt.Printf(" or List Nl: %d", wsNum/4)
 					break
@@ -436,11 +464,13 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 			case '!':
 				// image
 				err = mdP.checkImage(lin)
+				mdP.istate = IMG
 				if err != nil { return fmt.Errorf("lin %d image: %v\n",lin, err)}
 
 			case '[':
 				// check comment
 				err = mdP.checkComment(lin)
+				mdP.istate = COM
 				if err != nil {
 					err1 := mdP.checkPar(lin)
 					if err1 != nil {fmt.Printf("lin %d comment: %v\n        par: %v\n",lin, err, err1) }
@@ -449,29 +479,44 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 			case '|':
 				// table |text|
 				endLin, err := mdP.checkTable(lin)
+				mdP.istate = TBL
 				if err != nil {fmt.Printf("line %d: table error %v\n", lin, err)}
-				lin = endLin
+				lin = endLin + 1
 
 			default:
-
 				if utilLib.IsNumeric(fch) {
 				// ordered list 1.
 					err = mdP.checkOrList(lin)
+					mdP.istate = OL
 					if err != nil {fmt.Printf("line %d: ordered list error %v\n", lin, err)}
 		fmt.Printf("or List NL:0 ")
 					break
 				}
-
+//alpha
 				if utilLib.IsAlpha(fch) {
-					// paragraph
-//			fmt.Println("*** par start ***")
-					mdP.istate = PAR
+					// paragraph, block continuation
+			fmt.Printf("el state: %d\n", mdP.istate)
 //			fmt.Println(string((*mdP.inBuf)[linSt:linEnd]))
-					err = mdP.checkPar(lin)
-					if err != nil {fmt.Printf("line %d: par error %v\n", lin, err)}
+					switch mdP.istate {
+					case BLK:
+						err = mdP.checkBlock(lin)
+						mdP.istate = BLK
+						if err != nil {fmt.Printf("line %d: par error %v\n", lin, err)}
+
+					case COD:
+						err = mdP.checkCode(lin)
+						mdP.istate = COD
+						if err != nil {fmt.Printf("line %d: par error %v\n", lin, err)}
+
+					default:
+						err = mdP.checkPar(lin)
+						mdP.istate = PAR
+						if err != nil {fmt.Printf("line %d: par error %v\n", lin, err)}
+					}
 					break
 				}
 				fmt.Printf("line %d: no fit for first char: %q\n", lin, fch)
+				mdP.istate = ERR
 //				mdP.checkError(lin, fch, errmsg)
 		}
 	fmt.Printf(" state: %s\n",dispState(mdP.istate))
@@ -1603,6 +1648,16 @@ func (mdP *mdParseObj) checkTable(lin int)(endLin int, err error) {
 	mdP.elList = append(mdP.elList, el)
 
 	return endLin, nil
+}
+
+func (mdP *mdParseObj) closeOrList(lin int)(err error) {
+
+	last := len(mdP.elList)
+	lastEl := mdP.elList[last]
+	if lastEl.olEl == nil {return fmt.Errorf("last el is not ol!")}
+	nest := lastEl.olEl.nest
+	lastEl.olEl.count[nest] = 0
+	return nil
 }
 
 func (mdP *mdParseObj) checkOrList(lin int)(err error) {
