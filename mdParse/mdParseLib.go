@@ -1340,7 +1340,7 @@ func (mdP *mdParseObj) checkUnList(lin int) (err error){
 				switch buf[i] {
 				case ' ':
 					wsNum++
-				case '*':
+				case '*','+','-':
 					istate = 1
 				default:
 				}
