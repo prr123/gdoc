@@ -1366,7 +1366,7 @@ func (mdP *mdParseObj) checkUnList(lin int) (err error){
 	parEl.txtSt = parSt
 	parEl.typ = ul
 	err = mdP.checkParEOL(lin, &parEl)
-	parEl.txt = string(buf[parEl.txtSt:parEl.txtEnd])
+	parEl.txt = string(buf[parEl.txtSt:parEl.txtEnd+1])
 
 fmt.Printf(" UL txt: %s ", parEl.txt)
 
