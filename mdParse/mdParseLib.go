@@ -204,6 +204,39 @@ func dispHtmlEl(num int)(str string) {
 	return htmlDisp[num]
 }
 
+func dispElTyp(el structEl) {
+
+	fmt.Printf("el Type: ")
+	if el.emEl {fmt.Printf("empty line EL!\n")}
+	if el.hrEl {fmt.Printf("hor ruler HR!\n")}
+	if el.comEl != nil {fmt.Printf("comment CM!\n")}
+	if el.parEl != nil {fmt.Printf("paragraph PAR!\n")}
+	if el.tblEl != nil {fmt.Printf("table TBL!\n")}
+	if el.imgEl != nil {fmt.Printf("image IMG!\n")}
+	if el.ulEl != nil {fmt.Printf("unord List UL\n")}
+	if el.olEl != nil {fmt.Printf("ord List OL!\n")}
+	if el.bkEl != nil {fmt.Printf("block BLK!\n")}
+	if el.errEl != nil {fmt.Printf("error ERR!\n")}
+
+}
+
+func getElTyp(el structEl) (outstr string){
+
+	outstr = "el Type: "
+	if el.emEl {outstr += "empty line EL! "}
+	if el.hrEl {outstr += "hor ruler HR! "}
+	if el.comEl != nil {outstr += "comment CM! "}
+	if el.parEl != nil {outstr += "paragraph PAR! "}
+	if el.tblEl != nil {outstr += "table TBL! "}
+	if el.imgEl != nil {outstr += "image IMG! "}
+	if el.ulEl != nil {outstr += "unord List UL "}
+	if el.olEl != nil {outstr += "ord List OL! "}
+	if el.bkEl != nil {outstr += "block BLK! "}
+	if el.errEl != nil {outstr += "error ERR! "}
+	return outstr
+}
+
+
 func InitMdParse() (mdp *mdParseObj) {
 // function that initialises the mdParse object
 
@@ -505,7 +538,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 //alpha
 				if utilLib.IsAlpha(fch) {
 					// paragraph, block continuation
-			fmt.Printf("alpha: el state: %s\n", dispState(mdP.istate))
+			fmt.Printf("alpha: el state: %s ", dispState(mdP.istate))
 //			fmt.Println(string((*mdP.inBuf)[linSt:linEnd]))
 					switch mdP.istate {
 					case BLK:
@@ -995,19 +1028,18 @@ if buf[i] == '\r' || buf[i] == '\n' {
 func (mdP *mdParseObj) checkParEnd(lin int)(err error) {
 // method that checks terminates the previous paragraph after an empty line
 
+//	if mdP.istate != EL {return fmt.Errorf("checkParEnd: current el not EL!")}
 	lastEl := len(mdP.elList) -1
 	if lastEl < 0 {return fmt.Errorf("no elList")}
 
 	el := mdP.elList[lastEl]
 	if el.parEl != nil {
-		if el.parEl.fin == false {
-			el.parEl.fin = true
-		}
+		el.parEl.fin = true
 	}
 	return nil
 }
 
-func (mdP *mdParseObj) checkParEOL(lin int, parel *parEl)(res bool) {
+func (mdP *mdParseObj) checkParEOL(lin int, parel *parEl)(err error) {
 // function to test whether a line is completed with a md cr
 
 	linSt := mdP.linList[lin].linSt
@@ -1015,18 +1047,18 @@ func (mdP *mdParseObj) checkParEOL(lin int, parel *parEl)(res bool) {
 
 	buf := (*mdP.inBuf)
 
-	if (linEnd - linSt) < 2 {return false}
+	if (linEnd - linSt) < 2 {return fmt.Errorf("checkParEOL: empty line")}
 
 //fmt.Printf("EOL: %q %q\n", buf[linEnd-1], buf[linEnd])
-	if (buf[linEnd] == ' ') && (buf[linEnd-1] == ' ') { 
-		parel.txtEnd = linEnd
-		parel.fin = false
-		return true
+	if (buf[linEnd-2] == ' ') && (buf[linEnd-1] == ' ') {
+		parel.txtEnd = linEnd -3
+		parel.fin = true
+		return nil
 	}
 
-	parel.txtEnd = linEnd + 1
-	parel.fin = true
-	return false
+	parel.txtEnd = linEnd -1
+	parel.fin = false
+	return nil
 }
 
 func (mdP *mdParseObj) checkWs(lin int)(fch byte, err error) {
@@ -1099,21 +1131,24 @@ func (mdP *mdParseObj) checkPar(lin int)(err error) {
 //	linEnd := mdP.linList[lin].linEnd
 	buf := (*mdP.inBuf)
 
-	mdP.checkParEOL(lin, &parEl)
+	err = mdP.checkParEOL(lin, &parEl)
+	if err != nil {fmt.Printf(" error checkPar: empty line!")}
 
 	parEl.txtSt = linSt
-	parEl.txt = string(buf[parEl.txtSt:parEl.txtEnd-1])
+	parEl.txt = string(buf[parEl.txtSt:parEl.txtEnd+1])
+	parEl.typ = par
 	el.parEl = &parEl
 
 	// see whether the previous element of elList is a parEl
 	last := len(mdP.elList) -1
 	lastEl := mdP.elList[last]
-
+fmt.Printf("\n last el: %d %s\n", last, getElTyp(lastEl))
 	// prev element: par
 	if lastEl.parEl != nil {
 		// lastEl is a parEl
 		// we tack the txtstring onto the parEl
 		lastParEl := lastEl.parEl
+
 		if lastParEl.fin {
 			// last paragraph was ended -> create new parel
 fmt.Printf(" new el par txt: %s ", parEl.txt)
@@ -1329,9 +1364,9 @@ func (mdP *mdParseObj) checkUnList(lin int) (err error){
 	nestLev := wsNum/4
 
 	parEl.txtSt = parSt
-
-	mdP.checkParEOL(lin, &parEl)
-	parEl.txt = string(buf[parEl.txtSt:parEl.txtEnd-1])
+	parEl.typ = ul
+	err = mdP.checkParEOL(lin, &parEl)
+	parEl.txt = string(buf[parEl.txtSt:parEl.txtEnd])
 
 fmt.Printf(" UL txt: %s ", parEl.txt)
 
@@ -1406,6 +1441,7 @@ func (mdP *mdParseObj) checkBlock(lin int) (err error){
 		} else {
 			return fmt.Errorf("lin %d: istate: %d no blkEl found!", lin, mdP.istate)
 		}
+
 		parEl.txt = string(buf[linSt:linEnd])
 		parEl.txtSt = linSt
 		parEl.txtEnd = linEnd
@@ -1489,7 +1525,7 @@ fmt.Printf(" implied blk nest: %d par txt: %s ", nest, parEl.txt)
 	} else {
 		parEl.txt = string(buf[parSt:linEnd])
 		parEl.txtSt = parSt
-		parEl.txtEnd = linEnd
+		parEl.txtEnd = linEnd -1
 	}
 
 
@@ -1499,7 +1535,7 @@ fmt.Printf(" implied blk nest: %d par txt: %s ", nest, parEl.txt)
 	mdP.elList = append(mdP.elList, el)
 	mdP.istate = BLK
 
-fmt.Printf(" nest: %d par txt: %s ", nest, parEl.txt)
+fmt.Printf(" nest: %d par %d:%d txt: %s ", nest, parEl.txtSt, parEl.txtEnd, parEl.txt)
 
 	return nil
 }
@@ -1536,7 +1572,7 @@ func (mdP *mdParseObj) checkCode(lin int) (endLin int, err error){
 	for ilin:= lin+1; ilin< len(mdP.linList); ilin++ {
 		if buf[stPos] == '`' {
 			endLin = ilin
-			endPos = mdP.linList[ilin].linEnd
+			endPos = mdP.linList[ilin-1].linEnd-1
 			break
 		}
 	}
@@ -1824,7 +1860,7 @@ func (mdP *mdParseObj) printElList () {
 
 		if el.parEl != nil {
 			ParEl := *el.parEl
-			fmt.Printf( "par %-5s: text: %s status: %t", dispHtmlEl(ParEl.typ), ParEl.txt, ParEl.fin)
+			fmt.Printf( "par typ %-5s %t: text: %s ", dispHtmlEl(ParEl.typ), ParEl.fin, ParEl.txt)
 /*
 			subLen := len(ParEl.subEl)
 			if subLen == 1 {
@@ -1843,7 +1879,7 @@ func (mdP *mdParseObj) printElList () {
 			fmt.Printf( "ul nest %d: ", el.ulEl.nest)
 			if el.ulEl.parEl != nil {
 				ParEl := el.ulEl.parEl
-				fmt.Printf( "  par typ: %-5s text: %s stat: %t\n", dispHtmlEl(ParEl.typ), ParEl.txt, ParEl.fin)
+				fmt.Printf( "  par typ: %-5s %t text: %s\n", dispHtmlEl(ParEl.typ), ParEl.fin, ParEl.txt)
 /*
 				subLen := len(ParEl.subEl)
 				if subLen == 1 {
@@ -1865,7 +1901,7 @@ func (mdP *mdParseObj) printElList () {
 			fmt.Printf( "ol nest %d ", el.olEl.nest)
 			if el.olEl.parEl != nil {
 				ParEl := el.olEl.parEl
-				fmt.Printf( "par typ: %-5s subels: %d stat %t\n", dispHtmlEl(ParEl.typ), len(ParEl.subEl), ParEl.fin)
+				fmt.Printf( "par typ: %-5s %t text: %s\n", dispHtmlEl(ParEl.typ), ParEl.fin, ParEl.txt)
 /*
 				subLen := len(ParEl.subEl)
 				if subLen == 1 {
@@ -1888,7 +1924,7 @@ func (mdP *mdParseObj) printElList () {
 		}
 
 		if el.imgEl != nil {
-			fmt.Printf( "img h: %d w: %d src: %s \n", el.imgEl.height, el.imgEl.width, el.imgEl.src)
+			fmt.Printf( "img h: %d w: %d src: %s alt: %s\n", el.imgEl.height, el.imgEl.width, el.imgEl.src, el.imgEl.alt)
 			continue
 		}
 
@@ -1898,7 +1934,16 @@ func (mdP *mdParseObj) printElList () {
 		}
 
 		if el.bkEl != nil {
-			fmt.Printf( "blk lev: %d text: %s\n", el.bkEl.nest, el.bkEl.parEl.txt)
+			txtSt := el.bkEl.parEl.txtSt
+			txtEnd := el.bkEl.parEl.txtEnd
+			txtLen := txtEnd - txtSt
+			fmt.Printf( "blk lev: %d txtlen %d: ", el.bkEl.nest, txtLen)
+			if txtLen > 100 {
+				fmt.Printf("st: %d:%d: ", txtSt, txtEnd)
+				fmt.Printf(" text 100: %s\n", string(el.bkEl.parEl.txt[:100]))
+			} else {
+				fmt.Printf(" text %s\n", el.bkEl.parEl.txt)
+			}
 			continue
 		}
 
