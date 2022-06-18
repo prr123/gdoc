@@ -478,7 +478,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 
 			case '>':
 				// block quotes
-				err = mdP.checkBlock(lin)
+				err = mdP.checkBlock(lin, 0)
 				mdP.istate = BLK
 				if err != nil {fmt.Printf("line %d: quote block error %v\n", lin, err)}
 
@@ -502,8 +502,14 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 				if ch == 0 {
 					mdP.addErr(lin, "indent error no char")
 					mdP.istate = EP
+					break
 				}
 
+				if ch == '>' {
+					// blockquote within list
+					err = mdP.checkBlock(lin, wsNum)
+					break
+				}
 				if utilLib.IsAlpha(ch) {
 					switch mdP.istate {
 					case OL, EOL:
@@ -515,7 +521,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 						mdP.istate = UL
 
 					case EB, BLK, PAR, EP:
-						err = mdP.checkBlock(lin)
+						err = mdP.checkBlock(lin, wsNum)
 						mdP.istate = BLK
 						if err != nil {fmt.Printf("line %d: ind block error %v\n", lin, err)}
 
@@ -523,7 +529,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 						mdP.addErr(lin,fmt.Sprintf("indent istate: %s !", dispState(mdP.istate)))
 
 					}
-//err
+					break
 				}
 				if (ch == '*' || ch == '+') || ch == '-' {
 					err := mdP.checkUnList(lin)
@@ -579,8 +585,17 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 			fmt.Printf("alpha: el state: %s ", dispState(mdP.istate))
 //			fmt.Println(string((*mdP.inBuf)[linSt:linEnd]))
 					switch mdP.istate {
+					case UL:
+						err = mdP.checkUnList(lin)
+						if err != nil {fmt.Printf("line %d: UL par err: %v\n", lin, err)}
+						mdP.istate = UL
+					case OL:
+						err = mdP.checkOrList(lin)
+						if err != nil {fmt.Printf("line %d: OL par err: %v\n", lin, err)}
+						mdP.istate = OL
+
 					case BLK:
-						err = mdP.checkBlock(lin)
+						err = mdP.checkBlock(lin, 0)
 						mdP.istate = BLK
 						if err != nil {fmt.Printf("line %d: par error %v\n", lin, err)}
 /*
@@ -589,10 +604,13 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 						mdP.istate = COD
 						if err != nil {fmt.Printf("line %d: par error %v\n", lin, err)}
 */
-					default:
+					case EP,EOL, EUL, PAR:
 						err = mdP.checkPar(lin)
 						mdP.istate = PAR
 						if err != nil {fmt.Printf("line %d: par error %v\n", lin, err)}
+
+					default:
+						fmt.Printf("line %d: alpha state %s\n", lin, dispState(mdP.istate))
 					}
 					break
 				}
@@ -1386,7 +1404,7 @@ func (mdP *mdParseObj) checkUnList(lin int) (err error){
 		if parSt > 0 {break}
 	}
 
-	if parSt == 0 {return fmt.Errorf("ul no text found!")}
+	if parSt == 0 {return fmt.Errorf("UL no text found!")}
 
 	// nest lev
 	nestLev := wsNum/4
@@ -1440,14 +1458,14 @@ func (mdP *mdParseObj) checkIndent(lin int) (ch byte, numWs int, err error){
 }
 
 
-func (mdP *mdParseObj) checkBlock(lin int) (err error){
+func (mdP *mdParseObj) checkBlock(lin int, ws int) (err error){
 // A method that parses a blockquote
 
 	var el structEl
 	var bkEl bkEl
 	var parEl parEl
 
-	linSt := mdP.linList[lin].linSt
+	linSt := mdP.linList[lin].linSt + ws
 	linEnd := mdP.linList[lin].linEnd
 	buf := (*mdP.inBuf)
 	nest := -1
