@@ -12,15 +12,26 @@ package mdParseLib
 import (
 	"os"
 	"fmt"
+//	"strconv"
 	 "google/gdoc/util"
 )
 
 type mdParseObj struct {
+	istate int
+	errCount int
+	cnest int
+	cliTyp bool
+	cliCount [10]int
 	filnam string
 	inBuf *[]byte
 	linList []mdLin
 	elList []structEl
-	istate int
+	errList [10]errObj
+}
+
+type errObj struct {
+	lin int
+	msg string
 }
 
 type mdLin struct {
@@ -46,6 +57,7 @@ type structEl struct {
 type parEl struct {
 	typ int
 	fin bool
+	nest int
 	txtSt int
 	txtEnd int
 	txt string
@@ -111,7 +123,10 @@ type oList struct {
 
 // line attributes
 const (
-	EL = iota
+	EP = iota
+	EUL
+	EOL
+	EB
 	HR
 	COM
 	PAR
@@ -159,9 +174,12 @@ const (
 func dispState(num int)(str string) {
 // function that converts state constants to strings
 
-	var stateDisp [12]string
+	var stateDisp [15]string
 
-	stateDisp[EL] = "EL"
+	stateDisp[EP] = "EP"
+	stateDisp[EUL] = "EUL"
+	stateDisp[EOL] = "EOL"
+	stateDisp[EB] = "EB"
 	stateDisp[HR] = "HR"
 	stateDisp[COM] = "COM"
 	stateDisp[PAR] = "PAR"
@@ -341,8 +359,9 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 
 	var fch, sch byte
 
-	mdP.istate = EL
+//	mdP.istate = EP
 //	for lin:=0; lin<len(mdP.linList); lin++ {
+
 	maxLin := 500
 	if len(mdP.linList) < maxLin {maxLin = len(mdP.linList)}
 
@@ -375,35 +394,35 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 				switch mdP.istate {
 				case PAR:
 					err = mdP.checkParEnd(lin)
-					if err != nil {fmt.Printf("line %d ParEnd %v\n", lin, err); mdP.istate = ERR;}
+					if err != nil {fmt.Printf("line %d ParEnd %v\n", lin, err); mdP.istate = PAR;}
 					err = mdP.checkBR()
-					mdP.istate = EL
-					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err); mdP.istate = ERR;}
+					mdP.istate = EP
+					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err)}
 
 				case BLK:
 					err = mdP.checkBR()
-					mdP.istate = EL
-					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err); mdP.istate = ERR;}
+					mdP.istate = EB
+					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err)}
 
-				case EL, HR:
+				case EP, HR:
 					err = mdP.checkBR()
-					mdP.istate = EL
-					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err); mdP.istate = ERR}
+					mdP.istate = EP
+					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err)}
 
 				case UL:
 					err = mdP.checkBR()
-					mdP.istate = EL
-					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err); mdP.istate = ERR;}
+					mdP.istate = EUL
+					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err)}
 
 				case OL:
 					err = mdP.closeOrList(lin)
 					if err != nil {fmt.Printf("line %d closeOL %v\n", lin, err)}
 					err = mdP.checkBR()
-					mdP.istate = EL
-					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err); mdP.istate = ERR;}
+					mdP.istate = EOL
+					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err)}
 
 				default:
-					fmt.Printf("line %d error istate %s cr", lin, dispState(mdP.istate))
+					fmt.Printf("line %d unknown istate %s cr", lin, dispState(mdP.istate))
 				}
 
 			case '#':
@@ -445,7 +464,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 						}
 					} else {mdP.istate = HR}
 
-				case utilLib.IsAlpha(sch) :
+				case utilLib.IsAlpha(sch):
 //					fmt.Println(string((*mdP.inBuf)[linSt:linEnd]))
 					err = mdP.checkPar(lin)
 					mdP.istate = PAR
@@ -475,23 +494,42 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 				// nested list
 				ch, wsNum, err := mdP.checkIndent(lin)
 				if err != nil {
-					mdP.istate = ERR
+					mdP.addErr(lin,  fmt.Sprintf("indent error %v", err))
 					fmt.Printf("line %d: indent error %v\n", lin, err)
 					break
 				}
 
-				if utilLib.IsAlpha(ch) {
-					err = mdP.checkBlock(lin)
-					mdP.istate = BLK
-					if err != nil {fmt.Printf("line %d: ind block error %v\n", lin, err)}
-					break
+				if ch == 0 {
+					mdP.addErr(lin, "indent error no char")
+					mdP.istate = EP
 				}
 
+				if utilLib.IsAlpha(ch) {
+					switch mdP.istate {
+					case OL, EOL:
+						err = mdP.checkOrList(lin)
+						mdP.istate = OL
+
+					case UL, EUL:
+						err = mdP.checkUnList(lin)
+						mdP.istate = UL
+
+					case EB, BLK, PAR, EP:
+						err = mdP.checkBlock(lin)
+						mdP.istate = BLK
+						if err != nil {fmt.Printf("line %d: ind block error %v\n", lin, err)}
+
+					default:
+						mdP.addErr(lin,fmt.Sprintf("indent istate: %s !", dispState(mdP.istate)))
+
+					}
+//err
+				}
 				if (ch == '*' || ch == '+') || ch == '-' {
 					err := mdP.checkUnList(lin)
 					mdP.istate = UL
 					if err != nil {fmt.Printf("line %d: unordered list error %v\n", lin, err)}
-		fmt.Printf(" un List Nl: %d", wsNum/4)
+		fmt.Printf(" unList Nl: %d", wsNum/4)
 					break
 				}
 
@@ -499,7 +537,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 					err = mdP.checkOrList(lin)
 					mdP.istate = OL
 					if err != nil {fmt.Printf("line %d: ordered list error %v\n", lin, err)}
-		fmt.Printf(" or List Nl: %d", wsNum/4)
+		fmt.Printf(" orList Nl: %d", wsNum/4)
 					break
 				}
 				fmt.Printf("line %d: indent error start char %q in pos: %d\n", lin, ch, wsNum +1)
@@ -532,7 +570,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 					err = mdP.checkOrList(lin)
 					mdP.istate = OL
 					if err != nil {fmt.Printf("line %d: ordered list error %v\n", lin, err)}
-		fmt.Printf("or List NL:0 ")
+//		fmt.Printf("orList NL:0 ")
 					break
 				}
 //alpha
@@ -566,6 +604,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 	}
 
 	mdP.printElList()
+	mdP.printErrList()
 	return nil
 }
 
@@ -1061,6 +1100,61 @@ func (mdP *mdParseObj) checkParEOL(lin int, parel *parEl)(err error) {
 	return nil
 }
 
+func (mdP *mdParseObj) checkPar(lin int)(err error) {
+// method that parses a line  to check whether it is paragraph
+
+	var el structEl
+	var parEl parEl
+	linSt := mdP.linList[lin].linSt
+//	linEnd := mdP.linList[lin].linEnd
+	buf := (*mdP.inBuf)
+
+	err = mdP.checkParEOL(lin, &parEl)
+	if err != nil {fmt.Printf(" error checkPar: empty line!")}
+
+	parEl.txtSt = linSt
+	parEl.txt = string(buf[parEl.txtSt:parEl.txtEnd+1])
+	parEl.typ = par
+	el.parEl = &parEl
+
+	// see whether the previous element of elList is a parEl
+	last := len(mdP.elList) -1
+	lastEl := mdP.elList[last]
+fmt.Printf("\n last el: %d %s\n", last, getElTyp(lastEl))
+	// prev element: par
+	if lastEl.parEl != nil {
+		// lastEl is a parEl
+		// we tack the txtstring onto the parEl
+		lastParEl := lastEl.parEl
+
+		if lastParEl.fin {
+			// last paragraph was ended -> create new parel
+fmt.Printf(" new el par txt: %s ", parEl.txt)
+			mdP.elList = append(mdP.elList, el)
+			mdP.istate = PAR
+			return nil
+		}
+		// last par was not ended
+		lastParEl.txt += " " + parEl.txt
+		lastParEl.txtEnd = parEl.txtEnd
+fmt.Printf(" ex el par txt: %s ", parEl.txt)
+		mdP.istate = PAR
+		return nil
+	}
+
+
+	if lastEl.emEl {
+fmt.Printf(" new el par txt: %s ", parEl.txt)
+		mdP.elList = append(mdP.elList, el)
+		mdP.istate = PAR
+		return nil
+	}
+
+	return fmt.Errorf("state: %s elList at %d has no valid el", dispState(mdP.istate), last)
+}
+
+
+
 func (mdP *mdParseObj) checkWs(lin int)(fch byte, err error) {
 // method that checks indented lines to find the first character
 
@@ -1120,79 +1214,6 @@ func (mdP *mdParseObj) checkComment(lin int)(err error) {
 	mdP.elList = append(mdP.elList, el)
 
 	return nil
-}
-
-func (mdP *mdParseObj) checkPar(lin int)(err error) {
-// method that parses a line  to check whether it is paragraph
-
-	var el structEl
-	var parEl parEl
-	linSt := mdP.linList[lin].linSt
-//	linEnd := mdP.linList[lin].linEnd
-	buf := (*mdP.inBuf)
-
-	err = mdP.checkParEOL(lin, &parEl)
-	if err != nil {fmt.Printf(" error checkPar: empty line!")}
-
-	parEl.txtSt = linSt
-	parEl.txt = string(buf[parEl.txtSt:parEl.txtEnd+1])
-	parEl.typ = par
-	el.parEl = &parEl
-
-	// see whether the previous element of elList is a parEl
-	last := len(mdP.elList) -1
-	lastEl := mdP.elList[last]
-fmt.Printf("\n last el: %d %s\n", last, getElTyp(lastEl))
-	// prev element: par
-	if lastEl.parEl != nil {
-		// lastEl is a parEl
-		// we tack the txtstring onto the parEl
-		lastParEl := lastEl.parEl
-
-		if lastParEl.fin {
-			// last paragraph was ended -> create new parel
-fmt.Printf(" new el par txt: %s ", parEl.txt)
-			mdP.elList = append(mdP.elList, el)
-			mdP.istate = PAR
-			return nil
-		}
-		// last par was not ended
-		lastParEl.txt += " " + parEl.txt
-		lastParEl.txtEnd = parEl.txtEnd
-fmt.Printf(" ex el par txt: %s ", parEl.txt)
-		mdP.istate = PAR
-		return nil
-	}
-
-
-/*
-	// prev element: blk
-	if lastEl.bkEl != nil {
-		lastParEl := lastEl.bkEl.parEl
-
-		if lastParEl.fin {
-fmt.Printf(" new blk el txt: %s ", parEl.txt)
-			mdP.elList = append(mdP.elList, el)
-			return nil
-		}
-		// last par was not ended
-		lastParEl.txt += " " + parEl.txt
-		lastParEl.txtEnd = parEl.txtEnd
-fmt.Printf(" ex blk el txt: %s ", parEl.txt)
-		return nil
-	}
-*/
-	// prev elment1: code
-
-	//previous element: empty line
-	if lastEl.emEl {
-fmt.Printf(" new el par txt: %s ", parEl.txt)
-		mdP.elList = append(mdP.elList, el)
-		mdP.istate = PAR
-		return nil
-	}
-
-	return fmt.Errorf("state: %s elList at %d has no valid el", dispState(mdP.istate), last)
 }
 
 
@@ -1403,16 +1424,6 @@ func (mdP *mdParseObj) checkIndent(lin int) (ch byte, numWs int, err error){
 	if ch == 0 {return 0, numWs, fmt.Errorf("lin %d: checkIndent: no char found!")}
 
 	if wsCount < 4 { return ch, numWs, fmt.Errorf("lin %d: checkIndent: insufficient ws!")}
-
-/*
-		case '*','-','+':
-			if wsCount < 4 {return 0,false, fmt.Errorf("insufficient ws!")}
-			return wsCount/4, false, nil
-
-		case '1','2','3','4','5','6','7','8','9','0':
-			if wsCount < 4 {return wsCount/4, true, fmt.Errorf("insufficient ws!")}
-			return wsCount/4, true, nil
-*/
 
 	return ch, wsCount, nil
 }
@@ -1742,6 +1753,7 @@ func (mdP *mdParseObj) closeOrList(lin int)(err error) {
 	return nil
 }
 
+//ooo
 func (mdP *mdParseObj) checkOrList(lin int)(err error) {
 // method that parses an ordered list
 
@@ -1750,59 +1762,97 @@ func (mdP *mdParseObj) checkOrList(lin int)(err error) {
 	var parEl parEl
 
 	linSt := mdP.linList[lin].linSt
-	linEnd := mdP.linList[lin].linEnd
+//	linEnd := mdP.linList[lin].linEnd
 	buf := (*mdP.inBuf)
 
 	parSt:=0
+
+	markSt:= 0
 	markEnd := 0
 	wsNum := 0
+	istate := 0
+	mNum :=0
+
 	for i:= linSt; i< linSt +4; i++ {
 		ch:= buf[i]
-		if ch == '.' {
-			markEnd = i
-			break
+		switch istate {
+		case 0:
+			if ch == ' ' {
+				wsNum++
+			}
+			if utilLib.IsNumeric(ch) {
+				markSt = i
+				istate = 1
+				mNum = int(ch) - 48 + mNum*10
+			}
+			if utilLib.IsAlpha(ch) {
+				parSt = i
+			}
+//else {return fmt.Errorf(" orList: non-numeric char %q in counter", ch)}
+
+		case 1:
+			if ch == '.' {
+				markEnd = i
+				istate = 2
+			}
+
+		case 2:
+			if ch == ' ' {
+				istate = 3
+			}
+		case 3:
+			if utilLib.IsAlpha(ch) {
+				parSt = i
+			}
 		}
-		if !utilLib.IsNumeric(ch) {return fmt.Errorf(" orList: non-numeric char %q in counter", ch)}
+		if parSt > 0 {break}
 	}
 
+//	if markSt == 0 {return fmt.Errorf(" orList: no counter digit!")}
 	if markEnd == 0 {return fmt.Errorf(" orList: no period after counter!")}
 
-	// check for par start
-	for i:= markEnd+1; i< linEnd; i++ {
-		ch:= buf[i]
-		if utilLib.IsAlpha(ch) {
-			parSt = i
-			break
-		}
-		if ch == ' ' {
-			wsNum++
-			continue
-		}
-		return fmt.Errorf(" orList: unacceptable char %q in pos %d before par start!", ch, i)
-	}
+	// convert count into number
+//	numStr := string(buf[markSt:markEnd])
 
-	if parSt == 0 {return fmt.Errorf("olList no text start found!")}
+	if parSt == 0 {return fmt.Errorf("olList text start not found!")}
 
 	// nest lev
 	nest := wsNum/4
 
-	parEl.txtSt = parSt
+	if mNum > 0 {fmt.Printf("orlist marker: %d nest: %d\n", mNum, nest)}
 
+	parEl.txtSt = parSt
+	parEl.typ = ol
+	parEl.nest = nest
 	mdP.checkParEOL(lin, &parEl)
-	parEl.txt = string(buf[parEl.txtSt:parEl.txtEnd-1])
+	parEl.txt = string(buf[parEl.txtSt:parEl.txtEnd+1])
 
 fmt.Printf(" OL txt: %s ", parEl.txt)
 
-	orEl.nest = nest
-	orEl.count[nest]++
-	orEl.parEl = &parEl
+	if markSt == 0 {
+		el.parEl = &parEl
+	} else {
+		mdP.cliCount[nest]++
+		orEl.nest = nest
+		orEl.count[nest] = 	mdP.cliCount[nest]
+		orEl.parEl = &parEl
+		el.olEl = &orEl
+	}
 
-	el.olEl = &orEl
 	mdP.elList = append(mdP.elList, el)
 	mdP.istate = OL
 
 	return nil
 }
+
+func (mdP *mdParseObj) closeOL()() {
+
+	for inest:=0; inest< mdP.cnest; inest++ {
+		mdP.cliCount[inest] = 0
+	}
+
+}
+
 
 func (mdP *mdParseObj) checkBR()(err error) {
 // method that parses an empty line
@@ -1811,7 +1861,6 @@ func (mdP *mdParseObj) checkBR()(err error) {
 
 	el.emEl = true
 	mdP.elList = append(mdP.elList, el)
-	mdP.istate = EL
 	return nil
 }
 
@@ -1836,6 +1885,36 @@ func (mdP *mdParseObj) cvtMdToHtml()(err error) {
 	defer outfil.Close()
 
 	return nil
+}
+
+func (mdP *mdParseObj) addErr (lin int, msg string) {
+
+	if mdP.errCount > 9 {return}
+
+	mdP.errCount++
+	idx := mdP.errCount - 1
+	err := mdP.errList[idx]
+	err.lin = lin
+	err.msg = msg
+	return
+}
+
+func (mdP *mdParseObj) printErrList () {
+// method that prints the error list
+
+	if mdP.errCount == 0 {
+		fmt.Println("*** no Parsing Errors ***")
+		return
+	}
+
+	fmt.Println("*********** Error List ***********")
+	max_errors := 10
+	if mdP.errCount < max_errors {max_errors = mdP.errCount}
+	for i:=0; i< max_errors; i++ {
+		fmt.Printf("err %d line %d: %s\n", mdP.errList[i].lin, mdP.errList[i].msg)
+	}
+	if max_errors == 10 {fmt.Println("too many errors only 10 are displayed!")}
+	return
 }
 
 func (mdP *mdParseObj) printElList () {
@@ -1898,7 +1977,8 @@ func (mdP *mdParseObj) printElList () {
 		}
 
 		if el.olEl != nil {
-			fmt.Printf( "ol nest %d ", el.olEl.nest)
+			nest := el.olEl.nest
+			fmt.Printf( "ol nest %d counter %d: ", el.olEl.nest, el.olEl.count[nest])
 			if el.olEl.parEl != nil {
 				ParEl := el.olEl.parEl
 				fmt.Printf( "par typ: %-5s %t text: %s\n", dispHtmlEl(ParEl.typ), ParEl.fin, ParEl.txt)
