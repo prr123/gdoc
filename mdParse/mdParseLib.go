@@ -1347,6 +1347,7 @@ func (mdP *mdParseObj) checkUnList(lin int) (err error){
 	var el structEl
 	var ulEl uList
 	var parEl parEl
+	var ulCh byte
 
 //	listEl := mdP.elList[el]
 	linSt := mdP.linList[lin].linSt
@@ -1355,6 +1356,8 @@ func (mdP *mdParseObj) checkUnList(lin int) (err error){
 	parSt:=0
 	istate := 0
 	wsNum := 0
+	ulCh = 0
+
 	for i:= linSt; i< linEnd; i++ {
 		switch istate {
 			case 0:
@@ -1363,7 +1366,11 @@ func (mdP *mdParseObj) checkUnList(lin int) (err error){
 					wsNum++
 				case '*','+','-':
 					istate = 1
+					ulCh = buf[i]
 				default:
+					if utilLib.IsAlpha(buf[i]) {
+						parSt = i
+					}
 				}
 
 			case 1:
@@ -1386,14 +1393,18 @@ func (mdP *mdParseObj) checkUnList(lin int) (err error){
 
 	parEl.txtSt = parSt
 	parEl.typ = ul
+	parEl.nest = nestLev
 	err = mdP.checkParEOL(lin, &parEl)
 	parEl.txt = string(buf[parEl.txtSt:parEl.txtEnd+1])
 
 fmt.Printf(" UL txt: %s ", parEl.txt)
-
-	ulEl.nest = nestLev
-	ulEl.parEl = &parEl
-	el.ulEl = &ulEl
+	if ulCh == 0 {
+		el.parEl = &parEl
+	} else {
+		ulEl.nest = nestLev
+		ulEl.parEl = &parEl
+		el.ulEl = &ulEl
+	}
 	mdP.elList = append(mdP.elList, el)
 	mdP.istate = PAR
 
@@ -1762,7 +1773,7 @@ func (mdP *mdParseObj) checkOrList(lin int)(err error) {
 	var parEl parEl
 
 	linSt := mdP.linList[lin].linSt
-//	linEnd := mdP.linList[lin].linEnd
+	linEnd := mdP.linList[lin].linEnd
 	buf := (*mdP.inBuf)
 
 	parSt:=0
@@ -1773,7 +1784,7 @@ func (mdP *mdParseObj) checkOrList(lin int)(err error) {
 	istate := 0
 	mNum :=0
 
-	for i:= linSt; i< linSt +4; i++ {
+	for i:= linSt; i< linEnd; i++ {
 		ch:= buf[i]
 		switch istate {
 		case 0:
