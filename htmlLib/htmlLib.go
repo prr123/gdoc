@@ -11,14 +11,31 @@
 package htmlLib
 
 import (
-	"fmt"
-	"os"
+//	"fmt"
+//	"os"
 )
 
-func creHtmlBase(outfil *os.File)(err error) {
+func CreHtmlHead()(outstr string) {
+// func create start of html doc
+	outstr = "<!DOCTYPE html>\n"
+	outstr += "<html lang=\"en\">\n"
+	outstr += "<head>\n"
+	outstr += "  <meta charset=\"UTF-8\">\n"
+	// add more meta tags
+	outstr += "  <title>Azul Conversion</title>\n"
 
-	outfil.WriteString("<html>")
+//	outfil.WriteString(outstr)
+	return outstr
+}
 
+func CreHtmlMid()(outstr string) {
+// func ot end head and start body
+	outstr = "</head>\n<body>\n"
+	return outstr
+}
 
-	return nil
+func CreHtmlEnd()(outstr string) {
+// func to create end of html doc
+	outstr = "</body>\n</html>\n"
+	return outstr
 }
