@@ -289,7 +289,7 @@ func (mdP *mdParseObj) ParseMdFile(inpfilnam string) (err error) {
 	if inpfilnam[iper+1] != 'm' {return fmt.Errorf(" error extension not md!")}
 	if inpfilnam[iper+2] != 'd' {return fmt.Errorf(" error extension not md!")}
 
-	inpfil, err := os.Open(os.Args[1])
+	inpfil, err := os.Open(inpfilnam)
 	defer inpfil.Close()
 	if err != nil {return fmt.Errorf("os.Open: %v\n", err)}
 
@@ -1912,14 +1912,23 @@ func (mdP *mdParseObj) printLinList()() {
 func (mdP *mdParseObj) CvtMdToHtml(outfil *os.File)(err error) {
 // method that converts the parsed element list of an md file inot an html file
 
+	nam := outfil.Name
+	fmt.Printf("out file name: %s\n", nam)
+
     outstr := htmlLib.CreHtmlHead()
+
+	outstr += htmlLib.CreCss()
 
     outstr += htmlLib.CreHtmlMid()
 
+	outstr += htmlLib.CreHtmlDivMain("main")
+
+	outstr += "  </div>\n"
+
     outstr += htmlLib.CreHtmlEnd()
 
-	outfil.WriteString(outstr)
-
+	_,err = outfil.WriteString(outstr)
+	if err != nil {return fmt.Errorf("cannot write outstr: %v", err)}
 	return nil
 }
 
