@@ -11,7 +11,7 @@
 package htmlLib
 
 import (
-//	"fmt"
+	"fmt"
 //	"os"
 )
 
@@ -24,8 +24,25 @@ func CreHtmlHead()(outstr string) {
 	// add more meta tags
 	outstr += "  <title>Azul Conversion</title>\n"
 
-//	outfil.WriteString(outstr)
 	return outstr
+}
+
+func CreCss()(cssStr string) {
+
+	ws := "    "
+	cssStr = "  <style>\n"
+
+	cssStr += "  * {\n"
+	cssStr += ws + "margin: 0;\n"
+	cssStr += ws + "padding: 0;\n"
+	cssStr += ws + "ont-family: calibri;\n"
+	cssStr += ws + "list-style: none;\n"
+	cssStr += ws + "text-decoration: none;\n"
+	cssStr += "  }\n"
+
+	cssStr += "  </style>\n"
+
+	return cssStr
 }
 
 func CreHtmlMid()(outstr string) {
@@ -38,4 +55,11 @@ func CreHtmlEnd()(outstr string) {
 // func to create end of html doc
 	outstr = "</body>\n</html>\n"
 	return outstr
+}
+
+func CreHtmlDivMain(nam string)(htmlStr string) {
+// func to cre div
+	htmlStr = fmt.Sprintf("  <div class=\"%s\">\n", nam)
+
+	return htmlStr
 }
