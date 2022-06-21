@@ -35,7 +35,7 @@ func CreCss()(cssStr string) {
 	cssStr += "  * {\n"
 	cssStr += ws + "margin: 0;\n"
 	cssStr += ws + "padding: 0;\n"
-	cssStr += ws + "ont-family: calibri;\n"
+	cssStr += ws + "font-family: calibri;\n"
 	cssStr += ws + "list-style: none;\n"
 	cssStr += ws + "text-decoration: none;\n"
 	cssStr += "  }\n"
