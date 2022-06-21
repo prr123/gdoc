@@ -48,7 +48,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("outfil: %v name: %s\n", outfil, htmlFilNam)
+//	fmt.Printf("outfil: %v name: %s\n", outfil, htmlFilNam)
 
 	mdp := mdParse.InitMdParse()
 
