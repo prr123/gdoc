@@ -69,11 +69,17 @@ type parEl struct {
 type parSubEl struct {
 	elSt int
 	elEnd int
+	bold bool
+	italic bool
+	sup bool
+	sub bool
+	link bool
+	strike bool
 	ftn	int
 	img int
 	txtTyp int
 	txt string
-	link string
+	lkUri string
 }
 
 type errEl struct {
@@ -128,20 +134,21 @@ type oList struct {
 
 // line attributes
 const (
-	EP = iota
-	EUL
-	EOL
-	EB
-	HR
-	COM
-	PAR
-	UL
-	OL
-	IMG
-	BLK
-	COD
-	TBL
-	ERR
+	UK = iota 	// unknown
+	EP			// empty line after par
+	EUL			// empty line after ulist
+	EOL			// empty line after olist
+	EB			// empty line after block
+	HR			// horizintal ruler
+	COM			// comment
+	PAR			// paragraph
+	UL			// unordered list
+	OL			// ordered list
+	IMG			// image
+	BLK			// block
+	COD			// code
+	TBL			// table
+	ERR			// error ???
 )
 
 //html elements
@@ -174,13 +181,31 @@ const (
 	ftnote
 	sup
 	sub
+	link
 )
+
+func dispTxtAtt(num int)(str string) {
+
+	var txtAtt [8]string
+	txtAtt[bold] = "bold"
+	txtAtt[italic] = "italic"
+	txtAtt[strike] = "strike"
+	txtAtt[html] = "html"
+	txtAtt[ftnote] = "ftnote"
+	txtAtt[sup] = "sup"
+	txtAtt[sub] = "sub"
+	txtAtt[link] = "link"
+
+	if num > len(txtAtt)-1 {return ""}
+	return txtAtt[num]
+}
 
 func dispState(num int)(str string) {
 // function that converts state constants to strings
 
-	var stateDisp [15]string
+	var stateDisp [16]string
 
+	stateDisp[UK] = "UK"   //unknown
 	stateDisp[EP] = "EP"
 	stateDisp[EUL] = "EUL"
 	stateDisp[EOL] = "EOL"
@@ -518,16 +543,18 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 					switch mdP.istate {
 					case OL, EOL:
 						err = mdP.checkOrList(lin)
+						if err != nil {fmt.Printf("line %d: OL error %v\n", lin, err)}
 						mdP.istate = OL
 
 					case UL, EUL:
 						err = mdP.checkUnList(lin)
+						if err != nil {fmt.Printf("line %d: UL error %v\n", lin, err)}
 						mdP.istate = UL
 
 					case EB, BLK, PAR, EP:
 						err = mdP.checkBlock(lin, wsNum)
 						mdP.istate = BLK
-						if err != nil {fmt.Printf("line %d: ind block error %v\n", lin, err)}
+						if err != nil {fmt.Printf("line %d: block error %v\n", lin, err)}
 
 					default:
 						mdP.addErr(lin,fmt.Sprintf("indent istate: %s !", dispState(mdP.istate)))
@@ -580,14 +607,12 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 					err = mdP.checkOrList(lin)
 					mdP.istate = OL
 					if err != nil {fmt.Printf("line %d: ordered list error %v\n", lin, err)}
-//		fmt.Printf("orList NL:0 ")
 					break
 				}
-//alpha
 				if utilLib.IsAlpha(fch) {
 					// paragraph, block continuation
-			fmt.Printf("alpha: el state: %s ", dispState(mdP.istate))
-//			fmt.Println(string((*mdP.inBuf)[linSt:linEnd]))
+fmt.Printf("alpha: el state: %s ", dispState(mdP.istate))
+
 					switch mdP.istate {
 					case UL:
 						err = mdP.checkUnList(lin)
@@ -598,16 +623,6 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 						if err != nil {fmt.Printf("line %d: OL par err: %v\n", lin, err)}
 						mdP.istate = OL
 
-					case BLK:
-						err = mdP.checkBlock(lin, 0)
-						mdP.istate = BLK
-						if err != nil {fmt.Printf("line %d: par error %v\n", lin, err)}
-/*
-					case COD:
-						err = mdP.checkCode(lin)
-						mdP.istate = COD
-						if err != nil {fmt.Printf("line %d: par error %v\n", lin, err)}
-*/
 					case EP,EOL, EUL, PAR:
 						err = mdP.checkPar(lin)
 						mdP.istate = PAR
@@ -627,6 +642,10 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 
 	mdP.printElList()
 	mdP.printErrList()
+	fmt.Println("******** parse sub el ***********")
+	err = mdP.parseMdSubEl()
+	if err != nil { return fmt.Errorf("error parseMdSubEl: %v", err)}
+
 	return nil
 }
 
@@ -640,7 +659,7 @@ func (mdP *mdParseObj) parseMdSubEl()(err error) {
 
 		// parse par if el.parEl != nil
 		if el.parEl != nil {
-
+			err = mdP.parsePar(el.parEl)
 		}
 
 		// parse par el
@@ -663,9 +682,15 @@ func (mdP *mdParseObj) parseMdSubEl()(err error) {
 	return nil
 }
 
-func (mdP *mdParseObj) parseMdTxt(parEl *parEl)(err error) {
 
-	buf := []byte(parEl.txt)
+
+//ppar
+func (mdP *mdParseObj) parsePar(parEl *parEl)(err error) {
+// method which parses the text of of parEl
+
+	var subEl parSubEl
+
+	txtbuf := []byte(parEl.txt)
 
 	linkSt := 0
 	linkEnd := 0
@@ -677,16 +702,22 @@ func (mdP *mdParseObj) parseMdTxt(parEl *parEl)(err error) {
 	ftnStrSt:=0
 	ftnStrEnd :=0
 
-	for i:=0; i< len(buf); i++ {
-		ch := buf[i]
+	txtSt := 0
+	txtEnd := 0
+
+	for i:=0; i< len(txtbuf); i++ {
+		ch := txtbuf[i]
 		istate := 0
 		switch istate {
 		case 0:
+			txtSt = i
 			switch ch {
-			case ' ':
-				// ws
-				istate = 1
-
+			case '\r':
+				istate =5
+			case '\n':
+				txtEnd = i
+				subEl.txt = "\n"
+				parEl.subEl = append(parEl.subEl, subEl)
 			case '*':
 				// *
 				istate = 2
@@ -700,6 +731,7 @@ func (mdP *mdParseObj) parseMdTxt(parEl *parEl)(err error) {
 				istate = 40
 
 			default:
+
 			}
 
 		case 1:
@@ -727,6 +759,7 @@ func (mdP *mdParseObj) parseMdTxt(parEl *parEl)(err error) {
 
 			if utilLib.IsAlphaNumeric(ch) {
 				// *t
+				txtSt = i
 				istate = 3
 			}
 
@@ -739,11 +772,37 @@ func (mdP *mdParseObj) parseMdTxt(parEl *parEl)(err error) {
 
 		case 4:
 			// *txt*
-			if ch == ' ' {
+			switch ch {
+			case ' ':
 				// *txt*ws
-				istate = 1
-			} else {
-				//error
+				txtEnd = i-1
+				subEl.italic = true
+				subEl.txt = string(txtbuf[txtSt:txtEnd+1])
+				istate = 0
+
+			case '\r':
+				txtEnd = i-1
+				subEl.italic = true
+				subEl.txt = string(txtbuf[txtSt:txtEnd+1])
+				istate = 5
+
+			case '\n':
+				txtEnd = i
+				subEl.italic = true
+				subEl.txt = string(txtbuf[txtSt:txtEnd+1])
+				istate = 0
+
+			default:
+				// *txt*t
+			}
+
+		case 5:
+			// "/r/n"
+			switch ch {
+			case '\n':
+				subEl.txt += "\n"
+				parEl.subEl = append(parEl.subEl, subEl)
+				istate = 0
 			}
 
 		case 11:
@@ -756,6 +815,7 @@ func (mdP *mdParseObj) parseMdTxt(parEl *parEl)(err error) {
 
 			if utilLib.IsAlpha(ch) {
 				// _t
+				txtSt = i
 				istate = 12
 			}
 		case 12:
@@ -766,15 +826,36 @@ func (mdP *mdParseObj) parseMdTxt(parEl *parEl)(err error) {
 			}
 		case 13:
 			// _t_
-			if ch == ' ' {
+			switch ch {
+			case ' ':
 				// _t_ws
-				istate = 4
+				txtEnd := i-1
+				subEl.italic = true
+				subEl.txt = string(txtbuf[txtSt:txtEnd+1])
+				istate = 0
+
+			case '\r':
+				txtEnd := i-1
+				subEl.italic = true
+				subEl.txt = string(txtbuf[txtSt:txtEnd+1])
+				istate = 5
+
+			case '\n':
+				txtEnd := i
+				subEl.italic = true
+				subEl.txt = string(txtbuf[txtSt:txtEnd+1])
+				istate = 0
+
+			default:
+				// _t_a
+
 			}
 
 		case 15:
 			// __
 			if utilLib.IsAlpha(ch) {
 				// __t
+				txtSt = 1
 				istate = 16
 			}
 
@@ -796,24 +877,49 @@ func (mdP *mdParseObj) parseMdTxt(parEl *parEl)(err error) {
 
 		case 18:
 			// __t__
-			if ch == ' ' {
+			switch ch {
+			case ' ':
 				// __t__ws
-				istate = 4
+				txtEnd := i-1
+				subEl.italic = true
+				subEl.txt = string(txtbuf[txtSt:txtEnd+1])
+				istate = 0
+
+			case '\r':
+				txtEnd := i-1
+				subEl.italic = true
+				subEl.txt = string(txtbuf[txtSt:txtEnd+1])
+				istate = 5
+
+			case '\n':
+				txtEnd := i
+				subEl.italic = true
+				subEl.txt = string(txtbuf[txtSt:txtEnd+1])
+				istate = 0
+
+			default:
+				// __t__a
+
 			}
 
 		case 20:
 			// **
-			if ch == '*' {
+			switch ch {
+			case '*':
 				// ***
 				istate = 30
-			}
-			if utilLib.IsAlphaNumeric(ch) {
-				// **t
-				istate = 21
-			}
-			if ch == ' ' {
+
+			case ' ': 
 				//error
 				istate = 50
+
+			default:
+				if utilLib.IsAlphaNumeric(ch) {
+					// **t
+					istate = 21
+					txtSt = i
+				}
+				// error
 			}
 
 		case 21:
@@ -834,6 +940,7 @@ func (mdP *mdParseObj) parseMdTxt(parEl *parEl)(err error) {
 			// ***
 			if utilLib.IsAlphaNumeric(ch) {
 				istate = 31
+				txtSt = i
 			}
 			if ch == ' ' {
 				//error ***ws
@@ -842,9 +949,11 @@ func (mdP *mdParseObj) parseMdTxt(parEl *parEl)(err error) {
 
 		case 31:
 			// ***t
-			if ch == '*' {
+			switch ch {
+			case '*':
 				// ***t*
 				istate = 32
+			default:
 			}
 
 		case 32:
@@ -852,13 +961,44 @@ func (mdP *mdParseObj) parseMdTxt(parEl *parEl)(err error) {
 			if ch == '*' {
 				// ***text**
 				istate = 33
+			} else {
+				// error
 			}
 
 		case 33:
-			// **text**
+			// ***text***
 			if ch == '*' {
 				// ***text***
-				istate = 4
+				istate = 34
+			}
+
+		case 34:
+			switch ch {
+			case ' ':
+				// __t__ws
+				txtEnd := i-1
+				subEl.italic = true
+				subEl.bold = true
+				subEl.txt = string(txtbuf[txtSt:txtEnd+1])
+				istate = 0
+
+			case '\r':
+				txtEnd := i-1
+				subEl.italic = true
+				subEl.bold = true
+				subEl.txt = string(txtbuf[txtSt:txtEnd+1])
+				istate = 5
+
+			case '\n':
+				txtEnd := i
+				subEl.italic = true
+				subEl.bold = true
+				subEl.txt = string(txtbuf[txtSt:txtEnd+1])
+				istate = 0
+
+			default:
+				// __t__a
+				// error
 			}
 
 // links & footnotes
@@ -879,6 +1019,8 @@ func (mdP *mdParseObj) parseMdTxt(parEl *parEl)(err error) {
 			if ch == ']' {
 				// [t]
 				linkEnd = i-1
+				subEl.txt = string(txtbuf[linkSt:linkEnd +1])
+				parEl.subEl = append(parEl.subEl, subEl)
 				istate =42
 			}
 		case 42:
@@ -899,7 +1041,9 @@ func (mdP *mdParseObj) parseMdTxt(parEl *parEl)(err error) {
 			if ch == ')' {
 				// [t](uri)
 				uriEnd = i-1
-				istate = 4
+				subEl.lkUri = string(txtbuf[uriSt:uriEnd +1])
+				parEl.subEl = append(parEl.subEl, subEl)
+				istate = 0
 			}
 
 		case 50:
@@ -1786,10 +1930,14 @@ func (mdP *mdParseObj) closeOrList(lin int)(err error) {
 	return nil
 }
 
-//ooo
+
 func (mdP *mdParseObj) checkOrList(lin int)(err error) {
 // method that parses an ordered list
 
+// codes
+// 0 orlist item
+// 1 not an orlist item
+//
 	var el structEl
 	var orEl oList
 	var parEl parEl
@@ -1814,6 +1962,7 @@ func (mdP *mdParseObj) checkOrList(lin int)(err error) {
 				wsNum++
 			}
 			if utilLib.IsNumeric(ch) {
+				// new list item
 				markSt = i
 				istate = 1
 				mNum = int(ch) - 48 + mNum*10
@@ -1821,7 +1970,6 @@ func (mdP *mdParseObj) checkOrList(lin int)(err error) {
 			if utilLib.IsAlpha(ch) {
 				parSt = i
 			}
-//else {return fmt.Errorf(" orList: non-numeric char %q in counter", ch)}
 
 		case 1:
 			if ch == '.' {
@@ -1833,10 +1981,13 @@ func (mdP *mdParseObj) checkOrList(lin int)(err error) {
 			if ch == ' ' {
 				istate = 3
 			}
+
 		case 3:
 			if utilLib.IsAlpha(ch) {
 				parSt = i
 			}
+		default:
+
 		}
 		if parSt > 0 {break}
 	}
@@ -1863,17 +2014,29 @@ func (mdP *mdParseObj) checkOrList(lin int)(err error) {
 fmt.Printf(" OL txt: %s ", parEl.txt)
 
 	if markSt == 0 {
-		el.parEl = &parEl
+		// not a new list item
+		//check prev element
+		last := len(mdP.elList) -1
+		elLast := mdP.elList[last]
+		if elLast.olEl != nil {
+			elLast.olEl.parEl.txt += parEl.txt
+			elLast.olEl.parEl.txtEnd = parEl.txtEnd
+			mdP.istate = OL
+		} else {
+			mdP.istate = UK
+			return fmt.Errorf("no mark, prev el not an orlist item!")
+		}
 	} else {
+		// a new list item
 		mdP.cliCount[nest]++
 		orEl.nest = nest
 		orEl.count[nest] = 	mdP.cliCount[nest]
 		orEl.parEl = &parEl
 		el.olEl = &orEl
+		mdP.elList = append(mdP.elList, el)
+		mdP.istate = OL
 	}
 
-	mdP.elList = append(mdP.elList, el)
-	mdP.istate = OL
 
 	return nil
 }
@@ -1985,17 +2148,22 @@ func (mdP *mdParseObj) printElList () {
 		if el.parEl != nil {
 			ParEl := *el.parEl
 			fmt.Printf( "par typ %-5s %t: text: %s ", dispHtmlEl(ParEl.typ), ParEl.fin, ParEl.txt)
-/*
+
 			subLen := len(ParEl.subEl)
 			if subLen == 1 {
 				fmt.Printf(" subel 0: \"%s\"\n", ParEl.subEl[0].txt)
 			} else {
 				fmt.Printf("\n")
 				for i:=0; i< subLen; i++ {
-					fmt.Printf("         subel %d: %s\n", i, ParEl.subEl[i].txt)
+					subEl := ParEl.subEl[i]
+					if subEl.link {
+						fmt.Printf("         subel %d bold %t italic %t link: %s: %s\n", i, subEl.bold, subEl. italic, subEl.lkUri, subEl.txt)
+					} else {
+						fmt.Printf("         subel %d bold %t italic %t link: %s: %s\n", i, subEl.bold, subEl. italic, subEl.txt)
+					}
 				}
 			}
-*/
+
 			fmt.Printf("\n")
 			continue
 		}
