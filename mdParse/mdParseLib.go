@@ -1912,7 +1912,7 @@ func (mdP *mdParseObj) printLinList()() {
 func (mdP *mdParseObj) CvtMdToHtml(outfil *os.File)(err error) {
 // method that converts the parsed element list of an md file inot an html file
 
-	nam := outfil.Name
+	nam := outfil.Name()
 	fmt.Printf("out file name: %s\n", nam)
 
     outstr := htmlLib.CreHtmlHead()
