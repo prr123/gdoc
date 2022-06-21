@@ -28,6 +28,7 @@ func main() {
 		outfilNam = os.Args[1]
 
 	case 3:
+		outfilNam = os.Args[1]
 		if os.Args[2] == "html" {htmlflag = true}
 
 	default:
@@ -36,6 +37,7 @@ func main() {
 		os.Exit(1)
 
 	}
+
 
 	htmlFilNam := "output/htmlTest/" + outfilNam + ".html"
 	mdFilNam := "inpTestMd/" + outfilNam + ".md"
@@ -46,16 +48,20 @@ func main() {
 		os.Exit(1)
 	}
 
+	fmt.Printf("outfil: %v name: %s\n", outfil, htmlFilNam)
+
 	mdp := mdParse.InitMdParse()
 
 	// html
 	if !htmlflag {
     	err := mdp.ParseMdFile(mdFilNam)
     	if err != nil {
-        	fmt.Printf("error - parseMdfile: %v\n", err)
+        	fmt.Printf("error - parseMdfile %s: %v\n", mdFilNam, err)
         	os.Exit(1)
     	}
 	}
+
+
 	err = mdp.CvtMdToHtml(outfil)
 	if err != nil {
 		fmt.Printf("error CvtMdToHml: %v\n", err)
