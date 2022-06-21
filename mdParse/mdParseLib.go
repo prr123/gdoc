@@ -12,14 +12,16 @@ package mdParseLib
 import (
 	"os"
 	"fmt"
-//	"strconv"
-	 "google/gdoc/util"
+	"google/gdoc/util"
+	"google/gdoc/htmlLib"
 )
 
 type mdParseObj struct {
 	istate int
 	errCount int
 	cnest int
+	imgCount int
+	ftnCount int
 	cliTyp bool
 	cliCount [10]int
 	filnam string
@@ -67,8 +69,11 @@ type parEl struct {
 type parSubEl struct {
 	elSt int
 	elEnd int
-	txt string
+	ftn	int
+	img int
 	txtTyp int
+	txt string
+	link string
 }
 
 type errEl struct {
@@ -360,7 +365,6 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 	var fch, sch byte
 
 //	mdP.istate = EP
-//	for lin:=0; lin<len(mdP.linList); lin++ {
 
 	maxLin := 500
 	if len(mdP.linList) < maxLin {maxLin = len(mdP.linList)}
@@ -627,14 +631,14 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 }
 
 //ppp
-func (mdP *mdParseObj) parseMdTextEls()(err error) {
+func (mdP *mdParseObj) parseMdSubEl()(err error) {
 // method that parses the text fields
 
 	for i:=0; i < len(mdP.elList); i++ {
 		el := mdP.elList[i]
 		fmt.Printf("el %3d: ", i)
 
-		// parse par el
+		// parse par if el.parEl != nil
 		if el.parEl != nil {
 
 		}
@@ -1905,13 +1909,16 @@ func (mdP *mdParseObj) printLinList()() {
 
 }
 
-func (mdP *mdParseObj) cvtMdToHtml()(err error) {
+func (mdP *mdParseObj) CvtMdToHtml(outfil *os.File)(err error) {
 // method that converts the parsed element list of an md file inot an html file
-	fmt.Printf("*** input file: %s\n", mdP.filnam + ".md")
 
-	outfil, err := os.Create(mdP.filnam + ".html")
-	if err != nil { return fmt.Errorf("os.Create: %v\n", err)}
-	defer outfil.Close()
+    outstr := htmlLib.CreHtmlHead()
+
+    outstr += htmlLib.CreHtmlMid()
+
+    outstr += htmlLib.CreHtmlEnd()
+
+	outfil.WriteString(outstr)
 
 	return nil
 }
