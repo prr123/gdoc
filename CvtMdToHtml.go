@@ -9,7 +9,7 @@ package main
 import (
 	"fmt"
 	"os"
-	"google/gdoc/htmlLib"
+   	mdParse "google/gdoc/mdParse"
 )
 
 
@@ -17,6 +17,7 @@ func main() {
 
 	numArg := len(os.Args)
 
+	htmlflag:= false
 	outfilNam :=""
 	switch numArg {
 	case 1:
@@ -26,6 +27,9 @@ func main() {
 	case 2:
 		outfilNam = os.Args[1]
 
+	case 3:
+		if os.Args[2] == "html" {htmlflag = true}
+
 	default:
 		fmt.Println("error -- too many arguments!")
 		fmt.Println("usage is ./CvtMdToHtml outfil!")
@@ -34,6 +38,7 @@ func main() {
 	}
 
 	htmlFilNam := "output/htmlTest/" + outfilNam + ".html"
+	mdFilNam := "inpTestMd/" + outfilNam + ".md"
 
 	outfil, err := os.Create(htmlFilNam)
 	if err != nil {
@@ -41,14 +46,21 @@ func main() {
 		os.Exit(1)
 	}
 
+	mdp := mdParse.InitMdParse()
+
 	// html
-	outstr := htmlLib.CreHtmlHead()
-
-	outstr += htmlLib.CreHtmlMid()
-
-	outstr += htmlLib.CreHtmlEnd()
-
-	outfil.WriteString(outstr)
+	if !htmlflag {
+    	err := mdp.ParseMdFile(mdFilNam)
+    	if err != nil {
+        	fmt.Printf("error - parseMdfile: %v\n", err)
+        	os.Exit(1)
+    	}
+	}
+	err = mdp.CvtMdToHtml(outfil)
+	if err != nil {
+		fmt.Printf("error CvtMdToHml: %v\n", err)
+		os.Exit(1)
+	}
 
 	outfil.Close()
 
