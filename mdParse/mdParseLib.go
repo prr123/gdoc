@@ -2216,22 +2216,17 @@ func (mdP *mdParseObj) printElList () {
 				subLen := len(ParEl.subEl)
 				fmt.Printf( "  par typ: %-5s %t len: %d text: %s\n", dispHtmlEl(ParEl.typ), ParEl.fin, subLen, ParEl.txt)
 
-				if subLen == 1 {
-					fmt.Printf(" subel 0: \"%s\"\n", ParEl.subEl[0].txt)
-				} else {
-					fmt.Printf("\n")
-					for i:=0; i< subLen; i++ {
-						subEl := ParEl.subEl[i]
-						if subEl.link {
-							fmt.Printf("         subel %d bold %t italic %t link: %s txt: %s\n", i, subEl.bold, subEl. italic, subEl.lkUri, subEl.txt)
-						} else {
-							fmt.Printf("         subel %d bold %t italic %t txt: %s: \n", i, subEl.bold, subEl. italic, subEl.txt)
-						}
+				for i:=0; i< subLen; i++ {
+					subEl := ParEl.subEl[i]
+					if subEl.link {
+						fmt.Printf("         subel %d bold %t italic %t link: %s txt: %s\n", i, subEl.bold, subEl.italic, subEl.lkUri, subEl.txt)
+					} else {
+						fmt.Printf("         subel %d bold %t italic %t txt: %s: \n", i, subEl.bold, subEl.italic, subEl.txt)
 					}
 				}
 
 			} else {
-				fmt.Printf( "ulEl par nil!\n")
+				fmt.Printf( "ulEl error par is nil!\n")
 			}
 
 			continue
@@ -2242,22 +2237,25 @@ func (mdP *mdParseObj) printElList () {
 			fmt.Printf( "ol nest %d counter %d: ", el.olEl.nest, el.olEl.count[nest])
 			if el.olEl.parEl != nil {
 				ParEl := el.olEl.parEl
-				fmt.Printf( "par typ: %-5s %t text: %s\n", dispHtmlEl(ParEl.typ), ParEl.fin, ParEl.txt)
-/*
 				subLen := len(ParEl.subEl)
-				if subLen == 1 {
-					fmt.Printf("         subel 0: %s\n", ParEl.subEl[0].txt)
-				} else {
-					for i:=0; i< subLen; i++ {
-						fmt.Printf("         subel %d: %s\n", i, ParEl.subEl[i].txt)
+				fmt.Printf( "  par typ: %-5s %t len: %d text: %s\n", dispHtmlEl(ParEl.typ), ParEl.fin, subLen, ParEl.txt)
+
+				for i:=0; i< subLen; i++ {
+					subEl := ParEl.subEl[i]
+					if subEl.link {
+						fmt.Printf("         subel %d bold %t italic %t link: %s txt: %s\n", i, subEl.bold, subEl.italic, subEl.lkUri, subEl.txt)
+					} else {
+						fmt.Printf("         subel %d bold %t italic %t txt: %s: \n", i, subEl.bold, subEl.italic, subEl.txt)
 					}
 				}
-*/
+
 			} else {
-				fmt.Printf( "olEl par nil!\n")
+				fmt.Printf( "olEl error par is nil!\n")
 			}
+
 			continue
 		}
+
 
 		if el.tblEl != nil {
 			fmt.Printf( "tbl: rows: %d  cols: %d \n", el.tblEl.rows, el.tblEl.cols)
