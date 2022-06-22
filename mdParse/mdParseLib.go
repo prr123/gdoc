@@ -1577,6 +1577,7 @@ fmt.Printf(" UL txt: %s ", parEl.txt)
 			if ulCh == 0 {
 				// if no mark char, par
 				lastEl.ulEl.parEl.txt += parEl.txt
+				lastEl.ulEl.parEl.txtEnd = parEl.txtEnd
 				lastEl.ulEl.parEl.fin = false
 				return nil
 			} else {
@@ -2034,30 +2035,36 @@ func (mdP *mdParseObj) checkOrList(lin int)(err error) {
 
 fmt.Printf(" OL txt: %s ", parEl.txt)
 
-	if markSt == 0 {
-		// not a new list item
-		//check prev element
-		last := len(mdP.elList) -1
-		elLast := mdP.elList[last]
-		if elLast.olEl != nil {
-			elLast.olEl.parEl.txt += parEl.txt
-			elLast.olEl.parEl.txtEnd = parEl.txtEnd
-			mdP.istate = OL
+	last := len(mdP.elList) -1
+	if last > -1 {
+		// if there is a last el
+		lastEl := mdP.elList[last]
+		if lastEl.olEl != nil {
+			// if the lastEL is ol item, then
+			// if there is no mark, add the text to the previous ol element
+			if markSt == 0 {
+				lastEl.olEl.parEl.txt += parEl.txt
+				lastEl.olEl.parEl.txtEnd = parEl.txtEnd
+				lastEl.olEl.parEl.fin = false
+				mdP.istate = OL
+				return nil
+			} else {
+				// new element
+				lastEl.olEl.parEl.fin = true
+			}
 		} else {
-			mdP.istate = UK
-			return fmt.Errorf("no mark, prev el not an orlist item!")
+			// if lastEl is not a ol element, there is nothing to do
 		}
-	} else {
-		// a new list item
-		mdP.cliCount[nest]++
-		orEl.nest = nest
-		orEl.count[nest] = 	mdP.cliCount[nest]
-		orEl.parEl = &parEl
-		el.olEl = &orEl
-		mdP.elList = append(mdP.elList, el)
-		mdP.istate = OL
 	}
 
+	// a new list item
+	mdP.cliCount[nest]++
+	orEl.nest = nest
+	orEl.count[nest] = 	mdP.cliCount[nest]
+	orEl.parEl = &parEl
+	el.olEl = &orEl
+	mdP.elList = append(mdP.elList, el)
+	mdP.istate = OL
 
 	return nil
 }
