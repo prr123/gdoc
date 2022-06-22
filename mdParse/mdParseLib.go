@@ -44,6 +44,7 @@ type mdLin struct {
 }
 
 type structEl struct {
+	elTyp int
 	emEl bool
 	hrEl bool
 	comEl *comEl
@@ -231,9 +232,9 @@ func dispHtmlEl(num int)(str string) {
 	var htmlDisp [18]string
 
 	htmlDisp[br] = "br"
-	htmlDisp[par] = "par"
+	htmlDisp[par] = "p"
 	htmlDisp[hr] = "hr"
-	htmlDisp[sp] = "sp"
+	htmlDisp[sp] = "span"
 	htmlDisp[ul] = "ul"
 	htmlDisp[ol] = "ol"
 	htmlDisp[li] = "li"
@@ -2112,6 +2113,7 @@ func (mdP *mdParseObj) printLinList()() {
 }
 
 func cvtParHtml (parel *parEl) (htmlStr, cssStr string, err error) {
+
 
 	return htmlStr, cssStr, err
 }
