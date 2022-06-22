@@ -1113,8 +1113,6 @@ fmt.Printf(" **** subel %d bold %t italic %t link: %s txt: %s\n", i, subEl.bold,
 			fmt.Printf("link str: %d:%d uri: %d:%d\n", linkSt, linkEnd, uriSt, uriEnd)
 		}
 
-
-
 	}
 
 	//debug
