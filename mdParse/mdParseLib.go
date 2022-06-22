@@ -1290,6 +1290,7 @@ func (mdP *mdParseObj) checkPar(lin int)(err error) {
 	parEl.txt = string(buf[parEl.txtSt:parEl.txtEnd+1])
 	parEl.typ = par
 	el.parEl = &parEl
+	el.elTyp = PAR
 
 	// see whether the previous element of elList is a parEl
 	last := len(mdP.elList) -1
@@ -1385,6 +1386,7 @@ func (mdP *mdParseObj) checkComment(lin int)(err error) {
 
 	comEl.txt = string(buf[linSt+9:closPar-1])
 	el.comEl = &comEl
+	el.elTyp = COM
 	mdP.elList = append(mdP.elList, el)
 
 	return nil
@@ -1469,7 +1471,7 @@ func (mdP *mdParseObj) checkHeading(lin int) (err error){
 	fmt.Printf(" heading: %s text: \"%s\"", dispHtmlEl(hdtyp), parEl.txt)
 
 //fmt.Printf("linSt: %d linEnd: %d\n", linSt, linEnd)
-
+	el.elTyp = PAR
 	el.parEl = &parEl
 	mdP.elList = append(mdP.elList, el)
 	mdP.istate = PAR
@@ -1498,6 +1500,7 @@ func (mdP *mdParseObj) checkHr(lin int) (err error) {
 
 	if numCh >2 {
 		el.hrEl = true
+		el.elTyp = HR
 		mdP.elList = append(mdP.elList, el)
 		mdP.istate = HR
 		err = nil
@@ -1591,6 +1594,7 @@ fmt.Printf(" UL txt: %s ", parEl.txt)
 	ulEl.nest = nestLev
 	ulEl.parEl = &parEl
 	el.ulEl = &ulEl
+	el.elTyp = UL
 	mdP.elList = append(mdP.elList, el)
 	mdP.istate = UL
 
@@ -1657,6 +1661,7 @@ func (mdP *mdParseObj) checkBlock(lin int, ws int) (err error){
 		bkEl.nest = nest
 		bkEl.parEl = &parEl
 		el.bkEl = &bkEl
+		el.elTyp = BLK
 		mdP.elList = append(mdP.elList, el)
 		mdP.istate = BLK
 
@@ -1740,6 +1745,7 @@ fmt.Printf(" implied blk nest: %d par txt: %s ", nest, parEl.txt)
 	bkEl.nest = nest
 	bkEl.parEl = &parEl
 	el.bkEl = &bkEl
+	el.elTyp = BLK
 	mdP.elList = append(mdP.elList, el)
 	mdP.istate = BLK
 
@@ -1793,6 +1799,7 @@ func (mdP *mdParseObj) checkCode(lin int) (endLin int, err error){
 	parEl.txtEnd = endPos
 	parEl.typ = cod
 	el.parEl = &parEl
+	el.elTyp = COD
 	mdP.elList = append(mdP.elList, el)
 	mdP.istate = COD
 
@@ -1882,14 +1889,11 @@ func (mdP *mdParseObj) checkImage(lin int) (err error){
 	if !imgEnd {return fmt.Errorf("could not parse img el!")}
 
 	el.imgEl = &imgEl
+	el.elTyp = IMG
 	mdP.elList = append(mdP.elList, el)
 	mdP.istate = IMG
 
 	return nil
-}
-
-func (mdP *mdParseObj) checkLink() {
-
 }
 
 func (mdP *mdParseObj) checkTable(lin int)(endLin int, err error) {
@@ -1935,8 +1939,9 @@ func (mdP *mdParseObj) checkTable(lin int)(endLin int, err error) {
 	tblEl.cols = col
 
 	el.tblEl = &tblEl
+	el.elTyp = TBL
 	mdP.elList = append(mdP.elList, el)
-
+	mdP.istate = TBL
 	return endLin, nil
 }
 
@@ -2061,6 +2066,7 @@ fmt.Printf(" OL txt: %s ", parEl.txt)
 	orEl.count[nest] = 	mdP.cliCount[nest]
 	orEl.parEl = &parEl
 	el.olEl = &orEl
+	el.elTyp = OL
 	mdP.elList = append(mdP.elList, el)
 	mdP.istate = OL
 
@@ -2096,6 +2102,7 @@ func (mdP *mdParseObj) checkBR()(err error) {
 	}
 
 	el.emEl = true
+	el.elTyp = EP
 	mdP.elList = append(mdP.elList, el)
 	return nil
 }
