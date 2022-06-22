@@ -2111,19 +2111,83 @@ func (mdP *mdParseObj) printLinList()() {
 
 }
 
+func cvtParHtml (parel *parEl) (htmlStr, cssStr string, err error) {
+
+	return htmlStr, cssStr, err
+}
+
+//html
+func parseEl (el structEl) (htmlStr, cssStr string, err error) {
+
+	var eltyp int
+
+	typStr := ""
+	switch {
+	case el.parEl != nil:
+		eltyp = PAR
+		typStr = fmt.Sprintf("<!--- %s --->\n", dispState(eltyp))
+		htmlStr, cssStr, err = cvtParHtml(el.parEl)
+	case el.emEl:
+		eltyp = EP
+	case el.hrEl:
+		eltyp = HR
+	case el.ulEl != nil:
+		eltyp = UL
+	case el.olEl !=nil:
+		eltyp = OL
+	case el.comEl != nil:
+		eltyp = COM
+	case el.tblEl != nil:
+		eltyp = TBL
+	case el.imgEl != nil:
+		eltyp = IMG
+	case el.bkEl != nil:
+		eltyp = BLK
+	default:
+		eltyp = UK
+
+	}
+
+	htmlStr = typStr + htmlStr
+	return htmlStr, cssStr, err
+}
+
+
+func (mdP *mdParseObj) cvtElListHtml()(htmlStr string, cssStr string, err error) {
+
+	var el structEl
+
+	for elIdx:=0; elIdx<len(mdP.elList); elIdx++ {
+		el = mdP.elList[elIdx]
+		errStr := ""
+		thtmlStr, tcssStr, err := parseEl(el)
+		if err != nil {errStr = fmt.Sprintf("<!--- error el %d: %v --->\n", elIdx, err)}
+		htmlStr += thtmlStr
+		if len(errStr) > 0 {htmlStr += errStr}
+		cssStr += tcssStr
+	}
+	return htmlStr, cssStr, nil
+}
+
 func (mdP *mdParseObj) CvtMdToHtml(outfil *os.File)(err error) {
 // method that converts the parsed element list of an md file inot an html file
 
 	nam := outfil.Name()
 	fmt.Printf("out file name: %s\n", nam)
 
+	htmlStr, cssStr,_ := mdP.cvtElListHtml()
+
     outstr := htmlLib.CreHtmlHead()
 
-	outstr += htmlLib.CreCss()
+	outstr += "<style>\n"
+	outstr += cssStr
+	outstr += "</style>\n"
 
     outstr += htmlLib.CreHtmlMid()
 
 	outstr += htmlLib.CreHtmlDivMain("main")
+
+	outstr += htmlStr
 
 	outstr += "  </div>\n"
 
