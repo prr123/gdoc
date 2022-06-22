@@ -710,25 +710,11 @@ fmt.Printf("parsePar %d: %s\n", len(txtbuf), parEl.txt)
 	txtEnd := 0
 	istate := 0
 
+	last := len(txtbuf) -1
+
 	for i:=0; i< len(txtbuf); i++ {
 		ch := txtbuf[i]
 fmt.Printf("i %d: %q istate: %d %s\n", i, ch, istate, string(txtbuf[txtSt:i+1]))
-
-		if i == (len(txtbuf) -1) {
-			switch istate {
-				case 3, 11:
-					return fmt.Errorf("italics not ending!")
-
-				case 40:
-					return fmt.Errorf("link not closure!")
-
-			}
-
-			txtEnd = i
-			subEl.txt = string(txtbuf[txtSt:txtEnd+1]) + "\n"
-			parEl.subEl = append(parEl.subEl, subEl)
-			break
-		}
 
 		switch istate {
 		case 0:
@@ -762,7 +748,11 @@ fmt.Printf("i %d: %q istate: %d %s\n", i, ch, istate, string(txtbuf[txtSt:i+1]))
 				istate = 2
 
 			default:
-
+				if i == last {
+					txtEnd = i
+					subEl.txt = string(txtbuf[txtSt:txtEnd+1]) + "\n"
+					parEl.subEl = append(parEl.subEl, subEl)
+				}
 			}
 
 		case 2:
@@ -1028,6 +1018,7 @@ fmt.Printf("i %d: %q istate: %d %s\n", i, ch, istate, string(txtbuf[txtSt:i+1]))
 				linkEnd = i-1
 				subEl.link = true
 				subEl.txt = string(txtbuf[linkSt:linkEnd +1])
+fmt.Printf("link txt: %s\n",subEl.txt)
 				istate =42
 			}
 		case 42:
@@ -1050,6 +1041,10 @@ fmt.Printf("i %d: %q istate: %d %s\n", i, ch, istate, string(txtbuf[txtSt:i+1]))
 				uriEnd = i-1
 				subEl.lkUri = string(txtbuf[uriSt:uriEnd +1])
 				parEl.subEl = append(parEl.subEl, subEl)
+//ppsub
+fmt.Printf("link uri: %s\n",subEl.lkUri)
+fmt.Printf(" **** subel %d bold %t italic %t link: %s txt: %s\n", i, subEl.bold, subEl.italic, subEl.lkUri, subEl.txt)
+
 				istate = 0
 			}
 
@@ -1117,7 +1112,11 @@ fmt.Printf("i %d: %q istate: %d %s\n", i, ch, istate, string(txtbuf[txtSt:i+1]))
 			linkEnd = 0
 			fmt.Printf("link str: %d:%d uri: %d:%d\n", linkSt, linkEnd, uriSt, uriEnd)
 		}
+
+
+
 	}
+
 	//debug
 	sublen := len(parEl.subEl)
 	fmt.Printf("parsePar sub %d\n", sublen)
