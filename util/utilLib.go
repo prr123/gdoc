@@ -37,7 +37,7 @@ func IsUriCh(let byte)(res bool) {
 	if res {return res}
 
 	switch let {
-		case ':','.', '/':
+		case ':','.', '/','#':
 			res = true
 		default:
 			res = false
