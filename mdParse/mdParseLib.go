@@ -725,7 +725,7 @@ fmt.Printf("i %d: %q istate: %d %s\n", i, ch, istate, string(txtbuf[txtSt:i+1]))
 			}
 
 			txtEnd = i
-			subEl.txt = string(txtbuf[txtSt:txtEnd]) + "\n"
+			subEl.txt = string(txtbuf[txtSt:txtEnd+1]) + "\n"
 			parEl.subEl = append(parEl.subEl, subEl)
 			break
 		}
@@ -1026,8 +1026,8 @@ fmt.Printf("i %d: %q istate: %d %s\n", i, ch, istate, string(txtbuf[txtSt:i+1]))
 			if ch == ']' {
 				// [t]
 				linkEnd = i-1
+				subEl.link = true
 				subEl.txt = string(txtbuf[linkSt:linkEnd +1])
-				parEl.subEl = append(parEl.subEl, subEl)
 				istate =42
 			}
 		case 42:
@@ -1566,15 +1566,34 @@ func (mdP *mdParseObj) checkUnList(lin int) (err error){
 	parEl.txt = string(buf[parEl.txtSt:parEl.txtEnd+1])
 
 fmt.Printf(" UL txt: %s ", parEl.txt)
-	if ulCh == 0 {
-		el.parEl = &parEl
-	} else {
-		ulEl.nest = nestLev
-		ulEl.parEl = &parEl
-		el.ulEl = &ulEl
+
+	last := len(mdP.elList) - 1
+
+	if last > -1 {
+		// if there is a lastEl
+		lastEl := mdP.elList[last]
+		if lastEl.ulEl != nil {
+			// if prev el is ul
+			if ulCh == 0 {
+				// if no mark char, par
+				lastEl.ulEl.parEl.txt += parEl.txt
+				lastEl.ulEl.parEl.fin = false
+				return nil
+			} else {
+				// new element
+				lastEl.ulEl.parEl.fin = true
+			}
+		} else {
+			// if not there is nothing to do
+		}
 	}
+
+	// new element
+	ulEl.nest = nestLev
+	ulEl.parEl = &parEl
+	el.ulEl = &ulEl
 	mdP.elList = append(mdP.elList, el)
-	mdP.istate = PAR
+	mdP.istate = UL
 
 	return nil
 }
@@ -2057,6 +2076,20 @@ func (mdP *mdParseObj) checkBR()(err error) {
 
 	var el structEl
 
+	last := len(mdP.elList) -1
+	if last > -1 {
+		lastEl := mdP.elList[last]
+		switch mdP.istate {
+			case PAR:
+				lastEl.parEl.fin = true
+			case UL:
+				lastEl.ulEl.parEl.fin = true
+			case OL:
+				lastEl.olEl.parEl.fin = true
+			default:
+		}
+	}
+
 	el.emEl = true
 	mdP.elList = append(mdP.elList, el)
 	return nil
@@ -2183,9 +2216,9 @@ func (mdP *mdParseObj) printElList () {
 					for i:=0; i< subLen; i++ {
 						subEl := ParEl.subEl[i]
 						if subEl.link {
-							fmt.Printf("         subel %d bold %t italic %t link: %s: %s\n", i, subEl.bold, subEl. italic, subEl.lkUri, subEl.txt)
+							fmt.Printf("         subel %d bold %t italic %t link: %s txt: %s\n", i, subEl.bold, subEl. italic, subEl.lkUri, subEl.txt)
 						} else {
-							fmt.Printf("         subel %d bold %t italic %t link: %s: %s\n", i, subEl.bold, subEl. italic, subEl.txt)
+							fmt.Printf("         subel %d bold %t italic %t txt: %s: \n", i, subEl.bold, subEl. italic, subEl.txt)
 						}
 					}
 				}
