@@ -2122,6 +2122,10 @@ func (mdP *mdParseObj) printLinList()() {
 func cvtParHtml (parel *parEl) (htmlStr, cssStr string, err error) {
 // function that converts parel into html
 
+	prefix := fmt.Sprintf("<%s>\n", dispHtml(parel.typ))
+	suffix := fmt.Sprintf("</%s>\n", dispHtml(parel.typ))
+
+
 	subElCount := len(parel.subEl)
 	if subElCount == 0 {return "","", fmt.Errorf("no subel!")}
 	for i:=0; i<subElCount; i++ {
@@ -2137,6 +2141,7 @@ func cvtParHtml (parel *parEl) (htmlStr, cssStr string, err error) {
 		if !alter {htmlStr = fmt.Sprintf("<span>%s</span>", subEl.txt)}
 	}
 
+	htmlStr = prefix + htmlStr + suffix
 	return htmlStr, cssStr, nil
 }
 
@@ -2153,8 +2158,10 @@ func parseEl (el structEl) (htmlStr, cssStr string, err error) {
 		htmlStr, cssStr, err = cvtParHtml(el.parEl)
 	case el.emEl:
 		eltyp = EP
+		htmlStr ="<br>\n"
 	case el.hrEl:
 		eltyp = HR
+		htmlStr = "<hr>\n"
 	case el.ulEl != nil:
 		eltyp = UL
 	case el.olEl !=nil:
