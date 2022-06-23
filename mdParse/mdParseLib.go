@@ -42,7 +42,6 @@ type mdLin struct {
 	typ byte
 	fchar byte
 }
-
 type structEl struct {
 	elTyp int
 	emEl bool
@@ -697,7 +696,7 @@ func (mdP *mdParseObj) parsePar(parEl *parEl)(err error) {
 
 	txtbuf := []byte(parEl.txt)
 
-fmt.Printf("parsePar %d: %s\n", len(txtbuf), parEl.txt)
+//fmt.Printf("parsePar %d: %s\n", len(txtbuf), parEl.txt)
 
 	linkSt := 0
 	linkEnd := 0
@@ -719,7 +718,7 @@ fmt.Printf("parsePar %d: %s\n", len(txtbuf), parEl.txt)
 	for i:=0; i< len(txtbuf); i++ {
 		ch := txtbuf[i]
 //pstate
-fmt.Printf("i %d|%d: %q istate: %d %s\n", i, last, ch, istate, string(txtbuf[txtSt:i+1]))
+//fmt.Printf("i %d|%d: %q istate: %d %s\n", i, last, ch, istate, string(txtbuf[txtSt:i+1]))
 
 		switch istate {
 		case 0:
@@ -1566,7 +1565,7 @@ func (mdP *mdParseObj) checkUnList(lin int) (err error){
 	nestLev := wsNum/4
 
 	parEl.txtSt = parSt
-	parEl.typ = ul
+	parEl.typ = par
 	parEl.nest = nestLev
 	err = mdP.checkParEOL(lin, &parEl)
 	parEl.txt = string(buf[parEl.txtSt:parEl.txtEnd+1])
@@ -2128,12 +2127,12 @@ func cvtParHtml (parelpt *parEl) (htmlStr, cssStr string, err error) {
 // function that converts parel into html
 
 	parel := *parelpt
-	prefix := fmt.Sprintf("<%s>\n", dispHtmlEl(parel.typ))
+	prefix := fmt.Sprintf("<%s>", dispHtmlEl(parel.typ))
 	suffix := fmt.Sprintf("</%s>\n", dispHtmlEl(parel.typ))
 
-fmt.Printf("par prefix: %s\n", prefix)
+//fmt.Printf("par prefix: %s\n", prefix)
 	subElCount := len(parel.subEl)
-fmt.Printf("par subelcount: %d\n", subElCount)
+//fmt.Printf("par subelcount: %d\n", subElCount)
 
 	if subElCount == 0 {return "","", fmt.Errorf("no subel!")}
 	for i:=0; i<subElCount; i++ {
@@ -2247,13 +2246,19 @@ func (mdP *mdParseObj) cvtElListHtml()(htmlStr string, cssStr string, err error)
 			}
 			onest = nest
 		}
-//xxx
+
 		switch el.elTyp {
 
 		case PAR:
 			thtmlStr, tcssStr, err = cvtParHtml(el.parEl)
 
+		case EP, EB, EUL, EOL:
+			thtmlStr = "<br>\n"
+
 		case UL:
+			thtmlStr, tcssStr, err = cvtParHtml(el.ulEl.parEl)
+			thtmlStr = "<li>" + thtmlStr + "</li>\n"
+		case OL:
 
 		default:
 			err = fmt.Errorf("unkkown el: %s", dispState(el.elTyp))
