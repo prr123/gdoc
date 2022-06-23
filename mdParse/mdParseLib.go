@@ -2120,9 +2120,24 @@ func (mdP *mdParseObj) printLinList()() {
 }
 
 func cvtParHtml (parel *parEl) (htmlStr, cssStr string, err error) {
+// function that converts parel into html
 
+	subElCount := len(parel.subEl)
+	if subElCount == 0 {return "","", fmt.Errorf("no subel!")}
+	for i:=0; i<subElCount; i++ {
+		subEl := parel.subEl[i]
+		alter := false
+		if subEl.link {alter = true; htmlStr += fmt.Sprintf("<a href=\"%s\">%s</a>", subEl.lkUri, subEl.txt)}
+		if subEl.bold && subEl.italic {alter = true; htmlStr += fmt.Sprintf("<span class=\"bold italic\">%s</span>", subEl.txt)}
+		if subEl.bold {alter = true; htmlStr += fmt.Sprintf("<span class=\"bold\">%s</span>", subEl.txt)}
+		if subEl.italic {alter = true; htmlStr += fmt.Sprintf("<span class=\"italic\">%s</span>", subEl.txt)}
+		if subEl.strike {alter = true; htmlStr += fmt.Sprintf("<span class=\"strike\">%s</span>", subEl.txt)}
+		if subEl.sub {alter = true; htmlStr += fmt.Sprintf("<span class=\"sub\">%s</span>", subEl.txt)}
+		if subEl.sup {alter = true; htmlStr += fmt.Sprintf("<span class=\"sup\">%s</span>", subEl.txt)}
+		if !alter {htmlStr = fmt.Sprintf("<span>%s</span>", subEl.txt)}
+	}
 
-	return htmlStr, cssStr, err
+	return htmlStr, cssStr, nil
 }
 
 //html
