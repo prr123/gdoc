@@ -2122,8 +2122,8 @@ func (mdP *mdParseObj) printLinList()() {
 func cvtParHtml (parel *parEl) (htmlStr, cssStr string, err error) {
 // function that converts parel into html
 
-	prefix := fmt.Sprintf("<%s>\n", dispHtml(parel.typ))
-	suffix := fmt.Sprintf("</%s>\n", dispHtml(parel.typ))
+	prefix := fmt.Sprintf("<%s>\n", dispHtmlEl(parel.typ))
+	suffix := fmt.Sprintf("</%s>\n", dispHtmlEl(parel.typ))
 
 
 	subElCount := len(parel.subEl)
@@ -2188,9 +2188,52 @@ func (mdP *mdParseObj) cvtElListHtml()(htmlStr string, cssStr string, err error)
 
 	var el structEl
 
+	unest := -1
+	onest := -1
+	nest := -1
 	for elIdx:=0; elIdx<len(mdP.elList); elIdx++ {
 		el = mdP.elList[elIdx]
 		errStr := ""
+		if el.elTyp != UL {
+			for nstLev:= unest; nstLev> -1; nstLev-- {
+					htmlStr += "</ul>\n"
+			}
+
+		} else {
+			nest = el.ulEl.nest
+			if nest > unest {
+				for nstLev:= unest; nstLev< nest; nstLev++ {
+					htmlStr += "<ul>\n"
+				}
+			}
+			if nest < unest {
+				for nstLev:= unest; nstLev> nest; nstLev-- {
+					htmlStr += "</ul>\n"
+				}
+			}
+			unest = nest
+		}
+
+		if el.elTyp != OL {
+			for nstLev:= onest; nstLev> -1; nstLev-- {
+					htmlStr += "</ol>\n"
+			}
+
+		} else {
+			nest = el.olEl.nest
+			if nest > unest {
+				for nstLev:= onest; nstLev< nest; nstLev++ {
+					htmlStr += "<ol>\n"
+				}
+			}
+			if nest < unest {
+				for nstLev:= onest; nstLev> nest; nstLev-- {
+					htmlStr += "</ol>\n"
+				}
+			}
+			onest = nest
+		}
+
 		thtmlStr, tcssStr, err := parseEl(el)
 		if err != nil {errStr = fmt.Sprintf("<!--- error el %d: %v --->\n", elIdx, err)}
 		htmlStr += thtmlStr
