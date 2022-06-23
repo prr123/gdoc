@@ -17,19 +17,21 @@ func main() {
 
 	numArg := len(os.Args)
 
-	htmlflag:= false
-	outfilNam :=""
+//	htmlflag:= false
+	inpfilNam := ""
+	outfilNam := ""
+
 	switch numArg {
 	case 1:
 		fmt.Println("error -- no output file name provided!")
-		fmt.Println("usage is ./CvtMdToHtml outfil!")
+		fmt.Println("usage is ./CvtMdToHtml infil outfil!")
 		os.Exit(1)
 	case 2:
-		outfilNam = os.Args[1]
+		inpfilNam = os.Args[1]
 
 	case 3:
-		outfilNam = os.Args[1]
-		if os.Args[2] == "html" {htmlflag = true}
+		inpfilNam = os.Args[1]
+		outfilNam = os.Args[2]
 
 	default:
 		fmt.Println("error -- too many arguments!")
@@ -38,9 +40,10 @@ func main() {
 
 	}
 
+	if outfilNam == "" {outfilNam = inpfilNam}
 
 	htmlFilNam := "output/htmlTest/" + outfilNam + ".html"
-	mdFilNam := "inpTestMd/" + outfilNam + ".md"
+	mdFilNam := "inpTestMd/" + inpfilNam + ".md"
 
 	outfil, err := os.Create(htmlFilNam)
 	if err != nil {
@@ -53,14 +56,11 @@ func main() {
 	mdp := mdParse.InitMdParse()
 
 	// html
-	if !htmlflag {
-    	err := mdp.ParseMdFile(mdFilNam)
-    	if err != nil {
-        	fmt.Printf("error - parseMdfile %s: %v\n", mdFilNam, err)
-        	os.Exit(1)
-    	}
-	}
-
+   	err = mdp.ParseMdFile(mdFilNam)
+   	if err != nil {
+		fmt.Printf("error - parseMdfile %s: %v\n", mdFilNam, err)
+        os.Exit(1)
+    }
 
 	err = mdp.CvtMdToHtml(outfil)
 	if err != nil {
