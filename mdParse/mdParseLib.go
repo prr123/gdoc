@@ -558,7 +558,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 						if err != nil {fmt.Printf("line %d: block error %v\n", lin, err)}
 
 					default:
-						mdP.addErr(lin,fmt.Sprintf("indent istate: %s !", dispState(mdP.istate)))
+						mdP.addErr(lin,fmt.Sprintf("error indent istate: %s !", dispState(mdP.istate)))
 
 					}
 					break
@@ -693,6 +693,8 @@ func (mdP *mdParseObj) parsePar(parEl *parEl)(err error) {
 
 	var subEl parSubEl
 
+//	parEl := *parelpt
+
 	txtbuf := []byte(parEl.txt)
 
 fmt.Printf("parsePar %d: %s\n", len(txtbuf), parEl.txt)
@@ -713,9 +715,11 @@ fmt.Printf("parsePar %d: %s\n", len(txtbuf), parEl.txt)
 
 	last := len(txtbuf) -1
 
+
 	for i:=0; i< len(txtbuf); i++ {
 		ch := txtbuf[i]
-fmt.Printf("i %d: %q istate: %d %s\n", i, ch, istate, string(txtbuf[txtSt:i+1]))
+//pstate
+fmt.Printf("i %d|%d: %q istate: %d %s\n", i, last, ch, istate, string(txtbuf[txtSt:i+1]))
 
 		switch istate {
 		case 0:
@@ -753,6 +757,7 @@ fmt.Printf("i %d: %q istate: %d %s\n", i, ch, istate, string(txtbuf[txtSt:i+1]))
 					txtEnd = i
 					subEl.txt = string(txtbuf[txtSt:txtEnd+1]) + "\n"
 					parEl.subEl = append(parEl.subEl, subEl)
+fmt.Printf("len: %d\n", len(parEl.subEl))
 				}
 			}
 
@@ -760,7 +765,7 @@ fmt.Printf("i %d: %q istate: %d %s\n", i, ch, istate, string(txtbuf[txtSt:i+1]))
 			// tws
 			switch ch {
 			case ' ':
-
+				istate = 1
 			case '*':
 				// tws*
 				txtEnd = i-1
@@ -780,7 +785,7 @@ fmt.Printf("i %d: %q istate: %d %s\n", i, ch, istate, string(txtbuf[txtSt:i+1]))
 			default:
 				// wsT
 				if utilLib.IsAlphaNumeric(ch) {
-
+					istate = 1
 				}
 			}
 		case 3:
@@ -2119,14 +2124,17 @@ func (mdP *mdParseObj) printLinList()() {
 
 }
 
-func cvtParHtml (parel *parEl) (htmlStr, cssStr string, err error) {
+func cvtParHtml (parelpt *parEl) (htmlStr, cssStr string, err error) {
 // function that converts parel into html
 
+	parel := *parelpt
 	prefix := fmt.Sprintf("<%s>\n", dispHtmlEl(parel.typ))
 	suffix := fmt.Sprintf("</%s>\n", dispHtmlEl(parel.typ))
 
-
+fmt.Printf("par prefix: %s\n", prefix)
 	subElCount := len(parel.subEl)
+fmt.Printf("par subelcount: %d\n", subElCount)
+
 	if subElCount == 0 {return "","", fmt.Errorf("no subel!")}
 	for i:=0; i<subElCount; i++ {
 		subEl := parel.subEl[i]
@@ -2146,6 +2154,7 @@ func cvtParHtml (parel *parEl) (htmlStr, cssStr string, err error) {
 }
 
 //html
+/*
 func parseEl (el structEl) (htmlStr, cssStr string, err error) {
 
 	var eltyp int
@@ -2154,7 +2163,6 @@ func parseEl (el structEl) (htmlStr, cssStr string, err error) {
 	switch {
 	case el.parEl != nil:
 		eltyp = PAR
-		typStr = fmt.Sprintf("<!--- %s --->\n", dispState(eltyp))
 		htmlStr, cssStr, err = cvtParHtml(el.parEl)
 	case el.emEl:
 		eltyp = EP
@@ -2164,6 +2172,7 @@ func parseEl (el structEl) (htmlStr, cssStr string, err error) {
 		htmlStr = "<hr>\n"
 	case el.ulEl != nil:
 		eltyp = UL
+
 	case el.olEl !=nil:
 		eltyp = OL
 	case el.comEl != nil:
@@ -2182,7 +2191,7 @@ func parseEl (el structEl) (htmlStr, cssStr string, err error) {
 	htmlStr = typStr + htmlStr
 	return htmlStr, cssStr, err
 }
-
+*/
 
 func (mdP *mdParseObj) cvtElListHtml()(htmlStr string, cssStr string, err error) {
 
@@ -2191,9 +2200,14 @@ func (mdP *mdParseObj) cvtElListHtml()(htmlStr string, cssStr string, err error)
 	unest := -1
 	onest := -1
 	nest := -1
+
 	for elIdx:=0; elIdx<len(mdP.elList); elIdx++ {
 		el = mdP.elList[elIdx]
+		typStr := fmt.Sprintf("<!--- el %d: %s --->\n", elIdx, dispState(el.elTyp))
+		thtmlStr := ""
+		tcssStr := ""
 		errStr := ""
+
 		if el.elTyp != UL {
 			for nstLev:= unest; nstLev> -1; nstLev-- {
 					htmlStr += "</ul>\n"
@@ -2233,10 +2247,21 @@ func (mdP *mdParseObj) cvtElListHtml()(htmlStr string, cssStr string, err error)
 			}
 			onest = nest
 		}
+//xxx
+		switch el.elTyp {
 
-		thtmlStr, tcssStr, err := parseEl(el)
+		case PAR:
+			thtmlStr, tcssStr, err = cvtParHtml(el.parEl)
+
+		case UL:
+
+		default:
+			err = fmt.Errorf("unkkown el: %s", dispState(el.elTyp))
+
+		}
+
 		if err != nil {errStr = fmt.Sprintf("<!--- error el %d: %v --->\n", elIdx, err)}
-		htmlStr += thtmlStr
+		htmlStr += typStr + thtmlStr
 		if len(errStr) > 0 {htmlStr += errStr}
 		cssStr += tcssStr
 	}
@@ -2305,7 +2330,7 @@ func (mdP *mdParseObj) printErrList () {
 func (mdP *mdParseObj) printElList () {
 // method that prints out the structural element list
 
-	fmt.Println("*********** El List ***********")
+	fmt.Println("\n\n*********** El List ***********")
 	fmt.Printf("Elements: %d\n", len(mdP.elList))
 	fmt.Printf("  el nam typ  subels fin txt\n")
 	for i:=0; i < len(mdP.elList); i++ {
@@ -2324,9 +2349,9 @@ func (mdP *mdParseObj) printElList () {
 
 		if el.parEl != nil {
 			ParEl := *el.parEl
-			fmt.Printf( "par typ %-5s %t: text: %s ", dispHtmlEl(ParEl.typ), ParEl.fin, ParEl.txt)
-
 			subLen := len(ParEl.subEl)
+			fmt.Printf( "par typ %-5s %d %t: text: %s ", dispHtmlEl(ParEl.typ), subLen, ParEl.fin, ParEl.txt)
+
 			if subLen == 1 {
 				fmt.Printf(" subel 0: \"%s\"\n", ParEl.subEl[0].txt)
 			} else {
