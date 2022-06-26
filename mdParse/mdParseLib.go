@@ -2026,7 +2026,7 @@ func (mdP *mdParseObj) closeUnList(lin int)(err error) {
 	last := len(mdP.elList) -1
 	lastEl := mdP.elList[last]
 	if lastEl.ulEl == nil {return fmt.Errorf("last el is not ul!")}
-	lastEl.ulEl.nest = -1
+//	lastEl.ulEl.nest = -1
 	mdP.cnest = -1
 	return nil
 }
@@ -2038,7 +2038,7 @@ func (mdP *mdParseObj) closeOrList(lin int)(err error) {
 	if lastEl.olEl == nil {return fmt.Errorf("last el is not ol!")}
 	nest := lastEl.olEl.nest
 	lastEl.olEl.count[nest] = 0
-	lastEl.olEl.nest = -1
+//	lastEl.olEl.nest = -1
 	mdP.cnest = -1
 	return nil
 }
@@ -2105,11 +2105,11 @@ func (mdP *mdParseObj) checkOrList(lin int)(err error) {
 		if parSt > 0 {break}
 	}
 
-//	if markSt == 0 {return fmt.Errorf(" orList: no counter digit!")}
-	if markEnd == 0 {return fmt.Errorf(" orList: no period after counter!")}
+	last := len(mdP.elList) -1
 
-	// convert count into number
-//	numStr := string(buf[markSt:markEnd])
+	if markEnd == 0 {
+ 		if mdP.istate != OL {return fmt.Errorf(" orList: no period after counter!")}
+	}
 
 	if parSt == 0 {return fmt.Errorf("olList text start not found!")}
 
@@ -2126,7 +2126,6 @@ func (mdP *mdParseObj) checkOrList(lin int)(err error) {
 
 fmt.Printf(" OL txt: %s ", parEl.txt)
 
-	last := len(mdP.elList) -1
 	if last > -1 {
 		// if there is a last el
 		lastEl := mdP.elList[last]
