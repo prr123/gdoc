@@ -7,6 +7,7 @@
 // date: 28 May 2022
 // copyright prr azul software
 //
+
 package mdParseLib
 
 import (
@@ -289,6 +290,7 @@ func InitMdParse() (mdp *mdParseObj) {
 // function that initialises the mdParse object
 
 	mdp = new(mdParseObj)
+	mdp.cnest = -1
 	return mdp
 }
 
@@ -439,6 +441,8 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err)}
 
 				case UL:
+					err = mdP.closeUnList(lin)
+					if err != nil {fmt.Printf("line %d closeUL %v\n", lin, err)}
 					err = mdP.checkBR()
 					mdP.istate = EUL
 					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err)}
@@ -478,7 +482,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 				switch {
 				case sch == ' ':
 					// unordered list *wsp
-		fmt.Printf("un List NL:0 ")
+		fmt.Printf("UList NL: 0 ")
 					err = mdP.checkUnList(lin)
 					if err != nil {fmt.Printf("line %d: unordered list error %v\n", lin, err)}
 					mdP.istate = UL
@@ -696,7 +700,8 @@ func (mdP *mdParseObj) parsePar(parEl *parEl)(err error) {
 
 	txtbuf := []byte(parEl.txt)
 
-//fmt.Printf("parsePar %d: %s\n", len(txtbuf), parEl.txt)
+	pardbg := false
+if mdP.elList[22].parEl == parEl {fmt.Printf("parsePar %d: %s\n", len(txtbuf), parEl.txt); pardbg = true}
 
 	linkSt := 0
 	linkEnd := 0
@@ -718,7 +723,7 @@ func (mdP *mdParseObj) parsePar(parEl *parEl)(err error) {
 	for i:=0; i< len(txtbuf); i++ {
 		ch := txtbuf[i]
 //pstate
-//fmt.Printf("i %d|%d: %q istate: %d %s\n", i, last, ch, istate, string(txtbuf[txtSt:i+1]))
+if pardbg {fmt.Printf("i %d|%d: %q istate: %d %s\n", i, last, ch, istate, string(txtbuf[txtSt:i+1]))}
 
 		switch istate {
 		case 0:
@@ -756,7 +761,7 @@ func (mdP *mdParseObj) parsePar(parEl *parEl)(err error) {
 					txtEnd = i
 					subEl.txt = string(txtbuf[txtSt:txtEnd+1]) + "\n"
 					parEl.subEl = append(parEl.subEl, subEl)
-fmt.Printf("len: %d\n", len(parEl.subEl))
+//fmt.Printf("len: %d\n", len(parEl.subEl))
 				}
 			}
 
@@ -813,6 +818,13 @@ fmt.Printf("len: %d\n", len(parEl.subEl))
 
 			case '_','[',']':
 				// error
+			default:
+				if i == last {
+					subEl.txt = string(txtbuf[txtSt:i+1]) + "\n"
+					parEl.subEl = append(parEl.subEl, subEl)
+//fmt.Printf("len: %d\n", len(parEl.subEl))
+				}
+
 			}
 
 		case 5:
@@ -855,7 +867,17 @@ fmt.Printf("len: %d\n", len(parEl.subEl))
 			// _t
 			if ch == '_' {
 				// _t_
-				istate = 13
+				if i == last {
+					subEl.italic = true
+					subEl.txt = string(txtbuf[txtSt:i])
+					parEl.subEl = append(parEl.subEl, subEl)
+					subEl.italic = false
+					istate = 0
+					txtSt = i+1
+					break
+				} else {
+					istate = 13
+				}
 			}
 		case 13:
 			// _t_
@@ -865,6 +887,7 @@ fmt.Printf("len: %d\n", len(parEl.subEl))
 				txtEnd := i-1
 				subEl.italic = true
 				subEl.txt = string(txtbuf[txtSt:txtEnd+1])
+				parEl.subEl = append(parEl.subEl, subEl)
 				istate = 0
 
 			default:
@@ -891,25 +914,40 @@ fmt.Printf("len: %d\n", len(parEl.subEl))
 			// __t_
 			if ch == '_' {
 				// __t__
-				istate = 18
-			} else {
-				//error
+				if i == last {
+					subEl.bold = true
+					subEl.txt = string(txtbuf[txtSt:i-1])
+					parEl.subEl = append(parEl.subEl, subEl)
+					subEl.bold = false
+					istate = 0
+				} else {
+					istate = 18
+				}
+				break
 			}
+			//error
+			// __txt_a
 
 		case 18:
 			// __t__
 			switch ch {
 			case ' ':
 				// __t__ws
-				txtEnd := i-1
-				subEl.italic = true
-				subEl.txt = string(txtbuf[txtSt:txtEnd+1])
-				istate = 0
+				istate = 19
 
 			default:
+				// error
 				// __t__a
 
 			}
+
+		case 19:
+			// __t__ws
+				subEl.bold = true
+				subEl.txt = string(txtbuf[txtSt:i-2])
+				parEl.subEl = append(parEl.subEl, subEl)
+				subEl.bold = false
+				istate = 4
 
 		case 20:
 			// **
@@ -942,8 +980,34 @@ fmt.Printf("len: %d\n", len(parEl.subEl))
 			// **text*
 			if ch == '*' {
 				// **text**
-				istate = 4
+				if i == last {
+					subEl.bold = true
+					subEl.txt = string(txtbuf[txtSt:i-1])
+					parEl.subEl = append(parEl.subEl, subEl)
+					subEl.bold = false
+					istate = 0
+					txtSt = i+1
+					break
+				} else {
+					istate = 23
+				}
 			}
+
+		case 23:
+			// **txt**
+			if ch == ' ' {
+				// **txt**ws
+				subEl.bold = true
+				subEl.txt = string(txtbuf[txtSt:i-2])
+				parEl.subEl = append(parEl.subEl, subEl)
+				subEl.bold = false
+				istate = 4
+				txtSt = i
+				break
+			}
+
+			// error
+			// pos: i
 
 		case 30:
 			// ***
@@ -989,6 +1053,9 @@ fmt.Printf("len: %d\n", len(parEl.subEl))
 				subEl.italic = true
 				subEl.bold = true
 				subEl.txt = string(txtbuf[txtSt:txtEnd+1])
+				parEl.subEl = append(parEl.subEl, subEl)
+				subEl.italic = false
+				subEl.bold = false
 				istate = 0
 
 			case '\n':
@@ -996,6 +1063,9 @@ fmt.Printf("len: %d\n", len(parEl.subEl))
 				subEl.italic = true
 				subEl.bold = true
 				subEl.txt = string(txtbuf[txtSt:txtEnd+1])
+				parEl.subEl = append(parEl.subEl, subEl)
+				subEl.italic = false
+				subEl.bold = false
 				istate = 0
 
 			default:
@@ -1023,6 +1093,7 @@ fmt.Printf("len: %d\n", len(parEl.subEl))
 				linkEnd = i-1
 				subEl.link = true
 				subEl.txt = string(txtbuf[linkSt:linkEnd +1])
+//				parEl.subEl = append(parEl.subEl, subEl)
 fmt.Printf("link txt: %s\n",subEl.txt)
 				istate =42
 			}
@@ -1072,6 +1143,7 @@ fmt.Printf(" **** subel %d bold %t italic %t link: %s txt: %s\n", i, subEl.bold,
 			// [^1
 			if ch == ']' {
 				// [^1]
+
 				ftnNumEnd = i-1
 				istate = 52
 			}
@@ -1949,6 +2021,16 @@ func (mdP *mdParseObj) checkTable(lin int)(endLin int, err error) {
 	return endLin, nil
 }
 
+func (mdP *mdParseObj) closeUnList(lin int)(err error) {
+
+	last := len(mdP.elList) -1
+	lastEl := mdP.elList[last]
+	if lastEl.ulEl == nil {return fmt.Errorf("last el is not ul!")}
+	lastEl.ulEl.nest = -1
+	mdP.cnest = -1
+	return nil
+}
+
 func (mdP *mdParseObj) closeOrList(lin int)(err error) {
 
 	last := len(mdP.elList) -1
@@ -1956,6 +2038,8 @@ func (mdP *mdParseObj) closeOrList(lin int)(err error) {
 	if lastEl.olEl == nil {return fmt.Errorf("last el is not ol!")}
 	nest := lastEl.olEl.nest
 	lastEl.olEl.count[nest] = 0
+	lastEl.olEl.nest = -1
+	mdP.cnest = -1
 	return nil
 }
 
@@ -2145,7 +2229,7 @@ func cvtParHtml (parelpt *parEl) (htmlStr, cssStr string, err error) {
 		if subEl.strike {alter = true; htmlStr += fmt.Sprintf("<span class=\"strike\">%s</span>", subEl.txt)}
 		if subEl.sub {alter = true; htmlStr += fmt.Sprintf("<span class=\"sub\">%s</span>", subEl.txt)}
 		if subEl.sup {alter = true; htmlStr += fmt.Sprintf("<span class=\"sup\">%s</span>", subEl.txt)}
-		if !alter {htmlStr = fmt.Sprintf("<span>%s</span>", subEl.txt)}
+		if !alter {htmlStr += fmt.Sprintf("<span>%s</span>", subEl.txt)}
 	}
 
 	htmlStr = prefix + htmlStr + suffix
@@ -2199,7 +2283,7 @@ func (mdP *mdParseObj) cvtElListHtml()(htmlStr string, cssStr string, err error)
 	unest := -1
 	onest := -1
 	nest := -1
-
+//nest
 	for elIdx:=0; elIdx<len(mdP.elList); elIdx++ {
 		el = mdP.elList[elIdx]
 		typStr := fmt.Sprintf("<!--- el %d: %s --->\n", elIdx, dispState(el.elTyp))
@@ -2207,11 +2291,12 @@ func (mdP *mdParseObj) cvtElListHtml()(htmlStr string, cssStr string, err error)
 		tcssStr := ""
 		errStr := ""
 
+
 		if el.elTyp != UL {
-			for nstLev:= unest; nstLev> -1; nstLev-- {
+			for nstLev:= mdP.cnest; nstLev> -1; nstLev-- {
 					htmlStr += "</ul>\n"
 			}
-
+			mdP.cnest = -1
 		} else {
 			nest = el.ulEl.nest
 			if nest > unest {
@@ -2258,7 +2343,14 @@ func (mdP *mdParseObj) cvtElListHtml()(htmlStr string, cssStr string, err error)
 		case UL:
 			thtmlStr, tcssStr, err = cvtParHtml(el.ulEl.parEl)
 			thtmlStr = "<li>" + thtmlStr + "</li>\n"
+
 		case OL:
+			thtmlStr, tcssStr, err = cvtParHtml(el.olEl.parEl)
+			thtmlStr = "<li>" + thtmlStr + "</li>\n"
+
+		case HR:
+			thtmlStr = "<hr>\n"
+
 
 		default:
 			err = fmt.Errorf("unkkown el: %s", dispState(el.elTyp))
@@ -2364,10 +2456,15 @@ func (mdP *mdParseObj) printElList () {
 				for i:=0; i< subLen; i++ {
 					subEl := ParEl.subEl[i]
 					if subEl.link {
-						fmt.Printf("         subel %d bold %t italic %t link: %s: %s\n", i, subEl.bold, subEl. italic, subEl.lkUri, subEl.txt)
-					} else {
-						fmt.Printf("         subel %d bold %t italic %t link: %s: %s\n", i, subEl.bold, subEl. italic, subEl.txt)
+						fmt.Printf("         subel %d bold %t italic %t link: %s: txt: %s\n", i, subEl.bold, subEl. italic, subEl.lkUri, subEl.txt)
+						continue
 					}
+					if subEl.ftn >=0 {
+						fmt.Printf("         subel %d bold %t italic %t ftn: %d: %s\n", i, subEl.bold, subEl. italic, subEl.ftn, subEl.txt)
+						continue
+					}
+
+					fmt.Printf("         subel %d bold %t italic %t %s\n", i, subEl.bold, subEl. italic, subEl.txt)
 				}
 			}
 
