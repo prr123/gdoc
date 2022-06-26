@@ -1606,7 +1606,7 @@ func (mdP *mdParseObj) checkUnList(lin int) (err error){
 	linSt := mdP.linList[lin].linSt
 	linEnd := mdP.linList[lin].linEnd
 	buf := (*mdP.inBuf)
-	parSt:=0
+	parSt := 0
 	istate := 0
 	wsNum := 0
 	ulCh = 0
@@ -1722,6 +1722,7 @@ func (mdP *mdParseObj) checkUnList(lin int) (err error){
 	if numHd > 0 {parEl.typ = hdtyp}
 	// need to deal with numHd > 6
 
+	parEl.txtSt = parSt
 	parEl.nest = nestLev
 	err = mdP.checkParEOL(lin, &parEl)
 	parEl.txt = string(buf[parEl.txtSt:parEl.txtEnd+1])
@@ -2463,8 +2464,7 @@ func (mdP *mdParseObj) cvtElListHtml()(htmlStr string, cssStr string, err error)
 			thtmlStr = "<hr>\n"
 
 
-		default:
-			err = fmt.Errorf("unkkown el: %s", dispState(el.elTyp))
+		default: err = fmt.Errorf("unknown el: %s", dispState(el.elTyp))
 
 		}
 
@@ -2482,13 +2482,15 @@ func (mdP *mdParseObj) CvtMdToHtml(outfil *os.File)(err error) {
 	nam := outfil.Name()
 	fmt.Printf("out file name: %s\n", nam)
 
-	htmlStr, cssStr,_ := mdP.cvtElListHtml()
+	htmlStr,_,_ := mdP.cvtElListHtml()
 
     outstr := htmlLib.CreHtmlHead()
 
-	outstr += "<style>\n"
-	outstr += cssStr
-	outstr += "</style>\n"
+	outstr += fmt.Sprintf("  <link rel=\"stylesheet\" href=\"./test2.css\">\n")
+//	outstr += fmt.Sprintf("  <link rel=\"stylesheet\" href=\"./inpTestMd/test2.css\">\n")
+//	outstr += "<style>\n"
+//	outstr += cssStr
+//	outstr += "</style>\n"
 
     outstr += htmlLib.CreHtmlMid()
 
