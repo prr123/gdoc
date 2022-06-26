@@ -1610,6 +1610,7 @@ func (mdP *mdParseObj) checkUnList(lin int) (err error){
 	istate := 0
 	wsNum := 0
 	ulCh = 0
+	numHd := 0
 
 	for i:= linSt; i< linEnd; i++ {
 		switch istate {
@@ -1618,24 +1619,80 @@ func (mdP *mdParseObj) checkUnList(lin int) (err error){
 				case ' ':
 					wsNum++
 				case '*','+','-':
+					// *
 					istate = 1
 					ulCh = buf[i]
 				default:
+					// 't'
 					if utilLib.IsAlpha(buf[i]) {
 						parSt = i
 					}
 				}
 
 			case 1:
+				// '*'
+				switch buf[i] {
+				case ' ':
+					// '* '
+					istate = 2
+				default:
+					// '*t'
+					// error
+				}
+
+			case 2:
+				// *ws or '* '
+				switch buf[i] {
+				case ' ':
+					// *wsws '*  '
+					istate = 2
+				case '#':
+					// '* #'
+					numHd++
+					istate = 3
+				default:
+					// *wst or '* t'
+					if utilLib.IsAlpha(buf[i]) {
+						parSt = i
+					}
+
+				}
+
+			case 3:
+				// '* #'
+				switch buf[i] {
+				case ' ':
+					// *wsws '* #  '
+					istate = 4
+				case '#':
+					// '* ##'
+					numHd++
+
+				default:
+					// '* #t
+					parSt = i-1
+				}
+
+			case 4:
+				// *wsws '* #  '
 				switch buf[i] {
 				case ' ':
 
 				default:
-					parSt = i
-				}
+					// '* # t
+					if utilLib.IsAlpha(buf[i]) {
+						parSt = i
+					}
 
+				}
 			default:
-		}
+				// t
+				// error unknown istate
+				if utilLib.IsAlpha(buf[i]) {
+				parSt = i
+				}
+			} // end of swith case
+
 		if parSt > 0 {break}
 	}
 
@@ -1643,9 +1700,28 @@ func (mdP *mdParseObj) checkUnList(lin int) (err error){
 
 	// nest lev
 	nestLev := wsNum/4
-
-	parEl.txtSt = parSt
 	parEl.typ = par
+
+	hdtyp:=0
+    switch numHd {
+        case 1:
+            hdtyp = h1
+        case 2:
+            hdtyp = h2
+        case 3:
+            hdtyp = h3
+        case 4:
+            hdtyp = h4
+        case 5:
+            hdtyp = h5
+        case 6:
+            hdtyp = h6
+        default:
+    }
+
+	if numHd > 0 {parEl.typ = hdtyp}
+	// need to deal with numHd > 6
+
 	parEl.nest = nestLev
 	err = mdP.checkParEOL(lin, &parEl)
 	parEl.txt = string(buf[parEl.txtSt:parEl.txtEnd+1])
