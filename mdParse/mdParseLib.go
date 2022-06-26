@@ -424,7 +424,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 				}
 
 last:= len(mdP.elList) -1
-fmt.Printf("EL: %d, state: %s\n", last, dispState(mdP.istate))
+fmt.Printf("EL: %d, mdp state: %s\n", last, dispState(mdP.istate))
 				switch mdP.istate {
 				case PAR:
 					err = mdP.checkParEnd(lin)
@@ -436,6 +436,11 @@ fmt.Printf("EL: %d, state: %s\n", last, dispState(mdP.istate))
 				case BLK:
 					err = mdP.checkBR()
 					mdP.istate = EB
+					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err)}
+
+				case EUL:
+					err = mdP.checkBR()
+					mdP.istate = EP
 					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err)}
 
 				case EP, HR:
@@ -2030,6 +2035,8 @@ func (mdP *mdParseObj) closeUnList(lin int)(err error) {
 	lastEl := mdP.elList[last]
 	if lastEl.ulEl == nil {return fmt.Errorf("last el is not ul!")}
 //	lastEl.ulEl.nest = -1
+//	for nest := lastEl.ulEl.nest; nest > -1; nest -- {
+//	}
 	mdP.cnest = -1
 	return nil
 }
@@ -2069,6 +2076,7 @@ func (mdP *mdParseObj) checkOrList(lin int)(err error) {
 	wsNum := 0
 	istate := 0
 	mNum :=0
+	numHd := 0
 
 	for i:= linSt; i< linEnd; i++ {
 		ch:= buf[i]
@@ -2099,9 +2107,34 @@ func (mdP *mdParseObj) checkOrList(lin int)(err error) {
 			}
 
 		case 3:
+// need to check for header
+			switch ch {
+			case '#':
+				istate = 5
+			case ' ':
+
+			default:
+				if utilLib.IsAlpha(ch) {parSt = i}
+			}
+		case 5:
+		// 1. #
+			switch ch {
+			case '#':
+				numHd++
+			case ' ':
+				istate = 6
+			default:
+				if utilLib.IsAlpha(ch) {
+					parSt = i
+				}
+
+			}
+		case 6:
+		// 1. #ws
 			if utilLib.IsAlpha(ch) {
 				parSt = i
 			}
+			// else error
 		default:
 
 		}
@@ -2121,8 +2154,29 @@ func (mdP *mdParseObj) checkOrList(lin int)(err error) {
 
 	if mNum > 0 {fmt.Printf("orlist marker: %d nest: %d\n", mNum, nest)}
 
+// need to check for header
 	parEl.txtSt = parSt
-	parEl.typ = ol
+	parEl.typ = par
+
+	hdtyp:=0
+	switch numHd {
+		case 1:
+			hdtyp = h1
+		case 2:
+			hdtyp = h2
+		case 3:
+			hdtyp = h3
+		case 4:
+			hdtyp = h4
+		case 5:
+			hdtyp = h5
+		case 6:
+			hdtyp = h6
+		default:
+	}
+
+
+	if numHd > 0 {parEl.typ = hdtyp}
 	parEl.nest = nest
 	mdP.checkParEOL(lin, &parEl)
 	parEl.txt = string(buf[parEl.txtSt:parEl.txtEnd+1])
@@ -2238,99 +2292,73 @@ func cvtParHtml (parelpt *parEl) (htmlStr, cssStr string, err error) {
 	return htmlStr, cssStr, nil
 }
 
-//html
-/*
-func parseEl (el structEl) (htmlStr, cssStr string, err error) {
-
-	var eltyp int
-
-	typStr := ""
-	switch {
-	case el.parEl != nil:
-		eltyp = PAR
-		htmlStr, cssStr, err = cvtParHtml(el.parEl)
-	case el.emEl:
-		eltyp = EP
-		htmlStr ="<br>\n"
-	case el.hrEl:
-		eltyp = HR
-		htmlStr = "<hr>\n"
-	case el.ulEl != nil:
-		eltyp = UL
-
-	case el.olEl !=nil:
-		eltyp = OL
-	case el.comEl != nil:
-		eltyp = COM
-	case el.tblEl != nil:
-		eltyp = TBL
-	case el.imgEl != nil:
-		eltyp = IMG
-	case el.bkEl != nil:
-		eltyp = BLK
-	default:
-		eltyp = UK
-
-	}
-
-	htmlStr = typStr + htmlStr
-	return htmlStr, cssStr, err
-}
-*/
-
 func (mdP *mdParseObj) cvtElListHtml()(htmlStr string, cssStr string, err error) {
 
-	var el structEl
+	var el, prvEl structEl
 
-	unest := -1
-	onest := -1
-	nest := -1
-//nest
+	pnest := -1
+
 	for elIdx:=0; elIdx<len(mdP.elList); elIdx++ {
+		if elIdx > 0 {prvEl = el}
 		el = mdP.elList[elIdx]
+
 		typStr := fmt.Sprintf("<!--- el %d: %s --->\n", elIdx, dispState(el.elTyp))
 		thtmlStr := ""
 		tcssStr := ""
 		errStr := ""
 
-		if el.elTyp != UL {
-			for nstLev:= mdP.cnest; nstLev> -1; nstLev-- {
+		// check for lists
+
+		if prvEl.elTyp == UL {
+			if el.elTyp != UL {
+				// end of unordered list
+				for nstLev:= prvEl.ulEl.nest; nstLev> -1; nstLev-- {
 					htmlStr += "</ul>\n"
+				}
+			} else {
+				// continuation of ul list; have to check for nesting
+				pnest = prvEl.ulEl.nest
+				nest := el.ulEl.nest
+				if nest > pnest {
+					for nstLev:= pnest; nstLev< nest; nstLev++ {htmlStr += "<ul>\n"}
+				}
+				if nest < pnest {
+					for nstLev:= pnest; nstLev> nest; nstLev-- {htmlStr += "</ul>\n"}
+				}
 			}
-			mdP.cnest = -1
+
 		} else {
-			nest = el.ulEl.nest
-			if nest > unest {
-				for nstLev:= unest; nstLev< nest; nstLev++ {
-					htmlStr += "<ul>\n"
-				}
+			// no prev ul list element -> start of new un nest list
+			if el.elTyp == UL {
+				nest := el.ulEl.nest
+				for nstLev:= -1; nstLev< nest; nstLev++ {htmlStr += "<ul>\n"}
 			}
-			if nest < unest {
-				for nstLev:= unest; nstLev> nest; nstLev-- {
-					htmlStr += "</ul>\n"
-				}
-			}
-			unest = nest
 		}
 
-		if el.elTyp != OL {
-			for nstLev:= onest; nstLev> -1; nstLev-- {
+		if prvEl.elTyp == OL {
+			if el.elTyp != OL {
+				// end of unordered list
+				for nstLev:= prvEl.olEl.nest; nstLev> -1; nstLev-- {
 					htmlStr += "</ol>\n"
+				}
+			} else {
+				// continuation of ul list; have to check for nesting
+				pnest = prvEl.olEl.nest
+				nest := el.olEl.nest
+				if nest > pnest {
+					for nstLev:= pnest; nstLev< nest; nstLev++ {htmlStr += "<ol>\n"}
+				}
+				if nest < pnest {
+					for nstLev:= pnest; nstLev> nest; nstLev-- {htmlStr += "</ol>\n"}
+				}
 			}
 
 		} else {
-			nest = el.olEl.nest
-			if nest > unest {
-				for nstLev:= onest; nstLev< nest; nstLev++ {
-					htmlStr += "<ol>\n"
-				}
+			// no continuation of nest list; start list
+			if el.elTyp == OL {
+				nest := el.olEl.nest
+				for nstLev:= -1; nstLev< nest; nstLev++ {htmlStr += "<ol>\n"}
 			}
-			if nest < unest {
-				for nstLev:= onest; nstLev> nest; nstLev-- {
-					htmlStr += "</ol>\n"
-				}
-			}
-			onest = nest
 		}
 
 		switch el.elTyp {
@@ -2338,7 +2366,13 @@ func (mdP *mdParseObj) cvtElListHtml()(htmlStr string, cssStr string, err error)
 		case PAR:
 			thtmlStr, tcssStr, err = cvtParHtml(el.parEl)
 
-		case EP, EB, EUL, EOL:
+		case EUL:
+			thtmlStr = "<br>\n"
+
+		case EOL:
+			thtmlStr = "<br>\n"
+
+		case EP, EB:
 			thtmlStr = "<br>\n"
 
 		case UL:
@@ -2433,9 +2467,9 @@ func (mdP *mdParseObj) printElList () {
 	fmt.Printf("  el nam typ  subels fin txt\n")
 	for i:=0; i < len(mdP.elList); i++ {
 		el := mdP.elList[i]
-		fmt.Printf("el %3d: Type: %s", i, dispState(el.elTyp))
+		fmt.Printf("el %3d: Type: %4s ", i, dispState(el.elTyp))
 		if el.emEl {
-			fmt.Printf("eL: %t\n", el.emEl)
+			fmt.Printf("empty el: %t\n", el.emEl)
 			continue
 		}
 
