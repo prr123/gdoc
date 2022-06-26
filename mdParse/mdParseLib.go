@@ -422,6 +422,9 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 					mdP.istate = ERR
 					break
 				}
+
+last:= len(mdP.elList) -1
+fmt.Printf("EL: %d, state: %s\n", last, dispState(mdP.istate))
 				switch mdP.istate {
 				case PAR:
 					err = mdP.checkParEnd(lin)
@@ -645,7 +648,7 @@ fmt.Printf("alpha: el state: %s ", dispState(mdP.istate))
 	}
 
 	mdP.printElList()
-//	mdP.printErrList()
+
 	fmt.Println("/n******** parse sub el ***********")
 	err = mdP.parseMdSubEl()
 	if err != nil { return fmt.Errorf("error parseMdSubEl: %v", err)}
@@ -661,7 +664,7 @@ func (mdP *mdParseObj) parseMdSubEl()(err error) {
 
 	for i:=0; i < len(mdP.elList); i++ {
 		el := mdP.elList[i]
-		fmt.Printf("el %3d: ", i)
+fmt.Printf("el %3d: typ: %s \n", i, dispState(el.elTyp))
 
 		// parse par if el.parEl != nil
 		if el.parEl != nil {
@@ -700,8 +703,8 @@ func (mdP *mdParseObj) parsePar(parEl *parEl)(err error) {
 
 	txtbuf := []byte(parEl.txt)
 
-	pardbg := false
-if mdP.elList[22].parEl == parEl {fmt.Printf("parsePar %d: %s\n", len(txtbuf), parEl.txt); pardbg = true}
+//	pardbg := false
+//if mdP.elList[22].parEl == parEl {fmt.Printf("parsePar %d: %s\n", len(txtbuf), parEl.txt); pardbg = true}
 
 	linkSt := 0
 	linkEnd := 0
@@ -723,7 +726,7 @@ if mdP.elList[22].parEl == parEl {fmt.Printf("parsePar %d: %s\n", len(txtbuf), p
 	for i:=0; i< len(txtbuf); i++ {
 		ch := txtbuf[i]
 //pstate
-if pardbg {fmt.Printf("i %d|%d: %q istate: %d %s\n", i, last, ch, istate, string(txtbuf[txtSt:i+1]))}
+//if pardbg {fmt.Printf("i %d|%d: %q istate: %d %s\n", i, last, ch, istate, string(txtbuf[txtSt:i+1]))}
 
 		switch istate {
 		case 0:
@@ -1193,8 +1196,8 @@ fmt.Printf(" **** subel %d bold %t italic %t link: %s txt: %s\n", i, subEl.bold,
 	}
 
 	//debug
-	sublen := len(parEl.subEl)
-	fmt.Printf("parsePar sub %d\n", sublen)
+//	sublen := len(parEl.subEl)
+//	fmt.Printf("parsePar sub %d\n", sublen)
 	return nil
 }
 
@@ -1673,7 +1676,7 @@ fmt.Printf(" UL txt: %s ", parEl.txt)
 	el.elTyp = UL
 	mdP.elList = append(mdP.elList, el)
 	mdP.istate = UL
-
+	mdP.cnest = nestLev
 	return nil
 }
 
@@ -2290,7 +2293,6 @@ func (mdP *mdParseObj) cvtElListHtml()(htmlStr string, cssStr string, err error)
 		tcssStr := ""
 		errStr := ""
 
-
 		if el.elTyp != UL {
 			for nstLev:= mdP.cnest; nstLev> -1; nstLev-- {
 					htmlStr += "</ul>\n"
@@ -2431,7 +2433,7 @@ func (mdP *mdParseObj) printElList () {
 	fmt.Printf("  el nam typ  subels fin txt\n")
 	for i:=0; i < len(mdP.elList); i++ {
 		el := mdP.elList[i]
-		fmt.Printf("el %3d: ", i)
+		fmt.Printf("el %3d: Type: %s", i, dispState(el.elTyp))
 		if el.emEl {
 			fmt.Printf("eL: %t\n", el.emEl)
 			continue
