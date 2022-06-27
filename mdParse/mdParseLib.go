@@ -424,7 +424,7 @@ func (mdP *mdParseObj) parseMdTwo()(err error) {
 				}
 
 last:= len(mdP.elList) -1
-fmt.Printf("EL: %d, mdp state: %s\n", last, dispState(mdP.istate))
+fmt.Printf("EL: %d, mdp state: %s| ", last, dispState(mdP.istate))
 				switch mdP.istate {
 				case PAR:
 					err = mdP.checkParEnd(lin)
@@ -623,7 +623,7 @@ fmt.Printf("EL: %d, mdp state: %s\n", last, dispState(mdP.istate))
 				}
 				if utilLib.IsAlpha(fch) {
 					// paragraph, block continuation
-fmt.Printf("alpha: el state: %s ", dispState(mdP.istate))
+//fmt.Printf("alpha: el state: %s ", dispState(mdP.istate))
 
 					switch mdP.istate {
 					case UL:
@@ -649,7 +649,7 @@ fmt.Printf("alpha: el state: %s ", dispState(mdP.istate))
 				mdP.istate = ERR
 //				mdP.checkError(lin, fch, errmsg)
 		}
-	fmt.Printf(" state: %s\n",dispState(mdP.istate))
+	fmt.Printf(" el state: %s\n",dispState(mdP.istate))
 	}
 
 	mdP.printElList()
@@ -2323,7 +2323,19 @@ func (mdP *mdParseObj) checkBR()(err error) {
 	}
 
 	el.emEl = true
-	el.elTyp = EP
+	switch mdP.istate {
+	case UL:
+		el.elTyp = EUL
+
+	case OL:
+		el.elTyp = EOL
+
+	case BLK:
+		el.elTyp = EB
+
+	default:
+		el.elTyp = EP
+	}
 	mdP.elList = append(mdP.elList, el)
 	return nil
 }
