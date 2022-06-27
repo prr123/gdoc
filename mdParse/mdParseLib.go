@@ -438,7 +438,7 @@ fmt.Printf("EL: %d, mdp state: %s| ", last, dispState(mdP.istate))
 					mdP.istate = EB
 					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err)}
 
-				case EUL:
+				case EUL, EOL:
 					err = mdP.checkBR()
 					mdP.istate = EP
 					if err != nil {fmt.Printf("line %d checkBR %v\n", lin, err)}
@@ -535,7 +535,7 @@ fmt.Printf("EL: %d, mdp state: %s| ", last, dispState(mdP.istate))
 				// nested list
 				ch, wsNum, err := mdP.checkIndent(lin)
 				if err != nil {
-					mdP.addErr(lin,  fmt.Sprintf("indent error %v", err))
+//					mdP.addErr(lin,  fmt.Sprintf("indent error %v", err))
 					fmt.Printf("line %d: indent error %v\n", lin, err)
 					break
 				}
@@ -553,14 +553,17 @@ fmt.Printf("EL: %d, mdp state: %s| ", last, dispState(mdP.istate))
 				}
 				if utilLib.IsAlpha(ch) {
 					switch mdP.istate {
+
 					case OL, EOL:
-						err = mdP.checkOrList(lin)
-						if err != nil {fmt.Printf("line %d: OL error %v\n", lin, err)}
+						nestLev:= wsNum/4
+						err = mdP.checkIndentPar(lin, nestLev)
+						if err != nil {fmt.Printf("line %d: OL PAR error %v\n", lin, err)}
 						mdP.istate = OL
 
 					case UL, EUL:
-						err = mdP.checkUnList(lin)
-						if err != nil {fmt.Printf("line %d: UL error %v\n", lin, err)}
+						nestLev:= wsNum/4
+						err = mdP.checkIndentPar(lin, nestLev)
+						if err != nil {fmt.Printf("line %d: UL PAR error %v\n", lin, err)}
 						mdP.istate = UL
 
 					case EB, BLK, PAR, EP:
@@ -1358,6 +1361,7 @@ func (mdP *mdParseObj) checkParEOL(lin int, parel *parEl)(err error) {
 	return nil
 }
 
+
 func (mdP *mdParseObj) checkPar(lin int)(err error) {
 // method that parses a line  to check whether it is paragraph
 
@@ -1378,8 +1382,17 @@ func (mdP *mdParseObj) checkPar(lin int)(err error) {
 
 	// see whether the previous element of elList is a parEl
 	last := len(mdP.elList) -1
+
+	// if the element is the first element, there is no 'last element'
+	if last < 0 {
+		mdP.elList = append(mdP.elList, el)
+		mdP.istate = PAR
+		return nil
+	}
+
+	// check whether previous element is a paragraph
 	lastEl := mdP.elList[last]
-fmt.Printf("\n last el: %d %s\n", last, getElTyp(lastEl))
+//fmt.Printf("\n last el: %d %s\n", last, getElTyp(lastEl))
 	// prev element: par
 	if lastEl.parEl != nil {
 		// lastEl is a parEl
@@ -1388,7 +1401,7 @@ fmt.Printf("\n last el: %d %s\n", last, getElTyp(lastEl))
 
 		if lastParEl.fin {
 			// last paragraph was ended -> create new parel
-fmt.Printf(" new el par txt: %s ", parEl.txt)
+//fmt.Printf(" new el par txt: %s ", parEl.txt)
 			mdP.elList = append(mdP.elList, el)
 			mdP.istate = PAR
 			return nil
@@ -1412,6 +1425,80 @@ fmt.Printf(" new el par txt: %s ", parEl.txt)
 	return fmt.Errorf("state: %s elList at %d has no valid el", dispState(mdP.istate), last)
 }
 
+func (mdP *mdParseObj) checkIndentPar(lin, nestLev int)(err error) {
+// method that parses a line  to check whether it is paragraph
+
+	var el structEl
+	var parEl parEl
+	linSt := mdP.linList[lin].linSt
+//	linEnd := mdP.linList[lin].linEnd
+	buf := (*mdP.inBuf)
+
+	err = mdP.checkParEOL(lin, &parEl)
+	if err != nil {fmt.Printf(" error checkPar: empty line!")}
+
+	parEl.txtSt = linSt + nestLev*4
+	parEl.txt = string(buf[parEl.txtSt:parEl.txtEnd+1])
+	parEl.typ = par
+	parEl.nest = nestLev
+	el.parEl = &parEl
+	el.elTyp = PAR
+
+	// see whether the previous element of elList is a parEl
+	last := len(mdP.elList) -1
+
+	// if the element is the first element, there is no 'last element'
+	if last < 0 {
+		mdP.elList = append(mdP.elList, el)
+		mdP.istate = PAR
+		return nil
+	}
+
+	// check whether previous element is a paragraph
+	lastEl := mdP.elList[last]
+//fmt.Printf("\n last el: %d %s\n", last, getElTyp(lastEl))
+
+	// prev element: par
+	if lastEl.parEl != nil {
+		// lastEl is a parEl
+		// we tack the txtstring onto the parEl
+		lastParEl := lastEl.parEl
+
+		if lastParEl.fin {
+			// last paragraph was ended -> create new parel
+//fmt.Printf(" new el par txt: %s ", parEl.txt)
+			mdP.elList = append(mdP.elList, el)
+			mdP.istate = PAR
+			return nil
+		}
+
+		// if the nesting laevel is different finish the prev element
+		if lastParEl.nest != nestLev {
+			lastParEl.fin = true
+			// creae a new element
+			mdP.elList = append(mdP.elList, el)
+			mdP.istate = PAR
+			return nil
+		}
+
+		// last par was not ended
+		lastParEl.txt += " " + parEl.txt
+		lastParEl.txtEnd = parEl.txtEnd
+//fmt.Printf(" ex el par txt: %s ", parEl.txt)
+		mdP.istate = PAR
+		return nil
+	}
+
+
+	if lastEl.emEl {
+fmt.Printf(" new el par txt: %s ", parEl.txt)
+		mdP.elList = append(mdP.elList, el)
+		mdP.istate = PAR
+		return nil
+	}
+
+	return fmt.Errorf("state: %s elList at %d has no valid el", dispState(mdP.istate), last)
+}
 
 
 func (mdP *mdParseObj) checkWs(lin int)(fch byte, err error) {
@@ -2220,8 +2307,15 @@ func (mdP *mdParseObj) checkOrList(lin int)(err error) {
 
 	last := len(mdP.elList) -1
 
+
+	if markSt == 0 {
+		// no marker
+ 		return fmt.Errorf(" orList: no number for counter!")
+	}
+
 	if markEnd == 0 {
- 		if mdP.istate != OL {return fmt.Errorf(" orList: no period after counter!")}
+		// no marker
+ 		return fmt.Errorf(" orList: no period after counter!")
 	}
 
 	if parSt == 0 {return fmt.Errorf("olList text start not found!")}
@@ -2232,8 +2326,6 @@ func (mdP *mdParseObj) checkOrList(lin int)(err error) {
 	if mNum > 0 {fmt.Printf("orlist marker: %d nest: %d\n", mNum, nest)}
 
 // need to check for header
-	parEl.txtSt = parSt
-	parEl.typ = par
 
 	hdtyp:=0
 	switch numHd {
@@ -2250,8 +2342,11 @@ func (mdP *mdParseObj) checkOrList(lin int)(err error) {
 		case 6:
 			hdtyp = h6
 		default:
+
 	}
 
+	parEl.txtSt = parSt
+	parEl.typ = par
 
 	if numHd > 0 {parEl.typ = hdtyp}
 	parEl.nest = nest
@@ -2638,7 +2733,7 @@ func (mdP *mdParseObj) printElList () {
 		if el.parEl != nil {
 			ParEl := *el.parEl
 			subLen := len(ParEl.subEl)
-			fmt.Printf( "par typ %-5s %d %t: text: %s ", dispHtmlEl(ParEl.typ), subLen, ParEl.fin, ParEl.txt)
+			fmt.Printf( "par typ %-5s sub: %d  nest: %d fin: %t text: %s ", dispHtmlEl(ParEl.typ), subLen, ParEl.nest, ParEl.fin, ParEl.txt)
 
 			if subLen == 1 {
 				fmt.Printf(" subel 0: \"%s\"\n", ParEl.subEl[0].txt)
