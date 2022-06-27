@@ -2398,13 +2398,14 @@ func (mdP *mdParseObj) cvtElListHtml()(htmlStr string, cssStr string, err error)
 
 		// check for lists
 
-		if prvEl.elTyp == UL {
-			if el.elTyp != UL {
-				// end of unordered list
-				for nstLev:= prvEl.ulEl.nest; nstLev> -1; nstLev-- {
-					htmlStr += "</ul>\n"
-				}
-			} else {
+		switch prvEl.elTyp {
+		case UL:
+			switch el.elTyp {
+			case EUL:
+				pnest = prvEl.ulEl.nest
+
+
+			case UL:
 				// continuation of ul list; have to check for nesting
 				pnest = prvEl.ulEl.nest
 				nest := el.ulEl.nest
@@ -2414,23 +2415,45 @@ func (mdP *mdParseObj) cvtElListHtml()(htmlStr string, cssStr string, err error)
 				if nest < pnest {
 					for nstLev:= pnest; nstLev> nest; nstLev-- {htmlStr += "</ul>\n"}
 				}
-			}
 
-		} else {
-			// no prev ul list element -> start of new un nest list
-			if el.elTyp == UL {
-				nest := el.ulEl.nest
-				for nstLev:= -1; nstLev< nest; nstLev++ {htmlStr += "<ul>\n"}
-			}
-		}
-
-		if prvEl.elTyp == OL {
-			if el.elTyp != OL {
+			default:
 				// end of unordered list
-				for nstLev:= prvEl.olEl.nest; nstLev> -1; nstLev-- {
-					htmlStr += "</ol>\n"
+				for nstLev:= prvEl.ulEl.nest; nstLev> -1; nstLev-- {
+					htmlStr += "</ul>\n"
 				}
-			} else {
+				pnest = -1
+			}
+
+		case EUL:
+			switch el.elTyp {
+			case EUL:
+
+			case UL:
+				nest := el.ulEl.nest
+				if nest > pnest {
+					for nstLev:= pnest; nstLev< nest; nstLev++ {htmlStr += "<ul>\n"}
+				}
+				if nest < pnest {
+					for nstLev:= pnest; nstLev> nest; nstLev-- {htmlStr += "</ul>\n"}
+				}
+				pnest = nest
+
+			case PAR:
+				parEl := el.parEl
+				if parEl.nest == 0 {
+					for nstLev:= pnest; nstLev> -1; nstLev-- {htmlStr += "</ul>\n"}
+				}
+
+			default:
+				for nstLev:= pnest; nstLev> -1; nstLev-- {htmlStr += "</ul>\n"}
+				pnest = -1
+			}
+
+		case OL:
+			switch el.elTyp {
+			case EOL:
+
+			case OL:
 				// continuation of ul list; have to check for nesting
 				pnest = prvEl.olEl.nest
 				nest := el.olEl.nest
@@ -2440,13 +2463,56 @@ func (mdP *mdParseObj) cvtElListHtml()(htmlStr string, cssStr string, err error)
 				if nest < pnest {
 					for nstLev:= pnest; nstLev> nest; nstLev-- {htmlStr += "</ol>\n"}
 				}
+			default:
+				// end of unordered list
+				for nstLev:= prvEl.olEl.nest; nstLev> -1; nstLev-- {
+					htmlStr += "</ol>\n"
+				}
+				pnest = -1
 			}
 
-		} else {
+		case EOL:
+			switch el.elTyp {
+			case EOL:
+
+			case OL:
+				nest := el.olEl.nest
+				if nest > pnest {
+					for nstLev:= pnest; nstLev< nest; nstLev++ {htmlStr += "<ol>\n"}
+				}
+				if nest < pnest {
+					for nstLev:= pnest; nstLev> nest; nstLev-- {htmlStr += "</ol>\n"}
+				}
+				pnest = nest
+
+			case PAR:
+				parEl := el.parEl
+				if parEl.nest == 0 {
+					for nstLev:= pnest; nstLev> -1; nstLev-- {htmlStr += "</ol>\n"}
+				}
+
+
+			default:
+				for nstLev:= pnest; nstLev> -1; nstLev-- {
+					htmlStr += "</ol>\n"
+				}
+				pnest = -1
+			}
+
+		default:
+			switch el.elTyp {
+			// no prev ul list element -> start of new un nest list
+			case UL:
+				nest := el.ulEl.nest
+				for nstLev:= -1; nstLev< nest; nstLev++ {htmlStr += "<ul>\n"}
+				pnest = nest
 			// no continuation of nest list; start list
-			if el.elTyp == OL {
+			case OL:
 				nest := el.olEl.nest
 				for nstLev:= -1; nstLev< nest; nstLev++ {htmlStr += "<ol>\n"}
+				pnest = nest
+			default:
+				pnest = -1
 			}
 		}
 
