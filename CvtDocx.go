@@ -19,6 +19,7 @@ import (
 
 func main() {
 
+var file *zip.File
 //	var buf bytes.Buffer
 
 	numArg := len(os.Args)
@@ -61,57 +62,32 @@ func main() {
 
 	for _, f := range r.File {
 		fmt.Printf("Contents of %s:\n", f.Name)
-		rc, err := f.Open()
-		if err != nil {
-			fmt.Printf("error zip.Open file %s: %v\n", f.Name, err)
-			os.Exit(-1)
+
+
+        if f.Name == "word/document.xml" {
+            file = f
+			break
 		}
-		tmpStr := docx.WordDocToString(rc)
 
-		fmt.Printf("str: %s\n", tmpStr)
-
-		rc.Close()
-		fmt.Println("*** end of file ***")
+//		fmt.Println("*** end of file ***")
 	}
 
-/*
-	inpfil, err := os.Open(docxFilNam)
-	if err != nil {
-		fmt.Printf("error os.Open file %s: %v\n", docxFilNam, err)
-		os.Exit(-1)
-	}
-	defer inpfil.Close()
-
-
-	outfil, err := os.Create(htmlFilNam)
-	if err != nil {
-		fmt.Printf("error os.Create file %s: %v\n", htmlFilNam, err)
-		os.Exit(-1)
-	}
-	defer outfil.Close()
-	w := bufio.NewWriter(outfil)
-//	fmt.Printf("outfil: %v name: %s\n", outfil, htmlFilNam)
-*/
-	// read file
-/*
-	inpfilInfo,_ := inpfil.Stat()
-	inpSize := inpfilInfo.Size()
-
-	inbufp := make([]byte, inpSize)
-    nb, _ := inpfil.Read(inbufp)
-    if nb != int(inpSize) {
-		fmt.Printf("error could not read all input!")
+	if file == nil {
+		fmt.Printf("error could not find file word/document!\n")
 		os.Exit(-1)
 	}
 
-//
-	err = goldmark.AltConvert(inbufp, w)
+	docxFil, err := file.Open()
 
 	if err != nil {
-		fmt.Printf("error goldmark convert: %v\n", err)
+		fmt.Printf("error zip.Open file %s: %v\n", file.Name, err)
 		os.Exit(-1)
 	}
-*/
+	defer docxFil.Close()
+
+	tmpStr := docx.WordDocToString(docxFil)
+
+	fmt.Printf("content:\n%s\n", tmpStr)
 
 	fmt.Println("**** success *****")
 }
