@@ -89,5 +89,18 @@ var file *zip.File
 
 	fmt.Printf("content:\n%s\n", tmpStr)
 
+	var doc docx.Document
+
+	err = doc.Extract(tmpStr)
+	if err != nil {
+		fmt.Printf("error extract XML: %v", err)
+		os.Exit(-1)
+	}
+
+	fmt.Printf("doc: %v\n", doc.XMLName)
+	for i:=0; i<len(doc.Body.Paragraph); i++ {
+		fmt.Printf("doc par %d: %s\n", i, doc.Body.Paragraph[i])
+	}
+
 	fmt.Println("**** success *****")
 }
