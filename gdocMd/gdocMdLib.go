@@ -454,44 +454,37 @@ func (dObj *gdocMdObj) renderInlineImg(imgEl *docs.InlineObjectElement)(outstr s
     return outstr, nil
 }
 
-func (dObj *gdocMdObj) cvtPelTxt(parEl *docs.ParagraphElement)(outstr string, err error) {
-	var txtStr string
+func (dObj *gdocMdObj) cvtPelTxt(parEl *docs.ParagraphElement, bold bool, italic bool)(outstr string, err error) {
+
     if parEl == nil {
         return "", fmt.Errorf("error cvtPelToMd -- parEl is nil!")
     }
 
+//fmt.Println("maxChar: ", maChar)
 
-	cLen := len(parEl.TextRun.Content)
-	x := []byte(parEl.TextRun.Content)
+	xnbLen := len(parEl.TextRun.Content)
+	xnb := []byte(parEl.TextRun.Content)
 
 // should be either <br> or nothing
-	if (cLen == 1) && (x[0] == '\n') {
+	if (xnbLen == 1) && (xnb[0] == '\n') {
 		return "", nil
 	}
 
-	if x[cLen-1] == '\n' {
-		txtStr = string(x[:cLen-1])
-		cLen--
-	} else {
-		txtStr = string(x)
-	}
-
-//fmt.Println("txtstr: ", txtStr)
     prefix := ""
     suffix := ""
 
-    if parEl.TextRun.TextStyle.Italic {
+    if italic {
         prefix = "_"
         suffix  ="_"
     }
 
-    if parEl.TextRun.TextStyle.Bold {
+    if bold {
         prefix = "**" + prefix
         suffix = suffix + "**"
     }
 
+	 outstr = prefix + string(xnb) + suffix
 
-    outstr = prefix + txtStr + suffix
     return outstr, nil
 }
 
@@ -503,6 +496,7 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 	var doc *docs.Document
 
 	doc = dObj.doc
+//	opt := dObj.Options
 
 	numParEl := len(par.Elements)
 	if (numParEl == 1) && (!(len(par.Elements[0].TextRun.Content) >0)) {
@@ -550,6 +544,7 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 	if(par.ParagraphStyle.IndentStart) != nil {
 		parIndent = par.ParagraphStyle.IndentStart.Magnitude
 	}
+
 // temp solution
 	fmt.Printf("par indent: %.0f\n", parIndent)
 
@@ -570,11 +565,12 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 	suffix = ""
 	tocPrefix = ""
 	tocSuffix = ""
+
 	decode := false
 	titlestyl := false
 	subtitlestyl := false
 
-	// need to reconsider for paragraphs without text
+	// for title and subtitle only
 	boldStyl := false
 	italicStyl := false
 	if par.Elements[0].TextRun != nil {
@@ -589,8 +585,8 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 			suffix = "</p>\n\n"
 			if boldStyl {prefix += " font-weight: 800;"}
 			if italicStyl {prefix += " font-style:italic;"}
-			titlestyl = true
 			prefix += "\">"
+			titlestyl = true
 			tocPrefix = prefix
 			tocSuffix = suffix
 
@@ -653,24 +649,38 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
             prefix = fmt.Sprintf("[//]: * (Name Style: %s unknown)\n", par.ParagraphStyle.NamedStyleType)
     }
 
+	// need to reconsider for paragraphs without text
 
+	maxChar := dObj.Options.MaxCharLine
 	parStr = ""
-
+	parTxtStr := ""
+	parErrStr := ""
 	for p:=0; p< numParEl; p++ {
 
 		parEl := par.Elements[p]
 //fmt.Println("parEl: ", p, parEl.TextRun.Content)
 //		outstr += fmt.Sprintf("\nPar-El[%d]: %d - %d \n", p, parEl.StartIndex, parEl.EndIndex)
 
+		boldStyl := false
+		italicStyl := false
+		if (par.Elements[p].TextRun != nil)&& !(titlestyl || subtitlestyl) {
+			parTxtStyl := par.Elements[p].TextRun.TextStyle
+			boldStyl = parTxtStyl.Bold || NamedTxtStyl.Bold
+			italicStyl = parTxtStyl.Italic || NamedTxtStyl.Italic
+		}
+
+
 		// text
 		if parEl.TextRun != nil {
-			tstr, err := dObj.cvtPelTxt(parEl)
+			tstr, err := dObj.cvtPelTxt(parEl, boldStyl, italicStyl)
 			if err != nil {
 				errStr = fmt.Sprintf("\n[//]: # (error el %d cvtPelTxt: %v)\n", p, err)
 			}
-			parStr += tstr + errStr
-		//fmt.Printf("parstr %d: %s (%d)\n",p, parStr,len(parStr))
+
+			parErrStr += errStr
+			parTxtStr += tstr
 		}
+
 
 		if parEl.HorizontalRule != nil {
 			parStr += "---\n"
@@ -698,46 +708,63 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 			errStr = fmt.Sprintf("\n[//]: # (error el %d: RichLink not implemented)\n", p)
 			parStr += errStr
 		}
+
 	} // loop parEl
 
-	if (len(parStr) == 0) && (par.Bullet == nil) {
+	if (len(parTxtStr) == 0) && (par.Bullet == nil) {
 		outstr ="\n"
 		tocstr = "\n"
 		return outstr, tocstr
 	}
 
-// check of new line in the middle of the string
-	xnb := []byte(parStr)
-	n2parStr := ""
-	ist := 0
-	for i:= 0; i< len(parStr); i++ {
-		if xnb[i] == '\n' {
-			n2parStr += string(xnb[ist:i]) + "  \n"
-			ist = i
+	if decode {
+			tocParStr := dObj.cvtTocName(parStr)
+//    	outstr += prefix + parStr + suffix
+			tocstr+= tocPrefix + parStr + tocSuffix + tocParStr + ")\n\n"
+	}
+
+fmt.Printf("parstr raw (%d):\n%s\n", len(parTxtStr), parTxtStr)
+
+	xnb := []byte(parTxtStr)
+	xnbLen := len(xnb)
+	for i := 0; i< (xnbLen -1); i++ {
+		if xnb[i] == '\n' {xnb[i] = ' '}
+	}
+
+fmt.Printf("parstr2 no cr (%d):\n%s\n", xnbLen, string(xnb))
+
+	linSt := 0
+	if maxChar > 10 {
+		for lin := 0; lin <100; lin++ {
+			linEnd := linSt + maxChar
+
+			if linEnd > xnbLen {
+				linEnd = xnbLen
+				break
+			}
+
+
+			for i:= linEnd; i> linSt; i-- {
+				if xnb[i] == ' ' {
+					xnb[i] = '\n'
+					linSt = i +1
+					break
+				}
+			}
 		}
 	}
-	n2parStr += string(xnb[ist:])
-//fmt.Println("n2parstr: ",n2parStr," : ",len(n2parStr))
-	if decode {
-			tocParStr := dObj.cvtTocName(n2parStr)
-//    	outstr += prefix + parStr + suffix
-			tocstr+= tocPrefix + n2parStr + tocSuffix + tocParStr + ")\n\n"
-	}
-	boldPrefix := "";
-	itPrefix := "";
+	parCrTxtStr := string(xnb[:])
+
+fmt.Printf("parstr3 insert cr (%d)\n%s\n", xnbLen, parCrTxtStr)
 
 	switch {
 		case titlestyl:
-			tocstr+= tocPrefix + n2parStr + tocSuffix + "\n"
-	    	outstr = prefix + n2parStr + suffix
+			tocstr+= tocPrefix + parStr + tocSuffix + "\n"
+	    	outstr = prefix + parCrTxtStr + suffix
 		case subtitlestyl:
-	    		outstr += prefix + n2parStr + suffix
+	    	outstr = prefix + parCrTxtStr + suffix
 		default:
-
-			if italicStyl {itPrefix = "_"}
-			if boldStyl {boldPrefix = "**"}
-//	    		outstr = "\n" + listStr + prefix + boldPrefix + itPrefix + n2parStr + itPrefix + boldPrefix + suffix
-	    	outstr = listStr + prefix + boldPrefix + itPrefix + n2parStr + itPrefix + boldPrefix + suffix
+	    	outstr = listStr + prefix + parCrTxtStr + suffix + parStr
 		}
 
 
@@ -790,10 +817,11 @@ var errStr string
 				parEl := par.Elements[p]
 //fmt.Println("parEl: ", p, parEl.TextRun.Content)
 //		outstr += fmt.Sprintf("\nPar-El[%d]: %d - %d \n", p, parEl.StartIndex, parEl.EndIndex)
-
+				bold := false
+				italic := false
 				// text
 				if parEl.TextRun != nil {
-					tstr, err := dObj.cvtPelTxt(parEl)
+					tstr, err := dObj.cvtPelTxt(parEl, bold, italic)
 					if err != nil {
 						errStr = fmt.Sprintf("\n[//]: # (error el %d cvtPelTxt: %v)\n", p, err)
 					}
