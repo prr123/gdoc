@@ -546,7 +546,10 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 	}
 
 // temp solution
-	fmt.Printf("par indent: %.0f\n", parIndent)
+//	fmt.Printf("par indent: %.0f\n", parIndent)
+	if parIndent > 0 {
+
+	}
 
 	parStylTyp := par.ParagraphStyle.NamedStyleType
 	// doc styles
@@ -642,7 +645,7 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 
         case "NORMAL_TEXT":
             prefix = ""
-			suffix = "\n\n"
+//			suffix = ""
 			if par.Bullet != nil {suffix = "\n"}
 
         default:
@@ -723,15 +726,20 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 			tocstr+= tocPrefix + parStr + tocSuffix + tocParStr + ")\n\n"
 	}
 
-fmt.Printf("parstr raw (%d):\n%s\n", len(parTxtStr), parTxtStr)
+//fmt.Printf("parstr raw (%d):\n%s\n", len(parTxtStr), parTxtStr)
 
 	xnb := []byte(parTxtStr)
 	xnbLen := len(xnb)
-	for i := 0; i< (xnbLen -1); i++ {
+	for i := 0; i< xnbLen; i++ {
 		if xnb[i] == '\n' {xnb[i] = ' '}
 	}
+	altLen := xnbLen
+	for i:=xnbLen -1; i> xnbLen-5; i-- {
+		if xnb[i] == ' ' {altLen --} else {break}
+	}
 
-fmt.Printf("parstr2 no cr (%d):\n%s\n", xnbLen, string(xnb))
+	xnbLen = altLen
+//fmt.Printf("parstr2 no cr (%d):\n%s\n", xnbLen, string(xnb))
 
 	linSt := 0
 	if maxChar > 10 {
@@ -753,20 +761,40 @@ fmt.Printf("parstr2 no cr (%d):\n%s\n", xnbLen, string(xnb))
 			}
 		}
 	}
-	parCrTxtStr := string(xnb[:])
+	parCrTxtStr := string(xnb[:xnbLen]) + "  \n"
+	parTitleStr := string(xnb[:xnbLen])
 
-fmt.Printf("parstr3 insert cr (%d)\n%s\n", xnbLen, parCrTxtStr)
+/*
+	pL := len(parCrTxtStr)
+	plStart := pL -10
+	if plStart < 0 {plStart = 0}
+fmt.Printf("end parCrTxtStr:")
+for i := plStart; i< pL; i++ {
+	fmt.Printf("%q", parCrTxtStr[i])
+}
+fmt.Println()
+*/
 
 	switch {
 		case titlestyl:
-			tocstr+= tocPrefix + parStr + tocSuffix + "\n"
-	    	outstr = prefix + parCrTxtStr + suffix
+			tocstr+= tocPrefix + parTitleStr + tocSuffix + "\n"
+	    	outstr = prefix + parTitleStr + suffix
 		case subtitlestyl:
-	    	outstr = prefix + parCrTxtStr + suffix
+	    	outstr = prefix + parTitleStr + suffix
 		default:
 	    	outstr = listStr + prefix + parCrTxtStr + suffix + parStr
 		}
 
+/*
+	outL := len(outstr)
+	stOut:= outL - 10
+	if stOut < 0 {stOut = 0}
+fmt.Printf("cvt par outstr:")
+for i := stOut; i< outL; i++ {
+	fmt.Printf("%q", outstr[i])
+}
+fmt.Println()
+*/
 
 	if par.PositionedObjectIds != nil {
 		for id := 0; id < len(par.PositionedObjectIds); id++ {
@@ -906,9 +934,18 @@ func CvtGdocToMd(folderPath string, doc *docs.Document, options *util.OptObj)(er
 		if bodyEl.Paragraph != nil {
 			par := bodyEl.Paragraph
 			tstr, toctstr := docObj.cvtParToMd(par)
-			docObj.parCount++
 			bodyStr += tstr
 			tocstr += toctstr
+/*
+ltstr := len(tstr)
+fmt.Printf("tstr (%d):\n%s", ltstr, tstr)
+ltstart := ltstr -5
+if ltstart < 0 {ltstart = 0}
+for i:= ltstart; i< ltstr; i++ {
+	fmt.Printf("%q",tstr[i])
+}
+fmt.Println()
+*/
 		} // end par
 
 		// sections
@@ -928,6 +965,8 @@ func CvtGdocToMd(folderPath string, doc *docs.Document, options *util.OptObj)(er
 		if bodyEl.TableOfContents != nil {
 			bodyStr += fmt.Sprintf("[//]: * (TableOfContents)\n")
 		}
+
+//		fmt.Printf("el %d [%d]:\n%s", el, len(bodyStr), bodyStr)
 
 	}
 
