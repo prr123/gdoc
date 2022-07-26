@@ -470,6 +470,31 @@ func (dObj *gdocMdObj) cvtPelTxt(parEl *docs.ParagraphElement, bold bool, italic
 		return "", nil
 	}
 
+	if xnb[xnbLen-1] == '\n' {xnbLen --}
+
+	// left wsp
+	xSt := -1
+	for i:=0; i< xnbLen; i++ {
+		if xnb[i] == ' ' {
+			continue
+		} else {
+			xSt = i
+			break
+		}
+	}
+
+	xEnd := xnbLen
+	for i:= xnbLen - 1; i> -1; i-- {
+		if xnb[i] == ' ' {
+			continue
+		} else {
+			xEnd = i +1
+			break
+		}
+	}
+
+//fmt.Printf("xnbLen: %d [%d:%d]: %s\n", xnbLen, xSt, xEnd, xnb[xSt:xEnd])
+
     prefix := ""
     suffix := ""
 
@@ -483,7 +508,7 @@ func (dObj *gdocMdObj) cvtPelTxt(parEl *docs.ParagraphElement, bold bool, italic
         suffix = suffix + "**"
     }
 
-	 outstr = prefix + string(xnb) + suffix
+	 outstr = string(xnb[0:xSt]) + prefix + string(xnb[xSt:xEnd]) + suffix + string(xnb[xEnd:xnbLen])
 
     return outstr, nil
 }
@@ -582,6 +607,9 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 		italicStyl = parTxtStyl.Italic || NamedTxtStyl.Italic
 	}
 
+	headId := ""
+	if len(par.ParagraphStyle.HeadingId) > 0 {headId = string(par.ParagraphStyle.HeadingId[2:])}
+
     switch parStylTyp {
 		case "TITLE":
 			prefix ="<p style=\"font-size:20pt; text-align:center;"
@@ -603,42 +631,42 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 
 		case "HEADING_1":
             prefix = "# "
-			suffix = fmt.Sprintf("    \n")
-			tocPrefix = "\n# ["
+//			suffix = fmt.Sprintf("    \n")
+			tocPrefix = "# ["
 			tocSuffix = fmt.Sprintf("](#")
 			decode = true
 
 		case "HEADING_2":
             prefix = "## "
-			suffix = fmt.Sprintf("    \n")
+//			suffix = fmt.Sprintf("    \n")
 			tocPrefix = "\n## ["
 			tocSuffix = fmt.Sprintf("](#")
 			decode = true
 
         case "HEADING_3":
 			prefix = "### "
-			suffix = fmt.Sprintf("     \n")
+//			suffix = fmt.Sprintf("     \n")
 			tocPrefix = "\n### ["
 			tocSuffix = fmt.Sprintf("](#")
 			decode = true
 
         case "HEADING_4":
             prefix = "#### "
-			suffix = fmt.Sprintf("     \n")
+//			suffix = fmt.Sprintf("     \n")
 			tocPrefix = "\n#### ["
 			tocSuffix = fmt.Sprintf("](#")
 			decode = true
 
         case "HEADING_5":
             prefix = "##### "
-			suffix = fmt.Sprintf("    \n")
+//			suffix = fmt.Sprintf("    \n")
 			tocPrefix = "\n##### ["
 			tocSuffix = fmt.Sprintf("](#")
 			decode = true
 
         case "HEADING_6":
             prefix = "###### "
-			suffix = fmt.Sprintf("    \n")
+//			suffix = fmt.Sprintf("    \n")
 			tocPrefix = "\n###### ["
 			tocSuffix = fmt.Sprintf("](#")
 			decode = true
@@ -661,7 +689,7 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 	for p:=0; p< numParEl; p++ {
 
 		parEl := par.Elements[p]
-//fmt.Println("parEl: ", p, parEl.TextRun.Content)
+//fmt.Printf("parEl %2d: %s\n", p, parEl.TextRun.Content)
 //		outstr += fmt.Sprintf("\nPar-El[%d]: %d - %d \n", p, parEl.StartIndex, parEl.EndIndex)
 
 		boldStyl := false
@@ -679,7 +707,7 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 			if err != nil {
 				errStr = fmt.Sprintf("\n[//]: # (error el %d cvtPelTxt: %v)\n", p, err)
 			}
-
+//fmt.Println("tstr: ",tstr)
 			parErrStr += errStr
 			parTxtStr += tstr
 		}
@@ -720,12 +748,6 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 		return outstr, tocstr
 	}
 
-	if decode {
-			tocParStr := dObj.cvtTocName(parStr)
-//    	outstr += prefix + parStr + suffix
-			tocstr+= tocPrefix + parStr + tocSuffix + tocParStr + ")\n\n"
-	}
-
 //fmt.Printf("parstr raw (%d):\n%s\n", len(parTxtStr), parTxtStr)
 
 	xnb := []byte(parTxtStr)
@@ -733,6 +755,7 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 	for i := 0; i< xnbLen; i++ {
 		if xnb[i] == '\n' {xnb[i] = ' '}
 	}
+
 	altLen := xnbLen
 	for i:=xnbLen -1; i> xnbLen-5; i-- {
 		if xnb[i] == ' ' {altLen --} else {break}
@@ -761,28 +784,36 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 			}
 		}
 	}
-	parCrTxtStr := string(xnb[:xnbLen]) + "  \n"
+
+	parNTxtStr := string(xnb[:xnbLen])
+//	parCrTxtStr := string(xnb[:xnbLen]) + "  \n"
 	parTitleStr := string(xnb[:xnbLen])
 
 /*
-	pL := len(parCrTxtStr)
+	pL := len(parNTxtStr)
 	plStart := pL -10
 	if plStart < 0 {plStart = 0}
 fmt.Printf("end parCrTxtStr:")
 for i := plStart; i< pL; i++ {
-	fmt.Printf("%q", parCrTxtStr[i])
+	fmt.Printf("%q", parNTxtStr[i])
 }
 fmt.Println()
 */
-
+	tocOpt := dObj.Options.Toc
 	switch {
 		case titlestyl:
-			tocstr+= tocPrefix + parTitleStr + tocSuffix + "\n"
+			if tocOpt {	tocstr+= tocPrefix + parTitleStr + tocSuffix}
 	    	outstr = prefix + parTitleStr + suffix
 		case subtitlestyl:
 	    	outstr = prefix + parTitleStr + suffix
 		default:
-	    	outstr = listStr + prefix + parCrTxtStr + suffix + parStr
+			suffix = "  \n"
+			if len(headId) > 0 {suffix = "{#" + headId + "}  \n"}
+	    	outstr = listStr + prefix + parNTxtStr + suffix + parStr
+			if decode && tocOpt {
+//				tocParStr := dObj.cvtTocName(parNTxtStr)
+				tocstr+= tocPrefix + parNTxtStr + tocSuffix + headId + ")"
+			}
 		}
 
 /*
