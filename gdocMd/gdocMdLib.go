@@ -808,7 +808,7 @@ fmt.Println()
 	    	outstr = prefix + parTitleStr + suffix
 		default:
 			suffix = "  \n"
-			if len(headId) > 0 {suffix = "{#" + headId + "}  \n"}
+			if len(headId) > 0 {suffix = " {#" + headId + "}  \n"}
 	    	outstr = listStr + prefix + parNTxtStr + suffix + parStr
 			if decode && tocOpt {
 //				tocParStr := dObj.cvtTocName(parNTxtStr)
