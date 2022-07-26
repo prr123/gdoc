@@ -313,8 +313,7 @@ func (dObj *gdocMdObj) InitGdocMd(folderPath string, options *util.OptObj) (err 
 
 
 func (dObj *gdocMdObj) cvtTocName(parstr string)(tocstr string) {
-	var yLen int
-	var y [100]byte
+	var y [400]byte
 	parlStr := strings.ToLower(parstr)
 	parlStr = strings.TrimSpace(parlStr)
 	if len(parstr) < 1 {
@@ -325,26 +324,45 @@ func (dObj *gdocMdObj) cvtTocName(parstr string)(tocstr string) {
 
 	x:= []byte(parlStr)
 
-	last := false
-	yLen =0
+	xSt :=-1
 	for i:=0; i<len(x); i++ {
+		switch x[i] {
+			case ' ','*','_':
+
+			default:
+				xSt = i
+		}
+		if xSt > -1 {break}
+	}
+	if xSt < 0 {
+		return ""
+	}
+
+	yPos := -1
+	xEnd := -1
+	last := false
+	if len(x) < 20 {
+//fmt.Printf("[%d:%d]:%s\n",xSt,len(x),x[xSt:len(x)])
+	}
+	for i:=xSt; i<len(x); i++ {
 		switch x[i] {
 		case ' ':
 			if !last {
-				y[yLen] = '-'
-				yLen++
+				yPos++
+				y[yPos] = '-'
 			}
 			last = true
-		case '\n':
-
+		case '*','_':
+			xEnd = i
 		default:
-			y[yLen] = x[i]
-			yLen++
+			yPos++
+			y[yPos] = x[i]
 			last = false
 		}
+		if xEnd > -1 {break}
 	}
 
-	tocstr = string(y[:yLen])
+	tocstr = string(y[:yPos+1])+ "-1"
 
 	//fmt.Println("toctr: ", tocstr, " : ", len(tocstr))
 	//fmt.Println()
@@ -607,8 +625,8 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 		italicStyl = parTxtStyl.Italic || NamedTxtStyl.Italic
 	}
 
-	headId := ""
-	if len(par.ParagraphStyle.HeadingId) > 0 {headId = string(par.ParagraphStyle.HeadingId[2:])}
+//	headId := ""
+//	if len(par.ParagraphStyle.HeadingId) > 0 {headId = string(par.ParagraphStyle.HeadingId[2:])}
 
     switch parStylTyp {
 		case "TITLE":
@@ -808,11 +826,12 @@ fmt.Println()
 	    	outstr = prefix + parTitleStr + suffix
 		default:
 			suffix = "  \n"
-			if len(headId) > 0 {suffix = " {#" + headId + "}  \n"}
+//			if len(headId) > 0 {suffix = " {#" + headId + "}  \n"}
 	    	outstr = listStr + prefix + parNTxtStr + suffix + parStr
 			if decode && tocOpt {
-//				tocParStr := dObj.cvtTocName(parNTxtStr)
-				tocstr+= tocPrefix + parNTxtStr + tocSuffix + headId + ")"
+//				tocstr+= tocPrefix + parNTxtStr + tocSuffix + headId + ")"
+				tocParStr := dObj.cvtTocName(parNTxtStr)
+				tocstr+= tocPrefix + parNTxtStr + tocSuffix + tocParStr + ")"
 			}
 		}
 
