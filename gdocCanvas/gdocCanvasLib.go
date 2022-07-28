@@ -1,11 +1,11 @@
 // golang library that creates a html / js file from a gdoc file
 // author: prr
-// created: 2/5/2022
+// created: 20 July 2022
 // copyright 2022 prr, Peter Riemenschneider
 //
 // for changes see github
 //
-// start: CreGdocToDom
+// start: CreGdocToCanvas
 //
 
 package gdocCanvas
