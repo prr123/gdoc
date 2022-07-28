@@ -2062,7 +2062,7 @@ func (dObj *GdocDomObj) findListProp (listId string) (listProp *docs.ListPropert
 	return nil
 }
 
-func (dObj *GdocDomObj) initGdocDom(folderPath string, options *util.OptObj) (err error) {
+func (dObj *GdocDomObj) initGdocCanvas(folderPath string, options *util.OptObj) (err error) {
 	var listItem docList
 	var heading headingTyp
 	var sec secTyp
@@ -4387,9 +4387,9 @@ func CreGdocCanvasDoc(folderPath string, doc *docs.Document, options *util.OptOb
 	dObj.doc = doc
 
 	// further initialization
-	err = dObj.initGdocDom(folderPath, options)
+	err = dObj.initGdocCanvas(folderPath, options)
 	if err != nil {
-		return fmt.Errorf("initGdocHtml %v", err)
+		return fmt.Errorf("initGdocCanvas %v", err)
 	}
 
 // footnotes
@@ -4513,9 +4513,9 @@ func CreGdocCanvasMain(folderPath string, doc *docs.Document, options *util.OptO
 	dObj.doc = doc
 
 	// further initialization
-	err = dObj.initGdocDom(folderPath, options)
+	err = dObj.initGdocCanvas(folderPath, options)
 	if err != nil {
-		return fmt.Errorf("initGdocDom %v", err)
+		return fmt.Errorf("initGdocCanvas %v", err)
 	}
 
 // footnotes
@@ -4638,9 +4638,9 @@ func CreGdocCanvasSection(heading, folderPath string, doc *docs.Document, option
 	dObj.doc = doc
 
 	// further initialization
-	err = dObj.initGdocDom(folderPath, options)
+	err = dObj.initGdocCanvas(folderPath, options)
 	if err != nil {
-		return fmt.Errorf("initGdocDom %v", err)
+		return fmt.Errorf("initGdocCanvas %v", err)
 	}
 
 // footnotes
@@ -4763,9 +4763,9 @@ func CreGdocCanvasAll(folderPath string, doc *docs.Document, options *util.OptOb
 	dObj.doc = doc
 
 	// further initialization
-	err = dObj.initGdocDom(folderPath, options)
+	err = dObj.initGdocCanvas(folderPath, options)
 	if err != nil {
-		return fmt.Errorf("initGdocDom %v", err)
+		return fmt.Errorf("initGdocCanvas %v", err)
 	}
 
 // footnotes
