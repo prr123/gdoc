@@ -550,7 +550,7 @@ func (dObj *gdocTxtDbgObj) dispPar(par *docs.Paragraph)(outstr string, err error
 	outstr += fmt.Sprintf("\n  *** Paragraph Elements: %d ***\n", len(par.Elements))
 	for pEl:=0; pEl< len(par.Elements); pEl++ {
 		parDet := par.Elements[pEl]
-		outstr += fmt.Sprintf("    *** Par-El[%d]: [%d-%d] ", pEl, parDet.StartIndex, parDet.EndIndex)
+		outstr += fmt.Sprintf("    *** Par-El[%d]: [%d] ", pEl, len(parDet.TextRun.Content))
 		t2str, err := dObj.dispParEl(parDet)
 		if err != nil {
 			outstr += fmt.Sprintf("error dispParEl %d: %v\n", pEl, err)
@@ -581,8 +581,8 @@ func (dObj *gdocTxtDbgObj) dispParEl(parDet *docs.ParagraphElement)(outstr strin
 			}
 		}
 		if cLen > 0 {
-			if cLen > 21 {
-				outstr += fmt.Sprintf("    \"%s ...\"",parDet.TextRun.Content[0:20])
+			if cLen > 50 {
+				outstr += fmt.Sprintf("    \"%s ... %s\"",parDet.TextRun.Content[0:30], parDet.TextRun.Content[cLen-20:cLen-1])
 			} else {
 				if parDet.TextRun.Content[cLen-1:cLen] == "\n" {
 					outstr += fmt.Sprintf("    \"%s\"",parDet.TextRun.Content[:cLen-1])
