@@ -22,6 +22,7 @@ const (
     MmTopt = 2.8346456692913207
 )
 
+const ComStr = `[//]:  #  (`
 
 type gdocMdObj struct {
 	elState int
@@ -31,9 +32,8 @@ type gdocMdObj struct {
     imgId []string
     doc *docs.Document
     DocName string
-	listmap  map[string][]int
-	listid	string
-	nestlev int
+	listId	string
+	nestIdx int
 	folderPath string
 	outfil *os.File
 	imgFoldNam string
@@ -111,6 +111,7 @@ func (dObj *gdocMdObj) InitGdocMd(folderPath string, options *util.OptObj) (err 
 	dObj.posImgCount = len(doc.PositionedObjects)
 
     dObj.parCount = len(doc.Body.Content)
+	dObj.nestIdx = -1
 
 	dNam := doc.Title
     x := []byte(dNam)
@@ -204,7 +205,6 @@ func (dObj *gdocMdObj) InitGdocMd(folderPath string, options *util.OptObj) (err 
 
 			// list
             if elObj.Paragraph.Bullet != nil {
-
             // lists
                 listId := elObj.Paragraph.Bullet.ListId
                 found := findDocList(dObj.docLists, listId)
@@ -550,13 +550,18 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 //	fmt.Printf("  Paragraph with %d Par-Elements\n", len(par.Elements))
 	outstr = ""
 
+	// separate  lists
 	// lists
 	if par.Bullet != nil {
-		listStr = ""
 		listid := par.Bullet.ListId
 		nestIdx:= int(par.Bullet.NestingLevel)
+		// new list
+		if len(dObj.listId) == 0 {
+			dObj.listId = listid
+			dObj.nestIdx = nestIdx
+		}
 
-//        if dObj.Options.Verb {hdStr = fmt.Sprintf("<!--- List Element %d --->", dObj.parCount)}
+        if dObj.Options.Verb {hdStr = ComStr + fmt.Sprintf("List Element %d)\n", nestIdx)}
 
         // retrieve the list properties from the doc.Lists map
         nestL := dObj.doc.Lists[listid].ListProperties.NestingLevels[nestIdx]
@@ -564,6 +569,7 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 
         // list item
 		// we can do this differently start with an empty byte string
+		listStr = ""
 		listPrefix := ""
 		for nl:=0; nl < nestIdx; nl++ {
 			listPrefix += "  "
@@ -576,23 +582,37 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 		}
     } // end of lists
 
+	// pargraphs
+	// - list addition
+	// - quote
+	// - text
 
-	// check for heading
-
-// heading id
-//	hdId := par.ParagraphStyle.HeadingId
-
-// indentation
+	// indentation
 	parIndent := 0.0
 	if(par.ParagraphStyle.IndentStart) != nil {
 		parIndent = par.ParagraphStyle.IndentStart.Magnitude
 	}
 
-// temp solution
-//	fmt.Printf("par indent: %.0f\n", parIndent)
-	if parIndent > 0 {
-
+	parIndentEnd := -1.0
+	if(par.ParagraphStyle.IndentEnd) != nil {
+		parIndentEnd = par.ParagraphStyle.IndentEnd.Magnitude
 	}
+
+	// list addition or quote
+	bquote := false
+	parList := false
+	if parIndent > 0 {
+		if parIndentEnd > 0 {
+			bquote = true
+		} else {
+			// no indent
+			if dObj.nestIdx > -1 {parList = true}
+		}
+	} else {
+		dObj.nestIdx = -1
+	}
+
+//fmt.Printf("nest: %d parList: %t parIndent: %.1f parIndentEnd: %.1f\n", dObj.nestIdx, parList, parIndent, parIndentEnd)
 
 	parStylTyp := par.ParagraphStyle.NamedStyleType
 	// doc styles
@@ -704,8 +724,8 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 	parStr = ""
 	parTxtStr := ""
 	parErrStr := ""
-	for p:=0; p< numParEl; p++ {
 
+	for p:=0; p< numParEl; p++ {
 		parEl := par.Elements[p]
 //fmt.Printf("parEl %2d: %s\n", p, parEl.TextRun.Content)
 //		outstr += fmt.Sprintf("\nPar-El[%d]: %d - %d \n", p, parEl.StartIndex, parEl.EndIndex)
@@ -717,7 +737,6 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 			boldStyl = parTxtStyl.Bold || NamedTxtStyl.Bold
 			italicStyl = parTxtStyl.Italic || NamedTxtStyl.Italic
 		}
-
 
 		// text
 		if parEl.TextRun != nil {
@@ -803,9 +822,62 @@ func (dObj *gdocMdObj) cvtParToMd(par *docs.Paragraph)(outstr string, tocstr str
 		}
 	}
 
-	parNTxtStr := string(xnb[:xnbLen])
-//	parCrTxtStr := string(xnb[:xnbLen]) + "  \n"
-	parTitleStr := string(xnb[:xnbLen])
+
+	var bqx [1024]byte
+	var parNTxtStr, parTitleStr string
+	if bquote {
+		bcnt := 0
+		for i:=0; i<(xnbLen - 3); i++ {
+			if xnb[i] == '\n' {
+				bqx[bcnt] = xnb[i]
+				bqx[bcnt+1] = '>'
+				bqx[bcnt+2] = ' '
+				bqx[bcnt+3] = ' '
+				bcnt += 4
+			} else {
+				bqx[bcnt] = xnb[i]
+				bcnt++
+			}
+		}
+		parNTxtStr = string(bqx[:bcnt+1]) + "  \n"
+	} else {
+		if parList && par.Bullet == nil{
+//			parNTxtStr = string(xnb[:xnbLen])
+			bcnt := 0
+			for idx:=0; idx < dObj.nestIdx +1; idx++ {
+						bqx[bcnt] = ' '
+						bqx[bcnt+1] = ' '
+						bqx[bcnt+2] = ' '
+						bqx[bcnt+3] = ' '
+						bcnt += 4
+			}
+
+			for i:=0; i< xnbLen; i++ {
+				if xnb[i] == '\n' {
+					bqx[bcnt] = xnb[i]
+					for idx:=0; idx < dObj.nestIdx +1; idx++ {
+						bqx[bcnt+1] = ' '
+						bqx[bcnt+2] = ' '
+						bqx[bcnt+3] = ' '
+						bqx[bcnt+4] = ' '
+						bcnt += 5
+					}
+				} else {
+					bqx[bcnt] = xnb[i]
+					bcnt++
+				}
+			}
+			parNTxtStr = string(bqx[:bcnt]) + "  \n"
+//			for idx:=0; idx < dObj.nestIdx +1; idx++ {
+//				parNTxtStr = "     " + parNTxtStr
+//			}
+		} else {
+			parNTxtStr = string(xnb[:xnbLen])
+		}
+		parTitleStr = string(xnb[:xnbLen])
+	}
+
+
 
 /*
 	pL := len(parNTxtStr)
