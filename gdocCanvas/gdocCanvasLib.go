@@ -1598,8 +1598,20 @@ func addDispObj(src, add *dispObj) {
 
 func creHtmlDocHead(docNam string)(outstr string) {
     outstr = "<!DOCTYPE html>\n"
-    outstr += fmt.Sprintf("<!-- file: %s -->\n", docNam + "Dom")
+
+    outstr += fmt.Sprintf("<!-- file: %s Canvas -->\n", docNam)
     outstr += "<head>\n<style>\n"
+//<html lang="en">
+	outstr += `<head>
+  <meta charset="UTF-8">
+  <meta name="description" content="conversion of gdoc to canvas">
+  <meta name="keywords" content="gdoc, canvas, html">
+  <meta name="author" content="prr">
+  <meta name="date" content="28\7\2022">
+  <meta  name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gdoc Canvas Conversion</title>
+  <style>
+`
     return outstr
 }
 
@@ -1674,6 +1686,92 @@ func creHtmlDocDiv(docName string)(htmlStr string) {
 }
 
 func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
+  jsStr = `function addEl(elObj) {
+  let el = document.createElement(elObj.typ);
+  if (elObj.cl1 != null) {el.classList.add(elObj.cl1);}
+  if (elObj.cl2 != null) {el.classList.add(elObj.cl2);}
+  if (elObj.idStr != null) {el.setAttribute("id", elObj.idStr);}
+  if (elObj.href != null) {el.href=elObj.href};
+  if (elObj.txt != null) {
+    var text =  document.createTextNode(elObj.txt);
+	el.appendChild(text);
+  }
+  if (elObj.doAppend) {
+    elp = elObj.parent;
+    elp.appendChild(el);
+  }
+  return el}`
+
+  jsStr += `function clearObj(elObj) {
+    for (key in elObj) {elObj[key] = null;}
+    return
+  }
+  function addTxt(elObj) {
+    let el = elObj.parent;
+    if (elObj.txt != null) {
+      var text =  document.createTextNode(elObj.txt);
+      el.appendChild(text);
+    }
+  }
+  function appendEl(el, elPar) {
+    elPar.appendChild(el);
+    return
+  }
+  function addLink(elObj) {
+    let el = document.createElement('a');
+    el.setAttribute('href', elObj.href);
+    if (elObj.cl1 != null) {el.classList.add(elObj.cl1);}
+    if (elObj.cl2 != null) {el.classList.add(elObj.cl2);}
+    if (elObj.idStr != null) {el.setAttribute("id", elObj.idStr);}
+    if (elObj.txt != null) {
+      var text =  document.createTextNode(elObj.txt);
+      el.appendChild(text);
+    }
+    elp = elObj.parent;
+    elp.appendChild(el);
+    return
+  }`
+
+  	if imgFun {
+		jsStr += 
+	`function addImgEl(imgObj) {
+    if (imgObj.src == null) {return}
+    var img = new Image(imgObj.width, imgObj.height);
+    if (imgObj.idStr != null) {img.setAttribute("id", imgObj.idStr);}
+    if (imgObj.cl1 != null) {img.classList.add(imgObj.cl1);}
+	if (imgObj.cl2 != null) {img.classList.add(imgObj.cl2);
+    img.src = imgObj.src;
+    img.alt = imgObj.alt;
+    imgp = imgObj.parent;
+    imgp.appendChild(img);
+    return}`
+	}
+
+	if tableFun {
+		jsStr += `function creTbl(tblObj) {
+	var tbl = document.createElement('table');
+    var tblBody = document.createElement('tbody');
+    tbl.appendChild(tblBody);
+	return tbl}
+    function addCol(colObj) {
+	var col = document.createElement('col');
+    col.colspan = colObj.spanCount;
+    if (colObj.cl1 != null) {col.classList.add(colObj.cl1);}
+    if (colObj.cl2 != null) {col.classList.add(colObj.cl2);}
+    var colp = colObj.parent;
+    colp.appendChild(col);
+	return}`
+  }
+
+  	jsStr += `function addBodyElScript(divDoc) {
+    const elObj = {};
+    const imgObj = {};
+    const colObj = {};`
+
+	return jsStr
+  }
+
+func creElOldFuncScript(imgFun bool, tableFun bool) (jsStr string) {
 	jsStr = "function addEl(elObj) {\n"
 	jsStr += "  let el = document.createElement(elObj.typ);\n"
 	jsStr += "  if (elObj.cl1 != null) {el.classList.add(elObj.cl1);}\n"
@@ -1747,7 +1845,7 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
 		jsStr += "  if (colObj.cl2 != null) {col.classList.add(colObj.cl2);}\n"
 		jsStr += "  var colp = colObj.parent;\n"
 		jsStr += "  colp.appendChild(col);\n"
-		jsStr += "  }\n"
+		jsStr += "  return\n}\n"
 	}
 
 
@@ -2086,13 +2184,16 @@ func (dObj *GdocDomObj) initGdocCanvas(folderPath string, options *util.OptObj) 
 	if options == nil {
 		defOpt := new(util.OptObj)
 		util.GetDefOption(defOpt)
-		if defOpt.Verb {util.PrintOptions(defOpt)}
 		dObj.Options = defOpt
 		dObj.Options.DivBorders = true
 	} else {
 		dObj.Options = options
 	}
 
+	// temporary default for debugging
+	dObj.Options.Toc = false
+	dObj.Options.Verb = true
+	if dObj.Options.Verb {util.PrintOptions(dObj.Options)}
 
 	dObj.namStylMap = make(map[string]bool, 8)
 
