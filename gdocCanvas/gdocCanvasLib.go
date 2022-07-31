@@ -2073,7 +2073,7 @@ func creDocDivScript(docName string)(jsStr string) {
     jsStr += `  document.body.appendChild(divDoc);
     addBodyElScript(divDoc);
   }
-  document.addEventListener(\"DOMContentLoaded\", dispDoc);
+  document.addEventListener("DOMContentLoaded", dispDoc);
 `
 /*
 	jsStr = "  return\n}\n"
@@ -4519,7 +4519,7 @@ func (dObj *GdocDomObj) cvtBodyToCanvas() (bodyObj *dispObj, err error) {
 	divTitle.typ = "div"
 	divTitle.parent = "divDoc"
 	divTitle.cl1 = dObj.docName + "_main"
-	divTitle.newEl = dObj.parent
+	divTitle.newEl = "divTitle"
 	divTitle.doAppend = true
 	bodyObj.script = addElToDom(divTitle)
 //	dObj.parent = "divMain"
@@ -4539,7 +4539,7 @@ func (dObj *GdocDomObj) cvtBodyToCanvas() (bodyObj *dispObj, err error) {
 	divMain.typ = "div"
 	divMain.parent = "divDoc"
 	divMain.cl1 = dObj.docName + "_main"
-	divMain.newEl = dObj.parent
+	divMain.newEl = "divMain"
 	divMain.doAppend = true
 	bodyObj.script += addElToDom(divMain)
 
