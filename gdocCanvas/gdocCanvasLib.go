@@ -205,6 +205,18 @@ type elScriptObj struct {
 	doAppend bool
 }
 
+type canvasScriptObj struct {
+	idStr string
+	width int
+	height int
+	parent string
+	newEl string
+	ctx string
+	comment string
+	doAppend bool
+}
+
+
 type imgScriptObj struct {
 	cl1 string
 	cl2 string
@@ -1717,7 +1729,7 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
     elPar.appendChild(el);
     return
   }
-  function addLink(elObj) {
+    function addLink(elObj) {
     let el = document.createElement('a');
     el.setAttribute('href', elObj.href);
     if (elObj.cl1 != null) {el.classList.add(elObj.cl1);}
@@ -1730,8 +1742,8 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
     elp = elObj.parent;
     elp.appendChild(el);
     return
-  }`
-
+  }
+`
   	if imgFun {
 		jsStr += 
 	`function addImgEl(imgObj) {
@@ -1760,13 +1772,15 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
     if (colObj.cl2 != null) {col.classList.add(colObj.cl2);}
     var colp = colObj.parent;
     colp.appendChild(col);
-	return}`
+	return}
+	`
   }
 
   	jsStr += `function addBodyElScript(divDoc) {
     const elObj = {};
     const imgObj = {};
-    const colObj = {};`
+    const colObj = {};
+`
 
 	return jsStr
   }
@@ -1876,7 +1890,53 @@ func addTxtElToDom(elObj elScriptObj)(script string) {
 	return script
 }
 
-func addElToCanvas(elObj elScriptObj)(script string) {
+//canvas
+func creCanvasToDom(canvas canvasScriptObj) (script string) {
+//function that adds a canvas element into the Dom
+
+	script = "var " + canvas.newEl + " = document.createElement('canvas');\n"
+	script = "var " + canvas.ctx + " = " + canvas.newEl + ".getContext('2d');\n"
+	script += fmt.Sprintf("%s.id = \"%s\";\n", canvas.newEl, canvas.idStr)
+	script += fmt.Sprintf("%s.width = %d;\n", canvas.newEl, canvas.width)
+	script += fmt.Sprintf("%s.height = %d;\n", canvas.newEl, canvas.height)
+//	script += canvasEl.parent + ".appendChild(canvasEl)\n"
+	return script
+}
+
+func addStyleToCanvas(canvas, stylEl, stylVal string) (script string) {
+// add styles to canvas
+	script = canvas + ".style." + stylEl + " = \"" + stylVal + "\";\n"
+	return script
+}
+
+func addCanvasToDom(canvasEl canvasScriptObj) (script string) {
+	script = canvasEl.parent + ".appendChild(" + canvasEl.newEl + ")\n"
+	return script
+}
+
+func drawTest() (script string) {
+
+// Set line width
+	script = "ctx.lineWidth = 10;\n"
+
+// Wall
+	script += "ctx.strokeRect(75, 140, 150, 110);\n"
+
+// Door
+	script += "ctx.fillRect(130, 190, 40, 60);\n"
+
+// Roof
+	script += `ctx.beginPath();\n
+  ctx.moveTo(50, 140);
+  ctx.lineTo(150, 60);
+  ctx.lineTo(250, 140);
+  ctx.closePath();
+  ctx.stroke();
+`
+	return script
+}
+
+func addElToDom(elObj elScriptObj)(script string) {
 
 	script = "// addEl \n"
 	script += "// " + elObj.comment + "\n"
@@ -1905,6 +1965,33 @@ func addElToCanvas(elObj elScriptObj)(script string) {
 }
 
 func addLinkToCanvas(elObj elScriptObj)(script string) {
+
+	script = "// addLinkEl \n"
+	script += "// " + elObj.comment + "\n"
+	if !(len(elObj.parent) > 0) {
+		script += "// error - no el parent provided!\n"
+		return script
+	}
+	if !(len(elObj.txt) > 0) {
+		script += "// error - no text provided!\n"
+		return script
+	}
+	if !(len(elObj.href) > 0) {
+		script += "// error - no href provided!\n"
+		return script
+	}
+	script = "  for (key in elObj) {elObj[key] = null;}\n"
+	if len(elObj.cl1) > 0 {script += fmt.Sprintf("  elObj.cl1 = '%s';\n", elObj.cl1)}
+	if len(elObj.cl2) > 0 {script += fmt.Sprintf("  elObj.cl2 = '%s';\n", elObj.cl2)}
+	if len(elObj.idStr) > 0 {script += fmt.Sprintf("  elObj.idStr = '%s';\n", elObj.idStr)}
+	if len(elObj.txt) > 0 {script += fmt.Sprintf("  elObj.txt = '%s';\n", elObj.txt)}
+	script += fmt.Sprintf("  elObj.parent = %s;\n", elObj.parent)
+	script += fmt.Sprintf("  elObj.typ = 'a';\n")
+	script += fmt.Sprintf("  addLink(elObj);\n")
+	return script
+}
+
+func addLinkToDom(elObj elScriptObj)(script string) {
 
 	script = "// addLinkEl \n"
 	script += "// " + elObj.comment + "\n"
@@ -1969,7 +2056,7 @@ func addColToDom(colObj colScriptObj)(script string) {
 }
 
 func addDivMainScript(docName string) (jsStr string) {
-    jsStr += "  let divMain = document.createElement('div');\n"
+    jsStr = "  let divMain = document.createElement('div');\n"
     jsStr += fmt.Sprintf("  divMain.classList.add('%s_main');\n", docName)
     jsStr += "  divDoc.appendChild(divMain);\n"
 	return jsStr
@@ -1977,6 +2064,18 @@ func addDivMainScript(docName string) (jsStr string) {
 
 func creDocDivScript(docName string)(jsStr string) {
 
+	jsStr = `  return
+	  }
+  function dispDoc() {
+    let divDoc = document.createElement('div');
+`
+    jsStr += fmt.Sprintf("  divDoc.classList.add('%s_doc');\n", docName)
+    jsStr += `  document.body.appendChild(divDoc);
+    addBodyElScript(divDoc);
+  }
+  document.addEventListener(\"DOMContentLoaded\", dispDoc);
+`
+/*
 	jsStr = "  return\n}\n"
 	jsStr += "function dispDoc() {\n"
     jsStr += "  let divDoc = document.createElement('div');\n"
@@ -1985,6 +2084,7 @@ func creDocDivScript(docName string)(jsStr string) {
 	jsStr += "  addBodyElScript(divDoc);\n"
 	jsStr += "}\n"
     jsStr += "document.addEventListener(\"DOMContentLoaded\", dispDoc);\n"
+*/
     return jsStr
 }
 
@@ -2508,7 +2608,7 @@ func (dObj *GdocDomObj) cvtParDomElText(parElTxt *docs.TextRun, namedTyp string)
 		spanEl.newEl = "spanEl"
 		spanEl.doAppend = true
 //		spanEl.txt = cvtText(parElTxt.Content)
-		scriptStr = addElToCanvas(spanEl)
+		scriptStr = addElToDom(spanEl)
 		//css
 		cssStr = fmt.Sprintf("#%s {\n", spanIdStr) + spanCssStr + "}\n"
 
@@ -2520,7 +2620,7 @@ func (dObj *GdocDomObj) cvtParDomElText(parElTxt *docs.TextRun, namedTyp string)
 		spanEl.typ = "span"
 		spanEl.newEl = "spanEl"
 		spanEl.doAppend = true
-		scriptStr = addElToCanvas(spanEl)
+		scriptStr = addElToDom(spanEl)
 		//css
 		cssStr = ""
 	}
@@ -2531,7 +2631,7 @@ func (dObj *GdocDomObj) cvtParDomElText(parElTxt *docs.TextRun, namedTyp string)
 		linkEl.newEl = "anchor"
 		linkEl.href = parElTxt.TextStyle.Link.Url
 		linkEl.txt = parElTxt.Content
-		scriptStr += addElToCanvas(linkEl)
+		scriptStr += addElToDom(linkEl)
 	} else {
 		txtEl.parent = "spanEl"
 		txtEl.txt = stripCrText(parElTxt.Content)
@@ -2576,7 +2676,7 @@ func (dObj *GdocDomObj) cvtHrElToDom (hr *docs.HorizontalRule)(hrObj dispObj) {
 		hrEl.cl1 = fmt.Sprintf("%s_hr_%d", dObj.docName, dObj.hrCount)
     }
 
-    hrObj.script = addElToCanvas(hrEl)
+    hrObj.script = addElToDom(hrEl)
     hrObj.bodyCss = cssStr
     return hrObj
 }
@@ -2714,7 +2814,7 @@ func (dObj *GdocDomObj) renderPosImg(posImg *docs.PositionedObject, posId string
 	divEl.newEl = "imgDiv"
 	divEl.idStr = imgDivId
 	divEl.doAppend = true
-	scriptStr += addElToCanvas(divEl)
+	scriptStr += addElToDom(divEl)
 
 	//fmt.Sprintf("     <img src=\"%s\" alt=\"%s\" id=\"%s\">\n", imgSrc, imgProp.Title, imgId)
 	imgEl.parent = "imgDiv"
@@ -2731,7 +2831,7 @@ func (dObj *GdocDomObj) renderPosImg(posImg *docs.PositionedObject, posId string
 		divEl.idStr = pimgId
 		divEl.cl1 = dObj.docName + "_p"
 		divEl.doAppend = true
-		scriptStr += addElToCanvas(divEl)
+		scriptStr += addElToDom(divEl)
 	}
 
 	imgDispObj.script = scriptStr
@@ -2871,7 +2971,7 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 	tblObj.newEl = tblNam
 	tblObj.cl1 = dObj.docName + "_tbl"
 	tblObj.cl2 = fmt.Sprintf("tbl_%d", dObj.tableCounter)
-	scriptStr += addElToCanvas(tblObj)
+	scriptStr += addElToDom(tblObj)
 
 	// html "  <tbody>\n"
 	tblObj.parent = tblNam
@@ -2880,7 +2980,7 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 	tblObj.newEl = "tblBody"
 //	tblObj.cl1 = dObj.docName + "_tbl"
 //	tblObj.cl2 = fmt.Sprintf("tbl_%d", dObj.tableCounter)
-	scriptStr += addElToCanvas(tblObj)
+	scriptStr += addElToDom(tblObj)
 
 	// table columns
 	// conundrum: tables either have evenly distributed columns or not
@@ -2901,7 +3001,7 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 		elObj.typ = "colgroup"
 		elObj.newEl = "colgrp"
 		elObj.doAppend = true
-		scriptStr += addElToCanvas(elObj)
+		scriptStr += addElToDom(elObj)
 		tblW := 0.0
 		for icol = 0; icol < tbl.Columns; icol++ {
             colW := tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude
@@ -2928,7 +3028,7 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 		elObj.parent = "tblBody"
 		elObj.newEl = "trow"
 		elObj.doAppend = true
-		scriptStr += addElToCanvas(elObj)
+		scriptStr += addElToDom(elObj)
 
 		trowobj := tbl.TableRows[trow]
 //		mrheight := trowobj.TableRowStyle.MinRowHeight.Magnitude
@@ -3039,7 +3139,7 @@ func (dObj *GdocDomObj) cvtTableToDom(tbl *docs.Table)(tabObj dispObj, err error
 			elObj.parent = "trow"
 			elObj.newEl = "tcel"
 			elObj.doAppend = true
-			scriptStr += addElToCanvas(elObj)
+			scriptStr += addElToDom(elObj)
 
 			elNum := len(tcell.Content)
 			for el:=0; el< elNum; el++ {
@@ -3098,7 +3198,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 				brEl := elScriptObj{typ: "br", newEl: "noel",}
 				brEl.parent = dObj.parent
 				brEl.doAppend = true
-                parObj.script = addElToCanvas(brEl)
+                parObj.script = addElToDom(brEl)
                 return parObj, nil
             }
         }
@@ -3211,7 +3311,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 								orList.cl1 = listid[4:] + "_ol"
 								orList.cl2 = fmt.Sprintf("nL_%d", nl)
 								orList.doAppend = true
-								scriptStr += addElToCanvas(orList)
+								scriptStr += addElToDom(orList)
 								// css
 								listCss = fmt.Sprintf(".%s_ol.nL_%d {\n", listid[4:], nl)
 								listCss += fmt.Sprintf("  counter-reset: %s_nL_%d\n",listid[4:], nl)
@@ -3225,7 +3325,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 								unList.cl1 = listid[4:] + "_ul"
 								unList.cl2 = fmt.Sprintf("nL_%d", nl)
 								unList.doAppend = true
-								scriptStr += addElToCanvas(orList)
+								scriptStr += addElToDom(orList)
 								// css none
 							}
 						}
@@ -3277,7 +3377,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 					orList.cl1 = listid[4:] + "_ol"
 					orList.cl2 = fmt.Sprintf("nL_%d", nl)
 					orList.doAppend = true
-					scriptStr += addElToCanvas(orList)
+					scriptStr += addElToDom(orList)
 					// css
 					listCss = fmt.Sprintf(".%s_ol.nL_%d {\n", listid[4:], nestIdx)
 					listCss += fmt.Sprintf("  counter-reset: %s_nL_%d\n",listid[4:], nestIdx)
@@ -3293,7 +3393,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 					unList.cl1 = listid[4:] + "_ul"
 					unList.cl2 = fmt.Sprintf("nL_%d", nl)
 					unList.doAppend = true
-					scriptStr += addElToCanvas(unList)
+					scriptStr += addElToDom(unList)
 					//css
 				}
 		} // switch
@@ -3317,7 +3417,7 @@ func (dObj *GdocDomObj) cvtParToDom(par *docs.Paragraph)(parObj dispObj, err err
 		listEl.typ = "li"
 		listEl.newEl = "lsIt"
 		listEl.doAppend = true
-		parObj.script += addElToCanvas(listEl)
+		parObj.script += addElToDom(listEl)
 		// mark
 		if par.Bullet.TextStyle != nil {
 //      	    bulletTxtMap = fillTxtMap(par.Bullet.TextStyle)
@@ -3675,7 +3775,7 @@ func (dObj *GdocDomObj) cvtParStylToDom(parStyl *docs.ParagraphStyle, parent str
 	elObj.parent = parent
 	elObj.newEl = "hdel"
 	elObj.doAppend = true
-	parStylObj.script = addElToCanvas(elObj)
+	parStylObj.script = addElToDom(elObj)
 	parStylObj.bodyCss = cssStr
 	return parStylObj, alter, nil
 }
@@ -3730,7 +3830,7 @@ func (dObj *GdocDomObj) creSecDivDom() (secHd *dispObj) {
 	divObj.cl1 = fmt.Sprintf("%s_main_top", dObj.docName)
 	divObj.idStr = fmt.Sprintf("%s_sectoc", dObj.docName)
 	divObj.doAppend = true
-	scriptStr = addElToCanvas(divObj)
+	scriptStr = addElToDom(divObj)
 
 	// fmt.Sprintf("<p class=\"%s_title %s_leftTitle_UL\">Sections</p>\n",dObj.docName, dObj.docName)
 	parObj.parent = "divSec"
@@ -3740,7 +3840,7 @@ func (dObj *GdocDomObj) creSecDivDom() (secHd *dispObj) {
 	parObj.cl2 = dObj.docName + "_leftTitle_UL"
 	parObj.txt = "Sections"
 	parObj.doAppend = true
-	scriptStr += addElToCanvas(parObj)
+	scriptStr += addElToDom(parObj)
 
 	for i:=0; i< len(dObj.sections); i++ {
 		// fmt.Sprintf("  <p class=\"%s_p\"><a href=\"#%s_sec_%d\">Page: %3d</a></p>\n", dObj.docName, dObj.docName, i, i)
@@ -3749,7 +3849,7 @@ func (dObj *GdocDomObj) creSecDivDom() (secHd *dispObj) {
 		parObj.newEl = "pel"
 		parObj.cl1 = dObj.docName + "_p"
 		parObj.doAppend = true
-		scriptStr += addElToCanvas(parObj)
+		scriptStr += addElToDom(parObj)
 
 		parObj.parent = "pel"
 		parObj.href = fmt.Sprintf("#%s_sec_%d", dObj.docName, i)
@@ -3788,14 +3888,14 @@ func (dObj *GdocDomObj) creSecHeadToDom(ipage int) (secObj dispObj) {
 	divObj.cl2 = fmt.Sprintf("sec_%d", ipage)
 	divObj.idStr = fmt.Sprintf("%s_sec_%d", dObj.docName, ipage)
 	divObj.doAppend = true
-	secObj.script += addElToCanvas(divObj)
+	secObj.script += addElToDom(divObj)
 
 	parObj.parent = dObj.parent
 	parObj.typ = "p"
 	parObj.newEl = "ptop"
 	parObj.cl1 = fmt.Sprintf("%s_page", dObj.docName)
 	parObj.doAppend = true
-	secObj.script += addElToCanvas(parObj)
+	secObj.script += addElToDom(parObj)
 
 	linkObj.parent = "ptop"
 	linkObj.txt = fmt.Sprintf("Page %d", ipage)
@@ -4028,7 +4128,7 @@ func (dObj *GdocDomObj) creFtnoteDivDom () (ftnoteDiv *dispObj, err error) {
 	jselObj.cl2 = dObj.docName + "_ftndiv"
 	jselObj.newEl = "divFtn"
 	jselObj.doAppend = true
-	scriptStr += addElToCanvas(jselObj)
+	scriptStr += addElToDom(jselObj)
 
 	//css div footnote
 	cssStr = fmt.Sprintf(".%s_main.%s_ftndiv  {\n", dObj.docName, dObj.docName)
@@ -4053,7 +4153,7 @@ func (dObj *GdocDomObj) creFtnoteDivDom () (ftnoteDiv *dispObj, err error) {
 	jselObj.newEl = "ft_title"
 	jselObj.txt = "Footnotes"
 	jselObj.doAppend = true
-	scriptStr += addElToCanvas(jselObj)
+	scriptStr += addElToDom(jselObj)
 
 	//css footnote title
 	cssStr += fmt.Sprintf("%s_title.%s_ftTit {\n", dObj.docName, dObj.docName, dObj.docName)
@@ -4081,7 +4181,7 @@ func (dObj *GdocDomObj) creFtnoteDivDom () (ftnoteDiv *dispObj, err error) {
 	jselObj.newEl = "ft_Ol"
 //	jselObj.txt = "Footnotes"
 	jselObj.doAppend = true
-	scriptStr += addElToCanvas(jselObj)
+	scriptStr += addElToDom(jselObj)
 
 	// prefix for paragraphs
 
@@ -4116,7 +4216,7 @@ func (dObj *GdocDomObj) creFtnoteDivDom () (ftnoteDiv *dispObj, err error) {
 		jselObj.newEl = "liEl"
 		//	jselObj.txt = "Footnotes"
 		jselObj.doAppend = true
-		scriptStr += addElToCanvas(jselObj)
+		scriptStr += addElToDom(jselObj)
 
 
 		// presumably footnotes are paragraphs only
@@ -4136,7 +4236,7 @@ func (dObj *GdocDomObj) creFtnoteDivDom () (ftnoteDiv *dispObj, err error) {
 			jselObj.idStr = pidStr
 			jselObj.newEl = "pliEl"
 			jselObj.doAppend = true
-			scriptStr += addElToCanvas(jselObj)
+			scriptStr += addElToDom(jselObj)
 
 			dObj.parent = "pliEl"
 			tDisp, err := dObj.cvtParElToDom(par)
@@ -4226,7 +4326,7 @@ func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 	elObj.cl1 = dObj.docName + "_main"
 	elObj.cl2 = dObj.docName + "_top"
 	elObj.doAppend = true
-	tocDiv.script = addElToCanvas(elObj)
+	tocDiv.script = addElToDom(elObj)
 
 	//fmt.Sprintf("<p class=\"%s_title %s_leftTitle\">Table of Contents</p>\n", dObj.docName, dObj.docName)
 	elObj.parent = "divToc"
@@ -4236,7 +4336,7 @@ func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 	elObj.cl2 = dObj.docName + "_leftTitle"
 	elObj.txt = "Table of Contents"
 	elObj.doAppend = true
-	tocDiv.script = addElToCanvas(elObj)
+	tocDiv.script = addElToDom(elObj)
 
 	tocDiv.script = scriptStr
 
@@ -4260,11 +4360,11 @@ func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 			elObj.cl2 = dObj.docName + "_leftTitle"
 			elObj.newEl = "parel"
 			elObj.doAppend = true
-			tocDiv.script += addElToCanvas(elObj)
+			tocDiv.script += addElToDom(elObj)
 			elObj.parent = "parel"
 			elObj.txt = text
 			elObj.href = "#" + hdId
-			tocDiv.script += addLinkToCanvas(elObj)
+			tocDiv.script += addLinkToDom(elObj)
 
 		case "SUBTITLE":
 			//prefix := fmt.Sprintf("<p class=\"%s_subtitle\">", dObj.docName)
@@ -4276,11 +4376,11 @@ func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 			elObj.cl1 = dObj.docName + "_subtitle"
 			elObj.newEl = "parel"
 			elObj.doAppend = true
-			tocDiv.script += addElToCanvas(elObj)
+			tocDiv.script += addElToDom(elObj)
 			elObj.parent = "parel"
 			elObj.txt = text
 			elObj.href = "#" + hdId
-			tocDiv.script += addLinkToCanvas(elObj)
+			tocDiv.script += addLinkToDom(elObj)
 
 		case "HEADING_1":
 			//html
@@ -4294,11 +4394,11 @@ func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 			elObj.cl2 = "toc_h1"
 			elObj.newEl = "parel"
 			elObj.doAppend = true
-			tocDiv.script += addElToCanvas(elObj)
+			tocDiv.script += addElToDom(elObj)
 			elObj.parent = "parel"
 			elObj.txt = text
 			elObj.href = "#" + hdId
-			tocDiv.script += addLinkToCanvas(elObj)
+			tocDiv.script += addLinkToDom(elObj)
 
 		case "HEADING_2":
 			//prefix := fmt.Sprintf("<h2 class=\"%s_h2 toc_h2\">", dObj.docName)
@@ -4311,11 +4411,11 @@ func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 			elObj.cl2 = "toc_h2"
 			elObj.newEl = "parel"
 			elObj.doAppend = true
-			tocDiv.script += addElToCanvas(elObj)
+			tocDiv.script += addElToDom(elObj)
 			elObj.parent = "parel"
 			elObj.txt = text
 			elObj.href = "#" + hdId
-			tocDiv.script += addLinkToCanvas(elObj)
+			tocDiv.script += addLinkToDom(elObj)
 
 		case "HEADING_3":
 			//prefix := fmt.Sprintf("<h3 class=\"%s_h3 toc_h3\">", dObj.docName)
@@ -4328,11 +4428,11 @@ func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 			elObj.cl2 = "toc_h3"
 			elObj.newEl = "parel"
 			elObj.doAppend = true
-			tocDiv.script += addElToCanvas(elObj)
+			tocDiv.script += addElToDom(elObj)
 			elObj.parent = "parel"
 			elObj.txt = text
 			elObj.href = "#" + hdId
-			tocDiv.script += addLinkToCanvas(elObj)
+			tocDiv.script += addLinkToDom(elObj)
 
 		case "HEADING_4":
 			//prefix := fmt.Sprintf("<h4 class=\"%s_h4 toc_h4\">", dObj.docName)
@@ -4345,11 +4445,11 @@ func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 			elObj.cl2 = "toc_h4"
 			elObj.newEl = "parel"
 			elObj.doAppend = true
-			tocDiv.script += addElToCanvas(elObj)
+			tocDiv.script += addElToDom(elObj)
 			elObj.parent = "parel"
 			elObj.txt = text
 			elObj.href = "#" + hdId
-			tocDiv.script += addLinkToCanvas(elObj)
+			tocDiv.script += addLinkToDom(elObj)
 
 		case "HEADING_5":
 			//prefix := fmt.Sprintf("<h5 class=\"%s_h5 toc_h5\">", dObj.docName)
@@ -4362,11 +4462,11 @@ func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 			elObj.cl2 = "toc_h5"
 			elObj.newEl = "parel"
 			elObj.doAppend = true
-			tocDiv.script += addElToCanvas(elObj)
+			tocDiv.script += addElToDom(elObj)
 			elObj.parent = "parel"
 			elObj.txt = text
 			elObj.href = "#" + hdId
-			tocDiv.script += addLinkToCanvas(elObj)
+			tocDiv.script += addLinkToDom(elObj)
 
 		case "HEADING_6":
 			//prefix := fmt.Sprintf("<h6 class=\"%s_h6 toc_h6\">", dObj.docName)
@@ -4379,11 +4479,11 @@ func (dObj *GdocDomObj) creTocDivDom () (tocObj *dispObj, err error) {
 			elObj.cl2 = "toc_h6"
 			elObj.newEl = "parel"
 			elObj.doAppend = true
-			tocDiv.script += addElToCanvas(elObj)
+			tocDiv.script += addElToDom(elObj)
 			elObj.parent = "parel"
 			elObj.txt = text
 			elObj.href = "#" + hdId
-			tocDiv.script += addLinkToCanvas(elObj)
+			tocDiv.script += addLinkToDom(elObj)
 
 		case "NORMAL_TEXT":
 
@@ -4413,16 +4513,41 @@ func (dObj *GdocDomObj) cvtBodyToCanvas() (bodyObj *dispObj, err error) {
 	bodyObj = new(dispObj)
 
 //	bodyObj.bodyHtml = fmt.Sprintf("<div class=\"%s_main\">\n", dObj.docName)
-	var divMain elScriptObj
+	var divMain, divTitle elScriptObj
+
+	divTitle.comment = "create title div"
+	divTitle.typ = "div"
+	divTitle.parent = "divDoc"
+	divTitle.cl1 = dObj.docName + "_main"
+	divTitle.newEl = dObj.parent
+	divTitle.doAppend = true
+	bodyObj.script = addElToDom(divTitle)
+//	dObj.parent = "divMain"
+
+	titPar := elScriptObj {
+		typ: "p",
+		parent: "divDoc",
+		newEl: "titPar",
+		doAppend: true,
+		txt: "title",
+	}
+
+	titPar.cl1 = dObj.docName + "_main"
+	bodyObj.script += addElToDom(titPar)
+
 	divMain.comment = "create main div"
 	divMain.typ = "div"
 	divMain.parent = "divDoc"
 	divMain.cl1 = dObj.docName + "_main"
-	dObj.parent = "divMain"
 	divMain.newEl = dObj.parent
 	divMain.doAppend = true
-	bodyObj.script = addElToCanvas(divMain)
+	bodyObj.script += addElToDom(divMain)
 
+	dObj.parent = "divMain"
+
+
+
+/*
 	elNum := len(body.Content)
 	for el:=0; el< elNum; el++ {
 		bodyEl := body.Content[el]
@@ -4433,7 +4558,7 @@ func (dObj *GdocDomObj) cvtBodyToCanvas() (bodyObj *dispObj, err error) {
 		}
 		addDispObj(bodyObj, tObj)
 	} // for el loop end
-
+*/
 	if dObj.listStack != nil {dObj.closeList(-1)}
 
 	return bodyObj, err
