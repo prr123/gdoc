@@ -1698,6 +1698,8 @@ func creHtmlDocDiv(docName string)(htmlStr string) {
 }
 
 func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
+// This function creates the base js functions for rendering the Dom
+
   jsStr = `function addEl(elObj) {
   let el = document.createElement(elObj.typ);
   if (elObj.cl1 != null) {el.classList.add(elObj.cl1);}
@@ -1712,8 +1714,8 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
     elp = elObj.parent;
     elp.appendChild(el);
   }
-  return el}`
-
+  return el}
+`
   jsStr += `function clearObj(elObj) {
     for (key in elObj) {elObj[key] = null;}
     return
@@ -1744,8 +1746,20 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
     return
   }
 `
+// style function
+// el: document.element
+// styl: string
+// 	if len(styl) == 0 {return}
+	jsStr +=
+`function addStylToEl(el, styl) {
+ 	if (len(styl) == 0) {return;}
+    el.style.cssText=styl+';'
+  return
+}
+`
+// image function
   	if imgFun {
-		jsStr += 
+		jsStr +=
 	`function addImgEl(imgObj) {
     if (imgObj.src == null) {return}
     var img = new Image(imgObj.width, imgObj.height);
@@ -1756,9 +1770,10 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
     img.alt = imgObj.alt;
     imgp = imgObj.parent;
     imgp.appendChild(img);
-    return}`
+    return}
+	`
 	}
-
+// table function
 	if tableFun {
 		jsStr += `function creTbl(tblObj) {
 	var tbl = document.createElement('table');
@@ -1776,101 +1791,14 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
 	`
   }
 
-  	jsStr += `function addBodyElScript(divDoc) {
-    const elObj = {};
-    const imgObj = {};
-    const colObj = {};
+  	jsStr +=
+`function addBodyElScript(divDoc) {
+  let elObj = {};
+  let imgObj = {};
+  let colObj = {};
 `
-
 	return jsStr
   }
-
-func creElOldFuncScript(imgFun bool, tableFun bool) (jsStr string) {
-	jsStr = "function addEl(elObj) {\n"
-	jsStr += "  let el = document.createElement(elObj.typ);\n"
-	jsStr += "  if (elObj.cl1 != null) {el.classList.add(elObj.cl1);}\n"
-	jsStr += "  if (elObj.cl2 != null) {el.classList.add(elObj.cl2);}\n"
-	jsStr += "  if (elObj.idStr != null) {el.setAttribute(\"id\", elObj.idStr);}\n"
-	jsStr += "  if (elObj.href != null) {el.href=elObj.href};\n"
-	jsStr += "  if (elObj.txt != null) {\n"
-	jsStr += "    var text =  document.createTextNode(elObj.txt);\n"
-	jsStr += "    el.appendChild(text);\n"
-	jsStr += "  }\n"
-	jsStr += "  if (elObj.doAppend) {\n"
-	jsStr += "    elp = elObj.parent;\n"
-	jsStr += "    elp.appendChild(el);\n"
-	jsStr += "  }\n"
-	jsStr += "  return el\n}\n"
-
-	jsStr += "function clearObj(elObj) {\n"
-	jsStr += "  for (key in elObj) {elObj[key] = null;}\n"
-	jsStr += "  return\n}\n"
-
-	jsStr += "function addTxt(elObj) {\n"
-	jsStr += "  let el = elObj.parent;\n"
-	jsStr += "  if (elObj.txt != null) {\n"
-	jsStr += "    var text =  document.createTextNode(elObj.txt);\n"
-	jsStr += "    el.appendChild(text);\n"
-	jsStr += "  }\n}\n"
-
-	jsStr += "function appendEl(el, elPar) {\n"
-	jsStr += "  elPar.appendChild(el);\n"
-	jsStr += "  return}\n"
-
-	jsStr += "function addLink(elObj) {\n"
-	jsStr += "  let el = document.createElement('a');\n"
-	jsStr += "  el.setAttribute('href', elObj.href);\n"
-	jsStr += "  if (elObj.cl1 != null) {el.classList.add(elObj.cl1);}\n"
-	jsStr += "  if (elObj.cl2 != null) {el.classList.add(elObj.cl2);}\n"
-	jsStr += "  if (elObj.idStr != null) {el.setAttribute(\"id\", elObj.idStr);}\n"
-	jsStr += "  if (elObj.txt != null) {\n"
-	jsStr += "    var text =  document.createTextNode(elObj.txt);\n"
-	jsStr += "    el.appendChild(text);\n"
-	jsStr += "  }\n"
-	jsStr += "  elp = elObj.parent;\n"
-	jsStr += "  elp.appendChild(el);\n"
-	jsStr += "  return\n}\n"
-
-	if imgFun {
-		jsStr += "function addImgEl(imgObj) {\n"
-		jsStr += "  if (imgObj.src == null) {return\n}\n"
-		jsStr += "  var img = new Image(imgObj.width, imgObj.height);\n"
-		jsStr += "  if (imgObj.idStr != null) {img.setAttribute(\"id\", imgObj.idStr);}\n"
-		jsStr += "  if (imgObj.cl1 != null) {img.classList.add(imgObj.cl1);}\n"
-		jsStr += "  if (imgObj.cl2 != null) {img.classList.add(imgObj.cl2);}\n"
-		jsStr += "  img.src = imgObj.src;\n"
-		jsStr += "  img.alt = imgObj.alt;\n"
-//		jsStr += ""
-		jsStr += "  imgp = imgObj.parent;\n"
-		jsStr += "  imgp.appendChild(img);\n"
-		jsStr += "  return\n}\n"
-	}
-	if tableFun {
-		jsStr += "function creTbl(tblObj) {\n"
-		jsStr += "  var tbl = document.createElement('table');\n"
-		jsStr += "  var tblBody = document.createElement('tbody');\n"
-		jsStr += "  tbl.appendChild(tblBody);\n"
-		jsStr += "return tbl}\n"
-
-		jsStr += "function addCol(colObj) {\n"
-		jsStr += "  var col = document.createElement('col');\n"
-		jsStr += "  col.colspan = colObj.spanCount;\n"
-		jsStr += "  if (colObj.cl1 != null) {col.classList.add(colObj.cl1);}\n"
-		jsStr += "  if (colObj.cl2 != null) {col.classList.add(colObj.cl2);}\n"
-		jsStr += "  var colp = colObj.parent;\n"
-		jsStr += "  colp.appendChild(col);\n"
-		jsStr += "  return\n}\n"
-	}
-
-
-	jsStr += "function addBodyElScript(divDoc) {\n"
-	jsStr += "  const elObj = {};\n"
-	jsStr += "  const imgObj = {};\n"
-	jsStr += "  const colObj = {};\n"
-
-	return jsStr
-}
-
 
 func addTxtElToDom(elObj elScriptObj)(script string) {
 	script = "//addTxtEl \n"
@@ -4518,7 +4446,7 @@ func (dObj *GdocDomObj) cvtBodyToCanvas() (bodyObj *dispObj, err error) {
 	divTitle.comment = "create title div"
 	divTitle.typ = "div"
 	divTitle.parent = "divDoc"
-	divTitle.cl1 = dObj.docName + "_main"
+	divTitle.cl1 = dObj.docName + "_title"
 	divTitle.newEl = "divTitle"
 	divTitle.doAppend = true
 	bodyObj.script = addElToDom(divTitle)
@@ -4526,13 +4454,13 @@ func (dObj *GdocDomObj) cvtBodyToCanvas() (bodyObj *dispObj, err error) {
 
 	titPar := elScriptObj {
 		typ: "p",
-		parent: "divDoc",
+		parent: "divTitle",
 		newEl: "titPar",
 		doAppend: true,
 		txt: "title",
 	}
 
-	titPar.cl1 = dObj.docName + "_main"
+	titPar.cl1 = dObj.docName + "_par"
 	bodyObj.script += addElToDom(titPar)
 
 	divMain.comment = "create main div"
