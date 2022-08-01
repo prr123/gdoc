@@ -1749,10 +1749,9 @@ func creElFuncScript(imgFun bool, tableFun bool) (jsStr string) {
 // style function
 // el: document.element
 // styl: string
-// 	if len(styl) == 0 {return}
+// 	if (styl.length == 0) {return}
 	jsStr +=
 `function addStylToEl(el, styl) {
- 	if (len(styl) == 0) {return;}
     el.style.cssText=styl+';'
   return
 }
@@ -1892,6 +1891,13 @@ func addElToDom(elObj elScriptObj)(script string) {
 	return script
 }
 
+func addStylToDomEl(el, styl string)(script string) {
+
+	script = fmt.Sprintf("  addStylToEl(%s,'%s');", el, styl)
+
+	return script
+}
+
 func addLinkToCanvas(elObj elScriptObj)(script string) {
 
 	script = "// addLinkEl \n"
@@ -2003,16 +2009,6 @@ func creDocDivScript(docName string)(jsStr string) {
   }
   document.addEventListener("DOMContentLoaded", dispDoc);
 `
-/*
-	jsStr = "  return\n}\n"
-	jsStr += "function dispDoc() {\n"
-    jsStr += "  let divDoc = document.createElement('div');\n"
-    jsStr += fmt.Sprintf("  divDoc.classList.add('%s_doc');\n", docName)
-    jsStr += "  document.body.appendChild(divDoc);\n"
-	jsStr += "  addBodyElScript(divDoc);\n"
-	jsStr += "}\n"
-    jsStr += "document.addEventListener(\"DOMContentLoaded\", dispDoc);\n"
-*/
     return jsStr
 }
 
@@ -4470,6 +4466,10 @@ func (dObj *GdocDomObj) cvtBodyToCanvas() (bodyObj *dispObj, err error) {
 	divMain.newEl = "divMain"
 	divMain.doAppend = true
 	bodyObj.script += addElToDom(divMain)
+
+//sss
+	stylStr := "height:300px;"
+	bodyObj.script += addStylToDomEl("divMain", stylStr)
 
 	dObj.parent = "divMain"
 
