@@ -212,7 +212,6 @@ type canvasScriptObj struct {
 	parent string
 	newEl string
 	ctx string
-	comment string
 	doAppend bool
 }
 
@@ -1818,26 +1817,26 @@ func addTxtElToDom(elObj elScriptObj)(script string) {
 }
 
 //canvas
-func creCanvasToDom(canvas canvasScriptObj) (script string) {
+func creCanvas(canvas canvasScriptObj) (script string) {
 //function that adds a canvas element into the Dom
 
-	script = "var " + canvas.newEl + " = document.createElement('canvas');\n"
-	script = "var " + canvas.ctx + " = " + canvas.newEl + ".getContext('2d');\n"
-	script += fmt.Sprintf("%s.id = \"%s\";\n", canvas.newEl, canvas.idStr)
-	script += fmt.Sprintf("%s.width = %d;\n", canvas.newEl, canvas.width)
-	script += fmt.Sprintf("%s.height = %d;\n", canvas.newEl, canvas.height)
-//	script += canvasEl.parent + ".appendChild(canvasEl)\n"
+	script = "  let " + canvas.newEl + " = document.createElement('canvas');\n"
+	script += "  let " + canvas.ctx + " = " + canvas.newEl + ".getContext('2d');\n"
+	script += fmt.Sprintf("%  s.id = \"%s\";\n", canvas.newEl, canvas.idStr)
+	script += fmt.Sprintf("%  s.width = %d;\n", canvas.newEl, canvas.width)
+	script += fmt.Sprintf("%  s.height = %d;\n", canvas.newEl, canvas.height)
+//	script += canvasEl.parent + ".appendChild(" + canvas.newEl + ");\n"
 	return script
 }
 
-func addStyleToCanvas(canvas, stylEl, stylVal string) (script string) {
+func addStylToCanvas(canvas, stylEl, stylVal string) (script string) {
 // add styles to canvas
 	script = canvas + ".style." + stylEl + " = \"" + stylVal + "\";\n"
 	return script
 }
 
 func addCanvasToDom(canvasEl canvasScriptObj) (script string) {
-	script = canvasEl.parent + ".appendChild(" + canvasEl.newEl + ")\n"
+	script = canvasEl.parent + ".appendChild(" + canvasEl.newEl + ");\n"
 	return script
 }
 
@@ -1893,7 +1892,7 @@ func addElToDom(elObj elScriptObj)(script string) {
 
 func addStylToDomEl(el, styl string)(script string) {
 
-	script = fmt.Sprintf("  addStylToEl(%s,'%s');", el, styl)
+	script = fmt.Sprintf("  addStylToEl(%s,'%s');\n", el, styl)
 
 	return script
 }
@@ -4437,16 +4436,22 @@ func (dObj *GdocDomObj) cvtBodyToCanvas() (bodyObj *dispObj, err error) {
 	bodyObj = new(dispObj)
 
 //	bodyObj.bodyHtml = fmt.Sprintf("<div class=\"%s_main\">\n", dObj.docName)
-	var divMain, divTitle elScriptObj
+//	var divMain, divTitle elScriptObj
+	var stylStr string
 
-	divTitle.comment = "create title div"
-	divTitle.typ = "div"
-	divTitle.parent = "divDoc"
-	divTitle.cl1 = dObj.docName + "_title"
-	divTitle.newEl = "divTitle"
-	divTitle.doAppend = true
+	divTitle := elScriptObj {
+		typ: "div",
+		parent: "divDoc",
+		newEl: "divTitle",
+		doAppend: true,
+//		txt: "title",
+	}
+	divTitle.cl1 = dObj.docName + "_main"
+
 	bodyObj.script = addElToDom(divTitle)
-//	dObj.parent = "divMain"
+
+	stylStr = "width: 100%; border: 1px solid green;"
+	bodyObj.script += addStylToDomEl("divTitle", stylStr)
 
 	titPar := elScriptObj {
 		typ: "p",
@@ -4459,19 +4464,56 @@ func (dObj *GdocDomObj) cvtBodyToCanvas() (bodyObj *dispObj, err error) {
 	titPar.cl1 = dObj.docName + "_par"
 	bodyObj.script += addElToDom(titPar)
 
-	divMain.comment = "create main div"
-	divMain.typ = "div"
-	divMain.parent = "divDoc"
-	divMain.cl1 = dObj.docName + "_main"
-	divMain.newEl = "divMain"
-	divMain.doAppend = true
-	bodyObj.script += addElToDom(divMain)
+	stylStr = "font-family: Calibri; font-size: large; text-align: center;"
+	bodyObj.script += addStylToDomEl("titPar", stylStr)
 
-//sss
-	stylStr := "height:300px;"
-	bodyObj.script += addStylToDomEl("divMain", stylStr)
+//	divMain.comment = "create main div"
+	// Canvas
+	divCanvas := elScriptObj {
+		typ: "div",
+		parent: "divDoc",
+		newEl: "divCanvas",
+		doAppend: true,
+	}
+	divCanvas.cl1 = dObj.docName + "_canvas"
 
-	dObj.parent = "divMain"
+	bodyObj.script += addElToDom(divCanvas)
+	stylStr = "float: right; width: 400px; height:700px; border: 1px solid blue;"
+	bodyObj.script += addStylToDomEl("divCanvas", stylStr)
+
+
+	divLeft := elScriptObj {
+		typ: "div",
+		parent: "divDoc",
+		newEl: "divLeft",
+		doAppend: true,
+	}
+	divLeft.cl1 = dObj.docName + "_left"
+
+	bodyObj.script += addElToDom(divLeft)
+
+	stylStr = "float: left; width: 300px; height:500px; border: 1px dashed red;"
+	bodyObj.script += addStylToDomEl("divLeft", stylStr)
+
+//canvas
+	cnv1 := canvasScriptObj {
+		newEl: "cnv1",
+		parent: "divCanvas",
+		ctx: "cnv1Ctx",
+		width: 300,
+		height: 400,
+		idStr: "canvas1",
+	}
+
+	bodyObj.script += creCanvas(cnv1)
+	bodyObj.script += addCanvasToDom(cnv1)
+
+	stylStr = "background-color: yellow; border: 1px solid green;"
+	bodyObj.script += addStylToDomEl("cnv1", stylStr)
+//	bodyObj.script += addStylToCanvas(cnv1.newEl,"background-color" ,"yellow" )
+//	bodyObj.script += addStylToCanvas(cnv1.newEl,"border" ,"1px dash purple" )
+
+	dObj.parent = "divDoc"
 
 
 
