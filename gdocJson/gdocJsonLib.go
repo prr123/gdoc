@@ -1,14 +1,15 @@
-// golang library that creates a html / js file from a gdoc file
-// author: prr
-// created: 2/5/2022
+// golang library that creates a json file from a gdoc file
+// adopted from gdocDomLib.go
+// author: prr, azul software
+// created: 10/10/2022
 // copyright 2022 prr, Peter Riemenschneider
 //
 // for changes see github
 //
-// start: CreGdocToDom
+// start: CvtGdocToJson
 //
 
-package gdocDom
+package gdocJson
 
 import (
 	"fmt"
@@ -2063,7 +2064,7 @@ func (dObj *GdocDomObj) findListProp (listId string) (listProp *docs.ListPropert
 	return nil
 }
 
-func (dObj *GdocDomObj) initGdocDom(folderPath string, options *util.OptObj) (err error) {
+func (dObj *GdocDomObj) initGdocJson(folderPath string, options *util.OptObj) (err error) {
 	var listItem docList
 	var heading headingTyp
 	var sec secTyp
@@ -2071,7 +2072,7 @@ func (dObj *GdocDomObj) initGdocDom(folderPath string, options *util.OptObj) (er
 	var docPb pbTyp
 
 	doc := dObj.doc
-	if doc == nil {return fmt.Errorf("doc is nil in GdocDomObj!")}
+	if doc == nil {return fmt.Errorf("doc is nil in GdocObj!")}
 
 	// need to transform file name
 	// replace spaces with underscore
@@ -2294,8 +2295,8 @@ func (dObj *GdocDomObj) initGdocDom(folderPath string, options *util.OptObj) (er
 	}
 
     // create output file path/outfilNam.html
-	outfilNam := dObj.docName + "Dom"
-    outfil, err := util.CreateOutFil(fPath, outfilNam, "html")
+	outfilNam := dObj.docName
+    outfil, err := util.CreateOutFil(fPath, outfilNam, "json")
     if err!= nil {
         return fmt.Errorf("error -- util.CreateOutFil: %v", err)
     }
@@ -4388,7 +4389,7 @@ func CreGdocDomDoc(folderPath string, doc *docs.Document, options *util.OptObj)(
 	dObj.doc = doc
 
 	// further initialization
-	err = dObj.initGdocDom(folderPath, options)
+	err = dObj.initGdocJson(folderPath, options)
 	if err != nil {
 		return fmt.Errorf("initGdocHtml %v", err)
 	}
@@ -4514,7 +4515,7 @@ func CreGdocDomMain(folderPath string, doc *docs.Document, options *util.OptObj)
 	dObj.doc = doc
 
 	// further initialization
-	err = dObj.initGdocDom(folderPath, options)
+	err = dObj.initGdocJson(folderPath, options)
 	if err != nil {
 		return fmt.Errorf("initGdocDom %v", err)
 	}
@@ -4639,7 +4640,7 @@ func CreGdocDomSection(heading, folderPath string, doc *docs.Document, options *
 	dObj.doc = doc
 
 	// further initialization
-	err = dObj.initGdocDom(folderPath, options)
+	err = dObj.initGdocJson(folderPath, options)
 	if err != nil {
 		return fmt.Errorf("initGdocDom %v", err)
 	}
@@ -4755,7 +4756,7 @@ func CreGdocDomSection(heading, folderPath string, doc *docs.Document, options *
 
 
 
-func CreGdocDomAll(folderPath string, doc *docs.Document, options *util.OptObj)(err error) {
+func CreGdocJsonAll(folderPath string, doc *docs.Document, options *util.OptObj)(err error) {
 // function that creates an html fil from the named section
 	var mainDiv dispObj
 	var dObj GdocDomObj
@@ -4764,7 +4765,7 @@ func CreGdocDomAll(folderPath string, doc *docs.Document, options *util.OptObj)(
 	dObj.doc = doc
 
 	// further initialization
-	err = dObj.initGdocDom(folderPath, options)
+	err = dObj.initGdocJson(folderPath, options)
 	if err != nil {
 		return fmt.Errorf("initGdocDom %v", err)
 	}
