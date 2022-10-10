@@ -1,52 +1,90 @@
 //
-// CvtGdocToDom
-// date: 22. April 2022
+// CvtGdocToJson
+// adapted from GdocToDom
+// date: 10 Ocober 2022
+//
 // author: prr
 // copyright 2022 prr azul software
 //
 //		gdocHtml "google/gdoc/gdocHtml"
-
+//
 
 package main
 
 import (
         "fmt"
         "os"
-		"strings"
+//		"strings"
 		gdocApi "google/gdoc/gdocApi"
-		gdocDom "google/gdoc/gdocDom"
+		gdocJson "google/gdoc/gdocJson"
 )
 
 
 func main() {
 	var gd gdocApi.GdocApiStruct
 	// initialise default values
-	baseFolder := "output"
-	baseFolderSlash := baseFolder + "/"
-	opt:=""
-
+	baseFolder := "output/"
+//	baseFolderSlash := baseFolder + "/"
+	sel:=""
+	dbg := false
     numArgs := len(os.Args)
 //	fmt.Printf("args: %d\n", numArgs)
 	cmd := os.Args[0]
-
+	outFolder := "json"
 
 	switch numArgs {
 		case 1:
-       		fmt.Println("error - no comand line arguments!")
- 			fmt.Printf("%s usage is:\n  %s docId opt [sumary, main, all]\n", cmd[2:], cmd)
+       		fmt.Println("error - no docid provided!")
+          	fmt.Printf("%s usage is:\n  %s docId [outfolder] [dbg] [summary, main, all]\n", cmd[2:], cmd)
         	os.Exit(1)
 		case 2:
-       		fmt.Println("no option argument provided!")
-			fmt.Println("assuming 'opt = all'!")
-			opt = "all"
+       		fmt.Println("no outFolder nor selection argument provided!")
+			fmt.Println("assuming outFolder is 'default' selection is 'all'!")
+			sel = "all"
 		case 3:
-
+			switch os.Args[2] {
+				case "dbg":
+					dbg = true
+					sel = "all"
+				case "summary", "main", "all":
+					sel = os.Args[2]
+				default:
+					outFolder = os.Args[2]
+			}
 		case 4:
-			opt = os.Args[3]
+			outFolder = os.Args[2]
 
+			switch os.Args[3] {
+				case "dbg":
+					dbg = true
+					sel = "all"
+				case "summary", "main", "all":
+					sel = os.Args[3]
+				default:
+					fmt.Println("invalid argument: %s!\n", os.Args[2])
+          			fmt.Printf("%s usage is:\n  %s docId [out] [dbg] [summary, main, all] [opt]\n", cmd[2:], cmd)
+					os.Exit(1)
+			}
+		case 5:
+			outFolder = os.Args[2]
+			if os.Args[3] == "dbg" {
+				dbg = true
+			} else {
+				fmt.Println("invalid argument: %s!\n", os.Args[3])
+       			fmt.Printf("%s usage is:\n  %s docId [out] [dbg] [summary, main, all] [opt]\n", cmd[2:], cmd)
+				os.Exit(1)
+			}
+			switch os.Args[4] {
+				case "summary", "main", "all":
+					sel = os.Args[4]
+				default:
+					fmt.Println("invalid argument: %s!\n", os.Args[4])
+          			fmt.Printf("%s usage is:\n  %s docId [out] [dbg] [summary, main, all] [opt]\n", cmd[2:], cmd)
+					os.Exit(1)
+			}
 		default:
         	fmt.Println("error - too many arguments!")
-          	fmt.Printf("%s usage is:\n  %s docId opt [sumary, main, all]\n", cmd[2:], cmd)
+          	fmt.Printf("%s usage is:\n  %s docId [dbg] [summary, main, all] [opt]\n", cmd[2:], cmd)
         	os.Exit(1)
     }
 
@@ -60,40 +98,26 @@ func main() {
 
 	srv := gd.Svc
 
-	outfilPath:= ""
-	switch {
-		case numArgs == 2:
-			outfilPath = baseFolder
-		case os.Args[2] == baseFolder:
-			outfilPath = os.Args[2]
-		case strings.Index(os.Args[2], baseFolderSlash)< 0:
- 			outfilPath = baseFolderSlash + os.Args[2]
-		case strings.Index(os.Args[2], baseFolderSlash) == 0:
-			outfilPath = os.Args[2]
-		case os.Args[2] == "":
-			outfilPath = baseFolder
-		default:
-			fmt.Printf("no valid input folder: %s", os.Args[2])
-			os.Exit(1)
-	}
+	outfilPath:= baseFolder + outFolder
 
-	fmt.Printf("*************** CvtGdocToDom ************\n")
-	fmt.Printf("output folder: %s option: %s\n", outfilPath, opt)
+	fmt.Printf("*************** CvtGdocToJSON ************\n")
+	if (dbg) {fmt.Printf("*** debug ***\n")}
+	fmt.Printf("output folder: %s selection: %s\n", outfilPath, sel)
 
 	doc, err := srv.Documents.Get(docId).Do()
 	if err != nil {
 		fmt.Println("Unable to retrieve data from document: ", err)
 		os.Exit(1)
 	}
-	fmt.Printf("Doc Title: %s Option: %s\n", doc.Title, opt)
+	fmt.Printf("Doc Title: %s Selection: %s\n", doc.Title, sel)
 
-	switch opt {
+	switch sel {
 	case "heading":
 		fmt.Printf("*** not implemented yet ***\n")
 		os.Exit(1)
 //		err = gdocHtml.CreGdocHtmlSection("", outfilPath, doc, nil)
 		if err != nil {
-			fmt.Println("error main: CreGdocDomSummary -- cannot convert gdoc doc: ", err)
+			fmt.Println("error main: CvtGdocJsonSummary -- cannot convert gdoc doc: ", err)
 			os.Exit(1)
 		}
 		fmt.Println("*** success summary ***!")
@@ -102,9 +126,8 @@ func main() {
 	case "main":
 		fmt.Printf("*** not implemented yet ***\n")
 		os.Exit(1)
-//		err = gdocHtml.CreGdocHtmlMain(outfilPath, doc, nil)
 		if err != nil {
-			fmt.Println("error main CreGdocDomMain -- cannot convert gdoc file: ", err)
+			fmt.Println("error main CvtGdocJsonMain -- cannot convert gdoc file: ", err)
 			os.Exit(1)
 		}
 		fmt.Println("*** success main ***!")
@@ -113,9 +136,8 @@ func main() {
 	case "doc":
 		fmt.Printf("*** not implemented yet ***\n")
 		os.Exit(1)
-//		err = gdocHtml.CreGdocHtmlDoc(outfilPath, doc, nil)
 		if err != nil {
-			fmt.Println("error CreGdocDomDoc -- cannot convert gdoc file: ", err)
+			fmt.Println("error CvtGdocJsonDoc -- cannot convert gdoc file: ", err)
 			os.Exit(1)
 		}
 
@@ -123,9 +145,9 @@ func main() {
 		os.Exit(0)
 
 	case "all":
-		err = gdocDom.CreGdocDomAll(outfilPath, doc, nil)
+		err = gdocJson.CreGdocJsonAll(outfilPath, doc, nil)
 		if err != nil {
-			fmt.Println("error CreGdocDomAll -- cannot convert gdoc file: ", err)
+			fmt.Println("error CreGdocJsonAll -- cannot convert gdoc file: ", err)
 			os.Exit(1)
 		}
 
@@ -133,9 +155,10 @@ func main() {
 		os.Exit(0)
 
 	default:
-		fmt.Printf("%s is not a valid comand line opt!\n", opt)
+		fmt.Printf("%s is not a valid comand line opt!\n", sel)
 		fmt.Println("exiting!")
 		os.Exit(1)
 	}
+
 	fmt.Println("Success!")
 }
