@@ -467,11 +467,11 @@ func cvtTxtMapStylJson (txtMap *textMap, txtStyl *docs.TextStyle)(cssStr string)
             txtMap.baseOffset = txtStyl.BaselineOffset
             switch txtMap.baseOffset {
             case "SUPERSCRIPT":
-                cssStr += "\"verticalAlign\": \"sub\","
+                cssStr += "verticalAlign: sub;"
             case "SUBSCRIPT":
-                cssStr += "\"verticalAlign\": \"sup\","
+                cssStr += "verticalAlign: sup;"
             case "NONE":
-                cssStr += "\"verticalAlign\": \"baseline\","
+                cssStr += "verticalAlign: baseline;"
             default:
             //error
                 cssStr += fmt.Sprintf("/* Baseline Offset unknown: %s */\n", txtMap.baseOffset)
@@ -482,10 +482,10 @@ func cvtTxtMapStylJson (txtMap *textMap, txtStyl *docs.TextStyle)(cssStr string)
     switch {
     case txtStyl.Bold && (txtMap.fontWeight < 700):
         txtMap.fontWeight = 800
-        cssStr += fmt.Sprintf("\"fontWeight\": \"%d\",", txtMap.fontWeight)
+        cssStr += fmt.Sprintf("fontWeight: %d;", txtMap.fontWeight)
     case !txtStyl.Bold && (txtMap.fontWeight > 500):
         txtMap.fontWeight = 400
-        cssStr += fmt.Sprintf("\"fontWeight\": \"%d\",", txtMap.fontWeight)
+        cssStr += fmt.Sprintf("fontWeight: %d;", txtMap.fontWeight)
     default:
 
     }
@@ -493,9 +493,9 @@ func cvtTxtMapStylJson (txtMap *textMap, txtStyl *docs.TextStyle)(cssStr string)
     if txtStyl.Italic != txtMap.italic {
         txtMap.italic = txtStyl.Italic
         if txtMap.italic {
-            cssStr += "\"fontStyle\": \"italic\","
+            cssStr += "fontStyle: italic;"
         } else {
-            cssStr += "\"fontStyle\": \"normal\","
+            cssStr += "fontStyle: normal;"
         }
     }
 
@@ -522,12 +522,12 @@ func cvtTxtMapStylJson (txtMap *textMap, txtStyl *docs.TextStyle)(cssStr string)
         }
     }
 
-    if len(txtprop) > 0 {cssStr += fmt.Sprintf("\"textDecoration\": \"%s\",", txtprop)}
+    if len(txtprop) > 0 {cssStr += fmt.Sprintf("textDecoration: %s;", txtprop)}
 
     if txtStyl.WeightedFontFamily != nil {
         if txtStyl.WeightedFontFamily.FontFamily != txtMap.fontType {
             txtMap.fontType = txtStyl.WeightedFontFamily.FontFamily
-            cssStr += fmt.Sprintf("\"fontFamily\": \"%s\",", txtMap.fontType)
+            cssStr += fmt.Sprintf("fontFamily: %s;", txtMap.fontType)
         }
 /*
         if txtStyl.WeightedFontFamily.Weight != txtMap.fontWeight {
@@ -541,7 +541,7 @@ func cvtTxtMapStylJson (txtMap *textMap, txtStyl *docs.TextStyle)(cssStr string)
     if txtStyl.FontSize != nil {
         if txtStyl.FontSize.Magnitude != txtMap.fontSize {
             txtMap.fontSize = txtStyl.FontSize.Magnitude
-            cssStr += fmt.Sprintf("\"fontSize\": \"%.2fpt\",", txtMap.fontSize)
+            cssStr += fmt.Sprintf("fontSize: %.1fpt;", txtMap.fontSize)
         }
     }
 
@@ -550,7 +550,7 @@ func cvtTxtMapStylJson (txtMap *textMap, txtStyl *docs.TextStyle)(cssStr string)
             color := util.GetColor(txtStyl.ForegroundColor.Color)
             if color != txtMap.txtColor {
                 txtMap.txtColor = color
-                cssStr += fmt.Sprintf("\"color\": \"%s\",", txtMap.txtColor)
+                cssStr += fmt.Sprintf("color: %s;", txtMap.txtColor)
             }
         }
     }
@@ -560,7 +560,7 @@ func cvtTxtMapStylJson (txtMap *textMap, txtStyl *docs.TextStyle)(cssStr string)
             color := util.GetColor(txtStyl.BackgroundColor.Color)
             if color != txtMap.bckColor {
                 txtMap.bckColor = color
-                cssStr += fmt.Sprintf("\"backgroundColor\": \"%s\",", txtMap.bckColor)
+                cssStr += fmt.Sprintf("backgroundColor: %s;", txtMap.bckColor)
             }
         }
     }
@@ -2088,7 +2088,7 @@ func (dObj *GdocDomObj) cvtParTxtElToJson(parElTxt *docs.TextRun, namedTyp strin
 		elStr += "\"href\":\"" + parElTxt.TextStyle.Link.Url + "\","
 		elStr += "\"textContent\":\"" + parElTxt.Content + "\""
 		if len(spanStylStr) > 0 {
-			elStr += ", \"style\":{" + spanStylStr +"}"
+			elStr += ", \"style\":\"{" + spanStylStr +"}\""
 		}
 		elStr += "},\n"
 		return elStr
@@ -2098,7 +2098,7 @@ func (dObj *GdocDomObj) cvtParTxtElToJson(parElTxt *docs.TextRun, namedTyp strin
 	elStr += "\"parent\":\"" + dObj.parent + "\","
 	elStr += "\"textContent\":\"" + parElTxt.Content + "\""
 	if len(spanStylStr) > 0 {
-			elStr += ", \"style\":{" + spanStylStr +"}"
+			elStr += ", \"style\":\"{" + spanStylStr +"}\""
 	}
 	elStr += "},\n"
 	return elStr
