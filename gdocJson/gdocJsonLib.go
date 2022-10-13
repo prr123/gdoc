@@ -1651,9 +1651,9 @@ func creSecJson(docName string)(cssStr string){
 	cssStr = fmt.Sprintf(".%s_main.sec {\n", docName)
 	cssStr += "}\n"
 
-	cssStr += fmt.Sprintf(".%s_page {\n", docName)
-	cssStr += "  text-align: right;\n"
-	cssStr += "  margin: 0;\n"
+	cssStr += fmt.Sprintf(".%sPage {", docName)
+	cssStr += "textAlign: right;"
+	cssStr += "margin: 0;"
 	cssStr += "}\n"
 	return cssStr
 }
@@ -3095,7 +3095,7 @@ func (dObj *GdocDomObj) cvtGdocParToJson(parStyl *docs.ParagraphStyle, isList bo
 			if dObj.namStylMap["TITLE"] {
 				//html prefix = fmt.Sprintf("<p class=\"%s_title%s\"", dObj.docName, isListClass)
 				parStr += idStr + hdStr
-				className = fmt.Sprintf("%s_title", dObj.docName)
+				className = fmt.Sprintf("%sTitle", dObj.docName)
 				parStr += "\"className\":\"" + className + "\""
 				if alter {
 					parStr += ", \"style\":{" + cssParAtt + "}"
@@ -3110,7 +3110,7 @@ func (dObj *GdocDomObj) cvtGdocParToJson(parStyl *docs.ParagraphStyle, isList bo
 			if dObj.namStylMap["SUBTITLE"] {
 				//html prefix = fmt.Sprintf("<p class=\"%s_subtitle\"", dObj.docName)
 				parStr += idStr + hdStr
-				className = fmt.Sprintf("%s_subtitle", dObj.docName)
+				className = fmt.Sprintf("%sSubtitle", dObj.docName)
 				parStr += "\"className\":\"" + className + "\""
 
 				if alter {
@@ -3125,7 +3125,7 @@ func (dObj *GdocDomObj) cvtGdocParToJson(parStyl *docs.ParagraphStyle, isList bo
 			if dObj.namStylMap["HEADING_1"] {
 				//html prefix = fmt.Sprintf("<h1 class=\"%s_h1\"", dObj.docName)
 				parStr += idStr + hdStr
-				className = fmt.Sprintf("%s_h1", dObj.docName)
+				className = fmt.Sprintf("%sH1", dObj.docName)
 				parStr += "\"className\":\"" + className + "\""
 				if alter {
 					parStr += ", \"style\":{" + cssParAtt + "},"
@@ -3534,7 +3534,7 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
     dObj.docWidth = (docStyl.PageSize.Width.Magnitude - docStyl.MarginRight.Magnitude - docStyl.MarginLeft.Magnitude)
 
     //gdoc default el css and doc css
-    cssStr := fmt.Sprintf("\".%s_doc {", dObj.docName)
+    cssStr := fmt.Sprintf("\".%sDiv {", dObj.docName)
     cssStr += fmt.Sprintf("marginTop: %.1fmm;",docStyl.MarginTop.Magnitude*PtTomm)
     cssStr += fmt.Sprintf("marginBottom: %.1fmm;",docStyl.MarginBottom.Magnitude*PtTomm)
     cssStr += fmt.Sprintf("marginRight: %.2fmm;",docStyl.MarginRight.Magnitude*PtTomm)
@@ -3545,7 +3545,7 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 
 
 	//css default text style
-	cssStr = fmt.Sprintf("\".%s_main {", dObj.docName)
+	cssStr = fmt.Sprintf("\".%sDiv {", dObj.docName)
 	parStyl, txtStyl, err := dObj.getNamedStyl("NORMAL_TEXT")
 	if err != nil {
 		return headCss, fmt.Errorf("creHeadCss: %v", err)
@@ -3571,7 +3571,7 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 	// paragraph default style
     pCssStr := cvtParMapToJson(defParMap, dObj.Options)
 	if len(pCssStr) > 0 {
-		cssStr = fmt.Sprintf("\".%s_p {", dObj.docName)
+		cssStr = fmt.Sprintf("\".%sPar {", dObj.docName)
 		cssStr += "margin: 0;"
 		headCss += ruleStartStr + cssStr + pCssStr + ruleEndStr
 	}
@@ -4158,8 +4158,10 @@ func (dObj *GdocDomObj) cvtBodyToJson() (jsonStr string, err error) {
 
 	jsonStr = "\"elements\": ["
 	// divMain
-	classNam := dObj.docName + "Main"
-	elStr := fmt.Sprintf("{\"typ\":\"div\",\"className\":\"%s\",\"id\":\"%s\"},",classNam, dObj.docName)
+	classNam := dObj.docName + "Div"
+	dObj.parent = dObj.docName + "Main"
+	elStr := fmt.Sprintf("{\"typ\":\"div\",\"className\":\"%s\",\"id\":\"%sMain\",\"name\":\"%sMain\"},",classNam, dObj.docName, dObj.docName)
+
 	jsonStr +=elStr
 
 	elNum := len(body.Content)
