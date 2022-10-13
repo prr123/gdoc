@@ -2084,7 +2084,8 @@ func (dObj *GdocDomObj) cvtParTxtElToJson(parElTxt *docs.TextRun, namedTyp strin
 	elStr = ""
 	if parElTxt.TextStyle.Link != nil {
 		elStr = "{\"typ\":\"a\","
-		elStr += "\"parent\":\"" + dObj.parent + "\","
+//		elStr += "\"parent\":\"" + dObj.parent + "\","
+		elStr += "\"parent\":\"par\","
 		elStr += "\"href\":\"" + parElTxt.TextStyle.Link.Url + "\","
 		elStr += "\"textContent\":\"" + parElTxt.Content + "\""
 		if len(spanStylStr) > 0 {
@@ -2095,7 +2096,7 @@ func (dObj *GdocDomObj) cvtParTxtElToJson(parElTxt *docs.TextRun, namedTyp strin
 	}
 
 	elStr = "{\"typ\":\"span\","
-	elStr += "\"parent\":\"" + dObj.parent + "\","
+	elStr += "\"parent\":\"par\","
 	elStr += "\"textContent\":\"" + parElTxt.Content + "\""
 	if len(spanStylStr) > 0 {
 			elStr += ", \"style\":\"{" + spanStylStr +"}\""
@@ -3208,7 +3209,8 @@ func (dObj *GdocDomObj) cvtGdocParToJson(parStyl *docs.ParagraphStyle, isList bo
 
 			if dObj.namStylMap["NORMAL_TEXT"] {
 				parStr += idStr + hdStr
-				className = fmt.Sprintf("%s_p", dObj.docName)
+				parStr += "\"name\":\"par\","
+				className = fmt.Sprintf("%sPar", dObj.docName)
 				parStr += "\"className\":\"" + className + "\""
 				if alter {
 				//html prefix = fmt.Sprintf("<p class=\"%s_p\" style = {}">, dObj.docName)
