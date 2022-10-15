@@ -8,6 +8,8 @@
 //
 // start: CvtGdocToJson
 //
+// fix cssRules
+//
 
 package gdocJson
 
@@ -1694,7 +1696,7 @@ func creJsonHead (docNam string) (outstr string) {
 //	outstr = "// " + docNam + "\n"
 	outstr = "{\n"
 	outstr += "\"doc\":{\n"
-	outstr += "  \"docNam\": \"" + docNam + "\",\n"
+	outstr += "  \"docNam\": \"" + docNam + "\"},\n"
     return outstr
 }
 
@@ -3618,15 +3620,17 @@ func (dObj *GdocDomObj) creCssDocHead() (headCss string, err error) {
 */
 func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 
+
 	errStr :="";
+	cssStr := "\"cssRules\": [\n"
 	ruleEndStr := "}\",\n"
-	ruleStartStr := "  \"cssRule\": "
+	ruleStartStr := "  {\"cssRule\": "
 
     docStyl := dObj.doc.DocumentStyle
     dObj.docWidth = (docStyl.PageSize.Width.Magnitude - docStyl.MarginRight.Magnitude - docStyl.MarginLeft.Magnitude)
 
     //gdoc default el css and doc css
-    cssStr := fmt.Sprintf("\".%sDiv {", dObj.docName)
+    cssStr += fmt.Sprintf("\".%sDiv {", dObj.docName)
     cssStr += fmt.Sprintf("marginTop: %.1fmm;",docStyl.MarginTop.Magnitude*PtTomm)
     cssStr += fmt.Sprintf("marginBottom: %.1fmm;",docStyl.MarginBottom.Magnitude*PtTomm)
     cssStr += fmt.Sprintf("marginRight: %.2fmm;",docStyl.MarginRight.Magnitude*PtTomm)
@@ -3781,7 +3785,7 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 //	fmt.Printf("headCss last %q %q %q\n", headCss[xlen-4], headCss[xlen-3], headCss[xlen-2])
 
 	if headCss[xlen -2] == ',' {headCss = headCss[:xlen-3]}
-	headCss += "\"},\n"
+	headCss += "\"],\n"
 	return headCss, nil
 }
 
