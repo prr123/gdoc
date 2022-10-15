@@ -1693,10 +1693,7 @@ func cvtParMapToCssJson(pMap *parMap, opt *util.OptObj)(cssStr string) {
 
 func creJsonHead (docNam string) (outstr string) {
 
-//	outstr = "// " + docNam + "\n"
-	outstr = "{\n"
-	outstr += "\"doc\":{\n"
-	outstr += "  \"docNam\": \"" + docNam + "\"},\n"
+	outstr = "{\n\"doc\":{\"docNam\": \"" + docNam + "\"},\n"
     return outstr
 }
 
@@ -3622,10 +3619,10 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 
 
 	errStr :="";
-	cssStr := "\"cssRules\": [\n"
-	ruleEndStr := "}\",\n"
+	headCss = "\"cssRules\": [\n"
+	ruleEndStr := "}\"},\n"
 	ruleStartStr := "  {\"cssRule\": "
-
+	cssStr := ""
     docStyl := dObj.doc.DocumentStyle
     dObj.docWidth = (docStyl.PageSize.Width.Magnitude - docStyl.MarginRight.Magnitude - docStyl.MarginLeft.Magnitude)
 
@@ -3637,7 +3634,7 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
     cssStr += fmt.Sprintf("marginLeft: %.2fmm;",docStyl.MarginLeft.Magnitude*PtTomm)
     if dObj.docWidth > 0 {cssStr += fmt.Sprintf("width: %.1fmm;", dObj.docWidth*PtTomm)}
 	if dObj.Options.DivBorders {cssStr += "border: 1px solid red;"}
-	headCss = ruleStartStr + cssStr + ruleEndStr
+	headCss += ruleStartStr + cssStr + ruleEndStr
 
 
 	//css default text style
@@ -3781,11 +3778,11 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
     }
 */
 
-	xlen := len(headCss)
-//	fmt.Printf("headCss last %q %q %q\n", headCss[xlen-4], headCss[xlen-3], headCss[xlen-2])
+	xlen := len(headCss)-1
+	fmt.Printf("headCss last %q %q %q\n", headCss[xlen-2], headCss[xlen-1], headCss[xlen])
 
-	if headCss[xlen -2] == ',' {headCss = headCss[:xlen-3]}
-	headCss += "\"],\n"
+	if headCss[xlen-1] == ',' {headCss = headCss[:xlen-1]}
+	headCss += "],\n"
 	return headCss, nil
 }
 
