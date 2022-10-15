@@ -3174,7 +3174,8 @@ func (dObj *GdocDomObj) cvtGdocParToJson(parStyl *docs.ParagraphStyle, isList bo
 		hdStr = "\"hd\": \"" + headingId[3:] + "\","
 	}
 
-	idStr := fmt.Sprintf("\"id\":\"p%d\",", dObj.parCount) + " \"parent\":\"" + dObj.parent + "\","
+//	idStr := fmt.Sprintf("\"id\":\"p%d\",", dObj.parCount) + " \"parent\":\"" + dObj.parent + "\","
+	idStr := fmt.Sprintf("\"id\":\"p%d\",", dObj.parCount) + " \"parent\":\"gdocMain\","
 
 	dObj.parCount++
 
