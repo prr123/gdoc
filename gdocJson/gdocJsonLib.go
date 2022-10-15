@@ -3779,7 +3779,7 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 */
 
 	xlen := len(headCss)-1
-	fmt.Printf("headCss last %q %q %q\n", headCss[xlen-2], headCss[xlen-1], headCss[xlen])
+//	fmt.Printf("headCss last %q %q %q\n", headCss[xlen-2], headCss[xlen-1], headCss[xlen])
 
 	if headCss[xlen-1] == ',' {headCss = headCss[:xlen-1]}
 	headCss += "],\n"
