@@ -2290,7 +2290,8 @@ func (dObj *GdocDomObj) initGdocJson(folderPath string, options *util.OptObj) (e
 	dObj.posImgCount = len(doc.PositionedObjects)
 
 // create folders
-    fPath, fexist, err := util.CreateFileFolder(folderPath, dObj.docName)
+//todo add opt of creating docnam folder
+    fPath, fexist, err := util.CreateFileFolder(folderPath, "")
 //    fPath, _, err := util.CreateFileFolder(folderPath, dObj.docName)
     if err!= nil {
         return fmt.Errorf("error -- util.CreateFileFolder: %v", err)
@@ -3874,7 +3875,6 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 	defTxtMap := fillTxtMap(txtStyl)
 
 	cssStr += "display:block;"
-	cssStr += " margin: 0;"
 	if dObj.Options.DivBorders {cssStr += " border: 1px solid green;"}
 //fix
 	cssStr += cvtTxtMapCssJson(defTxtMap)
