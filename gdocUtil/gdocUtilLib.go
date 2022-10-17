@@ -26,11 +26,12 @@ type OptObj struct {
     BaseFontSize int
     CssFil bool
     ImgFold bool
+	CreImgFolder bool
     Verb bool
     Toc bool
     Sections bool
     DivBorders bool
-	CreImgFolder bool
+	MaxCharLine int
     Divisions []string
     DocMargin [4]int
     ElMargin [4]int
@@ -47,6 +48,7 @@ type font_desc struct {
 	Name string `yaml:"Font"`
 	Size string `yaml:"Size"`
 	LinSpace float64 `yaml:"LineSpacing"`
+	maxCharLine int `yaml:"MaxCharPerLine"`
 }
 
 type doc_desc struct {
@@ -591,7 +593,9 @@ func CreateFileFolder(path, foldnam string)(fullPath string, existDir bool, err 
             fullPath = foldnam
 
         case path[0] == '/':
-            return "", false, fmt.Errorf("error -- absolute path!")
+			homeFolder, err := os.UserHomeDir()
+			if err != nil {return "", false, fmt.Errorf("error -- cannot find home directory!")}
+			fullPath = homeFolder + path + foldnam
 
         case path[len(path)  -1] == '/':
                 fullPath = path + foldnam
@@ -612,16 +616,21 @@ func CreateFileFolder(path, foldnam string)(fullPath string, existDir bool, err 
 
     // path does not exist, we need to create path
     ist:=0
-    for i:=0; i<len(fullPath); i++ {
+    for i:=1; i<len(fullPath); i++ {
         if fullPath[i] == '/' {
             parPath := string(fullPath[ist:i])
 //  fmt.Printf("path %d: %s\n", i, parPath)
-            if _, err1 := os.Stat(parPath); os.IsNotExist(err1) {
-                err2 := os.Mkdir(parPath, os.ModePerm)
-                if err2 != nil {
-                    return "", false, fmt.Errorf("os.Mkdir: lev %d %v", err2, i)
-                }
-//          ist = i + 1
+            _, err1 := os.Stat(parPath)
+			if err1 !=nil {
+				if os.IsNotExist(err1) {
+              		err2 := os.Mkdir(parPath, os.ModePerm)
+               		if err2 != nil {
+                   		return "", false, fmt.Errorf("os.Mkdir: lev %d %v", i, err2)
+               		}
+					ist = i+1
+				} else {
+					return "", false, fmt.Errorf("os.Stat: lev %d %v", i, err1)
+				}
             }
         }
     }
@@ -643,6 +652,7 @@ func GetDefOption(opt *OptObj) {
     opt.ImgFold = true
     opt.Verb = true
     opt.Toc = true
+	opt.MaxCharLine = 80
     opt.Sections = true
     for i:=0; i< 4; i++ {opt.ElMargin[i] = 0}
     opt.Divisions = []string{"Main"}
@@ -668,6 +678,12 @@ func PrintOptions (opt *OptObj) {
     fmt.Printf("  Element Margin: ")
     for i:=0; i<4; i++ { fmt.Printf(" %3d",opt.ElMargin[i])}
     fmt.Printf("\n")
+	fmt.Println("  Text:")
+	if opt.MaxCharLine > 0 {
+		fmt.Printf("    Maximum Char per Line: %d\n", opt.MaxCharLine)
+	} else {
+		fmt.Printf("    No Maximum Char per Line\n")
+	}
     fmt.Printf("***************************************\n\n")
 }
 
