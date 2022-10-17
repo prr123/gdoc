@@ -26,12 +26,10 @@ func main() {
 	// initialise default values
 	baseFolder := "output/"
 //	baseFolderSlash := baseFolder + "/"
-	sel:=""
 	dbg := false
     numArgs := len(os.Args)
 //	fmt.Printf("args: %d\n", numArgs)
 	cmd := os.Args[0]
-	outFolder := "json"
 
 	if numArgs < 2 {
        		fmt.Println("error - no docid provided!")
@@ -40,7 +38,7 @@ func main() {
 	}
 
     docId := os.Args[1]
-	flags := []string{"base","dbg","sel"}
+	flags := []string{"baseFolder", "out","dbg","sel"}
 
 	cliMap, err :=util.ParseFlags(os.Args, flags)
 	if err !=nil {
@@ -49,18 +47,50 @@ func main() {
 	}
 
 
-	str, ok := cliMap["dbg"].(string)
+	dbgStr, ok := cliMap["dbg"].(string)
 	if !ok {
-		fmt.Println("invalid argument for dbg: ", str)
+		fmt.Println("invalid argument for dbg: ", dbgStr)
 		os.Exit(1)
 	}
 
-	if str == "true" || str == "none" {dbg = true}
+	if dbgStr == "true" || dbgStr == "none" {dbg = true}
 
 	fmt.Printf("cliMap: %v!\n", cliMap)
-
 	fmt.Printf("dbg: %t\n", dbg)
-	os.Exit(2)
+
+	baseStr, ok := cliMap["baseFolder"].(string)
+	if !ok {
+		fmt.Println("invalid argument for baseFolder: ", baseStr)
+		os.Exit(1)
+	}
+
+	if baseStr != "none" { baseFolder = baseStr}
+
+	fmt.Printf("baseFolder: %s\n", baseFolder)
+
+	outStr, ok := cliMap["out"].(string)
+	if !ok {
+		fmt.Println("invalid argument for outFolder: ", outStr)
+		os.Exit(1)
+	}
+	outFolder := "json"
+	if outStr != "none" { outFolder = outStr}
+
+	fmt.Printf("outFolder: %s\n", outFolder)
+
+	selStr, ok := cliMap["sel"].(string)
+	if !ok {
+		fmt.Println("invalid argument for selection: ", selStr)
+		os.Exit(1)
+	}
+
+	sel := "all"
+	if selStr != "none" { sel = selStr}
+
+	fmt.Printf("select: %s\n", sel)
+
+
+//	os.Exit(2)
 
 	err = gd.InitGdocApi()
 	if err != nil {
