@@ -2516,6 +2516,8 @@ func (dObj *GdocDomObj) initGdocJson(folderPath string, options *util.OptObj) (e
 			}
 
 			// headings
+			// used for creating a table of content TOC
+
 			text := ""
 			if len(elObj.Paragraph.ParagraphStyle.HeadingId) > 0 {
 				heading.id = elObj.Paragraph.ParagraphStyle.HeadingId
@@ -2534,10 +2536,6 @@ func (dObj *GdocDomObj) initGdocJson(folderPath string, options *util.OptObj) (e
 				heading.namedStyl = namedStyl
 
 				dObj.headings = append(dObj.headings, heading)
-//				hdlen := len(dObj.headings)
-//				if hdlen > 1 {
-//					dObj.headings[hdlen-2].hdElEnd = parHdEnd
-//				}
 			} // end headings
 
            // paragraph elements
@@ -3265,7 +3263,7 @@ func (dObj *GdocDomObj) cvtTableToJson(tbl *docs.Table)(tabStr string, err error
 	return tabStr, nil
 }
 
-func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err error) {
+func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, cssLiRule string,err error) {
 // paragraph element par
 // - Bullet
 // - Elements
@@ -3273,29 +3271,27 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err erro
 // - Positioned Objects
 //
 
-//	var listCss, scriptStr string
-//	var newList cList
-//	var	listEl elScriptObj
-//	var orList, unList elScriptObj
-//	var parent string
+	var listCss string
+	var newList cList
+	var errStr string
 
 	elStr = ""
 	if par == nil {
-        return "", fmt.Errorf("cvtPar -- parEl is nil!")
+        return "", "", fmt.Errorf("cvtPar -- parEl is nil!")
     }
 
 //	parent := dObj.elDiv
 
-	dObj.parCount++
 
 	isSingle := false
+
 	// first we need to check whether this is a cr-only paragraph
 	if len(par.Elements) == 1 {
        if par.Elements[0].TextRun != nil {
             if par.Elements[0].TextRun.Content == "\n" {
 //				elStr = "{\"typ\": \"br\",\"parent\":\"" + dObj.parent +"\"},\n"
 				elStr = "{\"typ\": \"br\",\"parent\":\"gdocMain\"},\n"
-				return elStr, nil
+				return elStr, "", nil
             }
 			isSingle = true
         }
@@ -3307,6 +3303,7 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err erro
 		// if we have a non-list paragraph. we assume any open lists need to be closed
 		// in a Dom we wander back to div_main
 		if dObj.listStack != nil {dObj.closeList(-1)}
+		dObj.parCount++
 			//fmt.Printf("new par -> close list\n")
 	}
 
@@ -3336,7 +3333,7 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err erro
 //change
 		pelStr, _, err := dObj.cvtGdocParToJson(par, isSingle)
 		if err != nil {
-			errStr = fmt.Sprintf("// error cvtParStyl: %v\n", err)
+			errStr = fmt.Sprintf("{\"error\": \"cvtParStyl: %v\"},\n", err)
 			dObj.errCount++
 		}
 		elStr += errStr + pelStr
@@ -3344,18 +3341,16 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err erro
 	// Heading Id refers to a heading paragraph not just a normal paragraph
 	// headings are bookmarked for TOC
 
-	// par elements: text and css for text
-
 		if !isSingle {
 			parElStr, err := dObj.cvtParElsToJson(par)
-			if err != nil {elStr += fmt.Sprintf("// error cvtParElDom: %v\n",err)}
+			if err != nil {elStr += fmt.Sprintf("\"error\":  \"cvtParElDom: %v\"},\n",err)}
 			elStr += parElStr
 		}
-		return elStr, nil
+		return elStr, "", nil
 
 	}
 
-/*
+
 	// lists
     if par.Bullet != nil {
 		// there is paragraph style for each ul and a text style for each list element
@@ -3363,11 +3358,9 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err erro
 // need to apply bulletTxtMap to marker
 
 
-		if dObj.Options.Verb {
+//		if dObj.Options.Verb {
 			// htnm listHtml += fmt.Sprintf("<!-- List Element %d -->\n", dObj.parCount)
-			// script
-			scriptStr += fmt.Sprintf("// List El %d\n", dObj.parCount)
-		}
+
 		// find list id of paragraph
 		listid := par.Bullet.ListId
 		nestIdx := int(par.Bullet.NestingLevel)
@@ -3391,12 +3384,13 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err erro
 
 		listAtt, cNest := getLiStack(dObj.listStack)
 		//printLiStackItem(listAtt, cNest)
-		scriptStr += fmt.Sprintf("// " + "listid: %s listAtt: %s\n", listid, listAtt.cListId)
-
+		listStr := ""
+		parent :=""
 		switch listid == listAtt.cListId {
 			case true:
 				switch {
 					case nestIdx > cNest:
+						// for each nest level, we have to start a new list
 						for nl:=cNest + 1; nl <= nestIdx; nl++ {
 							newList.cListId = listid
 							newList.cOrd = listOrd
@@ -3405,28 +3399,27 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err erro
 
 							if listOrd {
 								// html listHtml = fmt.Sprintf("<ol class=\"%s_ol nL_%d\">\n", listid[4:], nl)
-								// script
-								orList.parent = fmt.Sprintf("ol_%d", nl - 1)
-								orList.newEl = fmt.Sprintf("ol_%d", nl)
-								orList.typ = "ol"
-								orList.cl1 = listid[4:] + "_ol"
-								orList.cl2 = fmt.Sprintf("nL_%d", nl)
-								orList.doAppend = true
-								scriptStr += addElToDom(orList)
-								// css
-								listCss = fmt.Sprintf(".%s_ol.nL_%d {\n", listid[4:], nl)
-								listCss += fmt.Sprintf("  counter-reset: %s_nL_%d\n",listid[4:], nl)
-								listCss += "}\n"
+
+								if nl > 0 {parent = fmt.Sprintf("Ol%d", nl - 1)}
+								listStr = "{\"typ\":\"ol\","
+								listStr += " \"parent\":\"" + parent + "\","
+								cNam := fmt.Sprintf("%sOlNl%d",listid[4:],nl)
+								listStr += " \"className\":\"" + cNam + "\","
+								listStr += fmt.Sprintf(" \"name\":\"Ol%d\",",nl)
+
+								// css class: add css Rule
+								listCss = fmt.Sprintf("\"cssRule\":\".%sOlNl%d {", listid[4:], nl)
+								listCss += fmt.Sprintf(" counter-reset: %sOlNl%d}\n",listid[4:], nl)
 							} else {
+
 								// html listHtml = fmt.Sprintf("<ul class=\"%s_ul nL_%d\">\n", listid[4:], nl)
-								// script
-								unList.parent = fmt.Sprintf("ul_%d", nl - 1)
-								unList.newEl = fmt.Sprintf("ul_%d", nl)
-								unList.typ = "ul"
-								unList.cl1 = listid[4:] + "_ul"
-								unList.cl2 = fmt.Sprintf("nL_%d", nl)
-								unList.doAppend = true
-								scriptStr += addElToDom(orList)
+								if nl > 0 {parent = fmt.Sprintf("Ul%d", nl - 1)}
+								listStr = "{\"typ\":\"ul\","
+								listStr += " \"parent\":\"" + parent + "\","
+								cNam := fmt.Sprintf("%sUlNl%d",listid[4:],nl)
+								listStr += " \"className\":\"" + cNam + "\","
+								listStr += fmt.Sprintf(" \"name\":\"Ul%d\",",nl)
+
 								// css none
 							}
 						}
@@ -3437,69 +3430,58 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err erro
 						// html
 						// listHtml = dObj.closeList(nestIdx)
 						// listHtml += fmt.Sprintf("<!-- same list reduce %s new NL %d  old Nl %d -->\n", listid, nestIdx, cNest)
-//						scriptStr += fmt.Sprintf("// list id %s new NL: %d old NL: %d\n", list id, nestIdx, cNest)
-						//html diag	fmt.Printf("<!-- same list reduce %s new NL %d  old Nl %d -->\n", listid, nestIdx, cNest)
 
-						// script
 						dObj.closeList(nestIdx)
 
-
 					case nestIdx == cNest:
-//						listHtml =""
 				}
 
 			case false:
 				// new list
 				// close list first
-				// html listHtml = dObj.closeList(-1)
 				// html listHtml += fmt.Sprintf("<!-- new list %s %s -->\n", listid, listAtt.cListId)
 //fmt.Printf("<!-- new list %s %s -->\n", listid, listAtt.cListId)
 
 				// start a new list
-				scriptStr += "// " + "new list\n"
 				newList.cListId = listid
 				newList.cOrd = listOrd
 				newStack := pushLiStack(dObj.listStack, newList)
 				dObj.listStack = newStack
 				nl := nestIdx
-				parent = ""
-				if nl == 0 {
-					parent = dObj.parent
-				}
-//		fmt.Printf("parent: %s nl: %d \n", parent, nl)
+				listStr := ""
+				parent := ""
+				if nl == 0 {parent = "gdocMain"}
+
 				if listOrd {
 					// html listHtml += fmt.Sprintf("<ol class=\"%s_ol nL_%d\">\n", listid[4:], nestIdx)
-					// script
-					if len(parent) == 0 {parent = fmt.Sprintf("ol_%d", nl - 1)}
 
-					orList.parent = parent
-					orList.newEl = fmt.Sprintf("ol_%d", nl)
-					orList.typ = "ol"
-					orList.cl1 = listid[4:] + "_ol"
-					orList.cl2 = fmt.Sprintf("nL_%d", nl)
-					orList.doAppend = true
-					scriptStr += addElToDom(orList)
+					if nl > 0 {parent = fmt.Sprintf("Ol%d", nl - 1)}
+					listStr = "{\"typ\":\"ol\","
+					listStr += " \"parent\":\"" + parent + "\","
+					classNam := fmt.Sprintf("%sOlNl%d",listid[4:],nl)
+					listStr += " \"className\":\"" + classNam + "\","
+					listStr += fmt.Sprintf(" \"name\":\"OL%d\",",nl)
+
 					// css
-					listCss = fmt.Sprintf(".%s_ol.nL_%d {\n", listid[4:], nestIdx)
-					listCss += fmt.Sprintf("  counter-reset: %s_nL_%d\n",listid[4:], nestIdx)
-					listCss += "}\n"
+					listCss = fmt.Sprintf("\"cssRule\":\".%sOlNl%d {", listid[4:], nl)
+					listCss += fmt.Sprintf(" counter-reset: %sOlNl%d}\n",listid[4:], nl)
+
 				} else {
 					// html listHtml += fmt.Sprintf("<ul class=\"%s_ul nL_%d\">\n", listid[4:], nestIdx)
-					if len(parent) == 0 {parent = fmt.Sprintf("ul_%d", nl - 1)}
 
-		fmt.Printf("ul parent: %s nl: %d \n", parent, nl)
-					unList.parent = parent
-					unList.newEl = fmt.Sprintf("ul_%d", nl)
-					unList.typ = "ul"
-					unList.cl1 = listid[4:] + "_ul"
-					unList.cl2 = fmt.Sprintf("nL_%d", nl)
-					unList.doAppend = true
-					scriptStr += addElToDom(unList)
+					if nl > 0 {parent = fmt.Sprintf("Ul%d", nl - 1)}
+					listStr = "{\"typ\":\"ul\","
+					listStr += " \"parent\":\"" + parent + "\","
+					cNam := fmt.Sprintf("%sUlNl%d",listid[4:],nl)
+					listStr += " \"className\":\"" + cNam + "\","
+					listStr += fmt.Sprintf(" \"name\":\"Ul%d\",",nl)
+
 					//css
 				}
 		} // switch
 
-		parObj.script += scriptStr
+		elStr += listStr
+		cssLiRule += listCss
 
 		// html <li>
 		// html listPrefix = fmt.Sprintf("<li class=\"%s_li nL_%d\">", listid[4:], nestIdx)
@@ -3507,45 +3489,48 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err erro
 		listParent := ""
 		nl := nestIdx
 		if listOrd {
-			listParent = fmt.Sprintf("ol_%d", nl)
+			listParent = fmt.Sprintf("Ol%d", nl)
 		} else {
-			listParent = fmt.Sprintf("ul_%d", nl)
+			listParent = fmt.Sprintf("Ul%d", nl)
 		}
 
-		listEl.parent = listParent
-		listEl.cl1 = listid[4:] + "_li"
-		listEl.cl2 = fmt.Sprintf("nL_%d", nestIdx)
-		listEl.typ = "li"
-		listEl.newEl = "lsIt"
-		listEl.doAppend = true
-		parObj.script += addElToDom(listEl)
+		listStr = "{\"typ\":\"li\","
+		listStr += " \"parent\":\"" + listParent + "\","
+		cNam := fmt.Sprintf("%sUlNl%d",listid[4:],nl)
+		listStr += " \"className\":\"" + cNam + "\","
+		listStr += " \"name\":\"list\","
+
 		// mark
+
 		if par.Bullet.TextStyle != nil {
-//      	    bulletTxtMap = fillTxtMap(par.Bullet.TextStyle)
+      	    bulletTxtMap := fillTxtMap(par.Bullet.TextStyle)
+			cssStr := cvtTxtMapToCssJson(bulletTxtMap)
+			cssLiRule += "  {\"cssRule\": ." + cNam + " " + cssStr + "}\",\n"
 		}
 
-		// get paragraph style
-		parent = "lsIt"
-		parStyl, _, err := dObj.cvtGdocParToJson(par.ParagraphStyle, parent, isList)
+		// get paragraph
+		pelStr, _, err := dObj.cvtGdocParToJson(par, isSingle)
 		if err != nil {
-			parStyl.bodyCss += fmt.Sprintf("// error cvtParStyl: %v \n", err)
+			errStr = fmt.Sprintf("{\"error\": \"cvtGdocPar: %v\"},\n", err)
+			dObj.errCount++
 		}
-		addDispObj(&parObj,&parStyl)
+		elStr += errStr + pelStr
 
 		// Heading Id refers to a heading paragraph not just a normal paragraph
 		// headings are bookmarked for TOC
 
 		// par elements: text and css for text
-
-		parElSumDisp, err := dObj.cvtParElToDom(par)
-		if err != nil {parElSumDisp.script += fmt.Sprintf("// error cvtParElDom: %v\n",err)}
-		addDispObj(&parObj, &parElSumDisp)
-
+		if  !isSingle {
+			parElsStr, err := dObj.cvtParElsToJson(par)
+			if err != nil {
+				errStr = fmt.Sprintf("{\"error\": \"cvtGdocPar: %v\"},\n", err)
+				dObj.errCount++
+			}
+			elStr += errStr + parElsStr
+		}
 	}
 
-	parObj.bodyCss += listCss
-*/
-	return elStr, nil
+	return elStr, cssLiRule, nil
 }
 
 func (dObj *GdocDomObj) cvtParElsToJson(par *docs.Paragraph)(parElsStr string, err error) {
@@ -3736,16 +3721,10 @@ func (dObj *GdocDomObj) cvtGdocParToJson(par *docs.Paragraph, insTxt bool)(parSt
 	parStr = ""
 	hdStr := ""
 	txtStr := ""
-	if len(headingId) > 0 {
-//		prefix = fmt.Sprintf("%s id=\"%s\">", prefix, headingId[3:])
-		hdStr = "\"hd\": \"" + headingId[3:] + "\","
-	}
 
-//	idStr := fmt.Sprintf("\"id\":\"p%d\",", dObj.parCount) + " \"parent\":\"" + dObj.parent + "\","
-//	idStr := fmt.Sprintf("\"id\":\"p%d\",", dObj.parCount) + " \"parent\":\"gdocMain\","
+	if len(headingId) > 0 {hdStr = "\"hd\": \"" + headingId[3:] + "\","}
+
 	idStr := fmt.Sprintf("\"id\":\"p%d\",", dObj.parCount) + " \"name\":\"par\"," + " \"parent\":\"gdocMain\","
-
-
 
 	if insTxt {
 		txtStr =par.Elements[0].TextRun.Content
@@ -4012,175 +3991,7 @@ func (dObj *GdocDomObj) creSecHeadToDom(ipage int) (secObj dispObj) {
 	return secStr
 }
 
-//DocHead
-/*
-func (dObj *GdocDomObj) creCssDocHead() (headCss string, err error) {
 
-	var cssStr, errStr string
-
-    docStyl := dObj.doc.DocumentStyle
-    dObj.docWidth = (docStyl.PageSize.Width.Magnitude - docStyl.MarginRight.Magnitude - docStyl.MarginLeft.Magnitude)
-
-    //gdoc default el css and doc css
-    cssStr = fmt.Sprintf(".%s_doc {\n", dObj.docName)
-    cssStr += fmt.Sprintf("  margin-top: %.1fmm; \n",docStyl.MarginTop.Magnitude*PtTomm)
-    cssStr += fmt.Sprintf("  margin-bottom: %.1fmm; \n",docStyl.MarginBottom.Magnitude*PtTomm)
-    cssStr += fmt.Sprintf("  margin-right: %.2fmm; \n",docStyl.MarginRight.Magnitude*PtTomm)
-    cssStr += fmt.Sprintf("  margin-left: %.2fmm; \n",docStyl.MarginLeft.Magnitude*PtTomm)
-    if dObj.docWidth > 0 {cssStr += fmt.Sprintf("  width: %.1fmm;\n", dObj.docWidth*PtTomm)}
-	if dObj.Options.DivBorders {
-		cssStr += "  border: solid red;\n"
-		cssStr += "  border-width: 1px;\n"
-	}
-	cssStr += "}\n"
-	headCss = cssStr
-
-	//css default text style
-	cssStr = fmt.Sprintf(".%s_main {\n", dObj.docName)
-	parStyl, txtStyl, err := dObj.getNamedStyl("NORMAL_TEXT")
-	if err != nil {
-		return headCss, fmt.Errorf("creHeadCss: %v", err)
-	}
-
-	defParMap := fillParMap(parStyl)
-	defTxtMap := fillTxtMap(txtStyl)
-
-	cssStr += "  display:block;\n"
-	cssStr += "  margin: 0;\n"
-	if dObj.Options.DivBorders {
-		cssStr += "  border: solid green;\n"
-		cssStr += "  border-width: 1px;\n"
-	}
-	cssStr += cvtTxtMapCss(defTxtMap)
-	cssStr += "}\n"
-	headCss += cssStr
-
-	hdcss, err := dObj.cvtDocNamedStyles()
-	if err != nil {
-		errStr = fmt.Sprintf("cvtDocNamedStyles %v", err)
-	}
-	headCss += hdcss + errStr
-
-	// paragraph default style
-    pCssStr := cvtParMapJson(defParMap, dObj.Options)
-	cssStr =""
-	if len(pCssStr) > 0 {
-		cssStr += fmt.Sprintf("\".%s_p {", dObj.docName)
-		cssStr += "margin: 0;"
-		cssStr += pCssStr + "}"
-	}
-	headCss += cssStr
-
-	// list css strings
-	cssStr = ""
-	for i:=0; i<len(dObj.docLists); i++ {
-		listid := dObj.docLists[i].listId
-		listClass := listid[4:]
-		listProp := dObj.doc.Lists[listid].ListProperties
-
-		switch dObj.docLists[i].ord {
-			case true:
-				cssStr += fmt.Sprintf(".%s_ol {\n", listClass)
-//				glyphNum := "none"
-				cssStr += fmt.Sprintf("  list-style-type: none;\n")
-				cssStr += fmt.Sprintf("  list-style-position: outside;\n")
-				cssStr += fmt.Sprintf("}\n")
-
-			case false:
-				cssStr += fmt.Sprintf(".%s_ul {\n", listClass)
-				cssStr += fmt.Sprintf("  list-style-type: none;\n")
-				cssStr += fmt.Sprintf("  list-style-position: outside;\n")
-				cssStr += fmt.Sprintf("}\n")
-		}
-		cssStr += fmt.Sprintf(".%s_li {\n", listClass)
-		cssStr += fmt.Sprintf("  display: list-item;\n")
-		cssStr += fmt.Sprintf("  text-align: start;\n")
-		cssStr += fmt.Sprintf("  padding-left: 6pt;\n")
-		cssStr += fmt.Sprintf("}\n")
-
-//		nestLev0 := listProp.NestingLevels[0]
-//		defGlyphTxtMap := fillTxtMap(nestLev0.TextStyle)
-
-		cumIndent := 0.0
-
-		for nl:=0; nl <= int(dObj.docLists[i].maxNestLev); nl++ {
-			nestLev := listProp.NestingLevels[nl]
-
-			glyphStr := util.GetGlyphStr(nestLev)
-			switch dObj.docLists[i].ord {
-				case true:
-					cssStr += fmt.Sprintf(".%s_ol.nL_%d {\n", listClass, nl)
-				case false:
-					cssStr += fmt.Sprintf(".%s_ul.nL_%d {\n", listClass, nl)
-			}
-
-			idFl := nestLev.IndentFirstLine.Magnitude - cumIndent
-			idSt := nestLev.IndentStart.Magnitude - cumIndent
-			cssStr += fmt.Sprintf("  margin: 0 0 0 %.0fpt;\n", idFl)
-			cssStr += fmt.Sprintf("  padding-left: %.0fpt;\n", idSt-idFl - 6.0)
-			cssStr += fmt.Sprintf("}\n")
-
-			cumIndent += idSt
-
-			// Css <li nest level>
-			cssStr += fmt.Sprintf(".%s_li.nL_%d {\n", listClass, nl)
-			switch dObj.docLists[i].ord {
-				case true:
-					cssStr += fmt.Sprintf("  counter-increment: %s_li_nL_%d;\n", listClass, nl)
-//					cssStr += fmt.Sprintf("list-style-type: %s;\n", )
-				case false:
-					cssStr += fmt.Sprintf("  list-style-type: %s;\n", glyphStr)
-//					cssStr += fmt.Sprintf dObj.cvtGlyph(nestLev)
-			}
-			cssStr += fmt.Sprintf("}\n")
-
-			// Css marker
-			cssStr += fmt.Sprintf(".%s_li.nL_%d::marker {\n", listClass, nl)
-			switch dObj.docLists[i].ord {
-				case true:
-					cssStr += fmt.Sprintf(" content: counter(%s_li_nL_%d, %s) \".\";", listClass, nl, glyphStr)
-				case false:
-
-			}
-
-            cssStr += cvtTxtMapStylCss(defTxtMap,nestLev.TextStyle)
-			cssStr += fmt.Sprintf("}\n")
-		}
-	}
-	headCss += cssStr
-
-   // css default table
-    if dObj.tableCount > 0 {
-
-       //css default table styling (center aligned)
-        cssStr = fmt.Sprintf(".%s_tbl {\n", dObj.docName)
-        cssStr += "  width: 100%;\n"
-        cssStr += "  border-collapse: collapse;\n"
-        cssStr += "  border: 1px solid black;\n"
-        cssStr += "  margin-left: auto;  margin-right: auto;\n"
-        cssStr += "}\n"
-
-		//css table row
-        cssStr += fmt.Sprintf(".%s_tblrow {\n", dObj.docName)
-		cssStr += "  min-height: 1em;\n"
-        cssStr += "}\n"
-
-        //css table cell
-        cssStr += fmt.Sprintf(".%s_tblcel {\n", dObj.docName)
-		cssStr += "  border-collapse: collapse;\n"
-        cssStr += "  border: 1px solid black;\n"
-//      cssStr += "  margin:auto;\n"
-        cssStr += "  padding: 0.5pt;\n"
-		cssStr += "  height: 1em;\n"
-        cssStr += "}\n"
-
-		// add Css
-		headCss += cssStr
-    }
-
-	return headCss, nil
-}
-*/
 func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 
 	errStr :="";
@@ -4231,7 +4042,6 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 		headCss += ruleStartStr + cssStr + pCssStr + ruleEndStr
 	}
 
-/*
 	// list css strings
 	cssStr = ""
 	for i:=0; i<len(dObj.docLists); i++ {
@@ -4239,25 +4049,21 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 		listClass := listid[4:]
 		listProp := dObj.doc.Lists[listid].ListProperties
 
-		switch dObj.docLists[i].ord {
-			case true:
-				cssStr += fmt.Sprintf(".%s_ol {\n", listClass)
+		if dObj.docLists[i].ord {
+			cssStr += "\"cssRule\":\"" + listClass + "OL\" {"
 //				glyphNum := "none"
-				cssStr += fmt.Sprintf("  list-style-type: none;\n")
-				cssStr += fmt.Sprintf("  list-style-position: outside;\n")
-				cssStr += fmt.Sprintf("}\n")
-
-			case false:
-				cssStr += fmt.Sprintf(".%s_ul {\n", listClass)
-				cssStr += fmt.Sprintf("  list-style-type: none;\n")
-				cssStr += fmt.Sprintf("  list-style-position: outside;\n")
-				cssStr += fmt.Sprintf("}\n")
+		} else {
+			cssStr += "\"cssRule\":\"" + listClass + "OL\" {"
 		}
-		cssStr += fmt.Sprintf(".%s_li {\n", listClass)
-		cssStr += fmt.Sprintf("  display: list-item;\n")
-		cssStr += fmt.Sprintf("  text-align: start;\n")
-		cssStr += fmt.Sprintf("  padding-left: 6pt;\n")
-		cssStr += fmt.Sprintf("}\n")
+		cssStr += " list-style-type: none;"
+		cssStr += " list-style-position: outside;}\n"
+
+		// list class
+		cssStr += "\"cssRule\":\"." + listClass + "\"Li {"
+		cssStr += " display: list-item;"
+		cssStr += " text-align: start;"
+		cssStr += " padding-left: 6pt;"
+		cssStr += "}\n"
 
 //		nestLev0 := listProp.NestingLevels[0]
 //		defGlyphTxtMap := fillTxtMap(nestLev0.TextStyle)
@@ -4266,50 +4072,46 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 
 		for nl:=0; nl <= int(dObj.docLists[i].maxNestLev); nl++ {
 			nestLev := listProp.NestingLevels[nl]
-
+			cssStr += "\"cssRule\":"
 			glyphStr := util.GetGlyphStr(nestLev)
-			switch dObj.docLists[i].ord {
-				case true:
-					cssStr += fmt.Sprintf(".%s_ol.nL_%d {\n", listClass, nl)
-				case false:
-					cssStr += fmt.Sprintf(".%s_ul.nL_%d {\n", listClass, nl)
+			if dObj.docLists[i].ord {
+				cssStr += fmt.Sprintf(".%sOlNl%d {", listClass, nl)
+			} else {
+				cssStr += fmt.Sprintf(".%sUlNl%d {", listClass, nl)
 			}
 
 			idFl := nestLev.IndentFirstLine.Magnitude - cumIndent
 			idSt := nestLev.IndentStart.Magnitude - cumIndent
-			cssStr += fmt.Sprintf("  margin: 0 0 0 %.0fpt;\n", idFl)
-			cssStr += fmt.Sprintf("  padding-left: %.0fpt;\n", idSt-idFl - 6.0)
+			cssStr += fmt.Sprintf(" margin: 0pt 0pt 0pt %.0fpt;", idFl)
+			cssStr += fmt.Sprintf(" padding-left: %.0fpt;", idSt-idFl - 6.0)
 			cssStr += fmt.Sprintf("}\n")
 
 			cumIndent += idSt
 
 			// Css <li nest level>
-			cssStr += fmt.Sprintf(".%s_li.nL_%d {\n", listClass, nl)
-			switch dObj.docLists[i].ord {
-				case true:
-					cssStr += fmt.Sprintf("  counter-increment: %s_li_nL_%d;\n", listClass, nl)
-//					cssStr += fmt.Sprintf("list-style-type: %s;\n", )
-				case false:
-					cssStr += fmt.Sprintf("  list-style-type: %s;\n", glyphStr)
+			cssStr += "\"cssRule\":"
+			cssStr += fmt.Sprintf(".%sLiNl%d {\n", listClass, nl)
+			if dObj.docLists[i].ord {
+				cssStr += fmt.Sprintf(" counter-increment: %sLiNl%d;", listClass, nl)
+			} else {
+				cssStr += fmt.Sprintf(" list-style-type: %s;", glyphStr)
 //					cssStr += fmt.Sprintf dObj.cvtGlyph(nestLev)
 			}
 			cssStr += fmt.Sprintf("}\n")
 
 			// Css marker
-			cssStr += fmt.Sprintf(".%s_li.nL_%d::marker {\n", listClass, nl)
-			switch dObj.docLists[i].ord {
-				case true:
-					cssStr += fmt.Sprintf(" content: counter(%s_li_nL_%d, %s) \".\";", listClass, nl, glyphStr)
-				case false:
-
+			cssStr += "\"cssRule\":"
+			cssStr += fmt.Sprintf("\".%sLiNl%d::marker {\n", listClass, nl)
+			if dObj.docLists[i].ord {
+				cssStr += fmt.Sprintf(" content: counter(%s_li_nL_%d, %s) \".\";", listClass, nl, glyphStr)
 			}
-
-            cssStr += cvtTxtMapStylCss(defTxtMap,nestLev.TextStyle)
+//list
+            cssStr += cvtTxtMapStylToCssJson(defTxtMap,nestLev.TextStyle)
 			cssStr += fmt.Sprintf("}\n")
 		}
 	}
 	headCss += cssStr
-
+/*
    // css default table
     if dObj.tableCount > 0 {
 
@@ -4349,10 +4151,11 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 }
 
 
-func (dObj *GdocDomObj) cvtContentElToJson(contEl *docs.StructuralElement) (elStr string, err error) {
+func (dObj *GdocDomObj) cvtContentElToJson(contEl *docs.StructuralElement) (elStr string, cssRule string, err error) {
+// method that parses a Structural Element and invokes further methods
 
 	if dObj == nil {
-		return "", fmt.Errorf("error -- dObj is nil")
+		return "", "", fmt.Errorf("error -- dObj is nil")
 	}
 //	parent = dObj.eldiv
 
@@ -4360,35 +4163,35 @@ func (dObj *GdocDomObj) cvtContentElToJson(contEl *docs.StructuralElement) (elSt
 
 	if contEl.Paragraph != nil {
 		parEl := contEl.Paragraph
-		parElStr, err := dObj.cvtParToJson(parEl)
-		if err != nil { return parElStr, fmt.Errorf("error par %v\n", err) }
+		parElStr, cssRule, err := dObj.cvtParToJson(parEl)
+		if err != nil { return parElStr, "", fmt.Errorf("error par %v\n", err) }
 		elStr = parElStr
-		return elStr, err
+		return elStr, cssRule, err
 	}
 
 	if contEl.SectionBreak != nil {
 //		secStr := "{"
 //		errStr = "\"comment\":\"section not implemented\""
 //		elStr += secStr + errStr + "},\n"
-		return "", nil
+		return "", "", nil
 	}
 
 	if contEl.Table != nil {
 		tableEl := contEl.Table
 		tabStr, err := dObj.cvtTableToJson(tableEl)
-		if err != nil { return tabStr, fmt.Errorf("error table %v\n", err) }
+		if err != nil { return tabStr,"",  fmt.Errorf("error table %v\n", err) }
 		elStr = tabStr
-		return elStr, err
+		return elStr, "", err
 	}
 
 	if contEl.TableOfContents != nil {
 //		errStr = "\"comment\":\"toc not implemented\""
 //		elStr = errStr
-		return "", nil
+		return "", "", nil
 	}
 
 	err = fmt.Errorf("no contEl found!")
-	return "", err
+	return "", "", err
 }
 
 //footnote div
@@ -4783,17 +4586,16 @@ func (dObj *GdocDomObj) creJsonTocDiv () (tocStr string, err error) {
 	return tocStr, nil
 }
 
-func (dObj *GdocDomObj) cvtBodyToJson() (jsonStr string, err error) {
+func (dObj *GdocDomObj) cvtBodyToJson() (jsonStr string, cssRuleSet string, err error) {
 
-	jsonStr = ""
 	if dObj == nil {
-		return "", fmt.Errorf("-- no GdocObj!")
+		return "", "", fmt.Errorf("-- no GdocObj!")
 	}
 
 	doc := dObj.doc
 	body := doc.Body
 	if body == nil {
-		return "", fmt.Errorf("-- no doc.body!")
+		return "", "", fmt.Errorf("-- no doc.body!")
 	}
 
 	err = nil
@@ -4823,19 +4625,20 @@ func (dObj *GdocDomObj) cvtBodyToJson() (jsonStr string, err error) {
 	elNum := len(body.Content)
 	for el:=0; el< elNum; el++ {
 		bodyEl := body.Content[el]
-		elstr, err1 := dObj.cvtContentElToJson(bodyEl)
+		elstr, cssRules, err1 := dObj.cvtContentElToJson(bodyEl)
 		if err1 != nil {
 			jsonStr  += fmt.Sprintf("//error: el %d cvtContentEl: %v\n", el, err) 
 			err = fmt.Errorf("cvtContentEl: El %d %v\n", el, err)
 		}
 		jsonStr += elstr
+		cssRuleSet += cssRules
 	} // for el loop end
 
 	if dObj.listStack != nil {dObj.closeList(-1)}
 	ilen := len(jsonStr)
 	if ilen > 0 { jsonStr = jsonStr[:ilen-2]}
 	jsonStr += "]"
-	return jsonStr, err
+	return jsonStr, cssRuleSet, err
 }
 
 /*
@@ -4880,127 +4683,7 @@ func (dObj *GdocDomObj) cvtBodySecToDom(elSt, elEnd int) (bodyObj *dispObj, err 
 
 func CreGdocDomDoc(folderPath string, doc *docs.Document, options *util.OptObj)(err error) {
 	// function which converts the entire document into an hmlt file
-/*
-    if doc == nil { return fmt.Errorf("error -- doc is nil!\n")}
-	var mainDiv dispObj
-	var dObj GdocDomObj
 
-	// initialize dObj with doc assignment
-	dObj.doc = doc
-
-	// further initialization
-	err = dObj.initGdocJson(folderPath, options)
-	if err != nil {
-		return fmt.Errorf("initGdocHtml %v", err)
-	}
-
-// footnotes
-	ftnoteDiv, err := dObj.creFtnoteDivDom()
-	if err != nil {
-		fmt.Errorf("creFtnoteDivDom: %v", err)
-	}
-
-//	dObj.sections
-	secDiv := dObj.creSecDivDom()
-	if secDiv != nil {
-		for ipage:=0; ipage<len(dObj.sections); ipage++ {
-			pgHd := dObj.creSecHeadToDom(ipage)
-			elStart := dObj.sections[ipage].secElStart
-			elEnd := dObj.sections[ipage].secElEnd
-			pgBody, err := dObj.cvtBodySecToDom(elStart, elEnd)
-			if err != nil {
-				return fmt.Errorf("cvtBodySecToDom %d %v", ipage, err)
-			}
-//			mainDiv.headCss += pgBody.headCss
-			mainDiv.bodyCss += pgBody.bodyCss
-			mainDiv.bodyHtml += pgHd.bodyHtml + pgBody.bodyHtml
-		}
-	} else {
-		mBody, err := dObj.cvtBodyToDom()
-		if err != nil {
-			return fmt.Errorf("cvtBody: %v", err)
-		}
-//		mainDiv.headCss += mBody.headCss
-		mainDiv.bodyCss += mBody.bodyCss
-		mainDiv.bodyHtml += mBody.bodyHtml
-	}
-
-	//css for document head
-	headCss, err := dObj.creCssDocHeadJson()
-	if err != nil {
-		return fmt.Errorf("creCssDocHead: %v", err)
-	}
-
-	//html + css for Toc Div
-	tocDiv, err := dObj.creTocDivDom()
-	if err != nil {
-		tocDiv.bodyHtml = fmt.Sprintf("<!--- error Toc Head: %v --->\n",err)
-	}
-
-	//get html file pointer
-	outfil := dObj.jsonFil
-	if outfil == nil {
-		return fmt.Errorf("outfil is nil!")
-	}
-
-	// assemble html document
-	// html document file header
-	docHeadStr := creHtmlDocHead(dObj.docName)
-	outfil.WriteString(docHeadStr)
-
-	//Css
-
-	//css default css of document and document dimensions
-	outfil.WriteString(headCss)
-
-/*
-	// css of body elements
-	outfil.WriteString(mainDiv.bodyCss)
-
-	//css footnotes
-	if ftnoteDiv != nil {
-		cssStr := creFtnoteCss(dObj.docName)
-		cssStr += ftnoteDiv.bodyCss
-		outfil.WriteString(cssStr)
-	}
-
-	//css toc
-	if tocDiv != nil {
-		cssStr := creTocCss(dObj.docName)
-		cssStr  += tocDiv.bodyCss
-		outfil.WriteString(cssStr)
-	}
-
-	//css sec
-	if secDiv != nil {
-		cssStr := creSecCss(dObj.docName)
-		if tocDiv == nil { cssStr += creTocSecCss(dObj.docName) }
-		outfil.WriteString(cssStr)
-	}
-
-	// html start body
-	outfil.WriteString("</style>\n</head>\n<body>\n")
-
-
-	// html doc div
-//	htmlStr := creHtmlDocDiv(dObj.docName)
-//	outfil.WriteString(htmlStr)
-
-	// html toc
-	if tocDiv != nil  {outfil.WriteString(tocDiv.bodyHtml)}
-
-	// html sections
-	if secDiv != nil {outfil.WriteString(secDiv.bodyHtml)}
-
-	// html main document
-	outfil.WriteString(mainDiv.bodyHtml)
-
-	// html footnotes
-	if ftnoteDiv != nil {outfil.WriteString(ftnoteDiv.bodyHtml)}
-
-
-	outfil.Close()
-*/
 	return nil
 }
 
@@ -5008,262 +4691,15 @@ func CreGdocDomMain(folderPath string, doc *docs.Document, options *util.OptObj)
 // function that converts the main part of a gdoc document into an html file
 // excludes everything before the "main" heading or
 // excludes sections titled "summary" and "keywords"
-/*
-	var mainDiv dispObj
-	var dObj GdocDomObj
-
-	// initialize dObj with doc assignment
-	dObj.doc = doc
-
-	// further initialization
-	err = dObj.initGdocJson(folderPath, options)
-	if err != nil {
-		return fmt.Errorf("initGdocDom %v", err)
-	}
-
-// footnotes
-	ftnoteDiv, err := dObj.creFtnoteDivDom()
-	if err != nil {
-		fmt.Errorf("creFtnoteDivDom: %v", err)
-	}
-
-//	dObj.sections
-	secDiv := dObj.creSecDivDom()
-	if secDiv != nil {
-		for ipage:=0; ipage<len(dObj.sections); ipage++ {
-			pgHd := dObj.creSecHeadToDom(ipage)
-			elStart := dObj.sections[ipage].secElStart
-			elEnd := dObj.sections[ipage].secElEnd
-			pgBody, err := dObj.cvtBodySecToDom(elStart, elEnd)
-			if err != nil {
-				return fmt.Errorf("cvtBodySecToDom %d %v", ipage, err)
-			}
-//			mainDiv.headCss += pgBody.headCss
-			mainDiv.bodyCss += pgBody.bodyCss
-			mainDiv.bodyHtml += pgHd.bodyHtml + pgBody.bodyHtml
-		}
-	} else {
-		mBody, err := dObj.cvtBodyToDom()
-		if err != nil {
-			return fmt.Errorf("cvtBody: %v", err)
-		}
-//		mainDiv.headCss += mBody.headCss
-		mainDiv.bodyCss += mBody.bodyCss
-		mainDiv.bodyHtml += mBody.bodyHtml
-	}
-
-	//css for document head
-	headCss, err := dObj.creCssDocHead()
-	if err != nil {
-		return fmt.Errorf("creCssDocHead: %v", err)
-	}
-
-	//html + css for Toc Div
-	tocDiv, err := dObj.creTocDivDom()
-	if err != nil {
-		tocDiv.bodyHtml = fmt.Sprintf("<!--- error Toc Head: %v --->\n",err)
-	}
-
-	//get html file pointer
-	outfil := dObj.jsonFil
-	if outfil == nil {
-		return fmt.Errorf("outfil is nil!")
-	}
-
-	// assemble html document
-	// html document file header
-	docHeadStr := creHtmlDocHead(dObj.docName)
-	outfil.WriteString(docHeadStr)
-
-	//Css
-
-	//css default css of document and document dimensions
-	outfil.WriteString(headCss)
-
-	// css of body elements
-	outfil.WriteString(mainDiv.bodyCss)
-
-	//css footnotes
-	if ftnoteDiv != nil {
-		cssStr := creFtnoteCss(dObj.docName)
-		cssStr += ftnoteDiv.bodyCss
-		outfil.WriteString(cssStr)
-	}
-
-	//css toc
-	if tocDiv != nil {
-		cssStr := creTocCss(dObj.docName)
-		cssStr  += tocDiv.bodyCss
-		outfil.WriteString(cssStr)
-	}
-
-	//css sec
-	if secDiv != nil {
-		cssStr := creSecCss(dObj.docName)
-		if tocDiv == nil { cssStr += creTocSecCss(dObj.docName) }
-		outfil.WriteString(cssStr)
-	}
-
-	// html start body
-	outfil.WriteString("</style>\n</head>\n<body>\n")
-
-
-	// html doc div
-	htmlStr := creHtmlDocDiv(dObj.docName)
-	outfil.WriteString(htmlStr)
-
-	// html toc
-	if tocDiv != nil  {outfil.WriteString(tocDiv.bodyHtml)}
-
-	// html sections
-	if secDiv != nil {outfil.WriteString(secDiv.bodyHtml)}
-
-	// html main document
-	outfil.WriteString(mainDiv.bodyHtml)
-
-	// html footnotes
-	if ftnoteDiv != nil {outfil.WriteString(ftnoteDiv.bodyHtml)}
-
-	// html ends doc div
-	outfil.WriteString("</div>\n</body>\n</html>\n")
-	outfil.Close()
-*/
 	return nil
 }
 
 
-func CreGdocDomSection(heading, folderPath string, doc *docs.Document, options *util.OptObj)(err error) {
-// function that creates an html fil from the named section
-/*
-	var mainDiv dispObj
+func CreGdocJsonSection(heading, folderPath string, doc *docs.Document, options *util.OptObj)(err error) {
+// function that creates a J from the named section
+
 	var dObj GdocDomObj
-
-	// initialize dObj with doc assignment
-	dObj.doc = doc
-
-	// further initialization
-	err = dObj.initGdocJson(folderPath, options)
-	if err != nil {
-		return fmt.Errorf("initGdocDom %v", err)
-	}
-
-// footnotes
-	ftnoteDiv, err := dObj.creFtnoteDivDom()
-	if err != nil {
-		fmt.Errorf("creFtnoteDivDom: %v", err)
-	}
-
-//	dObj.sections
-	secDiv := dObj.creSecDivDom()
-	if secDiv != nil {
-		for ipage:=0; ipage<len(dObj.sections); ipage++ {
-			pgHd := dObj.creSecHeadToDom(ipage)
-			elStart := dObj.sections[ipage].secElStart
-			elEnd := dObj.sections[ipage].secElEnd
-			pgBody, err := dObj.cvtBodySecToDom(elStart, elEnd)
-			if err != nil {
-				return fmt.Errorf("cvtBodySecToDom %d %v", ipage, err)
-			}
-//			mainDiv.headCss += pgBody.headCss
-			mainDiv.bodyCss += pgBody.bodyCss
-			mainDiv.bodyHtml += pgHd.bodyHtml + pgBody.bodyHtml
-		}
-	} else {
-		mBody, err := dObj.cvtBodyToDom()
-		if err != nil {
-			return fmt.Errorf("cvtBody: %v", err)
-		}
-//		mainDiv.headCss += mBody.headCss
-		mainDiv.bodyCss += mBody.bodyCss
-		mainDiv.bodyHtml += mBody.bodyHtml
-	}
-
-	//css for document head
-	headCss, err := dObj.creCssDocHead()
-	if err != nil {
-		return fmt.Errorf("creCssDocHead: %v", err)
-	}
-
-	//html + css for Toc Div
-	tocDiv, err := dObj.creTocDivDom()
-	if err != nil {
-		tocDiv.bodyHtml = fmt.Sprintf("<!--- error Toc Head: %v --->\n",err)
-	}
-
-	//get html file pointer
-	outfil := dObj.jsonFil
-	if outfil == nil {
-		return fmt.Errorf("outfil is nil!")
-	}
-
-	// assemble html document
-	// html document file header
-	docHeadStr := creHtmlDocHead(dObj.docName)
-	outfil.WriteString(docHeadStr)
-
-	//Css
-
-	//css default css of document and document dimensions
-	outfil.WriteString(headCss)
-
-	// css of body elements
-	outfil.WriteString(mainDiv.bodyCss)
-
-	//css footnotes
-	if ftnoteDiv != nil {
-		cssStr := creFtnoteCss(dObj.docName)
-		cssStr += ftnoteDiv.bodyCss
-		outfil.WriteString(cssStr)
-	}
-
-	//css toc
-	if tocDiv != nil {
-		cssStr := creTocCss(dObj.docName)
-		cssStr  += tocDiv.bodyCss
-		outfil.WriteString(cssStr)
-	}
-
-	//css sec
-	if secDiv != nil {
-		cssStr := creSecCss(dObj.docName)
-		if tocDiv == nil { cssStr += creTocSecCss(dObj.docName) }
-		outfil.WriteString(cssStr)
-	}
-
-	// html start body
-	outfil.WriteString("</style>\n</head>\n<body>\n")
-
-
-	// html doc div
-	htmlStr := creHtmlDocDiv(dObj.docName)
-	outfil.WriteString(htmlStr)
-
-	// html toc
-	if tocDiv != nil  {outfil.WriteString(tocDiv.bodyHtml)}
-
-	// html sections
-	if secDiv != nil {outfil.WriteString(secDiv.bodyHtml)}
-
-	// html main document
-	outfil.WriteString(mainDiv.bodyHtml)
-
-	// html footnotes
-	if ftnoteDiv != nil {outfil.WriteString(ftnoteDiv.bodyHtml)}
-
-	// html ends doc div
-	outfil.WriteString("</div>\n</body>\n</html>\n")
-	outfil.Close()
-*/
-	return nil
-}
-
-
-
-func CreGdocJsonAll(folderPath string, doc *docs.Document, options *util.OptObj)(err error) {
-// function that creates an html fil from the named section
-//	var mainDiv string
-	var dObj GdocDomObj
-
+	var elementsStr, cssListClasses string
 	// initialize dObj with doc assignment
 	dObj.doc = doc
 
@@ -5273,10 +4709,9 @@ func CreGdocJsonAll(folderPath string, doc *docs.Document, options *util.OptObj)
 		return fmt.Errorf("initGdocDom %v", err)
 	}
 
-	mBodyStr := ""
 /*
 // footnotes
-	ftnoteDiv, err := dObj.creFtnoteDivDom()
+	ftnoteDiv, err := dObj.creFtnoteDivJson()
 	if err != nil {
 		fmt.Errorf("creFtnoteDivDom: %v", err)
 	}
@@ -5298,7 +4733,7 @@ func CreGdocJsonAll(folderPath string, doc *docs.Document, options *util.OptObj)
 */
 
 	} else {
-		mBodyStr, err = dObj.cvtBodyToJson()
+		elementsStr, cssListClasses, err = dObj.cvtBodyToJson()
 		if err != nil {
 			return fmt.Errorf("cvtBody: %v", err)
 		}
@@ -5324,93 +4759,107 @@ func CreGdocJsonAll(folderPath string, doc *docs.Document, options *util.OptObj)
 		return fmt.Errorf("outfil is nil!")
 	}
 
-	// assemble json string
+	// creates json string
 	docHeadStr := creJsonHead(dObj.docName)
 	outfil.WriteString(docHeadStr)
 
 
 	//css default css of document and document dimensions
 	outfil.WriteString(cssClasses)
+	outfil.WriteString(cssListClasses)
 
 
 	// css of body elements
-	outfil.WriteString(mBodyStr)
+	outfil.WriteString(elementsStr)
 
+	// closes json Object
 	outfil.WriteString("}")
+
+	outfil.Close()
+	return nil
+}
+
+
+func CreGdocJsonAll(folderPath string, doc *docs.Document, options *util.OptObj)(err error) {
+// function that creates an html fil from the named section
+
+	var dObj GdocDomObj
+	var elementsStr, cssListClasses string
+
+	// initialize dObj with doc assignment
+	dObj.doc = doc
+
+	// further initialization of dObj
+	err = dObj.initGdocJson(folderPath, options)
+	if err != nil {
+		return fmt.Errorf("initGdocDom %v", err)
+	}
+
 /*
-	//css footnotes
-	if ftnoteDiv != nil {
-		cssStr := creFtnoteCss(dObj.docName)
-		cssStr += ftnoteDiv.bodyCss
-		outfil.WriteString(cssStr)
+// footnotes
+	ftnoteDiv, err := dObj.creFtnoteDivJson()
+	if err != nil {
+		fmt.Errorf("creFtnoteDivDom: %v", err)
 	}
-
-	//css toc
-	if tocDiv != nil {
-		cssStr := creTocCss(dObj.docName)
-		cssStr  += tocDiv.bodyCss
-		outfil.WriteString(cssStr)
-	}
-
-	//css sec
-	if secDiv != nil {
-		cssStr := creSecCss(dObj.docName)
-		if tocDiv == nil { cssStr += creTocSecCss(dObj.docName) }
-		outfil.WriteString(cssStr)
-	}
-
-	// css end
-	cssStr := "</style>\n"
-	outfil.WriteString(cssStr)
-
-	//script start
-	jsStr := "<script>\n"
-	outfil.WriteString(jsStr)
-
-	//js create doc div
-	imgfun := false
-	if (dObj.inImgCount + dObj.posImgCount) > 0 {imgfun = true}
-	tablefun := false
-	if dObj.tableCount > 0 {tablefun = true}
-	jsStr = creElFuncScript(imgfun, tablefun)
-	outfil.WriteString(jsStr)
-
-	jsStr = mainDiv.script
-	outfil.WriteString(jsStr)
-
-	jsStr = creDocDivScript(dObj.docName)
-	outfil.WriteString(jsStr)
-
-	//script end
-	jsStr = "</script>\n"
-	outfil.WriteString(jsStr)
-
-
-	// html start body
-	htmlStr := "<body>\n"
-	outfil.WriteString(htmlStr)
-
-
-	// html doc div
-//	htmlStr = creHtmlDocDiv(dObj.docName)
-//	outfil.WriteString(htmlStr)
-
-	// html toc
-	if tocDiv != nil  {outfil.WriteString(tocDiv.bodyHtml)}
-
-	// html sections
-	if secDiv != nil {outfil.WriteString(secDiv.bodyHtml)}
-
-	// html main document
-//	outfil.WriteString(mainDiv.bodyHtml)
-
-	// html footnotes
-	if ftnoteDiv != nil {outfil.WriteString(ftnoteDiv.bodyHtml)}
-
-	// html ends doc div
-	htmlStr = creHtmlDocEnd()
-	outfil.WriteString(htmlStr)
 */
+//todo
+//	dObj.sections
+	secDivStr := dObj.creSecDivJson()
+	if len(secDivStr)>0 {
+/*
+		for ipage:=0; ipage<len(dObj.sections); ipage++ {
+			pgHd := dObj.creSecHeadToJson(ipage)
+			elStart := dObj.sections[ipage].secElStart
+			elEnd := dObj.sections[ipage].secElEnd
+			pgBodyStr, err := dObj.cvtBodySecToJson(elStart, elEnd)
+			if err != nil {
+				return fmt.Errorf("cvtBodySecToDom %d %v", ipage, err)
+			}
+		}
+*/
+
+	} else {
+		elementsStr, cssListClasses, err = dObj.cvtBodyToJson()
+		if err != nil {
+			return fmt.Errorf("cvtBody: %v", err)
+		}
+	}
+
+
+	//css for document head
+	cssClasses, err := dObj.creCssDocHeadJson()
+	if err != nil {
+		return fmt.Errorf("creCssDocHead: %v", err)
+	}
+
+/*
+	//html + css for Toc Div
+	tocDiv, err := dObj.creTocDivDom()
+	if err != nil {
+		tocDiv.bodyHtml = fmt.Sprintf("<!--- error Toc Head: %v --->\n",err)
+	}
+*/
+	//get html file pointer
+	outfil := dObj.jsonFil
+	if outfil == nil {
+		return fmt.Errorf("outfil is nil!")
+	}
+
+	// creates json string
+	docHeadStr := creJsonHead(dObj.docName)
+	outfil.WriteString(docHeadStr)
+
+
+	//css default css of document and document dimensions
+	outfil.WriteString(cssClasses)
+	outfil.WriteString(cssListClasses)
+
+
+	// css of body elements
+	outfil.WriteString(elementsStr)
+
+	// closes json Object
+	outfil.WriteString("}")
 
 	outfil.Close()
 	return nil
