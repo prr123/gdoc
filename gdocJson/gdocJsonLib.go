@@ -2261,53 +2261,53 @@ func creJsonHead (docNam string) (outstr string) {
 //todo
 func creTocSecJson(docName string)(cssStr string) {
 
-	cssStr = fmt.Sprintf("\"cssRule\": \".%sMain.top ", docName)
+	cssStr = fmt.Sprintf("  {\"cssRule\": \".%sMain.top ", docName)
 	cssStr += "{padding: 10px 0 10px 0;}\"\n"
 
 	cssStr += fmt.Sprintf("\"cssRule\":\".%s_title.leftTitle_UL {", docName)
 	cssStr += "  text-align: start;"
 	cssStr += "  text-decoration-line: underline;"
-	cssStr += "}\"\n"
+	cssStr += "}\"},\n"
 
-	cssStr += fmt.Sprintf("\"cssRule\": \".%s_title.leftTitle {", docName)
+	cssStr += fmt.Sprintf("  {\"cssRule\": \".%s_title.leftTitle {", docName)
 	cssStr += "  text-align: start;"
 	cssStr += "  text-decoration-line: none;"
-	cssStr += "}\"\n"
+	cssStr += "}\"},\n"
 
-	cssStr += fmt.Sprintf("\"cssRule\": \".%s_noUl {", docName)
+	cssStr += fmt.Sprintf("  {\"cssRule\": \".%s_noUl {", docName)
 	cssStr += "  text-decoration: none;"
-	cssStr += "}\"\n"
+	cssStr += "}\"},\n"
 
 	return cssStr
 }
 
 func creTocJson(docName string)(cssStr string) {
-	cssStr = fmt.Sprintf("\"cssRule:\": \".%_div.toc {", docName)
+	cssStr = fmt.Sprintf("  {\"cssRule:\": \".%_div.toc {", docName)
 
-	cssStr += "}\"\n"
+	cssStr += "}\"},\n"
 	return cssStr
 }
 
 //todo
 func creSecJson(docName string)(cssStr string){
 
-	cssStr = fmt.Sprintf("\"cssRule\": \".%sMain.sec {", docName)
+	cssStr = fmt.Sprintf("  {\"cssRule\": \".%sMain.sec {", docName)
 
-	cssStr += "}\"\n"
+	cssStr += "}\"},\n"
 
-	cssStr += fmt.Sprintf("\"cssRule\": \".%sPage {", docName)
+	cssStr += fmt.Sprintf("  {\"cssRule\": \".%sPage {", docName)
 	cssStr += "text-align: right;"
 	cssStr += "margin: 0;"
-	cssStr += "}\"\n"
+	cssStr += "}\"},\n"
 	return cssStr
 }
 
 func creFtnoteJson(docName string)(cssStr string){
 	//css footnote
-	cssStr = fmt.Sprintf("\"cssRule\":\".%sFtnote\" {", docName)
+	cssStr = fmt.Sprintf("  {\"cssRule\":\".%sFtnote\" {", docName)
 //	cssStr += "vertical-align: super;"
 	cssStr += "color: purple;"
-	cssStr += "}\"\n"
+	cssStr += "}\"},\n"
 	return cssStr
 }
 
@@ -3408,8 +3408,8 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, cssLiRul
 								listStr += fmt.Sprintf(" \"name\":\"Ol%d\",",nl)
 
 								// css class: add css Rule
-								listCss = fmt.Sprintf("\"cssRule\":\".%sOlNl%d {", listid[4:], nl)
-								listCss += fmt.Sprintf(" counter-reset: %sOlNl%d}\n",listid[4:], nl)
+								listCss = fmt.Sprintf("  {\"cssRule\":\".%sOlNl%d {", listid[4:], nl)
+								listCss += fmt.Sprintf(" counter-reset: %sOlNl%d;}\"},\n",listid[4:], nl)
 							} else {
 
 								// html listHtml = fmt.Sprintf("<ul class=\"%s_ul nL_%d\">\n", listid[4:], nl)
@@ -3463,8 +3463,8 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, cssLiRul
 					listStr += fmt.Sprintf(" \"name\":\"OL%d\",",nl)
 
 					// css
-					listCss = fmt.Sprintf("\"cssRule\":\".%sOlNl%d {", listid[4:], nl)
-					listCss += fmt.Sprintf(" counter-reset: %sOlNl%d}\n",listid[4:], nl)
+					listCss = fmt.Sprintf("  {\"cssRule\":\".%sOlNl%d {", listid[4:], nl)
+					listCss += fmt.Sprintf(" counter-reset: %sOlNl%d;}\"},\n",listid[4:], nl)
 
 				} else {
 					// html listHtml += fmt.Sprintf("<ul class=\"%s_ul nL_%d\">\n", listid[4:], nestIdx)
@@ -3505,7 +3505,7 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, cssLiRul
 		if par.Bullet.TextStyle != nil {
       	    bulletTxtMap := fillTxtMap(par.Bullet.TextStyle)
 			cssStr := cvtTxtMapToCssJson(bulletTxtMap)
-			cssLiRule += "  {\"cssRule\": ." + cNam + " " + cssStr + "}\",\n"
+			cssLiRule += "  {\"cssRule\": ." + cNam + " " + cssStr + "}\"},\n"
 		}
 
 		// get paragraph
