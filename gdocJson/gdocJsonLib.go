@@ -3408,7 +3408,7 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, cssLiRul
 								listStr += fmt.Sprintf(" \"name\":\"Ol%d\",",nl)
 
 								// css class: add css Rule
-								listCss = fmt.Sprintf("  {\"cssRule\":\".%sOlNl%d {", listid[4:], nl)
+								listCss = fmt.Sprintf("  {\"cssRule\": \".%sOlNl%d {", listid[4:], nl)
 								listCss += fmt.Sprintf(" counter-reset: %sOlNl%d;}\"},\n",listid[4:], nl)
 							} else {
 
@@ -3463,7 +3463,7 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, cssLiRul
 					listStr += fmt.Sprintf(" \"name\":\"OL%d\",",nl)
 
 					// css
-					listCss = fmt.Sprintf("  {\"cssRule\":\".%sOlNl%d {", listid[4:], nl)
+					listCss = fmt.Sprintf("  {\"cssRule\": \".%sOlNl%d {", listid[4:], nl)
 					listCss += fmt.Sprintf(" counter-reset: %sOlNl%d;}\"},\n",listid[4:], nl)
 
 				} else {
@@ -3488,24 +3488,27 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, cssLiRul
 		// script
 		listParent := ""
 		nl := nestIdx
+		cNam := ""
 		if listOrd {
 			listParent = fmt.Sprintf("Ol%d", nl)
+			cNam = fmt.Sprintf("%sOlNl%d",listid[4:],nl)
 		} else {
 			listParent = fmt.Sprintf("Ul%d", nl)
+			cNam = fmt.Sprintf("%sUlNl%d",listid[4:],nl)
 		}
 
 		listStr = "{\"typ\":\"li\","
 		listStr += " \"parent\":\"" + listParent + "\","
-		cNam := fmt.Sprintf("%sUlNl%d",listid[4:],nl)
 		listStr += " \"className\":\"" + cNam + "\","
 		listStr += " \"name\":\"list\","
 
 		// mark
 
 		if par.Bullet.TextStyle != nil {
-      	    bulletTxtMap := fillTxtMap(par.Bullet.TextStyle)
-			cssStr := cvtTxtMapToCssJson(bulletTxtMap)
-			cssLiRule += "  {\"cssRule\": ." + cNam + " " + cssStr + "}\"},\n"
+//      	    bulletTxtMap := fillTxtMap(par.Bullet.TextStyle)
+//			txtCss := cvtTxtMapStylToCssJson(defTxtMap, par.Bullet.TextStyle)
+//			cssStr := cvtTxtMapToCssJson(bulletTxtMap)
+//			cssLiRule += "  {\"cssRule\": \"." + cNam + " {" + txtCss + "}\"},\n"
 		}
 
 		// get paragraph
@@ -4050,20 +4053,20 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 		listProp := dObj.doc.Lists[listid].ListProperties
 
 		if dObj.docLists[i].ord {
-			cssStr += "\"cssRule\":\"" + listClass + "OL\" {"
+			cssStr += "  {\"cssRule\": \"." + listClass + "OL {"
 //				glyphNum := "none"
 		} else {
-			cssStr += "\"cssRule\":\"" + listClass + "OL\" {"
+			cssStr += "  {\"cssRule\": \"." + listClass + "UL {"
 		}
 		cssStr += " list-style-type: none;"
-		cssStr += " list-style-position: outside;}\n"
+		cssStr += " list-style-position: outside;}\"},\n"
 
 		// list class
-		cssStr += "\"cssRule\":\"." + listClass + "\"Li {"
+		cssStr += "  {\"cssRule\": \"." + listClass + "Li {"
 		cssStr += " display: list-item;"
 		cssStr += " text-align: start;"
 		cssStr += " padding-left: 6pt;"
-		cssStr += "}\n"
+		cssStr += "}\"},\n"
 
 //		nestLev0 := listProp.NestingLevels[0]
 //		defGlyphTxtMap := fillTxtMap(nestLev0.TextStyle)
@@ -4072,42 +4075,42 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 
 		for nl:=0; nl <= int(dObj.docLists[i].maxNestLev); nl++ {
 			nestLev := listProp.NestingLevels[nl]
-			cssStr += "\"cssRule\":"
+			cssStr += "  {\"cssRule\":"
 			glyphStr := util.GetGlyphStr(nestLev)
 			if dObj.docLists[i].ord {
-				cssStr += fmt.Sprintf(".%sOlNl%d {", listClass, nl)
+				cssStr += fmt.Sprintf(" \".%sOlNl%d {", listClass, nl)
 			} else {
-				cssStr += fmt.Sprintf(".%sUlNl%d {", listClass, nl)
+				cssStr += fmt.Sprintf(" \".%sUlNl%d {", listClass, nl)
 			}
 
 			idFl := nestLev.IndentFirstLine.Magnitude - cumIndent
 			idSt := nestLev.IndentStart.Magnitude - cumIndent
 			cssStr += fmt.Sprintf(" margin: 0pt 0pt 0pt %.0fpt;", idFl)
 			cssStr += fmt.Sprintf(" padding-left: %.0fpt;", idSt-idFl - 6.0)
-			cssStr += fmt.Sprintf("}\n")
+			cssStr += fmt.Sprintf("}\"},\n")
 
 			cumIndent += idSt
 
 			// Css <li nest level>
-			cssStr += "\"cssRule\":"
-			cssStr += fmt.Sprintf(".%sLiNl%d {\n", listClass, nl)
+			cssStr += "  {\"cssRule\":"
+			cssStr += fmt.Sprintf(" \".%sLiNl%d {", listClass, nl)
 			if dObj.docLists[i].ord {
 				cssStr += fmt.Sprintf(" counter-increment: %sLiNl%d;", listClass, nl)
 			} else {
 				cssStr += fmt.Sprintf(" list-style-type: %s;", glyphStr)
 //					cssStr += fmt.Sprintf dObj.cvtGlyph(nestLev)
 			}
-			cssStr += fmt.Sprintf("}\n")
+			cssStr += fmt.Sprintf("}\"},\n")
 
 			// Css marker
-			cssStr += "\"cssRule\":"
-			cssStr += fmt.Sprintf("\".%sLiNl%d::marker {\n", listClass, nl)
+			cssStr += "  {\"cssRule\":"
+			cssStr += fmt.Sprintf(" \".%sLiNl%d::marker {", listClass, nl)
 			if dObj.docLists[i].ord {
-				cssStr += fmt.Sprintf(" content: counter(%s_li_nL_%d, %s) \".\";", listClass, nl, glyphStr)
+				cssStr += fmt.Sprintf(" content: counter(%sLiNl%d, %s);", listClass, nl, glyphStr)
 			}
 //list
             cssStr += cvtTxtMapStylToCssJson(defTxtMap,nestLev.TextStyle)
-			cssStr += fmt.Sprintf("}\n")
+			cssStr += fmt.Sprintf("}\"},\n")
 		}
 	}
 	headCss += cssStr
