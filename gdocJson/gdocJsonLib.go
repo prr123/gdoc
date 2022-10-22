@@ -3497,7 +3497,7 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, cssLiRul
 			cNam = fmt.Sprintf("%sUlNl%d",listid[4:],nl)
 		}
 
-		listStr = "{\"typ\":\"li\","
+		listStr += "{\"typ\":\"li\","
 		listStr += " \"parent\":\"" + listParent + "\","
 		listStr += " \"className\":\"" + cNam + "\","
 		listStr += " \"name\":\"list\","
@@ -3511,6 +3511,7 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, cssLiRul
 //			cssLiRule += "  {\"cssRule\": \"." + cNam + " {" + txtCss + "}\"},\n"
 		}
 
+		elStr += listStr
 		// get paragraph
 		pelStr, _, err := dObj.cvtGdocParToJson(par, isSingle)
 		if err != nil {
@@ -4145,11 +4146,11 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
     }
 */
 
-	xlen := len(headCss)-1
+//	xlen := len(headCss)-1
 //	fmt.Printf("headCss last %q %q %q\n", headCss[xlen-2], headCss[xlen-1], headCss[xlen])
 
-	if headCss[xlen-1] == ',' {headCss = headCss[:xlen-1]}
-	headCss += "],\n"
+//	if headCss[xlen-1] == ',' {headCss = headCss[:xlen-1]}
+//	headCss += "],\n"
 	return headCss, nil
 }
 
@@ -4638,9 +4639,16 @@ func (dObj *GdocDomObj) cvtBodyToJson() (jsonStr string, cssRuleSet string, err 
 	} // for el loop end
 
 	if dObj.listStack != nil {dObj.closeList(-1)}
+
 	ilen := len(jsonStr)
 	if ilen > 0 { jsonStr = jsonStr[:ilen-2]}
 	jsonStr += "]"
+
+	xlen := len(cssRuleSet)-1
+	if cssRuleSet[xlen-1] == ',' {cssRuleSet = cssRuleSet[:xlen-1]}
+	cssRuleSet += "],\n"
+
+
 	return jsonStr, cssRuleSet, err
 }
 
