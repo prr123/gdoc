@@ -47,6 +47,7 @@ type GdocDomObj struct {
 	parent string
 	listStack *[]cList
 	docLists []docList
+	counter string
 	headings []headingTyp
 	sections []secTyp
 	docPb []pbTyp
@@ -2742,6 +2743,7 @@ func (dObj *GdocDomObj) cvtParTxtElToJson(parElTxt *docs.TextRun, namedTyp strin
 		txtStr = txtStr[:txtEnd]
 		crEnd = true
 	}
+	if len(txtStr)<1 { return "", true}
 
 	txtMap := fillTxtMap(namedTxtStyl)
 
@@ -3329,11 +3331,8 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err erro
 	}
 */
 
-
 	if par.Bullet == nil {
 
-
-	// first we need to check whether this is a cr-only paragraph
 		if len(par.Elements) == 1 {
       		if par.Elements[0].TextRun != nil {
             	if par.Elements[0].TextRun.Content == "\n" {
@@ -3343,6 +3342,9 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err erro
             	}
         	}
 		}
+
+
+	// first we need to check whether this is a cr-only paragraph
 
 // close with <br> ? or two <br>
 		if dObj.listStack != nil {dObj.closeList(-1)}
@@ -3392,17 +3394,17 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err erro
 		// condition for </ul></ol>
 		// 1. decrease in nesting level
 
-		fmt.Println("*********** listStack **********")
+//		fmt.Println("*********** listStack **********")
 		fmt.Printf("listid: %s \n", listid)
 		listAtt, cNest := getLiStack(dObj.listStack)
-printLiStack(dObj.listStack, "after")
+//printLiStack(dObj.listStack, "first")
 
-printLiStackItem(listAtt, cNest)
+//printLiStackItem(listAtt, cNest)
 		listStr := ""
 		parent :=""
 		switch listid == listAtt.cListId {
 			case true:
-fmt.Println("listid matched")
+//fmt.Println("listid matched")
 
 				switch {
 					case nestIdx > cNest:
@@ -3421,9 +3423,10 @@ fmt.Println("listid matched")
 								listStr += " \"parent\":\"" + parent + "\","
 								cNam := fmt.Sprintf("%sOl",dObj.docName)
 								listStr += " \"className\":\"" + cNam + "\","
-								listStr += fmt.Sprintf(" \"name\":\"Ol%d\"},\n",nl)
-								counter := fmt.Sprintf("%sOlNl%d",listid[4:],nl)
-								listStr += " \"style\": {\"counterReset\": \"" + counter + "\"}\n"
+								listStr += fmt.Sprintf(" \"name\":\"Ol%d\",",nl)
+								counter := fmt.Sprintf("%sOl%d",listid[4:],nl)
+								dObj.counter = counter
+								listStr += " \"style\": {\"counterReset\": \"" + counter + "\"}"
 
 								// css class: add css Rule
 							} else {
@@ -3432,9 +3435,10 @@ fmt.Println("listid matched")
 								if nl > 0 {parent = fmt.Sprintf("Ul%d", nl - 1)}
 								listStr = "{\"typ\":\"ul\","
 								listStr += " \"parent\":\"" + parent + "\","
-								cNam := fmt.Sprintf("%sUlNl%d",listid[4:],nl)
+								cNam := fmt.Sprintf("%sUl",dObj.docName)
 								listStr += " \"className\":\"" + cNam + "\","
-								listStr += fmt.Sprintf(" \"name\":\"Ul%d\"},\n",nl)
+								listStr += fmt.Sprintf(" \"name\":\"Ul%d\"}",nl)
+								dObj.counter = ""
 
 								// css none
 							}
@@ -3460,7 +3464,7 @@ fmt.Println("listid matched")
 //fmt.Printf("<!-- new list %s %s -->\n", listid, listAtt.cListId)
 
 				// start a new list
-fmt.Println("listid not matched")
+//fmt.Println("listid not matched")
 
 				newList.cListId = listid
 				newList.cOrd = listOrd
@@ -3479,10 +3483,11 @@ fmt.Println("listid not matched")
 					cNam := fmt.Sprintf("%sOl",dObj.docName)
 //					classNam := fmt.Sprintf("%sOlNl%d",listid[4:],nl)
 					listStr += " \"className\":\"" + cNam + "\","
-					listStr += fmt.Sprintf(" \"name\":\"OL%d\"},",nl)
+					listStr += fmt.Sprintf(" \"name\":\"Ol%d\",",nl)
 					// css
-					counter := fmt.Sprintf("%sOlNl%d",listid[4:],nl)
-					listStr += " \"style\": {\"counterReset\": \"" + counter + "\"}\n"
+					counter := fmt.Sprintf("%sOl%d",listid[4:],nl)
+					dObj.counter = counter
+					listStr += " \"style\": {\"counterReset\": \"" + counter + "\"}"
 
 //					listCss = fmt.Sprintf("  {\"cssRule\": \".%sOlNl%d {", listid[4:], nl)
 //					listCss += fmt.Sprintf(" counter-reset: %sOlNl%d;}\"},\n",listid[4:], nl)
@@ -3495,16 +3500,17 @@ fmt.Println("listid not matched")
 					listStr += " \"parent\":\"" + parent + "\","
 					cNam := fmt.Sprintf("%sUl",dObj.docName)
 					listStr += " \"className\":\"" + cNam + "\","
-					listStr += fmt.Sprintf(" \"name\":\"Ul%d\"},\n",nl)
+					listStr += fmt.Sprintf(" \"name\":\"Ul%d\"",nl)
+					dObj.counter = ""
 
 					//css
 				}
 			default:
 
 		} // switch
+		if len(listStr) > 0 {elStr += listStr + "},\n"}
 
-		elStr += listStr
-fmt.Printf("elstr list ol: %s \n",elStr)
+//fmt.Printf("elstr list: %s \n",elStr)
 
 		// html <li>
 		// html listPrefix = fmt.Sprintf("<li class=\"%s_li nL_%d\">", listid[4:], nestIdx)
@@ -3514,17 +3520,19 @@ fmt.Printf("elstr list ol: %s \n",elStr)
 		cNam := ""
 		if listOrd {
 			listParent = fmt.Sprintf("Ol%d", nl)
-			cNam = fmt.Sprintf("%sOlNl%d",listid[4:],nl)
+			cNam = fmt.Sprintf("%sOl%d",listid[4:],nl)
 		} else {
 			listParent = fmt.Sprintf("Ul%d", nl)
-			cNam = fmt.Sprintf("%sUlNl%d",listid[4:],nl)
+			cNam = fmt.Sprintf("%sUl%d",listid[4:],nl)
 		}
 
+		cNam = dObj.docName + "Li"
+		counter := dObj.counter
 		listStr = "{\"typ\":\"li\","
 		listStr += " \"parent\":\"" + listParent + "\","
 		listStr += " \"className\":\"" + cNam + "\","
-		listStr += " \"name\":\"list\"},\n"
-
+		listStr += " \"name\":\"list\","
+		listStr += " \"style\": {\"counterIncrement\": \"" + counter + "\"}},\n"
 		// mark
 
 		if par.Bullet.TextStyle != nil {
@@ -3534,15 +3542,17 @@ fmt.Printf("elstr list ol: %s \n",elStr)
 //			cssLiRule += "  {\"cssRule\": \"." + cNam + " {" + txtCss + "}\"},\n"
 		}
 
-		// get paragraph
+		elStr += listStr
+//fmt.Printf("elstr list li: %s \n",elStr)
 
+		// get paragraph
 		pelStr, _, err := dObj.cvtGdocParToJson(par)
 		if err != nil {
 			errStr = fmt.Sprintf("{\"error\": \"cvtGdocPar: %v\"},\n", err)
 			dObj.errCount++
 		}
 		elStr += errStr + pelStr
-fmt.Printf("elstr list par: %s \n",elStr)
+//fmt.Printf("elstr list par: %s \n",elStr)
 
 		// Heading Id refers to a heading paragraph not just a normal paragraph
 		// headings are bookmarked for TOC
@@ -3555,14 +3565,13 @@ fmt.Printf("elstr list par: %s \n",elStr)
 		}
 		elStr += errStr + parElsStr
 	}
+//fmt.Printf("elstr list end: %s \n",elStr)
 
 	return elStr, nil
 }
 
 func (dObj *GdocDomObj) cvtParElsToJson(par *docs.Paragraph)(parElsStr string, err error) {
 
-//	hasList := false
-//	if par.Bullet != nil {hasList = true}
 
 //	addBrStr := "{\"typ\":\"br\", \"parent\":\"gdocMain\"},"
 
@@ -3849,6 +3858,8 @@ func (dObj *GdocDomObj) cvtGdocParToJson(par *docs.Paragraph)(parStr string, alt
 			}
 
 		case "NORMAL_TEXT":
+			//html prefix = fmt.Sprintf("<p class=\"%s_p\" style = {}">, dObj.docName)
+
 			parStr = "{\"typ\":\"p\","
 
  			if dObj.namStylMap["NORMAL_TEXT"] {
@@ -3856,9 +3867,12 @@ func (dObj *GdocDomObj) cvtGdocParToJson(par *docs.Paragraph)(parStr string, alt
 				parStr += "\"name\":\"par\","
 				className = fmt.Sprintf("%sPar", dObj.docName)
 				parStr += "\"className\":\"" + className + "\""
+				listAtt := ""
+				if isList {listAtt = ", \"display\": \"inline\""}
 				if alter {
-				//html prefix = fmt.Sprintf("<p class=\"%s_p\" style = {}">, dObj.docName)
-					parStr += ", \"style\":{" + cssParAtt + "}"
+					parStr += ", \"style\":{" + cssParAtt + listAtt + "}"
+				} else {
+					if isList { parStr += ", \"style\":{\"display\": \"inline\"}"}
 				}
 			}
 
@@ -4067,21 +4081,24 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 	cssStr += " display: list-item;"
 	cssStr += " text-align: start;"
 	cssStr += " padding-left: 6pt;"
-	cssStr += "}\"}],\n"
+	cssStr += "}\"},\n"
 	headCss += cssStr
 
-	return headCss, nil
-}
 //		nestLev0 := listProp.NestingLevels[0]
 //		defGlyphTxtMap := fillTxtMap(nestLev0.TextStyle)
 
-/*
-		cumIndent := 0.0
+    cssStr = ""
+    for i:=0; i<len(dObj.docLists); i++ {
+        listid := dObj.docLists[i].listId
+        listClass := listid[4:]
+        listProp := dObj.doc.Lists[listid].ListProperties
+//		cumIndent := 0.0
 
 		for nl:=0; nl <= int(dObj.docLists[i].maxNestLev); nl++ {
 			nestLev := listProp.NestingLevels[nl]
-			cssStr += "  {\"cssRule\":"
+//			cssStr += "  {\"cssRule\":"
 			glyphStr := util.GetGlyphStr(nestLev)
+/*
 			if dObj.docLists[i].ord {
 				cssStr += fmt.Sprintf(" \".%sOlNl%d {", listClass, nl)
 			} else {
@@ -4106,19 +4123,24 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 //					cssStr += fmt.Sprintf dObj.cvtGlyph(nestLev)
 			}
 			cssStr += fmt.Sprintf("}\"},\n")
-
+*/
 			// Css marker
 			cssStr += "  {\"cssRule\":"
-			cssStr += fmt.Sprintf(" \".%sLiNl%d::marker {", listClass, nl)
+			cssStr += fmt.Sprintf(" \".%sOl%d::marker {", listClass, nl)
 			if dObj.docLists[i].ord {
-				cssStr += fmt.Sprintf(" content: counter(%sLiNl%d, %s);", listClass, nl, glyphStr)
+				cssStr += fmt.Sprintf(" content: counter(%sOl%d, %s);", listClass, nl, glyphStr)
 			}
 //list
-            cssStr += cvtTxtMapStylToCssJson(defTxtMap,nestLev.TextStyle)
+//            cssStr += cvtTxtMapStylToCssJson(defTxtMap,nestLev.TextStyle)
 			cssStr += fmt.Sprintf("}\"},\n")
 		}
 	}
-*/
+	xlen := len(cssStr) -2
+	cssStr = cssStr[:xlen]
+	headCss += cssStr + "],\n"
+	return headCss, nil
+}
+
 /*
    // css default table
     if dObj.tableCount > 0 {
@@ -4173,7 +4195,7 @@ func (dObj *GdocDomObj) cvtContentElToJson(contEl *docs.StructuralElement) (elSt
 		parEl := contEl.Paragraph
 		parElStr, err := dObj.cvtParToJson(parEl)
 		if err != nil { return parElStr, fmt.Errorf("error par %v\n", err) }
-		elStr = parElStr
+		elStr += parElStr
 		return elStr, err
 	}
 
@@ -4637,10 +4659,12 @@ func (dObj *GdocDomObj) cvtBodyToJson() (jsonStr string, err error) {
 		bodyEl := body.Content[el]
 		elstr, err1 := dObj.cvtContentElToJson(bodyEl)
 		if err1 != nil {
-			errStr  += fmt.Sprintf("//error: el %d cvtContentEl: %v\n", el, err) 
+			errStr = fmt.Sprintf("error: el %d cvtContentEl: %v", el, err1)
+			fmt.Printf("*** %s\n", errStr)
 //			err = fmt.Errorf("cvtContentEl: El %d %v\n", el, err)
+			return jsonStr, fmt.Errorf("cvtContentElToJson: %v", err1)
 		}
-		jsonStr += errStr + elstr
+		jsonStr += elstr
 	} // for el loop end
 
 	if dObj.listStack != nil {dObj.closeList(-1)}
