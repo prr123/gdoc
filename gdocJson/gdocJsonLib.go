@@ -3448,9 +3448,11 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err erro
 
 					case nestIdx < cNest:
 						// html
-						// listHtml = dObj.closeList(nestIdx)
-						// listHtml += fmt.Sprintf("<!-- same list reduce %s new NL %d  old Nl %d -->\n", listid, nestIdx, cNest)
 
+						if listOrd {
+							counter := fmt.Sprintf("%sOl%d",listid[4:],nestIdx)
+							dObj.counter = counter
+						}
 						dObj.closeList(nestIdx)
 
 					case nestIdx == cNest:
@@ -3459,12 +3461,8 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err erro
 
 			case false:
 				// new list
-				// close list first
-				// html listHtml += fmt.Sprintf("<!-- new list %s %s -->\n", listid, listAtt.cListId)
-//fmt.Printf("<!-- new list %s %s -->\n", listid, listAtt.cListId)
-
-				// start a new list
-//fmt.Println("listid not matched")
+				// if there is a list we need to close it
+//				if cNest > -1 {dObj.closeList(cNest) ?
 
 				newList.cListId = listid
 				newList.cOrd = listOrd
@@ -3526,7 +3524,7 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err erro
 			cNam = fmt.Sprintf("%sUl%d",listid[4:],nl)
 		}
 
-		cNam = dObj.docName + "Li"
+		cNam = dObj.docName + "Li " + fmt.Sprintf("Nl%d", nl)
 		counter := dObj.counter
 		listStr = "{\"typ\":\"li\","
 		listStr += " \"parent\":\"" + listParent + "\","
@@ -3749,7 +3747,9 @@ func (dObj *GdocDomObj) cvtGdocParToJson(par *docs.Paragraph)(parStr string, alt
 
 	if len(headingId) > 0 {hdStr = "\"hd\": \"" + headingId[3:] + "\","}
 
-	idStr := fmt.Sprintf("\"id\":\"p%d\",", dObj.parCount) + " \"name\":\"par\"," + " \"parent\":\"gdocMain\","
+	parent := "gdocMain"
+	if isList { parent = "list"}
+	idStr := fmt.Sprintf("\"id\":\"p%d\",", dObj.parCount) + " \"name\":\"par\"," + " \"parent\":\"" + parent + "\","
 	dObj.parCount++
 
 
@@ -4126,7 +4126,8 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 */
 			// Css marker
 			cssStr += "  {\"cssRule\":"
-			cssStr += fmt.Sprintf(" \".%sOl%d::marker {", listClass, nl)
+//			cssStr += fmt.Sprintf(" \".%sOl%d::marker {", listClass, nl)
+			cssStr += fmt.Sprintf(" \".%sLi.Nl%d::marker {", dObj.docName, nl)
 			if dObj.docLists[i].ord {
 				cssStr += fmt.Sprintf(" content: counter(%sOl%d, %s);", listClass, nl, glyphStr)
 			}
