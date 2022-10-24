@@ -3382,7 +3382,8 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err erro
 		nestIdx := int(par.Bullet.NestingLevel)
 
 		// retrieve the list properties from the doc.Lists map
-		nestL := dObj.doc.Lists[listid].ListProperties.NestingLevels[nestIdx]
+		listProp := dObj.doc.Lists[listid].ListProperties
+		nestL := listProp.NestingLevels[nestIdx]
 		listOrd := util.GetGlyphOrd(nestL)
 
 		// A. check whether need new <ul> or <ol>
@@ -3395,7 +3396,7 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err erro
 		// 1. decrease in nesting level
 
 //		fmt.Println("*********** listStack **********")
-		fmt.Printf("listid: %s \n", listid)
+//		fmt.Printf("listid: %s \n", listid)
 		listAtt, cNest := getLiStack(dObj.listStack)
 //printLiStack(dObj.listStack, "first")
 
@@ -3533,14 +3534,17 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err erro
 		listStr += " \"parent\":\"" + listParent + "\","
 		listStr += " \"className\":\"" + cNam + "\","
 		listStr += " \"name\":\"list\","
-//	cssStr += " display: list-item;"
 //	cssStr += " text-align: start;"
-//	cssStr += " padding-left: 6pt;"
-
 		listStr += " \"style\": {\"display\": \"listItem\", \"paddingLeft\": \"6pt\", "
-		listStr += "\"counterIncrement\": \"" + counter + "\"}},\n"
-		// mark
+		if listOrd {
+			listStr += "\"counterIncrement\": \"" + counter + "\"}},\n"
+		} else {
+			glyphStr := util.GetGlyphStr(nestL)
+			listStr += "\"listStyleType\": \"" + glyphStr + "\"}},\n"
+		}
+//					cssStr += fmt.Sprintf dObj.cvtGlyph(nestLev)
 
+		// marker
 		if par.Bullet.TextStyle != nil {
 //      	    bulletTxtMap := fillTxtMap(par.Bullet.TextStyle)
 //			txtCss := cvtTxtMapStylToCssJson(defTxtMap, par.Bullet.TextStyle)
@@ -4080,10 +4084,7 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 	}
 
 	// list css strings
-	cssListAtt := "list-style-type: none; list-style-position: outside;"
-//	cssStr = "  {\"cssRule\": \"." + dObj.docName + "Ol {" + cssListatt + "}\"},\n"
-//	cssStr += "  {\"cssRule\": \"." + dObj.docName + "Ul {" + cssListatt + "}\"},\n"
-
+/*
 	// list class
 	cssStr = "  {\"cssRule\": \"." + dObj.docName + "Li {"
 	cssStr += " display: list-item;"
@@ -4091,9 +4092,12 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 	cssStr += " padding-left: 6pt;"
 	cssStr += "}\"},\n"
 	headCss += cssStr
+*/
 
-//		nestLev0 := listProp.NestingLevels[0]
-//		defGlyphTxtMap := fillTxtMap(nestLev0.TextStyle)
+	// common css attributes for <li> elements
+	cssListAtt := "list-style-type: none; list-style-position: outside;"
+
+
 
     for i:=0; i<len(dObj.docLists); i++ {
         listid := dObj.docLists[i].listId
@@ -4109,9 +4113,6 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 
 //			if dObj.docLists[i].ord {
 				cssStr += fmt.Sprintf(" \".%s.Nl%d {", listClass, nl)
-//			} else {
-//				cssStr += fmt.Sprintf(" \".%sUl%d {", listClass, nl)
-//			}
 
 			idFl := nestLev.IndentFirstLine.Magnitude - cumIndent
 			idSt := nestLev.IndentStart.Magnitude - cumIndent
@@ -4121,31 +4122,15 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 
 			cumIndent += idSt
 
-/*
-			// Css <li nest level>
-			cssStr += "  {\"cssRule\":"
-			cssStr += fmt.Sprintf(" \".%sLiNl%d {", listClass, nl)
-			if dObj.docLists[i].ord {
-				cssStr += fmt.Sprintf(" counter-increment: %sLiNl%d;", listClass, nl)
-			} else {
-				cssStr += fmt.Sprintf(" list-style-type: %s;", glyphStr)
-//					cssStr += fmt.Sprintf dObj.cvtGlyph(nestLev)
-			}
-			cssStr += fmt.Sprintf("}\"},\n")
-*/
 			// Css marker
+//  todo          cssStr += cvtTxtMapStylToCssJson(defTxtMap,nestLev.TextStyle)
 			cssStr += "  {\"cssRule\":"
-//			cssStr += fmt.Sprintf(" \".%sOl%d::marker {", listClass, nl)
 			cssStr += fmt.Sprintf(" \".%sLi.Nl%d::marker {", listClass, nl)
 			if dObj.docLists[i].ord {
 				cssStr += fmt.Sprintf(" content: counter(%sOl%d, %s);", listClass, nl, glyphStr)
+			} else {
+ 				cssStr += fmt.Sprintf(" list-style-type: %s;", glyphStr)
 			}
-// else {
-// 				cssStr += fmt.Sprintf(" content: %s", glyphStr)
-
-//
-//list
-//            cssStr += cvtTxtMapStylToCssJson(defTxtMap,nestLev.TextStyle)
 			cssStr += fmt.Sprintf("}\"},\n")
 			headCss += cssStr
 		}
@@ -4161,7 +4146,7 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
     if dObj.tableCount > 0 {
 
        //css default table styling (center aligned)
-        cssStr = fmt.Sprintf(".%s_tbl {\n", dObj.docName)
+        cssStr = fmt.Sprintf(".%sTbl {\n", dObj.docName)
         cssStr += "  width: 100%;\n"
         cssStr += "  border-collapse: collapse;\n"
         cssStr += "  border: 1px solid black;\n"
