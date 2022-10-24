@@ -4135,51 +4135,45 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 			headCss += cssStr
 		}
 	}
+
+   // css default table
+    if dObj.tableCount > 0 {
+
+       //css default table styling (center aligned)
+		tblStr := ""
+        cssStr =  "  {\"cssRule\": \"." + dObj.docName + "Tbl {"
+        cssStr += " width: 100%;"
+        cssStr += " border-collapse: collapse;"
+        cssStr += " border: 1px solid black;"
+        cssStr += " margin-left: auto;  margin-right: auto;"
+        cssStr += "}\"},\n"
+		tblStr += cssStr
+
+		//css table row
+        cssStr =  "  {\"cssRule\": \"." + dObj.docName + "TblRow {"
+		cssStr += " min-height: 1em;"
+        cssStr += "}\"},\n"
+		tblStr += cssStr
+
+        //css table cell
+        cssStr =  "  {\"cssRule\": \"." + dObj.docName + "TblCel {"
+		cssStr += " border-collapse: collapse;"
+        cssStr += " border: 1px solid black;"
+//      cssStr += "  margin:auto;\n"
+        cssStr += " padding: 0.5pt;"
+		cssStr += "  height: 1em;"
+        cssStr += "}\"},\n"
+		tblStr += cssStr
+
+		// add Css
+		headCss += tblStr
+    }
+
 	xlen := len(headCss) -2
 	headCss = headCss[:xlen]
 	headCss = headCss + "],\n"
 	return headCss, nil
 }
-
-/*
-   // css default table
-    if dObj.tableCount > 0 {
-
-       //css default table styling (center aligned)
-        cssStr = fmt.Sprintf(".%sTbl {\n", dObj.docName)
-        cssStr += "  width: 100%;\n"
-        cssStr += "  border-collapse: collapse;\n"
-        cssStr += "  border: 1px solid black;\n"
-        cssStr += "  margin-left: auto;  margin-right: auto;\n"
-        cssStr += "}\n"
-
-		//css table row
-        cssStr += fmt.Sprintf(".%s_tblrow {\n", dObj.docName)
-		cssStr += "  min-height: 1em;\n"
-        cssStr += "}\n"
-
-        //css table cell
-        cssStr += fmt.Sprintf(".%s_tblcel {\n", dObj.docName)
-		cssStr += "  border-collapse: collapse;\n"
-        cssStr += "  border: 1px solid black;\n"
-//      cssStr += "  margin:auto;\n"
-        cssStr += "  padding: 0.5pt;\n"
-		cssStr += "  height: 1em;\n"
-        cssStr += "}\n"
-
-		// add Css
-		headCss += cssStr
-    }
-
-
-//	xlen := len(headCss)-1
-//	fmt.Printf("headCss last %q %q %q\n", headCss[xlen-2], headCss[xlen-1], headCss[xlen])
-
-//	if headCss[xlen-1] == ',' {headCss = headCss[:xlen-1]}
-//	headCss += "],\n"
-	return headCss, nil
-}
-*/
 
 func (dObj *GdocDomObj) cvtContentElToJson(contEl *docs.StructuralElement) (elStr string, err error) {
 // method that parses a Structural Element and invokes further methods
