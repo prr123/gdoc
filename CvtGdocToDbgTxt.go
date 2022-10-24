@@ -7,6 +7,7 @@
 //
 // CvtGdocToTxtv1.go from rd_Gdocv4.go
 // v1 move test to Gdoc
+// v2 change cli interface
 //
 
 package main
@@ -14,63 +15,80 @@ package main
 import (
         "fmt"
         "os"
-		"strings"
+//		"strings"
 		gdocApi "google/gdoc/gdocApi"
 		gdocDbg "google/gdoc/gdocDbgTxt"
+		util "google/gdoc/utilLib"
 )
 
 
 func main() {
 	var gd gdocApi.GdocApiStruct
 	// intialise
-    baseFolder := "output"
-    baseFolderSlash := baseFolder + "/"
+    baseFolder := "output/"
 
     numArgs := len(os.Args)
-
+    dbg := false
 	cmd := os.Args[0]
 
- 	switch numArgs {
-        case 1:
-            fmt.Println("error - no comand line arguments!")
-            fmt.Printf("%s usage is:\n  %s docId folder\n", cmd[2:], cmd)
+    if numArgs < 2 {
+            fmt.Println("error - no docid provided!")
+            fmt.Printf("%s usage is:\n  %s docId [outfolder] [dbg] [summary, main, all]\n", cmd[2:], cmd)
             os.Exit(1)
-        case 2:
-		// doc id
-		case 3:
-		// output folder
-		default:
-            fmt.Println("error - too many arguments!")
-            fmt.Printf("%s usage is:\n  %s folder docId\n", cmd[2:], cmd)
-            os.Exit(1)
-	}
+    }
 
     docId := os.Args[1]
+    flags := []string{"baseFolder", "out","dbg"}
 
-	err := gd.InitGdocApi()
+    cliMap, err :=util.ParseFlags(os.Args, flags)
+    if err !=nil {
+        fmt.Printf("error - CLI: ParseFlags: %v!\n", err)
+        os.Exit(1)
+    }
+
+    dbgStr, ok := cliMap["dbg"].(string)
+    if !ok {
+        fmt.Println("invalid argument for dbg: ", dbgStr)
+        os.Exit(1)
+    }
+
+    if dbgStr == "true" || dbgStr == "none" {dbg = true}
+
+    fmt.Printf("cliMap: %v!\n", cliMap)
+    fmt.Printf("dbg: %t\n", dbg)
+
+    baseStr, ok := cliMap["baseFolder"].(string)
+    if !ok {
+        fmt.Println("invalid argument for baseFolder: ", baseStr)
+        os.Exit(1)
+    }
+
+	if len(baseStr) > 0 {
+		if baseStr != "none" {
+			baseFolder = baseStr
+		}
+	}
+    fmt.Printf("baseFolder: %s\n", baseFolder)
+
+    outStr, ok := cliMap["out"].(string)
+    if !ok {
+        fmt.Println("invalid argument for outFolder: ", outStr)
+        os.Exit(1)
+    }
+
+    outFolder := "json"
+    if outStr != "none" { outFolder = outStr}
+
+    fmt.Printf("outFolder: %s\n", outFolder)
+
+	err = gd.InitGdocApi()
     if err != nil {
         fmt.Printf("error - InitGdocApi: %v!", err)
         os.Exit(1)
     }
 	srv := gd.Svc
 
-    outfilPath:= ""
-    switch {
-        case numArgs == 2:
-            outfilPath = baseFolder
-        case os.Args[2] == baseFolder:
-            outfilPath = os.Args[2]
-        case strings.Index(os.Args[2], baseFolderSlash)< 0:
-            outfilPath = baseFolderSlash + os.Args[2]
-        case strings.Index(os.Args[2], baseFolderSlash) == 0:
-            outfilPath = os.Args[2]
-        case os.Args[2] == "":
-            outfilPath = baseFolder
-        default:
-            fmt.Printf("no valid input folder: %s", os.Args[2])
-            os.Exit(1)
-    }
-
+	outfilPath:= baseFolder + outFolder
 
 //	docId := "1pdI_GFPR--q88V3WNKogcPfqa5VFOpzDZASo4alCKrE"
 
