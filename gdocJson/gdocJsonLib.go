@@ -3421,7 +3421,7 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err erro
 								if nl > 0 {parent = fmt.Sprintf("Ol%d", nl - 1)}
 								listStr = "{\"typ\":\"ol\","
 								listStr += " \"parent\":\"" + parent + "\","
-								cNam := fmt.Sprintf("%sOl",dObj.docName)
+								cNam := fmt.Sprintf("%s Nl%d ",listid[4:] ,nl)
 								listStr += " \"className\":\"" + cNam + "\","
 								listStr += fmt.Sprintf(" \"name\":\"Ol%d\",",nl)
 								counter := fmt.Sprintf("%sOl%d",listid[4:],nl)
@@ -3435,7 +3435,8 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err erro
 								if nl > 0 {parent = fmt.Sprintf("Ul%d", nl - 1)}
 								listStr = "{\"typ\":\"ul\","
 								listStr += " \"parent\":\"" + parent + "\","
-								cNam := fmt.Sprintf("%sUl",dObj.docName)
+								cNam := fmt.Sprintf("%s Nl%d ",listid[4:] ,nl)
+//								cNam := fmt.Sprintf("%sUl",dObj.docName)
 								listStr += " \"className\":\"" + cNam + "\","
 								listStr += fmt.Sprintf(" \"name\":\"Ul%d\"}",nl)
 								dObj.counter = ""
@@ -3478,7 +3479,8 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err erro
 					if nl > 0 {parent = fmt.Sprintf("Ol%d", nl - 1)}
 					listStr = "{\"typ\":\"ol\","
 					listStr += " \"parent\":\"" + parent + "\","
-					cNam := fmt.Sprintf("%sOl",dObj.docName)
+//					cNam := fmt.Sprintf("%sOl",dObj.docName)
+					cNam := fmt.Sprintf("%s Nl%d ",listid[4:] ,nl)
 //					classNam := fmt.Sprintf("%sOlNl%d",listid[4:],nl)
 					listStr += " \"className\":\"" + cNam + "\","
 					listStr += fmt.Sprintf(" \"name\":\"Ol%d\",",nl)
@@ -3496,7 +3498,8 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err erro
 					if nl > 0 {parent = fmt.Sprintf("Ul%d", nl - 1)}
 					listStr = "{\"typ\":\"ul\","
 					listStr += " \"parent\":\"" + parent + "\","
-					cNam := fmt.Sprintf("%sUl",dObj.docName)
+					cNam := fmt.Sprintf("%s Nl%d ",listid[4:] ,nl)
+//					cNam := fmt.Sprintf("%sUl",dObj.docName)
 					listStr += " \"className\":\"" + cNam + "\","
 					listStr += fmt.Sprintf(" \"name\":\"Ul%d\"",nl)
 					dObj.counter = ""
@@ -3524,13 +3527,18 @@ func (dObj *GdocDomObj) cvtParToJson(par *docs.Paragraph)(elStr string, err erro
 			cNam = fmt.Sprintf("%sUl%d",listid[4:],nl)
 		}
 
-		cNam = dObj.docName + "Li " + fmt.Sprintf("Nl%d", nl)
+		cNam = listid[4:] + "Li " + fmt.Sprintf("Nl%d", nl)
 		counter := dObj.counter
 		listStr = "{\"typ\":\"li\","
 		listStr += " \"parent\":\"" + listParent + "\","
 		listStr += " \"className\":\"" + cNam + "\","
 		listStr += " \"name\":\"list\","
-		listStr += " \"style\": {\"counterIncrement\": \"" + counter + "\"}},\n"
+//	cssStr += " display: list-item;"
+//	cssStr += " text-align: start;"
+//	cssStr += " padding-left: 6pt;"
+
+		listStr += " \"style\": {\"display\": \"listItem\", \"paddingLeft\": \"6pt\", "
+		listStr += "\"counterIncrement\": \"" + counter + "\"}},\n"
 		// mark
 
 		if par.Bullet.TextStyle != nil {
@@ -4072,12 +4080,12 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 	}
 
 	// list css strings
-	cssListatt := "list-style-type: none; list-style-position: outside;"
-	cssStr = "  {\"cssRule\": \"." + dObj.docName + "Ol {" + cssListatt + "}\"},\n"
-	cssStr += "  {\"cssRule\": \"." + dObj.docName + "Ul {" + cssListatt + "}\"},\n"
+	cssListAtt := "list-style-type: none; list-style-position: outside;"
+//	cssStr = "  {\"cssRule\": \"." + dObj.docName + "Ol {" + cssListatt + "}\"},\n"
+//	cssStr += "  {\"cssRule\": \"." + dObj.docName + "Ul {" + cssListatt + "}\"},\n"
 
 	// list class
-	cssStr += "  {\"cssRule\": \"." + dObj.docName + "Li {"
+	cssStr = "  {\"cssRule\": \"." + dObj.docName + "Li {"
 	cssStr += " display: list-item;"
 	cssStr += " text-align: start;"
 	cssStr += " padding-left: 6pt;"
@@ -4087,32 +4095,33 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 //		nestLev0 := listProp.NestingLevels[0]
 //		defGlyphTxtMap := fillTxtMap(nestLev0.TextStyle)
 
-    cssStr = ""
     for i:=0; i<len(dObj.docLists); i++ {
         listid := dObj.docLists[i].listId
         listClass := listid[4:]
         listProp := dObj.doc.Lists[listid].ListProperties
-//		cumIndent := 0.0
+		cumIndent := 0.0
 
 		for nl:=0; nl <= int(dObj.docLists[i].maxNestLev); nl++ {
+    		cssStr = ""
 			nestLev := listProp.NestingLevels[nl]
-//			cssStr += "  {\"cssRule\":"
+			cssStr += "  {\"cssRule\":"
 			glyphStr := util.GetGlyphStr(nestLev)
-/*
-			if dObj.docLists[i].ord {
-				cssStr += fmt.Sprintf(" \".%sOlNl%d {", listClass, nl)
-			} else {
-				cssStr += fmt.Sprintf(" \".%sUlNl%d {", listClass, nl)
-			}
+
+//			if dObj.docLists[i].ord {
+				cssStr += fmt.Sprintf(" \".%s.Nl%d {", listClass, nl)
+//			} else {
+//				cssStr += fmt.Sprintf(" \".%sUl%d {", listClass, nl)
+//			}
 
 			idFl := nestLev.IndentFirstLine.Magnitude - cumIndent
 			idSt := nestLev.IndentStart.Magnitude - cumIndent
-			cssStr += fmt.Sprintf(" margin: 0pt 0pt 0pt %.0fpt;", idFl)
+			cssStr += cssListAtt + fmt.Sprintf(" margin: 0pt 0pt 0pt %.0fpt;", idFl)
 			cssStr += fmt.Sprintf(" padding-left: %.0fpt;", idSt-idFl - 6.0)
 			cssStr += fmt.Sprintf("}\"},\n")
 
 			cumIndent += idSt
 
+/*
 			// Css <li nest level>
 			cssStr += "  {\"cssRule\":"
 			cssStr += fmt.Sprintf(" \".%sLiNl%d {", listClass, nl)
@@ -4127,18 +4136,23 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
 			// Css marker
 			cssStr += "  {\"cssRule\":"
 //			cssStr += fmt.Sprintf(" \".%sOl%d::marker {", listClass, nl)
-			cssStr += fmt.Sprintf(" \".%sLi.Nl%d::marker {", dObj.docName, nl)
+			cssStr += fmt.Sprintf(" \".%sLi.Nl%d::marker {", listClass, nl)
 			if dObj.docLists[i].ord {
 				cssStr += fmt.Sprintf(" content: counter(%sOl%d, %s);", listClass, nl, glyphStr)
 			}
+// else {
+// 				cssStr += fmt.Sprintf(" content: %s", glyphStr)
+
+//
 //list
 //            cssStr += cvtTxtMapStylToCssJson(defTxtMap,nestLev.TextStyle)
 			cssStr += fmt.Sprintf("}\"},\n")
+			headCss += cssStr
 		}
 	}
-	xlen := len(cssStr) -2
-	cssStr = cssStr[:xlen]
-	headCss += cssStr + "],\n"
+	xlen := len(headCss) -2
+	headCss = headCss[:xlen]
+	headCss = headCss + "],\n"
 	return headCss, nil
 }
 
