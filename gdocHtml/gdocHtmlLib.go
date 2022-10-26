@@ -14,7 +14,7 @@ import (
 	"fmt"
 	"os"
 	"google.golang.org/api/docs/v1"
-    gdocUtil "google/gdoc/gdocUtil"
+    gdoc "google/gdoc/gdocCommon"
 )
 
 const (
@@ -65,7 +65,7 @@ type GdocHtmlObj struct {
     imgFoldPath string
 //	textmaps []*textMap
 //	defTxtmap textMap
-	Options *gdocUtil.OptObj
+	Options *gdoc.OptObj
 }
 
 type namStyl struct {
@@ -326,14 +326,14 @@ if txtStyl == nil {
 	}
 	if txtStyl.ForegroundColor != nil {
 		if txtStyl.ForegroundColor.Color != nil {
-			fmt.Printf("Font Color:  %s %s\n", txtMap.txtColor, gdocUtil.GetColor(txtStyl.ForegroundColor.Color))
+			fmt.Printf("Font Color:  %s %s\n", txtMap.txtColor, gdoc.GetColor(txtStyl.ForegroundColor.Color))
 		}
 	} else {
 		fmt.Printf("Font Color: %s %s\n", txtMap.txtColor, "NA")
 	}
 	if txtStyl.BackgroundColor != nil {
 		if txtStyl.BackgroundColor != nil {
-			fmt.Printf("Font BckCol: %s %s\n", txtMap.bckColor, gdocUtil.GetColor(txtStyl.BackgroundColor.Color))
+			fmt.Printf("Font BckCol: %s %s\n", txtMap.bckColor, gdoc.GetColor(txtStyl.BackgroundColor.Color))
 		}
 	} else {
 		fmt.Printf("Font BckCol: %s %s\n", txtMap.bckColor, "NA")
@@ -397,7 +397,7 @@ func fillTxtMap (txtStyl *docs.TextStyle)(txtMapRef *textMap) {
 	txtMap.txtColor = "rgb(0,0,0)"
 	if txtStyl.ForegroundColor != nil {
 		if txtStyl.ForegroundColor.Color != nil {
-			color := gdocUtil.GetColor(txtStyl.ForegroundColor.Color)
+			color := gdoc.GetColor(txtStyl.ForegroundColor.Color)
 			if color != txtMap.txtColor {
 				txtMap.txtColor = color
 			}
@@ -407,7 +407,7 @@ func fillTxtMap (txtStyl *docs.TextStyle)(txtMapRef *textMap) {
 	txtMap.bckColor = ""
 	if txtStyl.BackgroundColor != nil {
 		if txtStyl.BackgroundColor.Color != nil {
-			color := gdocUtil.GetColor(txtStyl.BackgroundColor.Color)
+			color := gdoc.GetColor(txtStyl.BackgroundColor.Color)
 			if color != txtMap.bckColor {
 				txtMap.bckColor = color
 			}
@@ -550,7 +550,7 @@ func cvtTxtMapStylCss (txtMap *textMap, txtStyl *docs.TextStyle)(cssStr string) 
 
 	if txtStyl.ForegroundColor != nil {
 		if txtStyl.ForegroundColor.Color != nil {
-			color := gdocUtil.GetColor(txtStyl.ForegroundColor.Color)
+			color := gdoc.GetColor(txtStyl.ForegroundColor.Color)
 			if color != txtMap.txtColor {
 				txtMap.txtColor = color
 				cssStr += fmt.Sprintf("  color: %s;\n", txtMap.txtColor)
@@ -560,7 +560,7 @@ func cvtTxtMapStylCss (txtMap *textMap, txtStyl *docs.TextStyle)(cssStr string) 
 
 	if txtStyl.BackgroundColor != nil {
 		if txtStyl.BackgroundColor.Color != nil {
-			color := gdocUtil.GetColor(txtStyl.BackgroundColor.Color)
+			color := gdoc.GetColor(txtStyl.BackgroundColor.Color)
 			if color != txtMap.bckColor {
 				txtMap.bckColor = color
 				cssStr += fmt.Sprintf("  background-color: %s;\n", txtMap.bckColor)
@@ -613,13 +613,13 @@ func cvtTxtStylCss (txtStyl *docs.TextStyle)(cssStr string) {
 		if txtStyl.ForegroundColor.Color != nil {
 			//0 to 1
             tcssStr += "  color: "
-            tcssStr += gdocUtil.GetColor(txtStyl.ForegroundColor.Color)
+            tcssStr += gdoc.GetColor(txtStyl.ForegroundColor.Color)
 		}
 	}
 	if txtStyl.BackgroundColor != nil {
 		if txtStyl.BackgroundColor.Color != nil {
             tcssStr += "  background-color: "
-            tcssStr += gdocUtil.GetColor(txtStyl.BackgroundColor.Color)
+            tcssStr += gdoc.GetColor(txtStyl.BackgroundColor.Color)
 		}
 	}
 
@@ -769,7 +769,7 @@ func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 		}
 		if parStyl.BorderBetween.Color != nil {
 			if parStyl.BorderBetween.Color.Color != nil {
-				color := gdocUtil.GetColor(parStyl.BorderBetween.Color.Color)
+				color := gdoc.GetColor(parStyl.BorderBetween.Color.Color)
 				if color != parmap.bordBet.color {
 					parmap.bordBet.color = color
 					alter = true
@@ -804,7 +804,7 @@ func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 		}
 		if parStyl.BorderTop.Color != nil {
 			if parStyl.BorderTop.Color.Color != nil {
-				color := gdocUtil.GetColor(parStyl.BorderTop.Color.Color)
+				color := gdoc.GetColor(parStyl.BorderTop.Color.Color)
 				if color != parmap.bordTop.color {
 					parmap.bordTop.color = color
 					alter = true
@@ -833,7 +833,7 @@ func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 		}
 		if parStyl.BorderRight.Color != nil {
 			if parStyl.BorderRight.Color.Color != nil {
-				color := gdocUtil.GetColor(parStyl.BorderRight.Color.Color)
+				color := gdoc.GetColor(parStyl.BorderRight.Color.Color)
 				if color != parmap.bordRight.color {
 					parmap.bordRight.color = color
 					alter = true
@@ -865,7 +865,7 @@ func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 		}
 		if parStyl.BorderBottom.Color != nil {
 			if parStyl.BorderBottom.Color.Color != nil {
-				color := gdocUtil.GetColor(parStyl.BorderBottom.Color.Color)
+				color := gdoc.GetColor(parStyl.BorderBottom.Color.Color)
 				if color != parmap.bordBot.color {
 					parmap.bordBot.color = color
 					alter = true
@@ -894,7 +894,7 @@ func printParMap(parmap *parMap, parStyl *docs.ParagraphStyle) {
 		}
 		if parStyl.BorderLeft.Color != nil {
 			if parStyl.BorderLeft.Color.Color != nil {
-				color := gdocUtil.GetColor(parStyl.BorderLeft.Color.Color)
+				color := gdoc.GetColor(parStyl.BorderLeft.Color.Color)
 				if color != parmap.bordLeft.color {
 					parmap.bordLeft.color = color
 					alter = true
@@ -1069,7 +1069,7 @@ func fillParMap(parStyl *docs.ParagraphStyle)(parMapRef *parMap) {
 		}
 		if parStyl.BorderBetween.Color != nil {
 			if parStyl.BorderBetween.Color.Color != nil {
-				color := gdocUtil.GetColor(parStyl.BorderBetween.Color.Color)
+				color := gdoc.GetColor(parStyl.BorderBetween.Color.Color)
 				if color != parmap.bordBet.color {
 					parmap.bordBet.color = color
 				}
@@ -1098,7 +1098,7 @@ func fillParMap(parStyl *docs.ParagraphStyle)(parMapRef *parMap) {
 		}
 		if parStyl.BorderTop.Color != nil {
 			if parStyl.BorderTop.Color.Color != nil {
-				color := gdocUtil.GetColor(parStyl.BorderTop.Color.Color)
+				color := gdoc.GetColor(parStyl.BorderTop.Color.Color)
 				if color != parmap.bordTop.color {
 					parmap.bordTop.color = color
 				}
@@ -1126,7 +1126,7 @@ func fillParMap(parStyl *docs.ParagraphStyle)(parMapRef *parMap) {
 		}
 		if parStyl.BorderRight.Color != nil {
 			if parStyl.BorderRight.Color.Color != nil {
-				color := gdocUtil.GetColor(parStyl.BorderRight.Color.Color)
+				color := gdoc.GetColor(parStyl.BorderRight.Color.Color)
 				if color != parmap.bordRight.color {
 					parmap.bordRight.color = color
 				}
@@ -1156,7 +1156,7 @@ func fillParMap(parStyl *docs.ParagraphStyle)(parMapRef *parMap) {
 		}
 		if parStyl.BorderBottom.Color != nil {
 			if parStyl.BorderBottom.Color.Color != nil {
-				color := gdocUtil.GetColor(parStyl.BorderBottom.Color.Color)
+				color := gdoc.GetColor(parStyl.BorderBottom.Color.Color)
 				if color != parmap.bordBot.color {
 					parmap.bordBot.color = color
 				}
@@ -1184,7 +1184,7 @@ func fillParMap(parStyl *docs.ParagraphStyle)(parMapRef *parMap) {
 		}
 		if parStyl.BorderLeft.Color != nil {
 			if parStyl.BorderLeft.Color.Color != nil {
-				color := gdocUtil.GetColor(parStyl.BorderLeft.Color.Color)
+				color := gdoc.GetColor(parStyl.BorderLeft.Color.Color)
 				if color != parmap.bordLeft.color {
 					parmap.bordLeft.color = color
 				}
@@ -1206,7 +1206,7 @@ func fillParMap(parStyl *docs.ParagraphStyle)(parMapRef *parMap) {
 	return &parmap
 }
 
-func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *gdocUtil.OptObj)(cssStr string) {
+func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *gdoc.OptObj)(cssStr string) {
 // function that creates the css attributes of a paragraph
 // the function compares the values of the parMap and parStyl
 	if parmap == nil {return "/* no parmap */"}
@@ -1380,7 +1380,7 @@ func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *gdocUti
 		}
 		if parStyl.BorderBetween.Color != nil {
 			if parStyl.BorderBetween.Color.Color != nil {
-				color := gdocUtil.GetColor(parStyl.BorderBetween.Color.Color)
+				color := gdoc.GetColor(parStyl.BorderBetween.Color.Color)
 				if color != parmap.bordBet.color {
 					parmap.bordBet.color = color
 				}
@@ -1408,7 +1408,7 @@ func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *gdocUti
 		}
 		if parStyl.BorderTop.Color != nil {
 			if parStyl.BorderTop.Color.Color != nil {
-				color := gdocUtil.GetColor(parStyl.BorderTop.Color.Color)
+				color := gdoc.GetColor(parStyl.BorderTop.Color.Color)
 				if color != parmap.bordTop.color {
 					parmap.bordTop.color = color
 				}
@@ -1436,7 +1436,7 @@ func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *gdocUti
 		}
 		if parStyl.BorderRight.Color != nil {
 			if parStyl.BorderRight.Color.Color != nil {
-				color := gdocUtil.GetColor(parStyl.BorderRight.Color.Color)
+				color := gdoc.GetColor(parStyl.BorderRight.Color.Color)
 				if color != parmap.bordRight.color {
 					parmap.bordRight.color = color
 				}
@@ -1466,7 +1466,7 @@ func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *gdocUti
 		}
 		if parStyl.BorderBottom.Color != nil {
 			if parStyl.BorderBottom.Color.Color != nil {
-				color := gdocUtil.GetColor(parStyl.BorderBottom.Color.Color)
+				color := gdoc.GetColor(parStyl.BorderBottom.Color.Color)
 				if color != parmap.bordBot.color {
 					parmap.bordBot.color = color
 				}
@@ -1494,7 +1494,7 @@ func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *gdocUti
 		}
 		if parStyl.BorderLeft.Color != nil {
 			if parStyl.BorderLeft.Color.Color != nil {
-				color := gdocUtil.GetColor(parStyl.BorderLeft.Color.Color)
+				color := gdoc.GetColor(parStyl.BorderLeft.Color.Color)
 				if color != parmap.bordLeft.color {
 					parmap.bordLeft.color = color
 				}
@@ -1510,15 +1510,15 @@ func cvtParMapStylCss(parmap *parMap, parStyl *docs.ParagraphStyle, opt *gdocUti
 	}
 
 	cssStr += fmt.Sprintf("  padding: %.1fpt %.1fpt %.1fpt %.1fpt;\n", parmap.bordTop.pad, parmap.bordRight.pad, parmap.bordBot.pad, parmap.bordLeft.pad)
-	cssStr += fmt.Sprintf("  border-top: %.1fpt %s %s;\n", parmap.bordTop.width, gdocUtil.GetDash(parmap.bordTop.dash), parmap.bordTop.color)
-	cssStr += fmt.Sprintf("  border-right: %.1fpt %s %s;\n", parmap.bordRight.width, gdocUtil.GetDash(parmap.bordRight.dash), parmap.bordRight.color)
-	cssStr += fmt.Sprintf("  border-bottom: %.1fpt %s %s;\n", parmap.bordBot.width, gdocUtil.GetDash(parmap.bordBot.dash), parmap.bordBot.color)
-	cssStr += fmt.Sprintf("  border-left: %.1fpt %s %s;\n", parmap.bordLeft.width, gdocUtil.GetDash(parmap.bordLeft.dash), parmap.bordLeft.color)
+	cssStr += fmt.Sprintf("  border-top: %.1fpt %s %s;\n", parmap.bordTop.width, gdoc.GetDash(parmap.bordTop.dash), parmap.bordTop.color)
+	cssStr += fmt.Sprintf("  border-right: %.1fpt %s %s;\n", parmap.bordRight.width, gdoc.GetDash(parmap.bordRight.dash), parmap.bordRight.color)
+	cssStr += fmt.Sprintf("  border-bottom: %.1fpt %s %s;\n", parmap.bordBot.width, gdoc.GetDash(parmap.bordBot.dash), parmap.bordBot.color)
+	cssStr += fmt.Sprintf("  border-left: %.1fpt %s %s;\n", parmap.bordLeft.width, gdoc.GetDash(parmap.bordLeft.dash), parmap.bordLeft.color)
 
 	return cssStr
 }
 
-func cvtParMapCss(pMap *parMap, opt *gdocUtil.OptObj)(cssStr string) {
+func cvtParMapCss(pMap *parMap, opt *gdoc.OptObj)(cssStr string) {
 	cssStr =""
 
 	if len(pMap.halign) > 0 {
@@ -1578,10 +1578,10 @@ func cvtParMapCss(pMap *parMap, opt *gdocUtil.OptObj)(cssStr string) {
 
 	if !pMap.hasBorders { return cssStr }
 	cssStr += fmt.Sprintf("  padding: %.1fpt %.1fpt %.1fpt %.1fpt;\n", pMap.bordTop.pad, pMap.bordRight.pad, pMap.bordBot.pad, pMap.bordLeft.pad)
-	cssStr += fmt.Sprintf("  border-top: %.1fpt %s %s;\n", pMap.bordTop.width, gdocUtil.GetDash(pMap.bordTop.dash), pMap.bordTop.color)
-	cssStr += fmt.Sprintf("  border-right: %.1fpt %s %s;\n", pMap.bordRight.width, gdocUtil.GetDash(pMap.bordRight.dash), pMap.bordRight.color)
-	cssStr += fmt.Sprintf("  border-bottom: %.1fpt %s %s;\n", pMap.bordBot.width, gdocUtil.GetDash(pMap.bordBot.dash), pMap.bordBot.color)
-	cssStr += fmt.Sprintf("  border-left: %.1fpt %s %s;\n", pMap.bordLeft.width, gdocUtil.GetDash(pMap.bordLeft.dash), pMap.bordLeft.color)
+	cssStr += fmt.Sprintf("  border-top: %.1fpt %s %s;\n", pMap.bordTop.width, gdoc.GetDash(pMap.bordTop.dash), pMap.bordTop.color)
+	cssStr += fmt.Sprintf("  border-right: %.1fpt %s %s;\n", pMap.bordRight.width, gdoc.GetDash(pMap.bordRight.dash), pMap.bordRight.color)
+	cssStr += fmt.Sprintf("  border-bottom: %.1fpt %s %s;\n", pMap.bordBot.width, gdoc.GetDash(pMap.bordBot.dash), pMap.bordBot.color)
+	cssStr += fmt.Sprintf("  border-left: %.1fpt %s %s;\n", pMap.bordLeft.width, gdoc.GetDash(pMap.bordLeft.dash), pMap.bordLeft.color)
 
 	return cssStr
 }
@@ -1716,7 +1716,7 @@ func (dObj *GdocHtmlObj) findListProp (listId string) (listProp *docs.ListProper
 	return nil
 }
 
-func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *gdocUtil.OptObj) (err error) {
+func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *gdoc.OptObj) (err error) {
 	var listItem docList
 	var heading headingTyp
 	var sec secTyp
@@ -1738,9 +1738,9 @@ func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *gdocUtil.OptOb
 	dObj.docName = string(x[:])
 
 	if options == nil {
-		defOpt := new(gdocUtil.OptObj)
-		gdocUtil.GetDefOption(defOpt)
-		if defOpt.Verb {gdocUtil.PrintOptions(defOpt)}
+		defOpt := new(gdoc.OptObj)
+		gdoc.GetDefOption(defOpt)
+		if defOpt.Verb {gdoc.PrintOptions(defOpt)}
 		dObj.Options = defOpt
 	} else {
 		dObj.Options = options
@@ -1808,7 +1808,7 @@ func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *gdocUtil.OptOb
 					listItem.listId = listId
 					listItem.maxNestLev = elObj.Paragraph.Bullet.NestingLevel
 					nestL := doc.Lists[listId].ListProperties.NestingLevels[nestlev]
-					listItem.ord = gdocUtil.GetGlyphOrd(nestL)
+					listItem.ord = gdoc.GetGlyphOrd(nestL)
 					dObj.docLists = append(dObj.docLists, listItem)
 				} else {
 					if dObj.docLists[found].maxNestLev < nestlev { dObj.docLists[found].maxNestLev = nestlev }
@@ -1931,10 +1931,10 @@ func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *gdocUtil.OptOb
 	dObj.posImgCount = len(doc.PositionedObjects)
 
 // create folders
-    fPath, fexist, err := gdocUtil.CreateFileFolder(folderPath, dObj.docName)
-//    fPath, _, err := gdocUtil.CreateFileFolder(folderPath, dObj.docName)
+    fPath, fexist, err := gdoc.CreateFileFolder(folderPath, dObj.docName)
+//    fPath, _, err := gdoc.CreateFileFolder(folderPath, dObj.docName)
     if err!= nil {
-        return fmt.Errorf("error -- gdocUtil.CreateFileFolder: %v", err)
+        return fmt.Errorf("error -- gdoc.CreateFileFolder: %v", err)
     }
     dObj.folderPath = fPath
 
@@ -1948,9 +1948,9 @@ func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *gdocUtil.OptOb
 	}
 
     // create output file path/outfilNam.txt
-    outfil, err := gdocUtil.CreateOutFil(fPath, dObj.docName,"html")
+    outfil, err := gdoc.CreateOutFil(fPath, dObj.docName,"html")
     if err!= nil {
-        return fmt.Errorf("error -- gdocUtil.CreateOutFil: %v", err)
+        return fmt.Errorf("error -- gdoc.CreateOutFil: %v", err)
     }
     dObj.htmlFil = outfil
 
@@ -1959,12 +1959,12 @@ func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *gdocUtil.OptOb
 
 
     if dObj.Options.CreImgFolder && (totObjNum > 0) {
-        imgFoldPath, err := gdocUtil.CreateImgFolder(fPath ,dObj.docName)
+        imgFoldPath, err := gdoc.CreateImgFolder(fPath ,dObj.docName)
         if err != nil {
             return fmt.Errorf("error -- CreateImgFolder: could create ImgFolder: %v!", err)
         }
         dObj.imgFoldNam = imgFoldPath
-        err = gdocUtil.DownloadImages(doc, imgFoldPath, dObj.Options)
+        err = gdoc.DownloadImages(doc, imgFoldPath, dObj.Options)
         if err != nil {
             return fmt.Errorf("error -- downloadImages could download images: %v!", err)
         }
@@ -1977,7 +1977,7 @@ func (dObj *GdocHtmlObj) initGdocHtml(folderPath string, options *gdocUtil.OptOb
 func (dObj *GdocHtmlObj) cvtGlyph(nLev *docs.NestingLevel)(cssStr string) {
 var glyphTyp string
 
-	glyphTyp = gdocUtil.GetGlyphStr(nLev)
+	glyphTyp = gdoc.GetGlyphStr(nLev)
 	if len(glyphTyp) == 0 {
 		cssStr = fmt.Sprintf("/* unknown GlyphType: %s Symbol: %s */\n", nLev.GlyphType, nLev.GlyphSymbol)
 	} else {
@@ -2229,7 +2229,7 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 	defcel.bdash = "solid"
 
 	if tcelDefStyl != nil {
-		defcel.vert_align = gdocUtil.Get_vert_align(tcelDefStyl.ContentAlignment)
+		defcel.vert_align = gdoc.Get_vert_align(tcelDefStyl.ContentAlignment)
 
 	// if left border is the only border specified, let's use it for default values
 		tb := (tcelDefStyl.BorderTop == nil)&& (tcelDefStyl.BorderRight == nil)
@@ -2237,11 +2237,11 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 		if (tcelDefStyl.BorderLeft != nil) && tb {
 			if tcelDefStyl.BorderLeft.Color != nil {
 				if tcelDefStyl.BorderLeft.Color.Color != nil {
-					defcel.border[3].color = gdocUtil.GetColor(tcelDefStyl.BorderLeft.Color.Color)
+					defcel.border[3].color = gdoc.GetColor(tcelDefStyl.BorderLeft.Color.Color)
 				}
 			}
 			if tcelDefStyl.BorderLeft.Width != nil {defcel.border[3].width = tcelDefStyl.BorderLeft.Width.Magnitude}
-			defcel.border[3].dash = gdocUtil.GetDash(tcelDefStyl.BorderLeft.DashStyle)
+			defcel.border[3].dash = gdoc.GetDash(tcelDefStyl.BorderLeft.DashStyle)
 		}
 
 		if tcelDefStyl.PaddingTop != nil {defcel.pad[0] = tcelDefStyl.PaddingTop.Magnitude}
@@ -2251,48 +2251,48 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 
         if tcelDefStyl.BackgroundColor != nil {
             if tcelDefStyl.BackgroundColor.Color != nil {
-                defcel.bckcolor = gdocUtil.GetColor(tcelDefStyl.BackgroundColor.Color)
+                defcel.bckcolor = gdoc.GetColor(tcelDefStyl.BackgroundColor.Color)
             }
         }
 
         if tcelDefStyl.BorderTop != nil {
             if tcelDefStyl.BorderTop.Color != nil {
                 if tcelDefStyl.BorderTop.Color.Color != nil {
-                    defcel.border[0].color = gdocUtil.GetColor(tcelDefStyl.BorderTop.Color.Color)
+                    defcel.border[0].color = gdoc.GetColor(tcelDefStyl.BorderTop.Color.Color)
                 }
             }
             if tcelDefStyl.BorderTop.Width != nil {defcel.border[0].width = tcelDefStyl.BorderTop.Width.Magnitude}
-            defcel.border[0].dash = gdocUtil.GetDash(tcelDefStyl.BorderTop.DashStyle)
+            defcel.border[0].dash = gdoc.GetDash(tcelDefStyl.BorderTop.DashStyle)
         }
 
         if tcelDefStyl.BorderRight != nil {
             if tcelDefStyl.BorderRight.Color != nil {
                 if tcelDefStyl.BorderRight.Color.Color != nil {
-                    defcel.border[1].color = gdocUtil.GetColor(tcelDefStyl.BorderRight.Color.Color)
+                    defcel.border[1].color = gdoc.GetColor(tcelDefStyl.BorderRight.Color.Color)
                 }
             }
             if tcelDefStyl.BorderRight.Width != nil {defcel.border[1].width = tcelDefStyl.BorderRight.Width.Magnitude}
-            defcel.border[1].dash = gdocUtil.GetDash(tcelDefStyl.BorderRight.DashStyle)
+            defcel.border[1].dash = gdoc.GetDash(tcelDefStyl.BorderRight.DashStyle)
         }
 
         if tcelDefStyl.BorderBottom != nil {
             if tcelDefStyl.BorderBottom.Color != nil {
                 if tcelDefStyl.BorderBottom.Color.Color != nil {
-                    defcel.border[2].color = gdocUtil.GetColor(tcelDefStyl.BorderBottom.Color.Color)
+                    defcel.border[2].color = gdoc.GetColor(tcelDefStyl.BorderBottom.Color.Color)
                 }
             }
             if tcelDefStyl.BorderBottom.Width != nil {defcel.border[2].width = tcelDefStyl.BorderBottom.Width.Magnitude}
-            defcel.border[2].dash = gdocUtil.GetDash(tcelDefStyl.BorderBottom.DashStyle)
+            defcel.border[2].dash = gdoc.GetDash(tcelDefStyl.BorderBottom.DashStyle)
         }
 
         if tcelDefStyl.BorderLeft != nil {
             if tcelDefStyl.BorderLeft.Color != nil {
                 if tcelDefStyl.BorderLeft.Color.Color != nil {
-                    defcel.border[3].color = gdocUtil.GetColor(tcelDefStyl.BorderLeft.Color.Color)
+                    defcel.border[3].color = gdoc.GetColor(tcelDefStyl.BorderLeft.Color.Color)
                 }
             }
             if tcelDefStyl.BorderLeft.Width != nil {defcel.border[3].width = tcelDefStyl.BorderLeft.Width.Magnitude}
-            defcel.border[3].dash = gdocUtil.GetDash(tcelDefStyl.BorderLeft.DashStyle)
+            defcel.border[3].dash = gdoc.GetDash(tcelDefStyl.BorderLeft.DashStyle)
         }
 
         if tcelDefStyl.BorderTop == tcelDefStyl.BorderRight {
@@ -2300,10 +2300,10 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
             if tcelDefStyl.BorderTop != nil {
                 if tcelDefStyl.BorderTop.Color != nil {
                     if tcelDefStyl.BorderTop.Color.Color != nil {
-                        defcel.bcolor = gdocUtil.GetColor(tcelDefStyl.BorderTop.Color.Color)
+                        defcel.bcolor = gdoc.GetColor(tcelDefStyl.BorderTop.Color.Color)
                     }
                 }
-                defcel.bdash = gdocUtil.GetDash(tcelDefStyl.BorderTop.DashStyle)
+                defcel.bdash = gdoc.GetDash(tcelDefStyl.BorderTop.DashStyle)
                 if tcelDefStyl.BorderTop.Width != nil {defcel.bwidth = tcelDefStyl.BorderTop.Width.Magnitude}
             }
         }
@@ -2369,10 +2369,10 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 				tstyl := tcell.TableCellStyle
 				if tstyl.BackgroundColor != nil {
 					if tstyl.BackgroundColor.Color != nil {
-						cellStr += fmt.Sprintf(" background-color:\"%s\";",gdocUtil.GetColor(tstyl.BackgroundColor.Color))
+						cellStr += fmt.Sprintf(" background-color:\"%s\";",gdoc.GetColor(tstyl.BackgroundColor.Color))
 					}
 				}
-				if gdocUtil.Get_vert_align(tstyl.ContentAlignment) != defcel.vert_align {cellStr += fmt.Sprintf(" vertical-align: %s;", gdocUtil.Get_vert_align(tstyl.ContentAlignment))}
+				if gdoc.Get_vert_align(tstyl.ContentAlignment) != defcel.vert_align {cellStr += fmt.Sprintf(" vertical-align: %s;", gdoc.Get_vert_align(tstyl.ContentAlignment))}
 				if tstyl.PaddingTop != nil {
 					if tstyl.PaddingTop.Magnitude != defcel.pad[0] { cellStr += fmt.Sprintf(" padding-top: %5.1fpt;", tstyl.PaddingTop.Magnitude)}
 				}
@@ -2391,11 +2391,11 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 					// Color
 					if tstyl.BorderTop.Color != nil {
 						if tstyl.BorderTop.Color.Color != nil {
-							cellStr += fmt.Sprintf(" border-top-color: %s;", gdocUtil.GetColor(tstyl.BorderTop.Color.Color))
+							cellStr += fmt.Sprintf(" border-top-color: %s;", gdoc.GetColor(tstyl.BorderTop.Color.Color))
 						}
 					}
 					//dash
-					if gdocUtil.GetDash(tstyl.BorderTop.DashStyle) != defcel.bdash {cellStr += fmt.Sprintf(" border-top-style: %s;",  gdocUtil.GetDash(tstyl.BorderTop.DashStyle))}
+					if gdoc.GetDash(tstyl.BorderTop.DashStyle) != defcel.bdash {cellStr += fmt.Sprintf(" border-top-style: %s;",  gdoc.GetDash(tstyl.BorderTop.DashStyle))}
 					//Width
 					if tstyl.BorderTop.Width != nil {
 						cellStr += fmt.Sprintf(" border-top-width: %5.1fpt;", tstyl.BorderTop.Width.Magnitude)
@@ -2406,11 +2406,11 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 					// Color
 					if tstyl.BorderLeft.Color != nil {
 						if tstyl.BorderLeft.Color.Color != nil {
-							cellStr += fmt.Sprintf(" border-left-color: %s;", gdocUtil.GetColor(tstyl.BorderLeft.Color.Color))
+							cellStr += fmt.Sprintf(" border-left-color: %s;", gdoc.GetColor(tstyl.BorderLeft.Color.Color))
 						}
 					}
 					//dash
-					if gdocUtil.GetDash(tstyl.BorderLeft.DashStyle) != defcel.bdash {cellStr += fmt.Sprintf(" border-left-style: %s;",  gdocUtil.GetDash(tstyl.BorderLeft.DashStyle))}
+					if gdoc.GetDash(tstyl.BorderLeft.DashStyle) != defcel.bdash {cellStr += fmt.Sprintf(" border-left-style: %s;",  gdoc.GetDash(tstyl.BorderLeft.DashStyle))}
 					//Width
 					if tstyl.BorderTop.Width != nil {
 						cellStr += fmt.Sprintf(" border-left-width: %5.1fpt;", tstyl.BorderLeft.Width.Magnitude)
@@ -2421,11 +2421,11 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 					// Color
 					if tstyl.BorderBottom.Color != nil {
 						if tstyl.BorderBottom.Color.Color != nil {
-							cellStr += fmt.Sprintf(" border-bottom-color: %s;", gdocUtil.GetColor(tstyl.BorderBottom.Color.Color))
+							cellStr += fmt.Sprintf(" border-bottom-color: %s;", gdoc.GetColor(tstyl.BorderBottom.Color.Color))
 						}
 					}
 					//dash
-					if gdocUtil.GetDash(tstyl.BorderBottom.DashStyle) != defcel.bdash {cellStr += fmt.Sprintf(" border-bottom-style: %s;",  gdocUtil.GetDash(tstyl.BorderBottom.DashStyle))}
+					if gdoc.GetDash(tstyl.BorderBottom.DashStyle) != defcel.bdash {cellStr += fmt.Sprintf(" border-bottom-style: %s;",  gdoc.GetDash(tstyl.BorderBottom.DashStyle))}
 					//Width
 					if tstyl.BorderBottom.Width != nil {
 						cellStr += fmt.Sprintf(" border-bottom-width: %5.1fpt;", tstyl.BorderBottom.Width.Magnitude)
@@ -2436,11 +2436,11 @@ func (dObj *GdocHtmlObj) cvtTable(tbl *docs.Table)(tabObj dispObj, err error) {
 					// Color
 					if tstyl.BorderRight.Color != nil {
 						if tstyl.BorderRight.Color.Color != nil {
-							cellStr += fmt.Sprintf(" border-right-color: %s;", gdocUtil.GetColor(tstyl.BorderRight.Color.Color))
+							cellStr += fmt.Sprintf(" border-right-color: %s;", gdoc.GetColor(tstyl.BorderRight.Color.Color))
 						}
 					}
 					//dash
-					if gdocUtil.GetDash(tstyl.BorderRight.DashStyle) != defcel.bdash {cellStr += fmt.Sprintf(" border-right-style: %s;",  gdocUtil.GetDash(tstyl.BorderRight.DashStyle))}
+					if gdoc.GetDash(tstyl.BorderRight.DashStyle) != defcel.bdash {cellStr += fmt.Sprintf(" border-right-style: %s;",  gdoc.GetDash(tstyl.BorderRight.DashStyle))}
 					//Width
 					if tstyl.BorderRight.Width != nil {
 						cellStr += fmt.Sprintf(" border-right-width: %5.1fpt;", tstyl.BorderRight.Width.Magnitude)
@@ -2596,13 +2596,14 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parDisp dispObj, err error)
 
 		if dObj.Options.Verb {listHtml += fmt.Sprintf("<!-- List Element %d -->\n", dObj.parCount)}
 
-		bulletCssStr := ""
-		if par.Bullet.TextStyle != nil {
-			_, defTxtStyl, err := dObj.getNamedStyl("NORMAl_TEXT")
-			if err != nil {parDisp.bodyCss += "/* cannot find normal txt style*/\n"}
-			defTxtMap := fillTxtMap(defTxtStyl)
-			bulletCssStr = cvtTxtMapStylCss(defTxtMap, par.Bullet.TextStyle)
-		}
+// todo
+//		bulletCssStr := ""
+//		if par.Bullet.TextStyle != nil {
+//			_, defTxtStyl, err := dObj.getNamedStyl("NORMAl_TEXT")
+//			if err != nil {parDisp.bodyCss += "/* cannot find normal txt style*/\n"}
+//			defTxtMap := fillTxtMap(defTxtStyl)
+//			bulletCssStr = cvtTxtMapStylCss(defTxtMap, par.Bullet.TextStyle)
+//		}
 
 		// find list id of paragraph
 		listid := par.Bullet.ListId
@@ -2610,7 +2611,7 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parDisp dispObj, err error)
 
 		// retrieve the list properties from the doc.Lists map
 		nestL := dObj.doc.Lists[listid].ListProperties.NestingLevels[nestIdx]
-		listOrd := gdocUtil.GetGlyphOrd(nestL)
+		listOrd := gdoc.GetGlyphOrd(nestL)
 
 		// A. check whether need new <ul> or <ol>
 		// listHtml contains the <ul> <ol> element
@@ -2695,10 +2696,9 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parDisp dispObj, err error)
 				}
 		}
 
-//lll
 		// CSS
 		liCss := fmt.Sprintf(".%s_li.nL_%d.lc_%d::marker {\n", listid[4:], nestIdx, listAtt.count)
-		listAtt.counter++
+		listAtt.count++
 
 		if par.Bullet.TextStyle != nil {
 			liCss += cvtTxtStylCss(par.Bullet.TextStyle)
@@ -2706,12 +2706,12 @@ func (dObj *GdocHtmlObj) cvtPar(par *docs.Paragraph)(parDisp dispObj, err error)
 		glfmtStr := nestL.GlyphFormat
 //fmt.Printf("list count: %d glyph Format: %s\n", listAtt.count, glfmtStr)
 
-		glFmt, err := gdocUtil.ParseGlyphFormat(glfmtStr)
+		glFmt, err := gdoc.ParseGlyphFormat(glfmtStr)
 		if err != nil {
 			liCss += fmt.Sprintf("/* error %s */\n", glfmtStr)
 		}
 
-//		gdocUtil.PrintGlFmt(glFmt)
+//		gdoc.PrintGlFmt(glFmt)
 
 		liCss += fmt.Sprintf("  counter-increment: %s_li_nL_%d;\n", listid[4:], nestIdx)
 		liCss += fmt.Sprintf("  content: \"%s\" ", glFmt.Txt[0])
@@ -3157,7 +3157,7 @@ func (dObj *GdocHtmlObj) creCssDocHead() (headCss string, err error) {
 			nestLev := listProp.NestingLevels[nl]
 //			glyphTxtMap := defGlyphTxtMap
 //			if nl > 0 {cvtTxtMapStylCss(glyphTxtMap, nestLev.TextStyle)}
-			glyphStr := gdocUtil.GetGlyphStr(nestLev)
+			glyphStr := gdoc.GetGlyphStr(nestLev)
 			switch dObj.docLists[i].ord {
 				case true:
 					cssStr += fmt.Sprintf(".%s_ol.nL_%d {\n", listClass, nl)
@@ -3572,7 +3572,7 @@ func (dObj *GdocHtmlObj) cvtBodySec(elSt, elEnd int) (bodyObj *dispObj, err erro
 	return bodyObj, nil
 }
 
-func CreGdocHtmlDoc(folderPath string, doc *docs.Document, options *gdocUtil.OptObj)(err error) {
+func CreGdocHtmlDoc(folderPath string, doc *docs.Document, options *gdoc.OptObj)(err error) {
 	// function which converts the entire document into an hmlt file
 
     if doc == nil { return fmt.Errorf("error -- doc is nil!\n")}
@@ -3697,7 +3697,7 @@ func CreGdocHtmlDoc(folderPath string, doc *docs.Document, options *gdocUtil.Opt
 	return nil
 }
 
-func CreGdocHtmlMain(folderPath string, doc *docs.Document, options *gdocUtil.OptObj)(err error) {
+func CreGdocHtmlMain(folderPath string, doc *docs.Document, options *gdoc.OptObj)(err error) {
 // function that converts the main part of a gdoc document into an html file
 // excludes everything before the "main" heading or
 // excludes sections titled "summary" and "keywords"
@@ -3834,7 +3834,7 @@ func CreGdocHtmlMain(folderPath string, doc *docs.Document, options *gdocUtil.Op
 }
 
 
-func CreGdocHtmlSection(heading, folderPath string, doc *docs.Document, options *gdocUtil.OptObj)(err error) {
+func CreGdocHtmlSection(heading, folderPath string, doc *docs.Document, options *gdoc.OptObj)(err error) {
 // function that creates an html fil from the named section
 
 	var mainDiv dispObj
@@ -3960,7 +3960,7 @@ func CreGdocHtmlSection(heading, folderPath string, doc *docs.Document, options 
 
 
 
-func CreGdocHtmlAll(folderPath string, doc *docs.Document, options *gdocUtil.OptObj)(err error) {
+func CreGdocHtmlAll(folderPath string, doc *docs.Document, options *gdoc.OptObj)(err error) {
 // function that creates an html fil from the named section
 	var mainDiv dispObj
 	var dObj GdocHtmlObj
