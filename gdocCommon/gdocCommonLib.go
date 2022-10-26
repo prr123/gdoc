@@ -18,7 +18,7 @@ import (
     "unicode/utf8"
 	"gopkg.in/yaml.v3"
 	"google.golang.org/api/docs/v1"
-	"google/gdoc/util"
+	util "google/gdoc/utilLib"
 )
 
 type OptObj struct {
@@ -166,7 +166,7 @@ func ParseGlyphFormat(glyphFmt string)(glFmt glFmt, err error) {
 
 	for i:= 1; i< glFmt.Counter+1; i++ {
 		nlNumChar := glyphFmt[pos[i]+1]
-		if !utilLib.IsNumeric(nlNumChar) {
+		if !util.IsNumeric(nlNumChar) {
 			return glFmt, fmt.Errorf("level is not numeric!")
 		}
 
