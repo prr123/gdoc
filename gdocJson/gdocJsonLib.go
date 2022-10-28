@@ -3911,13 +3911,6 @@ func (dObj *GdocDomObj) cvtGdocParToJson(par *docs.Paragraph)(parStr string, alt
 		cssParAtt, alter = cvtParMapStylToJson(parmap, parStyl, dObj.Options)
 	}
 
-/*
- 	if len(par.Elements) == 1 {
-		parElTxt := par.Elements[0].TextRun
-		attStr, crEnd, err := dObj.cvtParTxtSingle(parElTxt *docs.TextRun, namedTyp string)
-		if err == nil {insText = true}
-	}
-*/
 	headingId := parStyl.HeadingId
 	className := ""
 	parStr = ""
@@ -4552,8 +4545,8 @@ func (dObj *GdocDomObj) creFtnoteDivDom () (ftnoteStr string, err error) {
 //toc div
 func (dObj *GdocDomObj) creJsonTocDiv () (tocStr string, err error) {
 
-/*
-	if dObj.Options.Toc != true { return nil, nil }
+
+	if dObj.Options.Toc != true { return "", nil }
 
 	if dObj.Options.Verb {
 		if len(dObj.headings) < 2 {
@@ -4563,76 +4556,16 @@ func (dObj *GdocDomObj) creJsonTocDiv () (tocStr string, err error) {
 		}
 	}
 
-	if len(dObj.headings) < 2 {
-		tocDiv.bodyHtml = fmt.Sprintf("<!-- no toc insufficient headings -->")
-		return tocObj, nil
-	}
 
-	//css
-	cssStr = ""
-	for namStyl, val := range dObj.namStylMap {
+	tocStr = "\"elements\": [\n"
 
-		if !val {continue}
+	// divMain
+	classNam := dObj.docName + "TOC"
+	elStr := fmt.Sprintf("{\"typ\":\"div\",\"className\":\"%s\",\"id\":\"%sTOC\",\"name\":\"gdocToc\"},\n",classNam, dObj.docName)
+	dObj.parent = "gdocToc"
 
-		switch namStyl {
-			case "HEADING_1":
-				cssStr = fmt.Sprintf(".%s_h1.toc_h1 {\n",dObj.docName)
- 				cssStr += "  padding-left: 10px;\n  margin: 0px;\n"
-				cssStr += "}\n"
-
-			case "HEADING_2":
-				cssStr = fmt.Sprintf(".%s_h2.toc_h2 {\n",dObj.docName)
-				cssStr += " padding-left: 20px;\n  margin: 0px;\n"
-				cssStr += "}\n"
-
-			case "HEADING_3":
-				cssStr = fmt.Sprintf(".%s_h3.toc_h3 {\n",dObj.docName)
-				cssStr += " padding-left: 40px;\n  margin: 0px;\n"
-				cssStr += "}\n"
-
-			case "HEADING_4":
-				cssStr = fmt.Sprintf(".%s_h4.toc_h4 {\n",dObj.docName)
-				cssStr += " padding-left: 60px;\n  margin: 0px;\n"
-				cssStr += "}\n"
-
-			case "HEADING_5":
-				cssStr = fmt.Sprintf(".%s_h5.toc_h5 {\n",dObj.docName)
-				cssStr += " padding-left: 80px;\n  margin: 0px;\n"
-				cssStr += "}\n"
-
-			case "HEADING_6":
-				cssStr = fmt.Sprintf(".%s_h6.toc_h6 {\n",dObj.docName)
-				cssStr += " padding-left: 100px;\n  margin: 0px;\n"
-				cssStr += "}\n"
-
-			default:
-
-		}
-	}
-
-	tocDiv.bodyCss = cssStr
-
-	//html
-	//fmt.Sprintf("<div class=\"%s_main %s_top\">\n", dObj.docName)
-	elObj.parent = "divDoc"
-	elObj.typ = "div"
-	elObj.newEl = "divToc"
-	elObj.cl1 = dObj.docName + "_main"
-	elObj.cl2 = dObj.docName + "_top"
-	elObj.doAppend = true
-	tocDiv.script = addElToDom(elObj)
-
-	//fmt.Sprintf("<p class=\"%s_title %s_leftTitle\">Table of Contents</p>\n", dObj.docName, dObj.docName)
-	elObj.parent = "divToc"
-	elObj.typ = "p"
-	elObj.newEl = "divToc"
-	elObj.cl1 = dObj.docName + "_title"
-	elObj.cl2 = dObj.docName + "_leftTitle"
-	elObj.txt = "Table of Contents"
-	elObj.doAppend = true
-	tocDiv.script = addElToDom(elObj)
-
-	tocDiv.script = scriptStr
+	tocStr +=elStr
+	parent:= dObj.parent
 
 	//html all headings are entries to toc table of content
 	for ihead:=0; ihead<len(dObj.headings); ihead++ {
@@ -4641,152 +4574,134 @@ func (dObj *GdocDomObj) creJsonTocDiv () (tocStr string, err error) {
 		hdId := dObj.headings[ihead].id[3:]
 		text := dObj.headings[ihead].text
 
+		idStr := fmt.Sprintf("\"id\":\"p%d\",", dObj.parCount) + " \"name\":\"par\"," + " \"parent\":\"" + parent + "\","
+		dObj.parCount++
 
 		switch namedStyl {
 		case "TITLE":
 			//prefix := fmt.Sprintf("<p class=\"%s_title %s_leftTitle_UL\">", dObj.docName, dObj.docName)
 			//middle := fmt.Sprintf("<a href=\"#%s\" class=\"%s_noUl\">%s</a>", hdId, dObj.docName, text)
 
-			//script
-			elObj.parent = "divToc"
-			elObj.typ = "p"
-			elObj.cl1 = dObj.docName + "_title"
-			elObj.cl2 = dObj.docName + "_leftTitle"
-			elObj.newEl = "parel"
-			elObj.doAppend = true
-			tocDiv.script += addElToDom(elObj)
-			elObj.parent = "parel"
-			elObj.txt = text
-			elObj.href = "#" + hdId
-			tocDiv.script += addLinkToDom(elObj)
+			elStr = "{\"typ\":\"p\", " + idStr
+			classNam := dObj.docName + "Title"
+			elStr += ", \"classNam\": \"" + classNam + "\","
+			elStr += ", \"style\":{\"textDecoration\": \"none\""
+				// \"margin\": \"0\"}"
+			elStr += "},\n"
+			parent = "par"
+			elStr += "{\"typ\":\"a\", " + idStr
+			elStr += "\"contentText\": \"" + text + "\","
+			elStr += "\"href\":\"#" + hdId + "\""
+			elStr += "},\n"
+
 
 		case "SUBTITLE":
 			//prefix := fmt.Sprintf("<p class=\"%s_subtitle\">", dObj.docName)
 			//middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
 
-			//script
-			elObj.parent = "divToc"
-			elObj.typ = "p"
-			elObj.cl1 = dObj.docName + "_subtitle"
-			elObj.newEl = "parel"
-			elObj.doAppend = true
-			tocDiv.script += addElToDom(elObj)
-			elObj.parent = "parel"
-			elObj.txt = text
-			elObj.href = "#" + hdId
-			tocDiv.script += addLinkToDom(elObj)
+/*
+			elStr = "{\"typ\":\"p\", " + idStr
+			classNam := dObj.docName + "SubTitle"
+			elStr += ", \"classNam\": \"" + classNam + "\","
+			elStr += ", \"style\":{\"paddingLeft\": \"10px\", \"margin\": \"0\"}"
+			elStr += "},\n"
+			parent = "par"
+			elStr += "{\"typ\":\"a\", " + idStr
+			elStr += "\"contentText\": \"" + text + "\","
+			elStr += "\"href\":\"#" + hdId + "\""
+			elStr += "},\n"
+*/
 
 		case "HEADING_1":
 			//html
 			//prefix := fmt.Sprintf("<h1 class=\"%s_h1 toc_h1\">", dObj.docName)
 			//middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
 
-			//script
-			elObj.parent = "divToc"
-			elObj.typ = "h1"
-			elObj.cl1 = dObj.docName + "_h1"
-			elObj.cl2 = "toc_h1"
-			elObj.newEl = "parel"
-			elObj.doAppend = true
-			tocDiv.script += addElToDom(elObj)
-			elObj.parent = "parel"
-			elObj.txt = text
-			elObj.href = "#" + hdId
-			tocDiv.script += addLinkToDom(elObj)
+			elStr = "{\"typ\":\"h1\", " + idStr
+			elStr += ", \"style\":{\"paddingLeft\": \"10px\", \"margin\": \"0\"}"
+			elStr += "},\n"
+			parent = "par"
+			elStr += "{\"typ\":\"a\", " + idStr
+			elStr += "\"contentText\": \"" + text + "\","
+			elStr += "\"href\":\"#" + hdId + "\""
+			elStr += "},\n"
 
 		case "HEADING_2":
 			//prefix := fmt.Sprintf("<h2 class=\"%s_h2 toc_h2\">", dObj.docName)
 			//middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
 
-			//script
-			elObj.parent = "divToc"
-			elObj.typ = "h2"
-			elObj.cl1 = dObj.docName + "_h2"
-			elObj.cl2 = "toc_h2"
-			elObj.newEl = "parel"
-			elObj.doAppend = true
-			tocDiv.script += addElToDom(elObj)
-			elObj.parent = "parel"
-			elObj.txt = text
-			elObj.href = "#" + hdId
-			tocDiv.script += addLinkToDom(elObj)
+			elStr = "{\"typ\":\"h2\", " + idStr
+			elStr += ", \"style\":{\"paddingLeft\": \"20px\", \"margin\": \"0\"}"
+			elStr += "},\n"
+			parent = "par"
+			elStr += "{\"typ\":\"a\", " + idStr
+			elStr += "\"contentText\": \"" + text + "\","
+			elStr += "\"href\":\"#" + hdId + "\""
+			elStr += "},\n"
+
 
 		case "HEADING_3":
 			//prefix := fmt.Sprintf("<h3 class=\"%s_h3 toc_h3\">", dObj.docName)
 			//middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
 
-			//script
-			elObj.parent = "divToc"
-			elObj.typ = "h3"
-			elObj.cl1 = dObj.docName + "_h3"
-			elObj.cl2 = "toc_h3"
-			elObj.newEl = "parel"
-			elObj.doAppend = true
-			tocDiv.script += addElToDom(elObj)
-			elObj.parent = "parel"
-			elObj.txt = text
-			elObj.href = "#" + hdId
-			tocDiv.script += addLinkToDom(elObj)
+			elStr = "{\"typ\":\"h3\", " + idStr
+			elStr += ", \"style\":{\"paddingLeft\": \"40px\", \"margin\": \"0\"}"
+			elStr += "},\n"
+			parent = "par"
+			elStr += "{\"typ\":\"a\", " + idStr
+			elStr += "\"contentText\": \"" + text + "\","
+			elStr += "\"href\":\"#" + hdId + "\""
+			elStr += "},\n"
 
 		case "HEADING_4":
 			//prefix := fmt.Sprintf("<h4 class=\"%s_h4 toc_h4\">", dObj.docName)
 			//middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
 
-			//script
-			elObj.parent = "divToc"
-			elObj.typ = "h4"
-			elObj.cl1 = dObj.docName + "_h4"
-			elObj.cl2 = "toc_h4"
-			elObj.newEl = "parel"
-			elObj.doAppend = true
-			tocDiv.script += addElToDom(elObj)
-			elObj.parent = "parel"
-			elObj.txt = text
-			elObj.href = "#" + hdId
-			tocDiv.script += addLinkToDom(elObj)
+			elStr = "{\"typ\":\"h4\", " + idStr
+			elStr += ", \"style\":{\"paddingLeft\": \"60px\", \"margin\": \"0\"}"
+			elStr += "},\n"
+			parent = "par"
+			elStr += "{\"typ\":\"a\", " + idStr
+			elStr += "\"contentText\": \"" + text + "\","
+			elStr += "\"href\":\"#" + hdId + "\""
+			elStr += "},\n"
 
 		case "HEADING_5":
 			//prefix := fmt.Sprintf("<h5 class=\"%s_h5 toc_h5\">", dObj.docName)
 			//middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
 
-			//script
-			elObj.parent = "divToc"
-			elObj.typ = "h5"
-			elObj.cl1 = dObj.docName + "_h5"
-			elObj.cl2 = "toc_h5"
-			elObj.newEl = "parel"
-			elObj.doAppend = true
-			tocDiv.script += addElToDom(elObj)
-			elObj.parent = "parel"
-			elObj.txt = text
-			elObj.href = "#" + hdId
-			tocDiv.script += addLinkToDom(elObj)
+			elStr = "{\"typ\":\"h5\", " + idStr
+			elStr += ", \"style\":{\"paddingLeft\": \"80px\", \"margin\": \"0\"}"
+			elStr += "},\n"
+			parent = "par"
+			elStr += "{\"typ\":\"a\", " + idStr
+			elStr += "\"contentText\": \"" + text + "\","
+			elStr += "\"href\":\"#" + hdId + "\""
+			elStr += "},\n"
 
 		case "HEADING_6":
 			//prefix := fmt.Sprintf("<h6 class=\"%s_h6 toc_h6\">", dObj.docName)
 			//middle := fmt.Sprintf("<a href=\"#%s\">%s</a>", hdId, text)
 
-			//script
-			elObj.parent = "divToc"
-			elObj.typ = "h6"
-			elObj.cl1 = dObj.docName + "_h6"
-			elObj.cl2 = "toc_h6"
-			elObj.newEl = "parel"
-			elObj.doAppend = true
-			tocDiv.script += addElToDom(elObj)
-			elObj.parent = "parel"
-			elObj.txt = text
-			elObj.href = "#" + hdId
-			tocDiv.script += addLinkToDom(elObj)
+			elStr = "{\"typ\":\"h6\", " + idStr
+			elStr += ", \"style\":{\"paddingLeft\": \"100px\", \"margin\": \"0\"}"
+			elStr += "},\n"
+			parent = "par"
+			elStr += "{\"typ\":\"a\", " + idStr
+			elStr += "\"contentText\": \"" + text + "\","
+			elStr += "\"href\":\"#" + hdId + "\""
+			elStr += "},\n"
 
 		case "NORMAL_TEXT":
 
 		default:
 
 		}
-
+		tocStr += elStr
 	} // end loop
-*/
+
+	dObj.parent = "gdocMain"
+
 	return tocStr, nil
 }
 
@@ -4820,10 +4735,10 @@ func (dObj *GdocDomObj) cvtBodyToJson() (jsonStr string, err error) {
 	bodyObj.script = addElToDom(divMain)
 */
 
-	jsonStr = "\"elements\": ["
+	jsonStr = "\"elements\": [\n"
+
 	// divMain
 	classNam := dObj.docName + "Div"
-//	dObj.parent = dObj.docName + "Main"
 	elStr := fmt.Sprintf("{\"typ\":\"div\",\"className\":\"%s\",\"id\":\"%sMain\",\"name\":\"gdocMain\"},\n",classNam, dObj.docName)
 	dObj.parent = "gdocMain"
 
