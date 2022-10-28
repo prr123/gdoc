@@ -3104,16 +3104,6 @@ func (dObj *GdocDomObj) cvtTableToJson(tbl *docs.Table)(tblStr string, err error
 
 	// html fmt.Sprintf("<table class=\"%s_tbl tbl_%d\">\n", dObj.docName, dObj.tableCounter)
 
-/*
-	tblObj.parent = dObj.parent
-	tblObj.typ = "table"
-	tblObj.doAppend = false
-	tblObj.newEl = tblNam
-	tblObj.cl1 = dObj.docName + "_tbl"
-	tblObj.cl2 = fmt.Sprintf("tbl_%d", dObj.tableCounter)
-	scriptStr += addElToDom(tblObj)
-*/
-
 	tblElStr :=""
 
 	tblElStr = "{\"typ\": \"table\","
@@ -3123,6 +3113,52 @@ func (dObj *GdocDomObj) cvtTableToJson(tbl *docs.Table)(tblStr string, err error
 	tblElStr += "\"parent\": \"" + dObj.parent + "\"},\n"
 	tblStr += tblElStr
 
+
+	// table columns
+	// conundrum: tables either have evenly distributed columns or not
+	// should not be possible to have a mixture of evenly distributed columns and specified width columns
+	// thus it should be sufficient to check the first column for that property
+
+	tblWidth := 0.0
+	colWidth := make([]float64, tbl.Columns)
+	colNum := tbl.Columns
+	colFixWidth := 0.0
+	tabWtyp :=tbl.TableStyle.TableColumnProperties[0].WidthType
+	switch tabWtyp {
+		case "EVENLY_DISTRIBUTED":
+		// no need for column groupd
+			colFixWidth = dObj.docWidth/float64(colNum)
+		case "WIDTH_TYPE_UNSPECIFIED":
+		// to be determined
+
+		case "FIXED_WIDTH":
+		// html htmlStr +="<colgroup>\n"
+			for icol = 0; icol < tbl.Columns; icol++ {
+				if tbl.TableStyle.TableColumnProperties[icol].Width != nil {
+					colWidth[icol] = tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude
+					tblWidth += colWidth[icol]
+				} else {
+					colWidth[icol] = 0.0
+				}
+			}
+	} //switch
+
+	tblHeader := false
+	rowStyl := tbl.TableRows[0].TableRowStyle;
+	if rowStyl != nil {
+		tblHeader = rowStyl.TableHeader
+	}
+
+	if tblHeader {
+// table body
+		tblElStr = "{\"typ\": \"thead\","
+		tblElStr += "\"id\": \"THead" + tblNam + "\","
+		tblElStr += "\"name\": \"tblHead\","
+		tblElStr += "\"parent\": \"tbl\","
+		tblElStr += "\"className\": \"" + dObj.docName + "TblHead\"},\n"
+		tblStr += tblElStr
+	}
+
 // table body
 	tblElStr = "{\"typ\": \"tbody\","
 	tblElStr += "\"id\": \"Body" + tblNam + "\","
@@ -3131,98 +3167,61 @@ func (dObj *GdocDomObj) cvtTableToJson(tbl *docs.Table)(tblStr string, err error
 	tblElStr += "\"className\": \"" + dObj.docName + "TblBody\"},\n"
 	tblStr += tblElStr
 
-	// table columns
-	// conundrum: tables either have evenly distributed columns or not
-	// should not be possible to have a mixture of evenly distributed columns and specified width columns
-	// thus it should be sufficient to check the first column for that property
-
-	tabWtyp :=tbl.TableStyle.TableColumnProperties[0].WidthType
-	switch tabWtyp {
-		case "EVENLY_DISTRIBUTED":
-		// no need for column groups
-
-		case "WIDTH_TYPE_UNSPECIFIED":
-		// to be determined
-
-		case "FIXED_WIDTH":
-		// html htmlStr +="<colgroup>\n"
-
-/*
-		elObj.parent = "tblBody"
-		elObj.typ = "colgroup"
-		elObj.newEl = "colgrp"
-		elObj.doAppend = true
-		scriptStr += addElToDom(elObj)
-*/
-		tblElStr = "{\"typ\": \"colgroup\","
-		tblElStr += "\"id\": \"ColGrp" + tblNam + "\","
-		tblElStr += "\"name\": \"colGrp\","
-		tblElStr += "\"parent\": \"tblBody\","
-		tblElStr += "\"className\": \"" + dObj.docName + "ColGrp\"},\n"
-		tblStr += tblElStr
-	} //switch
-
-//	tblW := 0.0
-	for icol = 0; icol < tbl.Columns; icol++ {
-/*
-            colW := tbl.TableStyle.TableColumnProperties[icol].Width.Magnitude
-			tblW += colW
-
-            cssStr += fmt.Sprintf(".%s_colgrp_%d.col_%d {width: %.0fpt;}\n", dObj.docName, dObj.tableCounter, icol, colW)
-            //htmlStr += fmt.Sprintf("<col span=\"1\" class=\"%s_colgrp_%d col_%d\">\n", dObj.docName, dObj.tableCounter, icol)
-			colObj.parent = "colgrp"
-			colObj.cl1 = fmt.Sprintf("%s_colgrp_%d", dObj.docName, dObj.tableCounter)
-			colObj.cl2 = fmt.Sprintf("col_%d", icol)
-			colObj.spanCount = 1
-			scriptStr += addColToDom(colObj)
-		}
-		//if tabw > 0.0 {tabWidth = tabw}
-		// html htmlStr +="</colgroup>\n"
-*/
-	}
-
 // row styling
 	tblCellCount := 0
 	for trow=0; trow < tbl.Rows; trow++ {
 		// html fmt.Sprintf("  <tr>\n")
-/*
-		elObj.typ ="tr"
-		elObj.cl1 = fmt.Sprintf("%s_tblrow", dObj.docName)
-		elObj.parent = "tblBody"
-		elObj.newEl = "trow"
-		elObj.doAppend = true
-		scriptStr += addElToDom(elObj)
-*/
+
 		tblElStr = "{\"typ\": \"tr\","
 		tblElStr += fmt.Sprintf("\"id\": \"%sTblRow%d\",",tblNam, trow)
 		tblElStr += "\"name\": \"trow\","
-		tblElStr += "\"parent\": \"tblBody\","
-		tblElStr += "\"className\": \"" + dObj.docName + "TblRow\"},\n"
-		tblStr += tblElStr
+		if tblHeader && trow == 0{
+			tblElStr += "\"parent\": \"tblHead\","
+		} else {
+			tblElStr += "\"parent\": \"tblBody\","
+		}
+		tblElStr += "\"className\": \"" + dObj.docName + "TblRow\""
 
-		trowobj := tbl.TableRows[trow]
-//		mrheight := trowobj.TableRowStyle.MinRowHeight.Magnitude
+		trowObj := tbl.TableRows[trow]
 
-		numCols := len(trowobj.TableCells)
+		rowStylStr := ""
+		rowStyl := trowObj.TableRowStyle;
+		if rowStyl != nil {
+			if rowStyl.MinRowHeight != nil {
+				rowStylStr += fmt.Sprintf("\"minRowHeight\": \"%4.1fpt\"", rowStyl.MinRowHeight.Magnitude)
+			}
+		}
+		if len(rowStylStr) > 0 {
+			tblElStr += ",\"style\":{" + rowStylStr + "}"
+		}
+		tblStr += tblElStr + "},\n"
+
+		numCols := len(trowObj.TableCells)
 		for tcol:=0; tcol< numCols; tcol++ {
-			tcell := trowobj.TableCells[tcol]
+			tcell := trowObj.TableCells[tcol]
 			tblCellCount++
 			cellStr := ""
-/*
-			elObj.cl1 =  fmt.Sprintf("%s_tblcel", dObj.docName)
-			elObj.typ ="td"
-			elObj.parent = "trow"
-			elObj.newEl = "tcel"
-			elObj.doAppend = true
-			scriptStr += addElToDom(elObj)
-*/
-			tblElStr = "{\"typ\": \"td\","
-			tblElStr += fmt.Sprintf("\"id\": \"%sCel%d\",",tblNam, tblCellCount)
-			tblElStr += "\"name\": \"tcel\","
-			tblElStr += "\"parent\": \"trow\","
-			tblElStr += "\"className\": \"" + dObj.docName + "TblCel\"}"
+
+			//header
+			if tblHeader && trow == 0{
+				tblElStr = "{\"typ\": \"th\","
+				tblElStr += fmt.Sprintf("\"id\": \"%sCel%d\",",tblNam, tblCellCount)
+				tblElStr += "\"name\": \"thcel\","
+				tblElStr += "\"parent\": \"trow\","
+				tblElStr += "\"className\": \"" + dObj.docName + "TblHdCel\""
+			} else {
+				tblElStr = "{\"typ\": \"td\","
+				tblElStr += fmt.Sprintf("\"id\": \"%sCel%d\",",tblNam, tblCellCount)
+				tblElStr += "\"name\": \"tcel\","
+				tblElStr += "\"parent\": \"trow\","
+				tblElStr += "\"className\": \"" + dObj.docName + "TblCel\""
+			}
 			// check whether cell style is different from default
-			cellStr = "\"style\": {"
+			cellStr =""
+//colw
+			if colFixWidth > 0 { cellStr += fmt.Sprintf("\"width\": \"%4.1fpt\",",colFixWidth)}
+			if colWidth[tcol] > 0 {cellStr += fmt.Sprintf("\"width\": \"%4.1fpt\",",colWidth[tcol])}
+
 			if tcell.TableCellStyle != nil {
 				tstyl := tcell.TableCellStyle
 				if tstyl.BackgroundColor != nil {
@@ -3269,43 +3268,72 @@ func (dObj *GdocDomObj) cvtTableToJson(tbl *docs.Table)(tblStr string, err error
 					}
                 }
 
-				cellStr += fmt.Sprintf(" \"padding\": \"%.1fpt %.1fpt %.1fpt %.1fpt\",", padTop, padRight, padBot, padLeft)
-
+				// test whether padding is equal on all sides
+				if padTop == padBot {
+					if padRight == padLeft {
+						if padTop == padRight {
+							if padTop > 0 {
+								cellStr += fmt.Sprintf(" \"padding\": \"%.1fpt\",", padTop)
+							}
+						}
+					}
+				} else {
+					cellStr += fmt.Sprintf(" \"padding\": \"%.1fpt %.1fpt %.1fpt %.1fpt\",", padTop, padRight, padBot, padLeft)
+				}
+				dashStr := "solid"
+				colorStr := "black"
+				widthStr := ""
                 if tstyl.BorderTop != nil {
                     // Color
                     if tstyl.BorderTop.Color != nil {
                         if tstyl.BorderTop.Color.Color != nil {
 //                            cellStr += fmt.Sprintf(" border-top-color: %s;", gdoc.GetColor(tstyl.BorderTop.Color.Color))
-                            cellStr += fmt.Sprintf(" \"borderTopColor\": \"%s\",", gdoc.GetColor(tstyl.BorderTop.Color.Color))
+//                            bordStr += fmt.Sprintf(" \"borderTopColor\": \"%s\",", gdoc.GetColor(tstyl.BorderTop.Color.Color))
+							colorStr = gdoc.GetColor(tstyl.BorderTop.Color.Color)
                         }
                     }
                     //dash
                     if gdoc.GetDash(tstyl.BorderTop.DashStyle) != defcel.bdash {
 //						cellStr += fmt.Sprintf(" border-top-style: %s;",  gdoc.GetDash(tstyl.BorderTop.DashStyle))}
-						cellStr += fmt.Sprintf(" \"borderTopStyle\": \"%s\",",  gdoc.GetDash(tstyl.BorderTop.DashStyle))
+//						bordStr += fmt.Sprintf(" \"borderTopStyle\": \"%s\",",  gdoc.GetDash(tstyl.BorderTop.DashStyle))
+						dashStr = gdoc.GetDash(tstyl.BorderTop.DashStyle)
 					}
                     //Width
                     if tstyl.BorderTop.Width != nil {
 //                        cellStr += fmt.Sprintf(" border-top-width: %5.1fpt;", tstyl.BorderTop.Width.Magnitude)
-                        cellStr += fmt.Sprintf(" \"borderTopWidth\": \"%5.1fpt\",", tstyl.BorderTop.Width.Magnitude)
+//                        bordStr += fmt.Sprintf(" \"borderTopWidth\": \"%5.1fpt\",", tstyl.BorderTop.Width.Magnitude)
+						widthStr = fmt.Sprintf("%4.1fpt",tstyl.BorderTop.Width.Magnitude)
+						if tstyl.BorderTop.Width.Magnitude > 0.0 {
+							cellStr += "\"borderTop\":\"" + widthStr + " " + dashStr + " " + colorStr + "\","
+						}
                     }
                 }
 
+
+				dashStr = "solid"
+				colorStr = "black"
+				widthStr = ""
                 if tstyl.BorderLeft != nil {
                     // Color
                     if tstyl.BorderLeft.Color != nil {
                         if tstyl.BorderLeft.Color.Color != nil {
                         //    cellStr += fmt.Sprintf(" border-left-color: %s;", gdoc.GetColor(tstyl.BorderLeft.Color.Color))
-                            cellStr += fmt.Sprintf(" \"borderLeftColor\": \"%s\",", gdoc.GetColor(tstyl.BorderLeft.Color.Color))
+                        //    cellStr += fmt.Sprintf(" \"borderLeftColor\": \"%s\",", gdoc.GetColor(tstyl.BorderLeft.Color.Color))
+							colorStr = gdoc.GetColor(tstyl.BorderLeft.Color.Color)
                         }
                     }
                     //dash
                     if gdoc.GetDash(tstyl.BorderLeft.DashStyle) != defcel.bdash {
-						cellStr += fmt.Sprintf(" \"borderLeftStyle\": \"%s\",",  gdoc.GetDash(tstyl.BorderLeft.DashStyle))
+						//cellStr += fmt.Sprintf(" \"borderLeftStyle\": \"%s\",",  gdoc.GetDash(tstyl.BorderLeft.DashStyle))
+						dashStr = gdoc.GetDash(tstyl.BorderLeft.DashStyle)
 					}
                     //Width
-                    if tstyl.BorderTop.Width != nil {
-                        cellStr += fmt.Sprintf(" \"borderLeftWidth\": \"%5.1fpt\",", tstyl.BorderLeft.Width.Magnitude)
+                    if tstyl.BorderLeft.Width != nil {
+                        //cellStr += fmt.Sprintf(" \"borderLeftWidth\": \"%5.1fpt\",", tstyl.BorderLeft.Width.Magnitude)
+						widthStr = fmt.Sprintf("%4.1fpt",tstyl.BorderLeft.Width.Magnitude)
+						if tstyl.BorderLeft.Width.Magnitude > 0.0 {
+							cellStr += "\"borderLeft\":\"" + widthStr + " " + dashStr + " " + colorStr + "\","
+						}
                     }
                 }
 
@@ -3315,19 +3343,25 @@ func (dObj *GdocDomObj) cvtTableToJson(tbl *docs.Table)(tblStr string, err error
                     if tstyl.BorderBottom.Color != nil {
                         if tstyl.BorderBottom.Color.Color != nil {
                         //    cellStr += fmt.Sprintf(" border-bottom-color: %s;", gdoc.GetColor(tstyl.BorderBottom.Color.Color))
-                            cellStr += fmt.Sprintf(" \"borderBottomColor\": \"%s\",", gdoc.GetColor(tstyl.BorderBottom.Color.Color))
+                        //    cellStr += fmt.Sprintf(" \"borderBottomColor\": \"%s\",", gdoc.GetColor(tstyl.BorderBottom.Color.Color))
+							colorStr = gdoc.GetColor(tstyl.BorderBottom.Color.Color)
                         }
                     }
                     //dash
                     if gdoc.GetDash(tstyl.BorderBottom.DashStyle) != defcel.bdash {
 					//	cellStr += fmt.Sprintf(" border-bottom-style: %s;",  gdoc.GetDash(tstyl.BorderBottom.DashStyle))
-						cellStr += fmt.Sprintf(" \"borderBottomStyle\": \"%s\",",  gdoc.GetDash(tstyl.BorderBottom.DashStyle))
+					//	cellStr += fmt.Sprintf(" \"borderBottomStyle\": \"%s\",",  gdoc.GetDash(tstyl.BorderBottom.DashStyle))
+						dashStr = gdoc.GetDash(tstyl.BorderBottom.DashStyle)
 					}
                     //Width
                     if tstyl.BorderBottom.Width != nil {
                     //    cellStr += fmt.Sprintf(" border-bottom-width: %5.1fpt;", tstyl.BorderBottom.Width.Magnitude)
-                        cellStr += fmt.Sprintf(" \"borderBottomWidth\": \"%5.1fpt\",", tstyl.BorderBottom.Width.Magnitude)
-                    }
+                    //    cellStr += fmt.Sprintf(" \"borderBottomWidth\": \"%5.1fpt\",", tstyl.BorderBottom.Width.Magnitude)
+						widthStr = fmt.Sprintf("%4.1fpt",tstyl.BorderBottom.Width.Magnitude)
+						if tstyl.BorderBottom.Width.Magnitude > 0.0 {
+							cellStr += "\"borderBottom\":\"" + widthStr + " " + dashStr + " " + colorStr + "\","
+						}
+					}
                 }
 
                 if tstyl.BorderRight != nil {
@@ -3335,27 +3369,35 @@ func (dObj *GdocDomObj) cvtTableToJson(tbl *docs.Table)(tblStr string, err error
                     if tstyl.BorderRight.Color != nil {
                         if tstyl.BorderRight.Color.Color != nil {
                         //    cellStr += fmt.Sprintf(" border-right-color: %s;", gdoc.GetColor(tstyl.BorderRight.Color.Color))
-                            cellStr += fmt.Sprintf(" \"borderRightColor\": \"%s\",", gdoc.GetColor(tstyl.BorderRight.Color.Color))
+                        //    cellStr += fmt.Sprintf(" \"borderRightColor\": \"%s\",", gdoc.GetColor(tstyl.BorderRight.Color.Color))
+							colorStr = gdoc.GetColor(tstyl.BorderRight.Color.Color)
                         }
                     }
                     //dash
                     if gdoc.GetDash(tstyl.BorderRight.DashStyle) != defcel.bdash {
 						// cellStr += fmt.Sprintf(" border-right-style: %s;",  gdoc.GetDash(tstyl.BorderRight.DashStyle))
-						cellStr += fmt.Sprintf(" \"borderRightStyle\": \"%s\",",  gdoc.GetDash(tstyl.BorderRight.DashStyle))
+						// cellStr += fmt.Sprintf(" \"borderRightStyle\": \"%s\",",  gdoc.GetDash(tstyl.BorderRight.DashStyle))
+						dashStr = gdoc.GetDash(tstyl.BorderRight.DashStyle)
 					}
                     //Width
                     if tstyl.BorderRight.Width != nil {
                         // cellStr += fmt.Sprintf(" border-right-width: %5.1fpt;", tstyl.BorderRight.Width.Magnitude)
-                        cellStr += fmt.Sprintf(" \"borderRightWidth\": \"%5.1fpt\",", tstyl.BorderRight.Width.Magnitude)
+                        // cellStr += fmt.Sprintf(" \"borderRightWidth\": \"%5.1fpt\",", tstyl.BorderRight.Width.Magnitude)
+						widthStr = fmt.Sprintf("%4.1fpt",tstyl.BorderRight.Width.Magnitude)
+						if tstyl.BorderRight.Width.Magnitude > 0.0 {
+							cellStr += "\"borderRight\":\"" + widthStr + " " + dashStr + " " + colorStr + "\","
+						}
+
                     }
                 }
+
 				cLen := len(cellStr)
 				telLen := len(tblElStr)
 				if cLen > 0 {
-					tblElStr = tblElStr[:telLen -1] + ", " + cellStr[:cLen-1] + "}},\n"
+					tblElStr = tblElStr[:telLen -1] + ", \"style\": {" + cellStr[:cLen-1] + "}"
 				}
+				tblElStr += "},\n"
 			} // style
-
 
 			tblStr += tblElStr
 
