@@ -3205,7 +3205,7 @@ func (dObj *GdocDomObj) cvtTableToJson(tbl *docs.Table)(tblStr string, err error
 			//header
 			if tblHeader && trow == 0{
 				tblElStr = "{\"typ\": \"th\","
-				tblElStr += fmt.Sprintf("\"id\": \"%sCel%d\",",tblNam, tblCellCount)
+				tblElStr += fmt.Sprintf("\"id\": \"%sHdCel%d\",",tblNam, tblCellCount)
 				tblElStr += "\"name\": \"thcel\","
 				tblElStr += "\"parent\": \"trow\","
 				tblElStr += "\"className\": \"" + dObj.docName + "TblHdCel\""
@@ -4327,10 +4327,21 @@ func (dObj *GdocDomObj) creCssDocHeadJson() (headCss string, err error) {
         cssStr =  "  {\"cssRule\": \"." + dObj.docName + "TblCel {"
 		cssStr += " border-collapse: collapse;"
         cssStr += " border: 1px solid black;"
-		cssStr += " vertical-align: top;"
+		cssStr += " vertical-align: middle;"
 //      cssStr += "  margin:auto;\n"
-        cssStr += " padding: 0.5pt;"
-		cssStr += "  height: 1em;"
+        cssStr += " padding: 0.5em;"
+		cssStr += " height: 1em;"
+        cssStr += "}\"},\n"
+		tblStr += cssStr
+
+        //css table head cell
+        cssStr =  "  {\"cssRule\": \"." + dObj.docName + "TblHdCel {"
+		cssStr += " border-collapse: collapse;"
+        cssStr += " border: 1px solid black;"
+		cssStr += " vertical-align: middle;"
+//      cssStr += "  margin:auto;\n"
+        cssStr += " padding: 0.5em;"
+		cssStr += " height: 1em;"
         cssStr += "}\"},\n"
 		tblStr += cssStr
 
