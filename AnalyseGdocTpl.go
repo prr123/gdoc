@@ -11,9 +11,11 @@ package main
 import (
 	"os"
 	"fmt"
+//	"bytes"
     gdocApi "google/gdoc/gdocApi"
 	gdocTpl "google/gdoc/gdocTpl"
     util "google/gdoc/utilLib"
+
 )
 
 func main() {
@@ -28,6 +30,7 @@ func main() {
     }
 
     docId =os.Args[1]
+	if len(docId) < 10 {fmt.Printf("invalid doc id: %s!\n", docId); os.Exit(-1);}
 
     flags := [] string {"out", "dbg"}
 
@@ -35,9 +38,11 @@ func main() {
     if err != nil {fmt.Printf("error ParseFlags: %v\n", err); os.Exit(-1);}
 
     outFilNam, ok := argmap["out"]
-    if !ok {fmt.Printf("error no out Filnam provided!\n"); os.Exit(-1);}
+    if !ok {fmt.Printf("error no output Filnam provided!\n"); os.Exit(-1);}
 
     outFilNamStr := outFilNam.(string)
+	if outFilNamStr == "none" {outFilNamStr = "output/tpltest/"}
+
 fmt.Printf("out file: %s\n",outFilNamStr)
 
 
@@ -57,9 +62,14 @@ fmt.Printf("out file: %s\n",outFilNamStr)
 
     fmt.Printf("Doc Title: %s\n", doc.Title)
 
-	tplObj := gdocTpl.InitTpl(doc)
+	tplFilStr := outFilNamStr + doc.Title + ".tpl"
 
-	fmt.Printf("gdObj: %v\n", tplObj)
+    fmt.Printf("Template File: %s\n", tplFilStr)
 
+	tpl:= gdocTpl.InitTpl(doc)
 
+	fmt.Printf("gdObj: %v\n", tpl)
+
+	err = tpl.ParseDoc(tplFilStr)
+	if err != nil {fmt.Printf("Error ParseDoc: %v\n",err); os.Exit(-1);}
 }
