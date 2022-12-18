@@ -19,7 +19,7 @@ import (
 //	"unicode/utf8"
 	"strings"
 	"google.golang.org/api/docs/v1"
-	gdoc "google/gdoc/gdocCommon"
+//	gdoc "google/gdoc/gdocCommon"
 )
 
 const (
@@ -29,36 +29,29 @@ const (
 
 
 type gdocObj struct {
-	parCount int
-	posImgCount int
- 	inImgCount int
-	imgId []string
 	doc *docs.Document
+	parCount int
 	DocName string
-}
-
-type TplItem struct {
-	Par *
-	Tpl_tag string
-	Tpl_sub string
-	Start int64
-	End int64
-}
-
-type TplList struct {
 	TplItemList *[]TplItem
 	TplNum int
 }
 
+type TplItem struct {
+	Par *docs.Paragraph
+	ParEl *[]docs.ParagraphElement
+	TplName string
+	Start int64
+	End int64
+}
 
-func (dObj *gdocObj) Init() (err error) {
-	if dObj == nil {
-		return fmt.Errorf("error Init: dObj is nil!")
-	}
-	dObj.parCount = 0
-	dObj.posImgCount = 0
-	dObj.inImgCount = 0
-	return nil
+
+func InitTpl(doc *docs.Document) (gdobj *gdocObj) {
+
+var gdObj gdocObj
+
+	gdObj.doc = doc
+	gdObj.parCount = 0
+	return &gdObj
 }
 
 
@@ -149,7 +142,7 @@ func (dObj *gdocObj) SearchTemp() (outstr string, err error) {
 }
 
 
-
+/*
 func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 	var outstr string
 
@@ -231,7 +224,7 @@ func CvtGdocToTxt(outfil *os.File, doc *docs.Document)(err error) {
 	outfil.Close()
 	return nil
 }
-
+/*
 func ReadGdocTpl(infilnam string)(tplList *Tpl_list, err error) {
 	var tpl_list Tpl_list
 	var inBt [1024]byte
@@ -267,7 +260,7 @@ func ReadGdocTpl(infilnam string)(tplList *Tpl_list, err error) {
 	tplList = &tpl_list
 	return tplList, nil
 }
-
+*/
 
 // create text file to dump document file
 func CreTxtOutFile(filnam string, ext string)(outfil *os.File, err error) {
