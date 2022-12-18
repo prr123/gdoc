@@ -24,10 +24,11 @@ import (
         "google.golang.org/api/option"
 )
 
-type GdocApiStruct  struct {
+type GdocApiObj  struct {
 	GdocCtx context.Context
-	tocFile string
+//	tocFile string
 	Svc *docs.Service
+	doc *docs.Document
 }
 
 // Retrieves a token, saves the token, then returns the generated client.
@@ -86,8 +87,8 @@ func saveToken(path string, token *oauth2.Token) {
 }
 
 // create text file to dump document file
-// no need for mthod 
-func (gdoc *GdocApiStruct) CreOutFile(filnam string, ext string)(outfil *os.File, err error) {
+// no need for mthod
+func (gdoc *GdocApiObj) CreOutFile(filnam string, ext string)(outfil *os.File, err error) {
 	// function create a file with the filname "filnam.ext" 
 	// returns a file pointer
 	//
@@ -152,7 +153,7 @@ func (gdoc *GdocApiStruct) CreOutFile(filnam string, ext string)(outfil *os.File
 }
 
 
-func (gdoc *GdocApiStruct) InitGdocApi() (err error) {
+func (gdoc *GdocApiObj) InitGdocApi() (err error) {
         ctx := context.Background()
         b, err := ioutil.ReadFile("credGdoc.json")
         if err != nil {
@@ -172,5 +173,44 @@ func (gdoc *GdocApiStruct) InitGdocApi() (err error) {
 			return fmt.Errorf("Unable to retrieve Docs client: %v", err)
         }
 		gdoc.Svc = svc
+	return nil
+}
+
+func InitGdocApiV2() (gdocObj *GdocApiObj ,err error) {
+
+	var gdoc GdocApiObj
+
+        ctx := context.Background()
+        b, err := ioutil.ReadFile("credGdoc.json")
+        if err != nil {
+			return nil, fmt.Errorf("Unable to read client secret file: %v!", err)
+		}
+
+        // If modifying these scopes, delete your previously saved token.json.
+        config, err := google.ConfigFromJSON(b, "https://www.googleapis.com/auth/documents.readonly")
+        if err != nil {
+			return nil, fmt.Errorf("Unable to parse client secret file to config: %v", err)
+        }
+
+        client := getClient(config)
+
+        svc, err := docs.NewService(ctx, option.WithHTTPClient(client))
+        if err != nil {
+			return nil, fmt.Errorf("Unable to retrieve Docs client: %v", err)
+        }
+		gdoc.Svc = svc
+
+	return &gdoc, nil
+}
+
+func (gdoc *GdocApiObj) GetDoc(docId string) (err error) {
+
+    srv := gdoc.Svc
+
+    doc, err := srv.Documents.Get(docId).Do()
+    if err != nil {
+        return fmt.Errorf("Unable to retrieve data from document: ", err)
+    }
+	gdoc.doc = doc
 	return nil
 }
