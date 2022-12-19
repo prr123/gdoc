@@ -15,7 +15,7 @@ package gdocTpl
 
 import (
 	"fmt"
-//	"os"
+	"os"
 //	"unicode/utf8"
 	"bytes"
 //	"strings"
@@ -29,36 +29,51 @@ const (
 )
 
 
-type gdocObj struct {
+type gdocTpl struct {
 	doc *docs.Document
+	tplFil *os.File
+	tplFilNam string
 	parCount int
-	DocName string
 	TplItemList *[]TplItem
 	TplNum int
 }
 
 type TplItem struct {
-	Par *docs.Paragraph
-	ParEl *[]docs.ParagraphElement
-	TplName string
+	name string
+	par int
+	parEl int
 	Start int64
 	End int64
 }
 
 
-func InitTpl(doc *docs.Document) (gdobj *gdocObj) {
+func InitTpl(doc *docs.Document) (gdobj *gdocTpl) {
 
-var gdObj gdocObj
+var tpl gdocTpl
 
-	gdObj.doc = doc
-	gdObj.parCount = 0
-	return &gdObj
+	tpl.doc = doc
+	tpl.parCount = 0
+	return &tpl
 }
 
 
-func (dObj *gdocObj) ParseDoc(tplFilNam string) (err error) {
 
-	body := dObj.doc.Body
+func (tplObj *gdocTpl) creTplFil(tplFilNam string) (err error) {
+
+	tplfil, err :=os.Create(tplFilNam)
+	if err != nil {return fmt.Errorf("os.Create: %v", err)}
+	tplObj.tplFil = tplfil
+
+	return nil
+}
+
+func (tplObj *gdocTpl) ParseDoc(tplFilNam string) (err error) {
+
+	var tplItem TplItem
+
+ 	tplList := make([]TplItem,0)
+
+	body := tplObj.doc.Body
 	numEl := len(body.Content)
 fmt.Printf("************ Body Els: %d *************\n", numEl)
 
@@ -86,7 +101,11 @@ fmt.Printf("Par Elements: %d\n", numPel)
 				if parState != 1 {return fmt.Errorf("found end bracket without start bracket!")}
 			} else {
 				parState = 0
-fmt.Printf("tpl field: %s\n", string(byteEl[stdx+1:edx]))
+				tplItem.name = string(byteEl[stdx+1:edx])
+				tplItem.par = el
+				tplItem.parEl = pel
+				tplList = append(tplList, tplItem)
+//fmt.Printf("tpl field: %s\n", string(byteEl[stdx+1:edx]))
 			}
 
 			if parState == 1 {
@@ -96,5 +115,46 @@ fmt.Printf("tpl field: %s\n", string(byteEl[stdx+1:edx]))
 		}
 	}
 
+	if tplObj.tplFil != nil {tplObj.tplFil.Close()}
+
+	tplObj.TplItemList = &tplList
+
 	return nil
 }
+
+func (tplObj *gdocTpl) CreateTplFil(tplFilNam string) (err error) {
+
+	tplfil, err :=os.Create(tplFilNam)
+	if err != nil {return fmt.Errorf("os.Create: %v", err)}
+
+	doc := tplObj.doc
+	outstr := "Title: " + doc.Title + "\n"
+	tplfil.WriteString(outstr)
+	outstr = "Id: " + doc.DocumentId + "\n"
+	tplfil.WriteString(outstr)
+
+	tplList := (*tplObj.TplItemList)
+	for i:=0; i<len(tplList); i++ {
+		tplItem := tplList[i]
+		outstr:= fmt.Sprintf("item: %2d\n   - name: %-10s\n   - par: %d\n   - pel: %d\n", i, tplItem.name, tplItem.par, tplItem.parEl)
+		tplfil.WriteString(outstr)
+	}
+	tplfil.Close()
+	return
+}
+
+func (tplObj *gdocTpl) PrintTpl() () {
+
+	doc := tplObj.doc
+	fmt.Printf("*********** Tpl Title: %s ***********\n", doc.Title)
+	fmt.Printf("Document Id:   %s\n", doc.DocumentId)
+	fmt.Printf("Template File: %s\n", tplObj.tplFilNam)
+
+	tplList := (*tplObj.TplItemList)
+	for i:=0; i<len(tplList); i++ {
+		tplItem := tplList[i]
+		fmt.Printf("item: %2d name: %-10s par: %d pel: %d\n", i, tplItem.name, tplItem.par, tplItem.parEl)
+	}
+	return
+}
+
