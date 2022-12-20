@@ -134,9 +134,14 @@ func (tplObj *gdocTpl) CreateTplFil(tplFilNam string) (err error) {
 	tplfil.WriteString(outstr)
 
 	tplList := (*tplObj.TplItemList)
+
+	outstr = fmt.Sprintf("NamesLen: %d\n", len(tplList))
+	tplfil.WriteString(outstr)
+
 	for i:=0; i<len(tplList); i++ {
 		tplItem := tplList[i]
-		outstr:= fmt.Sprintf("item: %2d\n   - name: %-10s\n   - par: %d\n   - pel: %d\n", i, tplItem.name, tplItem.par, tplItem.parEl)
+//		outstr:= fmt.Sprintf("item: %2d\n   - name: %-10s\n   - par: %d\n   - pel: %d\n", i, tplItem.name, tplItem.par, tplItem.parEl)
+		outstr:= fmt.Sprintf("%s:\n", tplItem.name)
 		tplfil.WriteString(outstr)
 	}
 	tplfil.Close()
