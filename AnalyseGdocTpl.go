@@ -45,7 +45,6 @@ func main() {
 
 fmt.Printf("out file: %s\n",outFilNamStr)
 
-
     gdoc, err := gdocApi.InitGdocApiV2()
     if err != nil {
         fmt.Printf("error - InitGdocApiV2: %v!", err)
@@ -72,4 +71,10 @@ fmt.Printf("out file: %s\n",outFilNamStr)
 
 	err = tpl.ParseDoc(tplFilStr)
 	if err != nil {fmt.Printf("Error ParseDoc: %v\n",err); os.Exit(-1);}
+
+	tpl.PrintTpl()
+
+	err = tpl.CreateTplFil(tplFilStr)
+	if err != nil {fmt.Printf("Error CreateTplFil: %v\n",err); os.Exit(-1);}
+
 }
