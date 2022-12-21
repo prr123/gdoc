@@ -15,6 +15,13 @@ import (
     util "google/gdoc/utilLib"
 	)
 
+type linItem struct {
+	nam string
+	namYaml string
+	typ string
+	val string
+}
+
 func main() {
 
     numArgs:= len(os.Args)
@@ -74,13 +81,13 @@ fmt.Printf("out file: %s\n",outFilNamStr)
 
 	outstr, err = parseYaml(&inbuf)
 	if err != nil {fmt.Printf("error parsing inbuf: %v",err); os.Exit(-1)}
-
+	outfil.WriteString(outstr)
+	outfil.WriteString("}")
 	fmt.Println("YamlToGo success")
 }
 
 func parseYaml(buf *[]byte) (outstr string, err error) {
 
-	var linByt [](*[]byte)
 	bufLen := len(*buf)
 
 //	fmt.Printf("buf len: %d\n", bufLen)
@@ -88,6 +95,11 @@ func parseYaml(buf *[]byte) (outstr string, err error) {
 	linst:=0
 	linend:= linst+100
 	if linend > bufLen {linend = bufLen}
+
+	outstr = "type tplObj struct {\n"
+
+//	exeStr := "\nfunc initYaml () (tpl tplObj, err error) {\n"
+
 	linCount:=0
 	for {
 //fmt.Printf("line [%d:%d] %d\n", linst, linend, linCount)
@@ -98,88 +110,96 @@ func parseYaml(buf *[]byte) (outstr string, err error) {
 		for i:=linst; i<linend; i++ {
 			if (*buf)[i] == '\n' {
 				linend = i
+				linCount++
 				break
 			}
 		}
-		linbuf := (*buf)[linst:linend]
-//fmt.Printf("line [%d:%d][%d]: %s\n", linst, linend,linCount, string(linbuf))
-		idx := bytes.Index(linbuf, []byte(":"))
-		if idx > -1 {
-			linByt = append(linByt, &linbuf)
-			linCount++
+
+
+		linByt := (*buf)[linst:linend]
+//fmt.Printf("line [%d:%d][%d]: %s\n", linst, linend,linCount, string(linByt))
+
+		item, errp := parseLin(linByt)
+//fmt.Printf("item: %v\n", item)
+		if errp != nil {
+			outstr += fmt.Sprintf("//line [%d]: %s\n", linCount, string(linByt))
+			outstr += fmt.Sprintf("//error line %d: %v\n", linCount, errp)
+		} else {
+			outstr += fmt.Sprintf("  %s %s `yaml:%s`\n", (*item).nam, (*item).typ, (*item).namYaml)
 		}
+
+		if linend == bufLen {break}
 		linst = linend+1
 		linend = linst+100
 		if linend > bufLen {linend = bufLen}
+		if linst >= bufLen {break}
 	}
 
-// parse lines
-	outstr = "type tplObj struct {\n"
-
 	fmt.Printf("lines: %d\n", linCount)
-	ilin := -1
-	errstr := ""
-	for ilin=0; ilin< len(linByt); ilin++ {
-		lin := *linByt[ilin]
-//fmt.Printf("line [%d]: %s\n", ilin, string(lin))
-		col:=-1
-		for j:=0; j<len(lin); j++ {
-			if lin[j] == ':' {
-				col = j
-				break
-			}
-		} //j
-		if col == -1 {
-			errstr += fmt.Sprintf("error line [%d] no colon\n", ilin)
-			continue
-		}
-
-fmt.Printf("key: %s val: %s\n", string(lin[:col]), string(lin[col+1:]))
-
-		istate:=0
-		typSt:= -1
-		typEnd:= -1
-		for j:=0; j<col; j++ {
-			switch istate {
-			case 0:
-				if lin[j] == '<' {
-					typSt = j
-					istate = 1
-				}
-			case 1:
-				if lin[j] == '>' {
-					typEnd = j
-					istate = 2
-				}
-
-
-			default:
-			errstr += fmt.Sprintf("error line [%d] istate %d \n", ilin, istate)
-
-			}
-			if istate > 1 {break}
-		}// j
-
-		fmt.Printf("colon %d typSt %d typEnd %d\n", col, typSt, typEnd)
-
-
-		typStr := ""
-		namStr := ""
-		if typSt < 0 {
-			// type is string
-			typStr = "string"
-			namStr = string(lin[:col])
-		fmt.Printf("name0: %s type: %s\n",namStr, typStr)
-			continue
-		} else {
-			if typEnd < 0 {errstr += fmt.Sprintf("error line [%d] no end bracker \">\"\n", ilin, istate); continue;}
-		}
-		typStr = string(lin[typSt+1:typEnd])
-		namStr = string(lin[:typSt])
-		fmt.Printf("name1: %s type: %s\n",namStr, typStr)
-
-	} //ilin
 
 	return outstr, nil
+}
+
+// parse lines
+
+func parseLin (lin []byte) (itemP *linItem, err error) {
+
+	var item linItem
+
+//	errstr := ""
+//fmt.Printf("line %s\n",string(lin))
+
+	col:=-1
+	com := -1
+	for j:=0; j<len(lin); j++ {
+		switch lin[j] {
+			case '#':
+				com = j
+			case ':':
+				col = j
+		}
+	} //j
+	if col == -1 && com == -1 {
+		return nil, fmt.Errorf("no colon\n")
+	}
+	// comment only
+	if col == -1 { return nil, nil}
+
+	if col> com && com > 0 {return nil, fmt.Errorf("comment before colon")}
+// fmt.Printf("key: %s val: %s\n", string(lin[:col]), string(lin[col+1:]))
+
+	item.nam = string(lin[:col])
+	item.namYaml = string(lin[:col])
+
+	if com == -1 {
+		// no comment thus no type
+		item.val = string(lin[col:])
+		item.typ = "string"
+		return &item, nil
+	}
+
+	// we have a comment, so v
+	item.val = string(lin[col:com])
+
+
+	// checking for typ
+	typSt:= -1
+	typEnd:= -1
+	for j:=com; j< len(lin); j++ {
+		switch lin[j] {
+			case '<':
+				typSt = j
+			case '>':
+				typEnd = j
+		}
+	}// j
+
+	if typSt > typEnd {return nil, fmt.Errorf("\">\" before \"<\"")}
+	if typSt == -1 && typEnd> 0 {return nil, fmt.Errorf("no \"<\" before \">\"")}
+	if typSt < 0 {item.typ = "string"; return &item, nil;}
+
+	item.typ = string(lin[typSt+1:typEnd])
+	return &item, nil
+
 }
 
