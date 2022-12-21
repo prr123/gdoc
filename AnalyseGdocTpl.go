@@ -67,14 +67,15 @@ fmt.Printf("out file: %s\n",outFilNamStr)
 
 	tpl:= gdocTpl.InitTpl(doc)
 
-	fmt.Printf("gdObj: %v\n", tpl)
+//	fmt.Printf("gdObj: %v\n", tpl)
 
 	err = tpl.ParseDoc(tplFilStr)
 	if err != nil {fmt.Printf("Error ParseDoc: %v\n",err); os.Exit(-1);}
 
-	tpl.PrintTpl()
 
 	err = tpl.CreateTplFil(tplFilStr)
 	if err != nil {fmt.Printf("Error CreateTplFil: %v\n",err); os.Exit(-1);}
+
+	tpl.PrintTpl()
 
 }
