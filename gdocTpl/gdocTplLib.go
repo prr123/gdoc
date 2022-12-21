@@ -40,6 +40,7 @@ type gdocTpl struct {
 
 type TplItem struct {
 	name string
+	typ string
 	par int
 	parEl int
 	Start int64
@@ -75,16 +76,18 @@ func (tplObj *gdocTpl) ParseDoc(tplFilNam string) (err error) {
 
 	body := tplObj.doc.Body
 	numEl := len(body.Content)
-fmt.Printf("************ Body Els: %d *************\n", numEl)
+//fmt.Printf("************ Body Els: %d *************\n", numEl)
 
 	parState := 0
 	for el:=0; el< numEl; el++ {
 		bodyEl := body.Content[el]
-fmt.Printf("el [%d]: ", el)
-		if bodyEl.Paragraph == nil {fmt.Printf(" no par\n"); continue;}
+//fmt.Printf("el [%d]: ", el)
+		if bodyEl.Paragraph == nil {continue;}
+
+//fmt.Printf(" no par\n"); 
 
 		numPel := len(bodyEl.Paragraph.Elements)
-fmt.Printf("Par Elements: %d\n", numPel)
+//fmt.Printf("Par Elements: %d\n", numPel)
 
 
 		for pel:=0; pel<numPel; pel++ {
@@ -138,14 +141,57 @@ func (tplObj *gdocTpl) CreateTplFil(tplFilNam string) (err error) {
 	outstr = fmt.Sprintf("NamesLen: %d\n", len(tplList))
 	tplfil.WriteString(outstr)
 
+	errCount :=0
 	for i:=0; i<len(tplList); i++ {
 		tplItem := tplList[i]
 //		outstr:= fmt.Sprintf("item: %2d\n   - name: %-10s\n   - par: %d\n   - pel: %d\n", i, tplItem.name, tplItem.par, tplItem.parEl)
-		outstr:= fmt.Sprintf("%s:\n", tplItem.name)
+		errProc := procTplItem(&tplItem)
+		if errProc != nil {
+			errCount++
+			errStr := fmt.Sprintf("%v\n", errProc)
+			outstr = fmt.Sprintf("%s:  # %s\n", tplItem.name, errStr)
+		} else {
+			if len(tplItem.typ) == 0 {
+				outstr = fmt.Sprintf("%s:\n", tplItem.name)
+			} else {
+				outstr = fmt.Sprintf("%s:  #<%s>\n", tplItem.name, tplItem.typ)
+			}
+		}
+		tplList[i] = tplItem
 		tplfil.WriteString(outstr)
+//fmt.Printf("item [%d]: %v\n", i, tplItem)
 	}
 	tplfil.Close()
-	return
+	if errCount > 0 {return fmt.Errorf("process name errors %d", errCount)}
+	*tplObj.TplItemList = tplList
+
+	return nil
+}
+
+func procTplItem(item *TplItem) (err error) {
+
+	namByt := []byte((*item).name)
+//fmt.Println("name: ", string(namByt))
+
+	typSt := -1
+	typEnd:= -1
+	for i:=0; i< len(namByt); i++ {
+		switch namByt[i] {
+		case '<':
+			typSt = i
+		case '>':
+			typEnd = i
+		}
+	} //i
+
+	if typSt < 0 {return nil}
+
+	if typEnd == -1 {return fmt.Errorf("%s: no ending bracket", string(namByt))}
+	if typEnd<=typSt {return fmt.Errorf("%s: ending bracket before opening bracket", string(namByt))}
+
+	(*item).name = string(namByt[:typSt])
+	(*item).typ = string(namByt[typSt+1: typEnd])
+	return nil
 }
 
 func (tplObj *gdocTpl) PrintTpl() () {
@@ -158,7 +204,7 @@ func (tplObj *gdocTpl) PrintTpl() () {
 	tplList := (*tplObj.TplItemList)
 	for i:=0; i<len(tplList); i++ {
 		tplItem := tplList[i]
-		fmt.Printf("item: %2d name: %-10s par: %d pel: %d\n", i, tplItem.name, tplItem.par, tplItem.parEl)
+		fmt.Printf("item: %2d name: %-10s typ: %s par: %d pel: %d\n", i, tplItem.name, tplItem.typ, tplItem.par, tplItem.parEl)
 	}
 	return
 }
