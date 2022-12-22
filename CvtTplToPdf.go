@@ -13,6 +13,8 @@ import (
     "fmt"
     "bytes"
 	"gopkg.in/yaml.v3"
+//	"google.golang.org/api/drive/v3"
+ 	gdrive "google/gdoc/gdriveLib"
     util "google/gdoc/utilLib"
     )
 
@@ -92,6 +94,21 @@ fmt.Printf("out file: %s\n",outFilNamStr)
 
 	printTpl(tpl)
 
+	//copy template
+    var gd gdrive.GdApiObj
+
+    err = gd.InitDriveApi()
+    if err != nil {
+        fmt.Printf("error main::Init gdriveApi: %v\n", err)
+        os.Exit(1)
+    }
+
+	// CopyFile(filId string, nam string, dirId string)
+
+	nfilId, err := gd.CopyFile(tpl.Id, "newFile", "")
+	if err != nil {fmt.Printf("copy file: %v\n", err); os.Exit(-1);}
+
+	fmt.Printf("new Id: %d\n", nfilId)
 	fmt.Println("*** success CvtTplToPdf ****")
 }
 
