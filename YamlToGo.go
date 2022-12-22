@@ -125,7 +125,7 @@ func parseYaml(buf *[]byte) (outstr string, err error) {
 			outstr += fmt.Sprintf("//line [%d]: %s\n", linCount, string(linByt))
 			outstr += fmt.Sprintf("//error line %d: %v\n", linCount, errp)
 		} else {
-			outstr += fmt.Sprintf("  %s %s `yaml:%s`\n", (*item).nam, (*item).typ, (*item).namYaml)
+			outstr += fmt.Sprintf("  %s %s `yaml:\"%s\"`\n", (*item).nam, (*item).typ, (*item).namYaml)
 		}
 
 		if linend == bufLen {break}
