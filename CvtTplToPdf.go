@@ -12,6 +12,7 @@ import (
     "os"
     "fmt"
     "bytes"
+	"gopkg.in/yaml.v3"
     util "google/gdoc/utilLib"
     )
 
@@ -19,12 +20,12 @@ import (
 
 // go struct for yaml file: output/tpltest/simpleTpl.tpl
 type tplObj struct {
-  Title string `yaml:Title`
-  Id string `yaml:Id`
-  NamesLen string `yaml:NamesLen`
-  First string `yaml:first`
-  Last string `yaml:last`
-  Num int `yaml:num`
+  Title string `yaml:"Title"`
+  Id string `yaml:"Id"`
+  NamesLen string `yaml:"NamesLen"`
+  First string `yaml:"first"`
+  Last string `yaml:"last"`
+  Num int `yaml:"num"`
 }
 
 
@@ -69,5 +70,39 @@ func main() {
 
 fmt.Printf("out file: %s\n",outFilNamStr)
 
+	// read Yaml File
+    info, err := infil.Stat()
+    if err != nil {fmt.Printf("error reading stat of input file: %v",err); os.Exit(-1)}
+
+//  fmt.Printf("infile size: %d\n", info.Size())
+
+    inbuf := make([]byte, info.Size())
+
+    _, err = infil.Read(inbuf)
+    if err != nil {fmt.Printf("error reading input file: %v",err); os.Exit(-1)}
+
+  fmt.Println("inbuf:\n", string(inbuf[:100]))
+
+	var tpl tplObj
+	err = yaml.Unmarshal(inbuf, &tpl)
+    if err != nil {
+        fmt.Printf("unmarshall error: %v\n", err)
+    }
+  fmt.Printf("tpl: %v\n", tpl)
+
+	printTpl(tpl)
+
 	fmt.Println("*** success CvtTplToPdf ****")
 }
+
+func printTpl(tpl tplObj) {
+
+	fmt.Println("******** tpl ********")
+	fmt.Printf("Title: %s\n", tpl.Title)
+	fmt.Printf("Id:    %s\n", tpl.Id)
+	fmt.Printf("Fields: %s\n", tpl.NamesLen)
+	fmt.Printf("First:  %s\n", tpl.First)
+	fmt.Printf("Last:  %s\n", tpl.Last)
+	fmt.Printf("Num:  %d\n", tpl.Num)
+
+}    
