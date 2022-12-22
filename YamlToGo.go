@@ -168,8 +168,10 @@ func parseLin (lin []byte) (itemP *linItem, err error) {
 	if col> com && com > 0 {return nil, fmt.Errorf("comment before colon")}
 // fmt.Printf("key: %s val: %s\n", string(lin[:col]), string(lin[col+1:]))
 
-	item.nam = string(lin[:col])
 	item.namYaml = string(lin[:col])
+	// crude method of capitalising the first letter
+	if lin[0] > 96 {lin[0] = lin[0] - 32}
+	item.nam = string(lin[:col])
 
 	if com == -1 {
 		// no comment thus no type
