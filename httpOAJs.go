@@ -284,6 +284,20 @@ func (oa2 *OA2) getToken() (err error) {
 	return nil
 }
 
+func (oa2 *OA2) saveToken(filnam string) (err error) {
+
+	outfil, err := os.Create(filnam)
+	if err != nil {return fmt.Errorf("os.Create: %v", err)}
+
+	b, err := json.Marshal(*(oa2.token))
+	if err != nil {return fmt.Errorf("json.Marshall: %v", err)}
+
+	_, err = outfil.Write(b)
+	if err != nil {return fmt.Errorf("Write: %v", err)}
+
+	return nil
+}
+
 func (oa2 *OA2) getUserInfo() (cont string, err error) {
 
 	token := oa2.token
