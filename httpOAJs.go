@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-//	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"encoding/json"
@@ -97,16 +97,16 @@ func main() {
 	oa2Obj, err := initCred()
 	if err != nil {fmt.Printf("error initCred: %v\n", err); os.Exit(-1)}
 
-	fmt.Printf("oa2Obj:\n%v\n\n", oa2Obj)
-//	os.Exit(1)
-//	http.HandleFunc("/", handleMain)
 	http.HandleFunc("/", oa2Obj.handleGSignin)
-//	http.HandleFunc("/login", oa2Obj.handleLogin)
 	http.HandleFunc("/googleIdCallback", oa2Obj.handleGoogleIdCallback)
-	http.HandleFunc("/callback", handleCallback)
-	fmt.Println(http.ListenAndServe(":8090", nil))
+//	http.HandleFunc("/callback", handleCallback)
+//	fmt.Println(http.ListenAndServe(":8090", nil))
+	err = http.ListenAndServe("localhost:8090", nil)
+	if err != nil {fmt.Printf("http error: %v\n", err); os.Exit(-1)}
+	fmt.Printf("http server localhost:8090 listening!")
 }
 
+/*
 func handleCallback(w http.ResponseWriter, r *http.Request) {
 	var htmlIndex = `<html>
 <body>
@@ -116,7 +116,7 @@ func handleCallback(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Fprintf(w, htmlIndex)
 }
-
+*/
 
 func (oa2 *OA2)handleGSignin(w http.ResponseWriter, r *http.Request) {
 	var htmlIndex = `<html>
@@ -174,9 +174,6 @@ Object.entries(credObj).forEach(([key, value]) => {
 <body>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
-//        function handleCredentialResponse(response) {
-//          console.log("Encoded JWT ID token: " + response.credential);
-//        }
         window.onload = function () {
           google.accounts.id.initialize({
             client_id: "962131291489-649afk49rj2v4mhjesvnvvf6fu43fi6m.apps.googleusercontent.com",
@@ -197,6 +194,7 @@ Object.entries(credObj).forEach(([key, value]) => {
 	fmt.Fprintf(w, htmlIndex)
 }
 
+/*
 func (oa2 *OA2) handleReqAuth(w http.ResponseWriter, r *http.Request) {
 
 fmt.Printf("\nreceived login request\n")
@@ -213,7 +211,7 @@ return
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
-/*
+
 func (oa2 *OA2)handleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("\ngoogle call back\n state: %s code: %s\n", r.FormValue("state"), r.FormValue("code"))
 	fmt.Printf("\ncallback form:\n%v\n", r)
@@ -244,8 +242,8 @@ func (oa2 *OA2)handleGoogleIdCallback(w http.ResponseWriter, r *http.Request) {
 	}
 //	fmt.Fprintf(w, "Content: %s\n", content)
 	oa2.authCode = r.Form["code"][0]
-
 	state := r.Form["state"][0]
+
 	fmt.Printf("auth code: %s state: %s\n", oa2.authCode, state)
 
 //	if state != oa2.oauth {return fmt.Errorf("invalid oauth state")}
@@ -265,14 +263,13 @@ func (oa2 *OA2) getToken() (err error) {
 	config.ClientID = oa2.ClientId
 	config.ClientSecret = oa2.ClientSecret
 	config.Endpoint = google.Endpoint
-//	config.RedirectURL = "http://localhost:8090/"
 	config.RedirectURL = "http://localhost:8090/googleIdCallback"
 	config.Scopes = make([]string, len(oa2.Scopes))
 	for i:=0; i< len(oa2.Scopes); i++ {
 		config.Scopes[i] = oa2.Scopes[i]
 	}
 
-	fmt.Printf("config:\n%v\n", config)
+//	fmt.Printf("config:\n%v\n", config)
 	fmt.Println("code exchange")
 
 	code:= oa2.authCode
@@ -283,20 +280,26 @@ func (oa2 *OA2) getToken() (err error) {
 	}
 	fmt.Printf("token: %s\n", token)
 	oa2.token = token
-/*
+//	fmt.Printf("response: %s\n",contents)
+	return nil
+}
+
+func (oa2 *OA2) getUserInfo() (cont string, err error) {
+
+	token := oa2.token
 	response, err := http.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + token.AccessToken)
 	if err != nil {
-		return nil, fmt.Errorf("failed getting user info: %s", err.Error())
+		return "", fmt.Errorf("failed getting user info: %s", err.Error())
 	}
 
 	defer response.Body.Close()
-	contents, err := ioutil.ReadAll(response.Body)
+	contents, err := io.ReadAll(response.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed reading response body: %s", err.Error())
+		return "", fmt.Errorf("failed reading response body: %s", err.Error())
 	}
-*/
-//	fmt.Printf("response: %s\n",contents)
-	return nil
+
+	cont = string(contents)
+	return cont, nil
 }
 
 
