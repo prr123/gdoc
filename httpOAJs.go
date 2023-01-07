@@ -37,6 +37,7 @@ type OA2 struct {
 		state 			int
 		authCode 		string
 		token 			*oauth2.Token
+		tokFil			string
 }
 
 
@@ -146,7 +147,7 @@ function handleCredResp (response) {
   if (creList.length != 3) {throw new Error('credential token not valid!');}
   let credDecoded= atob(creList[1]);
 
-  console.log("response credential: "+ credDecoded);
+  console.log("response credential: " + credDecoded);
 
 //JSON.parse(base64_url_decode(token.split(".")[pos]));
 
@@ -160,14 +161,12 @@ Object.entries(credObj).forEach(([key, value]) => {
   console.log("key: " + key + " value: " + value);
 });
 
-//	url = "https://accounts.google.com/o/oauth2/v2/auth?scope=https://www.googleapis.com/auth%2Fdrive.file+https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdocuments";
 	url = "https://accounts.google.com/o/oauth2/v2/auth?scope=https://www.googleapis.com/auth/drive+https://www.googleapis.com/auth/documents";
-	url1 = "&response_type=code&state=2kjd9nyuamtUAnwF34NQ12&redirect_uri=http://localhost:8090/googleIdCallback&client_id=962131291489-649afk49rj2v4mhjesvnvvf6fu43fi6m.apps.googleusercontent.com";
-	url = url + url1;
+	url1 = "&response_type=code&state=2kjd9nyuamtUAnwF34NQ12&redirect_uri=http://localhost:8090/googleIdCallback&access_type=offline"
+	url2 = "&client_id=962131291489-649afk49rj2v4mhjesvnvvf6fu43fi6m.apps.googleusercontent.com";
+	url = url + url1 + url2;
 	console.log("url: "+ url);
 	location.replace(url)
-//	data = fetchAsync(url);
-//	console.log("replaced url")
 }
 </script>
 </head>
@@ -252,8 +251,17 @@ func (oa2 *OA2)handleGoogleIdCallback(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Printf("error getToken: %v\n", err)
 		fmt.Fprintf(w, "cannot get token\n")
+		return
 	}
 	fmt.Printf("received token:\n%v\n",oa2.token)
+	oa2.tokFil = "tokNew.json"
+	err = oa2.saveToken(oa2.tokFil)
+	if err != nil {
+		fmt.Printf("error saveToken: %v\n", err)
+		fmt.Fprintf(w, "cannot save token\n")
+	}
+	fmt.Printf("saved token as: %s\n",oa2.tokFil)
+
 }
 
 func (oa2 *OA2) getToken() (err error) {
