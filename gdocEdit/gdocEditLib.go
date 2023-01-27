@@ -47,7 +47,7 @@ type tblObj struct {
 	El int
 }
 
-func initGdocEdit(docSvc *docs.DocumentsService, docId string) (gdEdObj *gdEditObj, err error) {
+func InitGdocEdit(docSvc *docs.DocumentsService, docId string) (gdEdObj *gdEditObj, err error) {
 	var gdEd gdEditObj
 
 	doc, err := docSvc.Get(docId).Do()
@@ -72,17 +72,28 @@ func (edObj *gdEditObj) BatchUpd(docId string, updreq *docs.BatchUpdateDocumentR
 	return nil
 }
 
-func (edObj *gdEditObj) FindText(strObj *stringObj) (stPos int64, err error) {
+func (edObj *gdEditObj) FindTextNext(strObj *stringObj, start int64) (stPos int64, err error) {
 
 	if edObj.Doc == nil {return -1, fmt.Errorf("doc is nil!")}
 
     body := edObj.Doc.Body
-
     numEl := len(body.Content)
-//fmt.Printf("************ Body Els: %d *************\n", numEl)
+
+	startEl := 0
+    for el:=0; el< numEl; el++ {
+        bodyEl := body.Content[el]
+        numPel := len(bodyEl.Paragraph.Elements)
+		parStart := bodyEl.Paragraph.Elements[0].StartIndex
+		parEnd := bodyEl.Paragraph.Elements[numPel-1].EndIndex
+
+		if start >= parStart && start < parEnd {
+			startEl = el
+			break
+		}
+	}
 
 	stPos = -1
-    for el:=0; el< numEl; el++ {
+    for el:=startEl; el< numEl; el++ {
         bodyEl := body.Content[el]
         if bodyEl.Paragraph == nil {continue;}
 		// found paragraph
@@ -94,7 +105,6 @@ func (edObj *gdEditObj) FindText(strObj *stringObj) (stPos int64, err error) {
 
 		parStr:=""
         for pel:=0; pel<numPel; pel++ {
-//          parEl := bodyEl.Paragraph.Elements[pel]
             parStr += bodyEl.Paragraph.Elements[pel].TextRun.Content
 //          pelStart := bodyEl.Paragraph.Elements[pel].StartIndex
 //          pelEnd := bodyEl.Paragraph.Elements[pel].EndIndex
@@ -112,6 +122,45 @@ func (edObj *gdEditObj) FindText(strObj *stringObj) (stPos int64, err error) {
 	//
 	if stPos == -1 {return stPos, fmt.Errorf("string not found!")}
 	return stPos, nil
+}
+
+func (edObj *gdEditObj) FindTextAll(strObj *stringObj) (posList *[]int64, err error) {
+
+	var pos []int64
+
+	if edObj.Doc == nil {return nil, fmt.Errorf("doc is nil!")}
+
+    body := edObj.Doc.Body
+    numEl := len(body.Content)
+
+    for el:=0; el< numEl; el++ {
+        bodyEl := body.Content[el]
+        if bodyEl.Paragraph == nil {continue;}
+		// found paragraph
+        numPel := len(bodyEl.Paragraph.Elements)
+//fmt.Printf("Par Elements: %d\n", numPel)
+
+//		parStart := bodyEl.Paragraph.Elements[0].StartIndex
+//		parEnd := bodyEl.Paragraph.Elements[numPel-1].EndIndex
+
+		parStr:=""
+        for pel:=0; pel<numPel; pel++ {
+            parStr += bodyEl.Paragraph.Elements[pel].TextRun.Content
+//          pelStart := bodyEl.Paragraph.Elements[pel].StartIndex
+//          pelEnd := bodyEl.Paragraph.Elements[pel].EndIndex
+//fmt.Printf("Par El[%d]: %s\n",pel, parElStr)
+        }
+
+		idx := bytes.Index([]byte(parStr), []byte(strObj.txt))
+		if idx > -1 {
+			stPos := bodyEl.Paragraph.Elements[0].StartIndex + int64(idx)
+			pos = append(pos, stPos)
+		}
+    }
+
+	//
+	if len(pos) <1 {return nil, fmt.Errorf("string not found!")}
+	return &pos, nil
 }
 
 func (edObj *gdEditObj) FindTables() (tables *[]tblObj, err error) {
@@ -394,4 +443,30 @@ func PrintTblObj (tbls *[]tblObj) {
 		fmt.Printf("table[%d]: rows: %d cols: %d\n", i, (*tbls)[i].Rows, (*tbls)[i].Cols)
 	}
 	fmt.Printf("********************\n")
+}
+
+func PrintUpdResp (resp *docs.BatchUpdateDocumentResponse) {
+
+    fmt.Println("******* Batch Update Response ********")
+    fmt.Println("document id: ", resp.DocumentId)
+
+    wc := resp.WriteControl
+    if wc == nil {return}
+    fmt.Println("rev id: ", wc.RequiredRevisionId)
+
+
+    fmt.Println("Replies: ", len(resp.Replies))
+
+    for i:=0; i < len(resp.Replies); i++ {
+        rpl := resp.Replies[i]
+        fmt.Printf("reply [%d]:\n", i)
+        if rpl.CreateFooter != nil {
+            fmt.Println("  create footer id: ", rpl.CreateFooter.FooterId)
+        }
+        if rpl.ReplaceAllText != nil {
+            fmt.Println("  replace text: ", rpl.ReplaceAllText.OccurrencesChanged)
+        }
+
+    }
+
 }
