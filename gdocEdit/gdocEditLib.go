@@ -72,33 +72,25 @@ func (edObj *gdEditObj) BatchUpd(docId string, updreq *docs.BatchUpdateDocumentR
 	return nil
 }
 
-func (edObj *gdEditObj) FindTextNext(strObj *stringObj, start int64) (stPos int64, err error) {
+func (edObj *gdEditObj) FindTextNext(text string, start int64) (stPos int64, err error) {
 
 	if edObj.Doc == nil {return -1, fmt.Errorf("doc is nil!")}
 
+//fmt.Printf("start: %d\n", start)
     body := edObj.Doc.Body
     numEl := len(body.Content)
 
-	startEl := 0
+	stPos = -1
     for el:=0; el< numEl; el++ {
         bodyEl := body.Content[el]
+		if bodyEl.Paragraph == nil {continue}
         numPel := len(bodyEl.Paragraph.Elements)
 		parStart := bodyEl.Paragraph.Elements[0].StartIndex
 		parEnd := bodyEl.Paragraph.Elements[numPel-1].EndIndex
+//fmt.Printf("par %d %d %d\n",el, parStart, parEnd)
 
-		if start >= parStart && start < parEnd {
-			startEl = el
-			break
-		}
-	}
-
-	stPos = -1
-    for el:=startEl; el< numEl; el++ {
-        bodyEl := body.Content[el]
-        if bodyEl.Paragraph == nil {continue;}
-		// found paragraph
-        numPel := len(bodyEl.Paragraph.Elements)
-//fmt.Printf("Par Elements: %d\n", numPel)
+		if start > parEnd {continue}
+//			startEl = el
 
 //		parStart := bodyEl.Paragraph.Elements[0].StartIndex
 //		parEnd := bodyEl.Paragraph.Elements[numPel-1].EndIndex
@@ -106,17 +98,16 @@ func (edObj *gdEditObj) FindTextNext(strObj *stringObj, start int64) (stPos int6
 		parStr:=""
         for pel:=0; pel<numPel; pel++ {
             parStr += bodyEl.Paragraph.Elements[pel].TextRun.Content
-//          pelStart := bodyEl.Paragraph.Elements[pel].StartIndex
+//          	pelStart := bodyEl.Paragraph.Elements[pel].StartIndex
 //          pelEnd := bodyEl.Paragraph.Elements[pel].EndIndex
-//fmt.Printf("Par El[%d]: %s\n",pel, parElStr)
+//fmt.Printf("Par %d El[%d]: %s\n",el, pel, parStr)
 
-        }
-
-		idx := bytes.Index([]byte(parStr), []byte(strObj.txt))
-		if idx > -1 {
-			stPos = bodyEl.Paragraph.Elements[0].StartIndex + int64(idx)
+			idx := bytes.Index([]byte(parStr), []byte(text))
+			if idx == -1 || start > parStart + int64(idx) { continue}
+			stPos = parStart + int64(idx)
 			break
 		}
+		if stPos > -1 {break}
     }
 
 	//
@@ -124,7 +115,7 @@ func (edObj *gdEditObj) FindTextNext(strObj *stringObj, start int64) (stPos int6
 	return stPos, nil
 }
 
-func (edObj *gdEditObj) FindTextAll(strObj *stringObj) (posList *[]int64, err error) {
+func (edObj *gdEditObj) FindTextAll(text string) (posList *[]int64, err error) {
 
 	var pos []int64
 
@@ -151,7 +142,7 @@ func (edObj *gdEditObj) FindTextAll(strObj *stringObj) (posList *[]int64, err er
 //fmt.Printf("Par El[%d]: %s\n",pel, parElStr)
         }
 
-		idx := bytes.Index([]byte(parStr), []byte(strObj.txt))
+		idx := bytes.Index([]byte(parStr), []byte(text))
 		if idx > -1 {
 			stPos := bodyEl.Paragraph.Elements[0].StartIndex + int64(idx)
 			pos = append(pos, stPos)
@@ -161,6 +152,150 @@ func (edObj *gdEditObj) FindTextAll(strObj *stringObj) (posList *[]int64, err er
 	//
 	if len(pos) <1 {return nil, fmt.Errorf("string not found!")}
 	return &pos, nil
+}
+
+func (edObj *gdEditObj) GetEl(start int64) (elObj int, pelObj int, err error) {
+
+	if edObj.Doc == nil {return -1, -1, fmt.Errorf("doc is nil!")}
+
+//fmt.Printf("start: %d\n", start)
+    body := edObj.Doc.Body
+    numEl := len(body.Content)
+
+	elObj = -1
+	pelObj = -1
+
+    for el:=0; el< numEl; el++ {
+        bodyEl := body.Content[el]
+		if bodyEl.Paragraph == nil {continue}
+        numPel := len(bodyEl.Paragraph.Elements)
+//		parStart := bodyEl.Paragraph.Elements[0].StartIndex
+		parEnd := bodyEl.Paragraph.Elements[numPel-1].EndIndex
+
+		if start > parEnd {continue}
+		elObj = el
+
+        for pel:=0; pel<numPel; pel++ {
+          	pelStart := bodyEl.Paragraph.Elements[pel].StartIndex
+			pelEnd := bodyEl.Paragraph.Elements[pel].EndIndex
+//fmt.Printf("Par %d El[%d]: %s\n",el, pel, parStr)
+			if start>= pelStart && start <= pelEnd {
+				pelObj = pel
+				break
+			}
+		}
+		if elObj > 0 {break}
+    }
+
+	//
+	if pelObj == -1 {return elObj, pelObj, fmt.Errorf("string not found!")}
+	return elObj, pelObj, nil
+}
+
+
+func (edObj *gdEditObj) FindHeadingsAll(heading string) (ellist *[]int, err error) {
+
+	var elList []int
+	var tgtStyl string
+
+	if edObj.Doc == nil {return nil, fmt.Errorf("doc is nil!")}
+
+	switch heading {
+	case "h1":
+		tgtStyl = "HEADING_1"
+	case "h2":
+		tgtStyl = "HEADING_2"
+	default:
+		return nil, fmt.Errorf("not a valid heading supplied")
+	}
+
+fmt.Printf("style: %s\n", tgtStyl)
+
+    body := edObj.Doc.Body
+    numEl := len(body.Content)
+
+    for el:=0; el< numEl; el++ {
+        bodyEl := body.Content[el]
+        if bodyEl.Paragraph == nil {continue;}
+
+		parstyl := bodyEl.Paragraph.ParagraphStyle
+		// found paragraph
+		if parstyl.NamedStyleType == tgtStyl {
+			elList = append(elList, el)
+		}
+    }
+
+	return &elList, nil
+}
+
+
+func (edObj *gdEditObj) DispText(start int64) (err error) {
+
+	if edObj.Doc == nil {fmt.Errorf("doc is nil!")}
+
+    body := edObj.Doc.Body
+    numEl := len(body.Content)
+
+	elIdx := -1
+    for el:=0; el< numEl; el++ {
+        bodyEl := body.Content[el]
+		if bodyEl.Paragraph == nil {continue}
+        numPel := len(bodyEl.Paragraph.Elements)
+		parStart := bodyEl.Paragraph.Elements[0].StartIndex
+		parEnd := bodyEl.Paragraph.Elements[numPel-1].EndIndex
+
+		if start >= parStart && start < parEnd {
+			elIdx = el
+			break
+		}
+	}
+
+	if elIdx < 0 {return fmt.Errorf("paragraph El not found!")} 
+
+	dispEl := body.Content[elIdx]
+	numPel := len(dispEl.Paragraph.Elements)
+
+	pelIdx :=-1
+	for pel:=0; pel<numPel; pel++ {
+		parEl := dispEl.Paragraph.Elements[pel]
+		parElStart := parEl.StartIndex
+		parElEnd := parEl.EndIndex
+		if start >= parElStart && start < parElEnd {
+			pelIdx = pel
+            parElStr := parEl.TextRun.Content
+			textByt := []byte(parElStr)
+			relSt := start - parElStart
+			relEnd := relSt + 10
+			if start + relEnd > parElEnd { relEnd = parElEnd - parElStart}
+			fmt.Printf("disp text: %s\n", string(textByt[relSt: relEnd]))
+			return nil
+		}
+	}
+	if pelIdx < 0 {return fmt.Errorf("text not found in pEl!")} 
+	
+	return nil
+}
+
+func (edObj *gdEditObj) DispPar(el int) (outstr string, err error) {
+
+	if edObj.Doc == nil {fmt.Errorf("doc is nil!")}
+
+    body := edObj.Doc.Body
+    numEl := len(body.Content)
+
+	if el > numEl {return "", fmt.Errorf("el > num els!")}
+
+	bodyEl := body.Content[el]
+	if bodyEl.Paragraph == nil {return "", fmt.Errorf("el not a paragraph!")}
+
+	numPel := len(bodyEl.Paragraph.Elements)
+
+
+	for i:=0; i< numPel; i++ {
+		outstr += bodyEl.Paragraph.Elements[i].TextRun.Content
+	}
+
+	return outstr, nil
 }
 
 func (edObj *gdEditObj) FindTables() (tables *[]tblObj, err error) {
