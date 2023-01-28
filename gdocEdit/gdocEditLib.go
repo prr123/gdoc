@@ -298,7 +298,7 @@ func (edObj *gdEditObj) DispPar(el int) (outstr string, err error) {
 	return outstr, nil
 }
 
-func (edObj *gdEditObj) FindTables() (tables *[]tblObj, err error) {
+func (edObj *gdEditObj) ListTables() (tables *[]tblObj, err error) {
 // method that finds all tables in google doc. returns an array of startindices
 
 	var tbl tblObj
