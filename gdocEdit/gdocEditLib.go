@@ -344,7 +344,7 @@ func (edObj *gdEditObj) FindNextTable(start int64) (tblobj *tblObj, err error) {
 	return &tbl, nil
 }
 
-func (edObj *gdEditObj) addTblRows(addRows int, tbl *tblObj) (updreq *docs.BatchUpdateDocumentRequest, err error) {
+func (edObj *gdEditObj) AddTblRows(addRows int, tbl *tblObj) (updreq *docs.BatchUpdateDocumentRequest, err error) {
 // method that adds rows to an exisiting table
 
     var loc docs.Location
@@ -389,6 +389,57 @@ func (edObj *gdEditObj) addTblRows(addRows int, tbl *tblObj) (updreq *docs.Batch
 	return updreq, nil
 }
 
+func  (edObj *gdEditObj) GetTblContent(tbl *tblObj) (contTbl *[][]string, err error) {
+
+fmt.Printf("Get Tbk Cont: %d %d\n", (*tbl).Rows, (*tbl).Cols)
+
+	table := make([][]string,(*tbl).Rows)
+
+	for irow:=0; irow< (*tbl).Rows; irow++ {
+		tblRow := make([]string, (*tbl).Cols)
+		table[irow] = tblRow
+	}
+
+	doc := edObj.Doc
+	if doc == nil {return nil, fmt.Errorf("doc not provided")}
+
+	el := doc.Body.Content[tbl.El]
+
+	if el.Table == nil {return nil, fmt.Errorf("el %d is not a table!", tbl.El)}
+
+	elTbl := el.Table
+	if len(table) != int(elTbl.Rows) {return nil, fmt.Errorf("contTbl and tbl row numbers do not match!")}
+	if len(table[0]) != int(elTbl.Columns) {return nil, fmt.Errorf("contTbl and tbl col numbers do not match!")}
+
+
+	for row:=0; row<int(elTbl.Rows); row++ {
+		for col:=0; col<int(elTbl.Columns); col++ {
+
+			tblCel := elTbl.TableRows[row].TableCells[col]
+
+    		celElCount := len(tblCel.Content)
+//fmt.Printf("cel[%d,%d]: %d ", row, col, celElCount)
+			celStr :=""
+			for el:=0; el< celElCount; el++ {
+        		celEl := tblCel.Content[el]
+        		if celEl.Paragraph == nil {continue}
+				numPel := len(celEl.Paragraph.Elements)
+				// celPel cell Paragraph Element
+				for celPel:=0; celPel< numPel; celPel++ {
+					celStr += celEl.Paragraph.Elements[celPel].TextRun.Content
+				}
+			} //for el
+//fmt.Printf("%s\n", celStr)
+			celB := []byte(celStr)
+//for i:=0; i<len(celB); i++ {fmt.Printf("%q ",celB[i])}
+//fmt.Println()
+			if celB[len(celB) - 1] == '\n' {celStr = string(celB[:len(celB)-1])}
+			table[row][col] = celStr
+		} // for col
+	} // for row
+	return &table, nil
+}
+
 func  (edObj *gdEditObj) FillTblContent(contTbl *[][]string, tbl *tblObj) (updreq *docs.BatchUpdateDocumentRequest, err error) {
 
     var parEl *docs.ParagraphElement
@@ -405,60 +456,42 @@ func  (edObj *gdEditObj) FillTblContent(contTbl *[][]string, tbl *tblObj) (updre
 	if len(*contTbl) != int(elTbl.Rows) {return nil, fmt.Errorf("contTbl and tbl row numbers do not match!")}
 	if len((*contTbl)[0]) != int(elTbl.Columns) {return nil, fmt.Errorf("contTbl and tbl col numbers do not match!")}
 
-    fmt.Printf("update Cell Content: table: %d %d Index: %d\n", elTbl.Rows, elTbl.Columns, el.StartIndex)
+//    fmt.Printf("update Cell Content: table: %d %d Index: %d\n", elTbl.Rows, elTbl.Columns, el.StartIndex)
 
 	updreq = new(docs.BatchUpdateDocumentRequest)
     updreq.Requests = make([]*docs.Request, el.Table.Rows*el.Table.Columns)
 
 	reqCount:=0
-	for row:=0; row<int(elTbl.Rows); row++ {
 
+	delta := int64(0)
+	for row:=0; row<int(elTbl.Rows); row++ {
 		for col:=0; col<int(elTbl.Columns); col++ {
 
 			tblCel := elTbl.TableRows[row].TableCells[col]
+    		celElCount := len(tblCel.Content)
+			if celElCount > 1 {return nil, fmt.Errorf("table cell[%d, %d] not empty", row, col)}
+//			for el:=0; el< celElCount; el++ {
+			celEl := tblCel.Content[0]
+			celPar := celEl.Paragraph
+			if celPar == nil {return nil, fmt.Errorf("table cell[%d, %d] has no Paragraph", row, col)}
 
-    		celContItems := len(tblCel.Content)
-
-			idx := -1
-			for i:=0; i< celContItems; i++ {
-        		celCont := tblCel.Content[i]
-        		if celCont.Paragraph != nil {
-            		idx = i
-            		break
-        		}
-			}
-
-//fmt.Printf("tblCel[%d, %d]: %d %d\n", row, col, celContItems, idx)
-
-
-//			if idx < 0 {
-        			// insert paragraph
-
- //   		} else {
-        		celPar := tblCel.Content[idx].Paragraph
-//        			parEls := len(celPar.Elements)
-//fmt.Printf("celpars - idx: %d parEls: %d\n", idx, parEls)
-//        for j:=0; j< parEls; j++ {
-            	parEl = celPar.Elements[0]
-//            	elStr = parEl.TextRun.Content
-//fmt.Printf("parEl[%d]: %d \"%s\"\n", parEl.StartIndex, len(elStr), elStr)
-//        }
-//        			parEl0 = celPar.Elements[0]
-//    		}
+			parEl = celPar.Elements[0]
 
     		loc:= new(docs.Location)
-			loc.Index = parEl.StartIndex
+			loc.Index = parEl.StartIndex + delta
+
+			newTxt := (*contTbl)[row][col]
 
     		insTxtReq:= new(docs.InsertTextRequest)
     		insTxtReq.Location = loc
-
-    		insTxtReq.Text = (*contTbl)[row][col]
+    		insTxtReq.Text = newTxt
 
     		insReq := new(docs.Request)
 
     		insReq.InsertText = insTxtReq
-//      insReq.InsertTableRow = &addRowReq
 			updreq.Requests[reqCount] = insReq
+
+			delta += int64(len(newTxt))
 			reqCount++
 		}
 	}
@@ -466,7 +499,74 @@ func  (edObj *gdEditObj) FillTblContent(contTbl *[][]string, tbl *tblObj) (updre
     return updreq, nil
 }
 
+func  (edObj *gdEditObj) ClearTblContent(tbl *tblObj) (updreq *docs.BatchUpdateDocumentRequest, err error) {
 
+    if tbl == nil {return nil, fmt.Errorf("no tblObj provided!")}
+
+	doc := edObj.Doc
+
+	el := doc.Body.Content[tbl.El]
+
+	if el.Table == nil {return nil, fmt.Errorf("el %d is not a table!", tbl.El)}
+
+	elTbl := el.Table
+
+    fmt.Printf("clear Cell Content: table: %d %d Index: %d\n", elTbl.Rows, elTbl.Columns, el.StartIndex)
+
+	updreq = new(docs.BatchUpdateDocumentRequest)
+    updreq.Requests = make([]*docs.Request, 0, elTbl.Rows*elTbl.Columns)
+
+//fmt.Printf("reqs: %d\n", len(updreq.Requests))
+
+	reqCount:=0
+
+	delta := int64(0)
+	for row:=0; row<int(elTbl.Rows); row++ {
+		for col:=0; col<int(elTbl.Columns); col++ {
+
+			tblCel := elTbl.TableRows[row].TableCells[col]
+    		celElCount := len(tblCel.Content)
+			if celElCount > 1 {return nil, fmt.Errorf("table cell[%d, %d] not empty", row, col)}
+//			for el:=0; el< celElCount; el++ {
+			celEl := tblCel.Content[0]
+			celPar := celEl.Paragraph
+			if celPar == nil {return nil, fmt.Errorf("table cell[%d, %d] has no Paragraph", row, col)}
+
+//			parEl := celPar.Elements[0]
+			numPel := len(celPar.Elements)
+
+				// celPel cell Paragraph Element
+			celStr:=""
+			for celPel:=0; celPel< numPel; celPel++ {
+				celStr += celPar.Elements[celPel].TextRun.Content
+			}
+fmt.Printf("cell[%d:%d]: %s\n", row, col, celStr)
+
+			stPos := celPar.Elements[0].StartIndex + delta
+			endPos := celPar.Elements[numPel -1].EndIndex -1 + delta
+
+			delta += stPos - endPos
+			if (endPos - stPos) < 1 {continue}
+
+			delRange:= new(docs.Range)
+    		delRange.StartIndex =  stPos
+   			delRange.EndIndex = endPos
+
+			delTxtReq:= new(docs.DeleteContentRangeRequest)
+    		delTxtReq.Range = delRange
+
+    		delReq := new(docs.Request)
+    		delReq.DeleteContentRange = delTxtReq
+
+			updreq.Requests = append(updreq.Requests, delReq)
+//    		updreq.Requests[reqCount] = delReq
+
+			reqCount++
+		}
+	}
+
+    return updreq, nil
+}
 
 func (edObj *gdEditObj) FindString(strObj stringObj) (stPos int64, err error) {
 
@@ -603,5 +703,28 @@ func PrintUpdResp (resp *docs.BatchUpdateDocumentResponse) {
         }
 
     }
+
+}
+
+func PrintTbl(contTbl *[][]string) {
+
+    rows:= len(*contTbl)
+    cols := len((*contTbl)[0])
+fmt.Printf("rows: %d cols: %d\n", rows, cols)
+
+    fmt.Printf("cols:    ")
+    for ic:=0; ic<cols; ic++ {
+        fmt.Printf(" %8d   |", ic+1)
+    }
+    fmt.Println()
+
+    for ir:=0; ir<rows; ir++ {
+        fmt.Printf("row[%d]: |", ir+1)
+        for ic:=0; ic<cols; ic++ {
+            fmt.Printf(" %10s |", (*contTbl)[ir][ic])
+        }
+        fmt.Println()
+    }
+
 
 }
