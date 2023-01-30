@@ -30,6 +30,7 @@ type gdEditObj struct {
 	DocId string
 	diffStart int64
 	diff int64
+	hdMap map[string]string
 }
 
 type stringObj struct {
@@ -47,6 +48,37 @@ type tblObj struct {
 	El int
 }
 
+type sectObj struct {
+	Start int64
+	End int64
+	Rows int
+	Cols int
+	El int
+}
+
+type pbObj struct {
+	Start int64
+	End int64
+	El int
+	pEl int
+}
+
+type imgObj struct {
+	Start int64
+	Width int
+	Height int
+	Src string
+	El int
+}
+
+type headObj struct {
+	Typ string
+	Start int64
+	End int64
+	El int
+	Text string
+}
+
 func InitGdocEdit(docSvc *docs.DocumentsService, docId string) (gdEdObj *gdEditObj, err error) {
 	var gdEd gdEditObj
 
@@ -57,6 +89,14 @@ func InitGdocEdit(docSvc *docs.DocumentsService, docId string) (gdEdObj *gdEditO
 	gdEd.DocSvc = docSvc
     gdEd.Doc = doc
 	gdEd.DocId = docId
+	gdEd.hdMap = map[string]string{
+	"h1":"HEADING_1",
+	"h2":"HEADING_2",
+	"h3":"HEADING_3",
+	"h4":"HEADING_4",
+	"h5":"HEADING_5",
+	"h6":"HEADING_6",
+	}
 	return &gdEd, nil
 }
 
@@ -190,42 +230,6 @@ func (edObj *gdEditObj) GetEl(start int64) (elObj int, pelObj int, err error) {
 	//
 	if pelObj == -1 {return elObj, pelObj, fmt.Errorf("string not found!")}
 	return elObj, pelObj, nil
-}
-
-
-func (edObj *gdEditObj) FindHeadingsAll(heading string) (ellist *[]int, err error) {
-
-	var elList []int
-	var tgtStyl string
-
-	if edObj.Doc == nil {return nil, fmt.Errorf("doc is nil!")}
-
-	switch heading {
-	case "h1":
-		tgtStyl = "HEADING_1"
-	case "h2":
-		tgtStyl = "HEADING_2"
-	default:
-		return nil, fmt.Errorf("not a valid heading supplied")
-	}
-
-fmt.Printf("style: %s\n", tgtStyl)
-
-    body := edObj.Doc.Body
-    numEl := len(body.Content)
-
-    for el:=0; el< numEl; el++ {
-        bodyEl := body.Content[el]
-        if bodyEl.Paragraph == nil {continue;}
-
-		parstyl := bodyEl.Paragraph.ParagraphStyle
-		// found paragraph
-		if parstyl.NamedStyleType == tgtStyl {
-			elList = append(elList, el)
-		}
-    }
-
-	return &elList, nil
 }
 
 
@@ -540,7 +544,6 @@ func  (edObj *gdEditObj) ClearTblContent(tbl *tblObj) (updreq *docs.BatchUpdateD
 			for celPel:=0; celPel< numPel; celPel++ {
 				celStr += celPar.Elements[celPel].TextRun.Content
 			}
-fmt.Printf("cell[%d:%d]: %s\n", row, col, celStr)
 
 			stPos := celPar.Elements[0].StartIndex + delta
 			endPos := celPar.Elements[numPel -1].EndIndex -1 + delta
@@ -670,6 +673,143 @@ func (edObj *gdEditObj) ReplaceString(strObj stringObj) (updreq *docs.BatchUpdat
 
     return updreq, nil
 }
+
+func (edObj *gdEditObj) ListImg() (images *[]imgObj, err error) {
+// method that finds all tables in google doc. returns an array of startindices
+
+	var img imgObj
+	var imgList []imgObj
+
+	doc := edObj.Doc
+
+    for i:=0; i< len(doc.Body.Content); i++ {
+        el := doc.Body.Content[i]
+        if el.Table != nil {
+            img.Start = el.StartIndex
+//			img.Rows = int(el.Table.Rows)
+//			img.Cols = int(el.Table.Columns)
+			img.El = i
+			imgList = append(imgList, img)
+        }
+    }
+	return &imgList, nil
+}
+
+func (edObj *gdEditObj) ListSects() (sections *[]sectObj, err error) {
+// method that finds all tables in google doc. returns an array of startindices
+
+	var sect sectObj
+	var sectList []sectObj
+
+	doc := edObj.Doc
+
+    for i:=0; i< len(doc.Body.Content); i++ {
+        el := doc.Body.Content[i]
+        if el.SectionBreak != nil {
+            sect.Start = el.StartIndex
+			sect.End = el.EndIndex
+			sect.El = i
+			sectList = append(sectList, sect)
+        }
+    }
+	return &sectList, nil
+}
+
+func (edObj *gdEditObj) GetHeadTxt(hd *headObj) (outstr string, err error) {
+
+	if edObj.Doc == nil {return "", fmt.Errorf("doc is nil!")}
+
+    body := edObj.Doc.Body
+    numEl := len(body.Content)
+	if hd.El > numEl -1 {return "", fmt.Errorf("invalid header Element!")}
+
+	el := body.Content[hd.El]
+    if el.Paragraph == nil {return "", fmt.Errorf("el is not a Paragraph!")}
+
+	for pel:=0; pel < len(el.Paragraph.Elements); pel++ {
+		if el.Paragraph.Elements[pel].TextRun == nil {continue}
+		outstr += el.Paragraph.Elements[pel].TextRun.Content
+	}
+	return outstr, nil
+}
+
+func (edObj *gdEditObj) ListHeadings(shortHead string) (headlist *[]headObj, err error) {
+
+	var head headObj
+	var hdList []headObj
+
+	if edObj.Doc == nil {return nil, fmt.Errorf("doc is nil!")}
+
+	heading, ok := edObj.hdMap[shortHead]
+	if !ok {return nil, fmt.Errorf("invalid heading!")}
+
+fmt.Printf("heading: %s %s\n", heading, shortHead)
+
+    body := edObj.Doc.Body
+    numEl := len(body.Content)
+
+    for iEl:=0; iEl< numEl; iEl++ {
+        bodyEl := body.Content[iEl]
+        if bodyEl.Paragraph == nil {continue;}
+		parstyl := bodyEl.Paragraph.ParagraphStyle
+
+//fmt.Printf("parstyle [el: %d] %s\n", iEl, parstyl.NamedStyleType)
+		// found paragraph
+		outstr := ""
+		if parstyl.NamedStyleType == heading {
+			head.Typ = shortHead
+			head.Start = bodyEl.StartIndex
+			head.End = bodyEl.EndIndex
+			for pel:=0; pel < len(bodyEl.Paragraph.Elements); pel++ {
+				if bodyEl.Paragraph.Elements[pel].TextRun == nil {continue}
+				outstr += bodyEl.Paragraph.Elements[pel].TextRun.Content
+			}
+			outByt := []byte(outstr)
+			if outByt[len(outByt)-1] == '\n' {outstr = string(outByt[:len(outByt)-1])}
+			head.Text = outstr
+			hdList = append(hdList, head)
+		}
+    }
+
+	return &hdList, nil
+}
+
+
+func (edObj *gdEditObj) ListHeadingsAlt(heading string) (ellist *[]int, err error) {
+
+	var elList []int
+	var tgtStyl string
+
+	if edObj.Doc == nil {return nil, fmt.Errorf("doc is nil!")}
+
+	switch heading {
+	case "h1":
+		tgtStyl = "HEADING_1"
+	case "h2":
+		tgtStyl = "HEADING_2"
+	default:
+		return nil, fmt.Errorf("not a valid heading supplied")
+	}
+
+fmt.Printf("style: %s\n", tgtStyl)
+
+    body := edObj.Doc.Body
+    numEl := len(body.Content)
+
+    for el:=0; el< numEl; el++ {
+        bodyEl := body.Content[el]
+        if bodyEl.Paragraph == nil {continue;}
+
+		parstyl := bodyEl.Paragraph.ParagraphStyle
+		// found paragraph
+		if parstyl.NamedStyleType == tgtStyl {
+			elList = append(elList, el)
+		}
+    }
+
+	return &elList, nil
+}
+
 
 func PrintTblObj (tbls *[]tblObj) {
 
