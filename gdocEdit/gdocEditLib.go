@@ -46,14 +46,15 @@ type tblObj struct {
 	Rows int
 	Cols int
 	El int
+
 }
 
 type sectObj struct {
+	Typ string
 	Start int64
 	End int64
-	Rows int
-	Cols int
 	El int
+	Text string
 }
 
 type pbObj struct {
@@ -709,6 +710,11 @@ func (edObj *gdEditObj) ListSects() (sections *[]sectObj, err error) {
             sect.Start = el.StartIndex
 			sect.End = el.EndIndex
 			sect.El = i
+			secStyl := el.SectionBreak
+			sect.Typ = "none"
+			if secStyl != nil {
+				sect.Typ = secStyl.SectionType
+			}
 			sectList = append(sectList, sect)
         }
     }
