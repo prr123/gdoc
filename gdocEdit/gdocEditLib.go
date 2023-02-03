@@ -19,7 +19,7 @@ import (
 )
 
 const (
-    PtTomm = 0.35277777777778
+    PtToMm = 0.35277777777778
     MmTopt = 2.8346456692913207
 )
 
@@ -65,11 +65,16 @@ type pbObj struct {
 }
 
 type imgObj struct {
+	Typ bool
 	Start int64
-	Width int
-	Height int
+	Width float64
+	Height float64
 	Src string
 	El int
+	Pel int
+	Id string
+	Title string
+	Desc string
 }
 
 type headObj struct {
@@ -675,28 +680,85 @@ func (edObj *gdEditObj) ReplaceString(strObj stringObj) (updreq *docs.BatchUpdat
     return updreq, nil
 }
 
-func (edObj *gdEditObj) ListImg() (images *[]imgObj, err error) {
+func (edObj *gdEditObj) ListImages() (images *[]imgObj, err error) {
 // method that finds all tables in google doc. returns an array of startindices
 
-	var img imgObj
+//	var img imgObj
 	var imgList []imgObj
 
 	doc := edObj.Doc
 
-    for i:=0; i< len(doc.Body.Content); i++ {
-        el := doc.Body.Content[i]
-        if el.Table != nil {
-            img.Start = el.StartIndex
-//			img.Rows = int(el.Table.Rows)
-//			img.Cols = int(el.Table.Columns)
-			img.El = i
-			imgList = append(imgList, img)
-        }
-    }
+	for _, imgItem := range doc.InlineObjects {
+		img := new(imgObj)
+		img.Id = imgItem.ObjectId
+		emObj:= imgItem.InlineObjectProperties.EmbeddedObject
+		img.Title = emObj.Title
+		img.Desc = emObj.Description
+		img.Typ = true
+		img.Width = emObj.Size.Width.Magnitude * PtToMm
+		img.Height = emObj.Size.Height.Magnitude * PtToMm
+		img.Src = emObj.ImageProperties.SourceUri
+		imgList = append(imgList, *img)
+	}
+
+	imgId := ""
+	for iEl:=0; iEl< len(doc.Body.Content); iEl++ {
+		contEl := doc.Body.Content[iEl]
+		if contEl.Paragraph == nil {continue}
+		for pEl:=0; pEl < len(contEl.Paragraph.Elements); pEl++ {
+			parEl := contEl.Paragraph.Elements[pEl]
+			imgEl := parEl.InlineObjectElement
+			if imgEl == nil {continue}
+			imgId = imgEl.InlineObjectId
+			found:= false
+			for i:=0; i< len(imgList); i++ {
+				if !imgList[i].Typ {continue}
+				if imgId != imgList[i].Id {continue}
+				imgList[i].El = iEl
+				imgList[i].Pel = pEl
+				found = true
+				break
+			}
+			if !found {return &imgList, fmt.Errorf("imgEl %s not found in imgList", imgId)}
+		}
+	}
+
+
+	for _, imgItem := range doc.PositionedObjects {
+		img := new(imgObj)
+		img.Id = imgItem.ObjectId
+		emObj:= imgItem.PositionedObjectProperties.EmbeddedObject
+		img.Title = emObj.Title
+		img.Desc = emObj.Description
+		img.Typ = false
+		img.Width = emObj.Size.Width.Magnitude * PtToMm
+		img.Height = emObj.Size.Height.Magnitude * PtToMm
+		imgList = append(imgList, *img)
+	}
+
+	for iEl:=0; iEl< len(doc.Body.Content); iEl++ {
+		contEl := doc.Body.Content[iEl]
+		if contEl.Paragraph == nil {continue}
+		posObjList := contEl.Paragraph.PositionedObjectIds
+		for posId:=0; posId < len(posObjList); posId++ {
+			imgId = posObjList[posId]
+			found:= false
+			for i:=0; i< len(imgList); i++ {
+				if imgList[i].Typ {continue}
+				if imgId != imgList[i].Id {continue}
+				imgList[i].El = iEl
+				imgList[i].Pel = i
+				found = true
+				break
+			}
+			if !found {return &imgList, fmt.Errorf("posImgEl %s not found in imgList", imgId)}
+		}
+	}
+
 	return &imgList, nil
 }
 
-func (edObj *gdEditObj) ListSects() (sections *[]sectObj, err error) {
+func (edObj *gdEditObj) ListSections() (sections *[]sectObj, err error) {
 // method that finds all tables in google doc. returns an array of startindices
 
 	var sect sectObj
@@ -704,7 +766,7 @@ func (edObj *gdEditObj) ListSects() (sections *[]sectObj, err error) {
 
 	doc := edObj.Doc
 
-    for i:=0; i< len(doc.Body.Content); i++ {
+    for i:=1; i< len(doc.Body.Content); i++ {
         el := doc.Body.Content[i]
         if el.SectionBreak != nil {
             sect.Start = el.StartIndex
@@ -713,7 +775,7 @@ func (edObj *gdEditObj) ListSects() (sections *[]sectObj, err error) {
 			secStyl := el.SectionBreak
 			sect.Typ = "none"
 			if secStyl != nil {
-				sect.Typ = secStyl.SectionType
+				sect.Typ = secStyl.SectionStyle.SectionType
 			}
 			sectList = append(sectList, sect)
         }
@@ -749,7 +811,7 @@ func (edObj *gdEditObj) ListHeadings(shortHead string) (headlist *[]headObj, err
 	heading, ok := edObj.hdMap[shortHead]
 	if !ok {return nil, fmt.Errorf("invalid heading!")}
 
-fmt.Printf("heading: %s %s\n", heading, shortHead)
+//fmt.Printf("heading: %s %s\n", heading, shortHead)
 
     body := edObj.Doc.Body
     numEl := len(body.Content)
@@ -797,7 +859,7 @@ func (edObj *gdEditObj) ListHeadingsAlt(heading string) (ellist *[]int, err erro
 		return nil, fmt.Errorf("not a valid heading supplied")
 	}
 
-fmt.Printf("style: %s\n", tgtStyl)
+//fmt.Printf("style: %s\n", tgtStyl)
 
     body := edObj.Doc.Body
     numEl := len(body.Content)
@@ -872,5 +934,47 @@ fmt.Printf("rows: %d cols: %d\n", rows, cols)
         fmt.Println()
     }
 
+}
+func PrintImgList(imgList *[]imgObj) {
+
+	inLineCount := 0
+	for i:=0; i< len(*imgList); i++ {
+		if (*imgList)[i].Typ {inLineCount++}
+	}
+
+	fmt.Printf("*** Inline Images %d ****\n", inLineCount)
+	for i:=0; i< len(*imgList); i++ {
+
+		if !(*imgList)[i].Typ {continue}
+		fmt.Printf("********* Image %d **********\n", i)
+		fmt.Printf("Id: %s\n", (*imgList)[i].Id)
+		fmt.Printf("Title:       %s\n", (*imgList)[i].Title)
+		fmt.Printf("Description: %s\n", (*imgList)[i].Desc)
+
+		fmt.Printf("Src: %s\n", (*imgList)[i].Src)
+		fmt.Printf("W: %.0f mm H: %.0f mm\n", (*imgList)[i].Width, (*imgList)[i].Height)
+		fmt.Printf("El: %d pEl: %d\n", (*imgList)[i].El, (*imgList)[i].Pel)
+	}
+
+
+	posImgCount := 0
+	for i:=0; i< len(*imgList); i++ {
+		if !(*imgList)[i].Typ {posImgCount++}
+	}
+
+	fmt.Printf("*** Positioned Images %d ****\n", posImgCount)
+	for i:=0; i< len(*imgList); i++ {
+
+		if (*imgList)[i].Typ {continue}
+		fmt.Printf("********* Image %d **********\n", i)
+		fmt.Printf("Id: %s\n", (*imgList)[i].Id)
+		fmt.Printf("Title:       %s\n", (*imgList)[i].Title)
+		fmt.Printf("Description: %s\n", (*imgList)[i].Desc)
+
+		fmt.Printf("Src: %s\n", (*imgList)[i].Src)
+		fmt.Printf("W: %.0f mm H: %.0f mm\n", (*imgList)[i].Width, (*imgList)[i].Height)
+		fmt.Printf("El: %d pEl: %d\n", (*imgList)[i].El, (*imgList)[i].Pel)
+	}
 
 }
+
